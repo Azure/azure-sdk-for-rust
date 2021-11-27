@@ -10,8 +10,8 @@ https://docs.microsoft.com/rest/api/vmware/privateclouds/list
 cargo run --package azure_mgmt_vmware --example private_cloud_list
 */
 
-use std::sync::Arc;
 use azure_identity::token_credentials::AzureCliCredential;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

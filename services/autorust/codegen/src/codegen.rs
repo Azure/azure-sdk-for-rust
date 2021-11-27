@@ -149,12 +149,12 @@ pub fn is_basic_type(property: &ResolvedSchema) -> bool {
     )
 }
 
-/// Wraps a type in an Option if is not required.
-pub fn require(is_required: bool, tp: TokenStream) -> TokenStream {
-    if is_required {
-        tp
-    } else {
+/// Wraps a type in an Option
+pub fn add_option(is_option: bool, tp: TokenStream) -> TokenStream {
+    if is_option {
         quote! { Option<#tp> }
+    } else {
+        tp
     }
 }
 

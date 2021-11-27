@@ -1,7 +1,7 @@
 use crate::{
     codegen::{
-        create_generated_by_header, enum_values_as_strings, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref,
-        is_basic_type, is_local_enum, is_local_struct, is_vec, require, Error,
+        add_option, create_generated_by_header, enum_values_as_strings, get_schema_array_items, get_type_name_for_schema,
+        get_type_name_for_schema_ref, is_basic_type, is_local_enum, is_local_struct, is_vec, Error,
     },
     identifier::{CamelCaseIdent, SnakeCaseIdent},
     spec, CodeGen, PropertyName, ResolvedSchema,
@@ -207,7 +207,7 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
 
         let is_vec = is_vec(&field_tp_name);
         if !is_vec {
-            field_tp_name = require(is_required, field_tp_name);
+            field_tp_name = add_option(!is_required, field_tp_name);
         }
         local_types.extend(field_tp);
         let mut serde_attrs: Vec<TokenStream> = Vec::new();

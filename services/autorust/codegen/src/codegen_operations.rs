@@ -1,5 +1,5 @@
 use crate::{
-    codegen::{create_generated_by_header, get_type_name_for_schema_ref, require, Error},
+    codegen::{add_option, create_generated_by_header, get_type_name_for_schema_ref, Error},
     codegen::{parse_params, PARAM_RE},
     identifier::ident,
     identifier::SnakeCaseIdent,
@@ -174,10 +174,10 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         match operations_code.get_mut(&module_name) {
             Some(operation_code) => {
                 let OperationCode {
-                    function_code,
+                    builder_instance_code,
                     module_code,
                 } = code;
-                operation_code.function_code.extend(function_code);
+                operation_code.builder_instance_code.extend(builder_instance_code);
                 operation_code.module_code.extend(module_code);
             }
             None => {
@@ -188,7 +188,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
 
     for (module_name, operation_code) in operations_code {
         let OperationCode {
-            function_code,
+            builder_instance_code,
             module_code,
         } = operation_code;
         match module_name {
@@ -199,7 +199,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
                         use super::{API_VERSION, models};
                         pub struct Client(pub(crate) super::Client);
                         impl Client {
-                            #function_code
+                            #builder_instance_code
                         }
                         #module_code
                     }
@@ -208,7 +208,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
             None => {
                 file.extend(quote! {
                     impl Client {
-                        #function_code
+                        #builder_instance_code
                     }
                     #module_code
                 });
@@ -219,7 +219,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
 }
 
 struct OperationCode {
-    function_code: TokenStream,
+    builder_instance_code: TokenStream,
     module_code: TokenStream,
 }
 
@@ -613,8 +613,9 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
         });
     }
 
-    let function_code = create_builder_instance_code(&fname, &parameters)?;
-    let builder_code = create_builder_struct_code(&parameters)?;
+    let builder_instance_code = create_builder_instance_code(&fname, &parameters)?;
+    let builder_struct_code = create_builder_struct_code(&parameters)?;
+    let builder_setters_code = create_builder_setters_code(&parameters)?;
 
     let module_code = quote! {
 
@@ -642,9 +643,10 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                 Deserialize(serde_json::Error, bytes::Bytes),
             }
 
-            #builder_code
+            #builder_struct_code
 
             impl Builder {
+                #builder_setters_code
                 pub fn into_future(self) -> futures::future::BoxFuture<'static, #fresponse> {
                     Box::pin(async move {
                         let url_str = &format!(#fpath, &self.client.endpoint, #url_str_args);
@@ -667,7 +669,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
     };
 
     Ok(OperationCode {
-        function_code,
+        builder_instance_code,
         module_code,
     })
 }
@@ -692,7 +694,7 @@ fn create_function_params_code(parameters: &[&WebParameter]) -> Result<TokenStre
     let mut params: Vec<TokenStream> = Vec::new();
     for param in parameters.iter().filter(|p| p.required()) {
         let name = get_param_name(param)?;
-        let tp = get_param_type(param, true)?;
+        let tp = get_param_type(param, true, true)?;
         params.push(quote! { #name: #tp });
     }
     let slf = quote! { &self };
@@ -730,12 +732,12 @@ fn create_builder_struct_code(parameters: &[&WebParameter]) -> Result<TokenStrea
     params.push(quote! { pub(crate) client: crate::operations::Client });
     for param in parameters.iter().filter(|p| p.required()) {
         let name = get_param_name(param)?;
-        let tp = get_param_type(param, false)?;
+        let tp = get_param_type(param, false, true)?;
         params.push(quote! { pub(crate) #name: #tp });
     }
     for param in parameters.iter().filter(|p| !p.required()) {
         let name = get_param_name(param)?;
-        let tp = get_param_type(param, false)?;
+        let tp = get_param_type(param, false, true)?;
         params.push(quote! { pub(crate) #name: #tp });
     }
     Ok(quote! {
@@ -746,15 +748,31 @@ fn create_builder_struct_code(parameters: &[&WebParameter]) -> Result<TokenStrea
     })
 }
 
+fn create_builder_setters_code(parameters: &[&WebParameter]) -> Result<TokenStream, Error> {
+    let mut setters = TokenStream::new();
+    for param in parameters.iter().filter(|p| !p.required()) {
+        let name = get_param_name(param)?;
+        let tp = get_param_type(param, false, false)?;
+        setters.extend(quote! {
+            pub fn #name(mut self, #name: #tp) -> Self {
+                self.#name = Some(#name);
+                self
+            }
+        });
+    }
+    Ok(setters)
+}
+
 fn get_param_name(param: &WebParameter) -> Result<TokenStream, Error> {
     param.name().to_snake_case_ident().map_err(Error::ParamName)
 }
 
-fn get_param_type(param: &WebParameter, as_ref: bool) -> Result<TokenStream, Error> {
+fn get_param_type(param: &WebParameter, as_ref: bool, may_be_option: bool) -> Result<TokenStream, Error> {
     let is_required = param.required();
     let is_array = param.is_array();
+    let is_option = may_be_option && !(is_required || is_array);
     let tp = param.type_name()?.to_token_stream(as_ref, true)?;
-    Ok(require(is_required || is_array, tp))
+    Ok(add_option(is_option, tp))
 }
 
 fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
