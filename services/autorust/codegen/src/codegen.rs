@@ -197,9 +197,9 @@ impl TypeName {
                 }
             }
             TypeName::Array(vec_items_typ) => {
-                let vec_items_typ = vec_items_typ.to_token_stream(as_ref, qualify_models)?;
+                let vec_items_typ = vec_items_typ.to_token_stream(false, qualify_models)?;
                 match as_ref {
-                    true => quote! { &[#vec_items_typ] },
+                    true => quote! { impl Into<Vec<#vec_items_typ>> },
                     false => quote! { Vec<#vec_items_typ> },
                 }
             }

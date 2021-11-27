@@ -703,8 +703,13 @@ fn create_function_params_code(parameters: &[&WebParameter]) -> Result<TokenStre
     let mut params: Vec<TokenStream> = Vec::new();
     for param in parameters.iter().filter(|p| p.required()) {
         let name = get_param_name(param)?;
-        let tp = get_param_type(param, true, true)?;
-        params.push(quote! { #name: #tp });
+        if param.is_array() {
+            let tp = get_param_type(param, false, false)?;
+            params.push(quote! { #name: #tp });
+        } else {
+            let tp = get_param_type(param, true, false)?;
+            params.push(quote! { #name: #tp });
+        }
     }
     let slf = quote! { &self };
     params.insert(0, slf);
@@ -765,21 +770,21 @@ fn create_builder_setters_code(parameters: &[&WebParameter]) -> Result<TokenStre
     let mut setters = TokenStream::new();
     for param in parameters.iter().filter(|p| !p.required()) {
         let name = &get_param_name(param)?;
-        let value = if param.type_is_ref()? {
-            quote! { #name.into() }
-        } else {
-            name.clone()
-        };
         if param.is_array() {
             let tp = get_param_type(param, false, false)?;
             setters.extend(quote! {
-                pub fn #name(mut self, #name: impl Into<#tp>) -> Self {
-                    self.#name = #value.into();
+                pub fn #name(mut self, #name: #tp) -> Self {
+                    self.#name = #name;
                     self
                 }
             });
         } else {
             let tp = get_param_type(param, true, false)?;
+            let value = if param.type_is_ref()? {
+                quote! { #name.into() }
+            } else {
+                name.clone()
+            };
             setters.extend(quote! {
                 pub fn #name(mut self, #name: #tp) -> Self {
                     self.#name = Some(#value);
