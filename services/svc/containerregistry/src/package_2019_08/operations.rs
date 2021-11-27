@@ -3,6 +3,81 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
+    pub fn blob(&self) -> blob::Client {
+        blob::Client(self.clone())
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -16,37 +91,31 @@ pub enum Error {
 }
 pub mod blob {
     use super::{models, API_VERSION};
-    pub async fn start_upload(operation_config: &crate::OperationConfig, name: &str) -> std::result::Result<(), start_upload::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/v2/{}/blobs/uploads/?mode=resumable", operation_config.base_path(), name);
-        let mut url = url::Url::parse(url_str).map_err(start_upload::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(start_upload::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(start_upload::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(start_upload::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AcrErrors =
-                    serde_json::from_slice(rsp_body).map_err(|source| start_upload::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(start_upload::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn start_upload(&self, name: impl Into<String>) -> start_upload::Builder {
+            start_upload::Builder {
+                client: self.base_clone(),
+                name: name.into(),
+            }
+        }
+        pub fn get_chunk(&self, name: impl Into<String>, digest: impl Into<String>, range: impl Into<String>) -> get_chunk::Builder {
+            get_chunk::Builder {
+                client: self.base_clone(),
+                name: name.into(),
+                digest: digest.into(),
+                range: range.into(),
+            }
+        }
+        pub fn check_chunk(&self, name: impl Into<String>, digest: impl Into<String>, range: impl Into<String>) -> check_chunk::Builder {
+            check_chunk::Builder {
+                client: self.base_clone(),
+                name: name.into(),
+                digest: digest.into(),
+                range: range.into(),
             }
         }
     }
@@ -60,58 +129,56 @@ pub mod blob {
                 value: models::AcrErrors,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_chunk(
-        operation_config: &crate::OperationConfig,
-        name: &str,
-        digest: &str,
-        range: &str,
-    ) -> std::result::Result<bytes::Bytes, get_chunk::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/v2/{}/blobs/{}?mode=chunk", operation_config.base_path(), name, digest);
-        let mut url = url::Url::parse(url_str).map_err(get_chunk::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_chunk::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) name: String,
         }
-        req_builder = req_builder.header("Range", range);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_chunk::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_chunk::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::PARTIAL_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value = rsp_body.clone();
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AcrErrors =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_chunk::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_chunk::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/v2/{}/blobs/uploads/?mode=resumable", &self.client.endpoint, &self.name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AcrErrors =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -126,54 +193,62 @@ pub mod blob {
                 value: models::AcrErrors,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn check_chunk(
-        operation_config: &crate::OperationConfig,
-        name: &str,
-        digest: &str,
-        range: &str,
-    ) -> std::result::Result<(), check_chunk::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/v2/{}/blobs/{}?mode=chunk", operation_config.base_path(), name, digest);
-        let mut url = url::Url::parse(url_str).map_err(check_chunk::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::HEAD);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(check_chunk::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) name: String,
+            pub(crate) digest: String,
+            pub(crate) range: String,
         }
-        req_builder = req_builder.header("Range", range);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(check_chunk::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(check_chunk::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AcrErrors =
-                    serde_json::from_slice(rsp_body).map_err(|source| check_chunk::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(check_chunk::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<bytes::Bytes, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/v2/{}/blobs/{}?mode=chunk", &self.client.endpoint, &self.name, &self.digest);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("Range", &self.range);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::PARTIAL_CONTENT => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value = rsp_body.clone();
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AcrErrors =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -188,17 +263,60 @@ pub mod blob {
                 value: models::AcrErrors,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) name: String,
+            pub(crate) digest: String,
+            pub(crate) range: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/v2/{}/blobs/{}?mode=chunk", &self.client.endpoint, &self.name, &self.digest);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::HEAD);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("Range", &self.range);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AcrErrors =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }

@@ -3,6 +3,114 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
+    pub fn legacy_peerings(&self) -> legacy_peerings::Client {
+        legacy_peerings::Client(self.clone())
+    }
+    pub fn operations(&self) -> operations::Client {
+        operations::Client(self.clone())
+    }
+    pub fn peer_asns(&self) -> peer_asns::Client {
+        peer_asns::Client(self.clone())
+    }
+    pub fn peering_locations(&self) -> peering_locations::Client {
+        peering_locations::Client(self.clone())
+    }
+    pub fn peering_service_countries(&self) -> peering_service_countries::Client {
+        peering_service_countries::Client(self.clone())
+    }
+    pub fn peering_service_locations(&self) -> peering_service_locations::Client {
+        peering_service_locations::Client(self.clone())
+    }
+    pub fn peering_service_providers(&self) -> peering_service_providers::Client {
+        peering_service_providers::Client(self.clone())
+    }
+    pub fn peering_services(&self) -> peering_services::Client {
+        peering_services::Client(self.clone())
+    }
+    pub fn peerings(&self) -> peerings::Client {
+        peerings::Client(self.clone())
+    }
+    pub fn prefixes(&self) -> prefixes::Client {
+        prefixes::Client(self.clone())
+    }
+    pub fn registered_asns(&self) -> registered_asns::Client {
+        registered_asns::Client(self.clone())
+    }
+    pub fn registered_prefixes(&self) -> registered_prefixes::Client {
+        registered_prefixes::Client(self.clone())
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -78,54 +186,16 @@ pub enum Error {
     #[error(transparent)]
     PeeringServices_ListBySubscription(#[from] peering_services::list_by_subscription::Error),
 }
-pub async fn check_service_provider_availability(
-    operation_config: &crate::OperationConfig,
-    check_service_provider_availability_input: &models::CheckServiceProviderAvailabilityInput,
-    subscription_id: &str,
-) -> std::result::Result<String, check_service_provider_availability::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/subscriptions/{}/providers/Microsoft.Peering/CheckServiceProviderAvailability",
-        operation_config.base_path(),
-        subscription_id
-    );
-    let mut url = url::Url::parse(url_str).map_err(check_service_provider_availability::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::POST);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(check_service_provider_availability::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    req_builder = req_builder.header("content-type", "application/json");
-    let req_body = azure_core::to_json(check_service_provider_availability_input)
-        .map_err(check_service_provider_availability::Error::SerializeError)?;
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(check_service_provider_availability::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(check_service_provider_availability::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: String = serde_json::from_slice(rsp_body)
-                .map_err(|source| check_service_provider_availability::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                .map_err(|source| check_service_provider_availability::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(check_service_provider_availability::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            })
+impl Client {
+    pub fn check_service_provider_availability(
+        &self,
+        check_service_provider_availability_input: impl Into<models::CheckServiceProviderAvailabilityInput>,
+        subscription_id: impl Into<String>,
+    ) -> check_service_provider_availability::Builder {
+        check_service_provider_availability::Builder {
+            client: self.base_clone(),
+            check_service_provider_availability_input: check_service_provider_availability_input.into(),
+            subscription_id: subscription_id.into(),
         }
     }
 }
@@ -139,69 +209,89 @@ pub mod check_service_provider_availability {
             value: models::ErrorResponse,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
+    }
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) check_service_provider_availability_input: models::CheckServiceProviderAvailabilityInput,
+        pub(crate) subscription_id: String,
+    }
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<String, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/subscriptions/{}/providers/Microsoft.Peering/CheckServiceProviderAvailability",
+                    &self.client.endpoint, &self.subscription_id
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::POST);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                req_builder = req_builder.header("content-type", "application/json");
+                let req_body = azure_core::to_json(&self.check_service_provider_availability_input).map_err(Error::Serialize)?;
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: String =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::ErrorResponse =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
     }
 }
 pub mod legacy_peerings {
     use super::{models, API_VERSION};
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        peering_location: &str,
-        kind: &str,
-        asn: Option<i32>,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Peering/legacyPeerings",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("peeringLocation", peering_location);
-        url.query_pairs_mut().append_pair("kind", kind);
-        if let Some(asn) = asn {
-            url.query_pairs_mut().append_pair("asn", asn.to_string().as_str());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn list(
+            &self,
+            peering_location: impl Into<String>,
+            kind: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list::Builder {
+            list::Builder {
+                client: self.base_clone(),
+                peering_location: peering_location.into(),
+                kind: kind.into(),
+                subscription_id: subscription_id.into(),
+                asn: None,
             }
         }
     }
@@ -215,56 +305,92 @@ pub mod legacy_peerings {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) peering_location: String,
+            pub(crate) kind: String,
+            pub(crate) subscription_id: String,
+            pub(crate) asn: Option<i32>,
+        }
+        impl Builder {
+            pub fn asn(mut self, asn: i32) -> Self {
+                self.asn = Some(asn);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Peering/legacyPeerings",
+                        &self.client.endpoint, &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let peering_location = &self.peering_location;
+                    url.query_pairs_mut().append_pair("peeringLocation", peering_location);
+                    let kind = &self.kind;
+                    url.query_pairs_mut().append_pair("kind", kind);
+                    if let Some(asn) = &self.asn {
+                        url.query_pairs_mut().append_pair("asn", &asn.to_string());
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod operations {
     use super::{models, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/Microsoft.Peering/operations", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::OperationListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
+        pub fn list(&self) -> list::Builder {
+            list::Builder { client: self.base_clone() }
         }
     }
     pub mod list {
@@ -277,64 +403,103 @@ pub mod operations {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/providers/Microsoft.Peering/operations", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::OperationListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod peer_asns {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        peer_asn_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeerAsn, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Peering/peerAsns/{}",
-            operation_config.base_path(),
-            subscription_id,
-            peer_asn_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeerAsn =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(&self, peer_asn_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                peer_asn_name: peer_asn_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            peer_asn_name: impl Into<String>,
+            peer_asn: impl Into<models::PeerAsn>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                peer_asn_name: peer_asn_name.into(),
+                peer_asn: peer_asn.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(&self, peer_asn_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                peer_asn_name: peer_asn_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
+            list_by_subscription::Builder {
+                client: self.base_clone(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -348,71 +513,65 @@ pub mod peer_asns {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        peer_asn_name: &str,
-        peer_asn: &models::PeerAsn,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Peering/peerAsns/{}",
-            operation_config.base_path(),
-            subscription_id,
-            peer_asn_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) peer_asn_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(peer_asn).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeerAsn = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeerAsn = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeerAsn, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Peering/peerAsns/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.peer_asn_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeerAsn =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -432,56 +591,73 @@ pub mod peer_asns {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        peer_asn_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Peering/peerAsns/{}",
-            operation_config.base_path(),
-            subscription_id,
-            peer_asn_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) peer_asn_name: String,
+            pub(crate) peer_asn: models::PeerAsn,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Peering/peerAsns/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.peer_asn_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.peer_asn).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeerAsn =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeerAsn =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -501,61 +677,61 @@ pub mod peer_asns {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_subscription(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeerAsnListResult, list_by_subscription::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Peering/peerAsns",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_subscription::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_subscription::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) peer_asn_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_subscription::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_subscription::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeerAsnListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_by_subscription::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Peering/peerAsns/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.peer_asn_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -570,68 +746,82 @@ pub mod peer_asns {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeerAsnListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Peering/peerAsns",
+                        &self.client.endpoint, &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeerAsnListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod peering_locations {
     use super::{models, API_VERSION};
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        kind: &str,
-        direct_peering_type: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringLocationListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Peering/peeringLocations",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("kind", kind);
-        if let Some(direct_peering_type) = direct_peering_type {
-            url.query_pairs_mut().append_pair("directPeeringType", direct_peering_type);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringLocationListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn list(&self, kind: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.base_clone(),
+                kind: kind.into(),
+                subscription_id: subscription_id.into(),
+                direct_peering_type: None,
             }
         }
     }
@@ -645,68 +835,145 @@ pub mod peering_locations {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) kind: String,
+            pub(crate) subscription_id: String,
+            pub(crate) direct_peering_type: Option<String>,
+        }
+        impl Builder {
+            pub fn direct_peering_type(mut self, direct_peering_type: impl Into<String>) -> Self {
+                self.direct_peering_type = Some(direct_peering_type.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringLocationListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Peering/peeringLocations",
+                        &self.client.endpoint, &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let kind = &self.kind;
+                    url.query_pairs_mut().append_pair("kind", kind);
+                    if let Some(direct_peering_type) = &self.direct_peering_type {
+                        url.query_pairs_mut().append_pair("directPeeringType", direct_peering_type);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringLocationListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod registered_asns {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        registered_asn_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringRegisteredAsn, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredAsns/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name,
-            registered_asn_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringRegisteredAsn =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            registered_asn_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                registered_asn_name: registered_asn_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            registered_asn_name: impl Into<String>,
+            registered_asn: impl Into<models::PeeringRegisteredAsn>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                registered_asn_name: registered_asn_name.into(),
+                registered_asn: registered_asn.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            registered_asn_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                registered_asn_name: registered_asn_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_peering(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_peering::Builder {
+            list_by_peering::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -720,75 +987,71 @@ pub mod registered_asns {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        registered_asn_name: &str,
-        registered_asn: &models::PeeringRegisteredAsn,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredAsns/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name,
-            registered_asn_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) registered_asn_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(registered_asn).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringRegisteredAsn = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringRegisteredAsn = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringRegisteredAsn, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredAsns/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.peering_name,
+                        &self.registered_asn_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringRegisteredAsn =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -808,60 +1071,79 @@ pub mod registered_asns {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        registered_asn_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredAsns/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name,
-            registered_asn_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) registered_asn_name: String,
+            pub(crate) registered_asn: models::PeeringRegisteredAsn,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredAsns/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.peering_name,
+                        &self.registered_asn_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.registered_asn).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringRegisteredAsn =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringRegisteredAsn =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -881,65 +1163,67 @@ pub mod registered_asns {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_peering(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringRegisteredAsnListResult, list_by_peering::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredAsns",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_peering::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_peering::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) registered_asn_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_peering::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_peering::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringRegisteredAsnListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_peering::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_peering::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_by_peering::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredAsns/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.peering_name,
+                        &self.registered_asn_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -954,68 +1238,138 @@ pub mod registered_asns {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringRegisteredAsnListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredAsns",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.peering_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringRegisteredAsnListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod registered_prefixes {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        registered_prefix_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringRegisteredPrefix, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredPrefixes/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name,
-            registered_prefix_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringRegisteredPrefix =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            registered_prefix_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                registered_prefix_name: registered_prefix_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            registered_prefix_name: impl Into<String>,
+            registered_prefix: impl Into<models::PeeringRegisteredPrefix>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                registered_prefix_name: registered_prefix_name.into(),
+                registered_prefix: registered_prefix.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            registered_prefix_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                registered_prefix_name: registered_prefix_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_peering(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_peering::Builder {
+            list_by_peering::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -1029,75 +1383,71 @@ pub mod registered_prefixes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        registered_prefix_name: &str,
-        registered_prefix: &models::PeeringRegisteredPrefix,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredPrefixes/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name,
-            registered_prefix_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) registered_prefix_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(registered_prefix).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringRegisteredPrefix = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringRegisteredPrefix = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringRegisteredPrefix, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredPrefixes/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.peering_name,
+                        &self.registered_prefix_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringRegisteredPrefix =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1117,60 +1467,79 @@ pub mod registered_prefixes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        registered_prefix_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredPrefixes/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name,
-            registered_prefix_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) registered_prefix_name: String,
+            pub(crate) registered_prefix: models::PeeringRegisteredPrefix,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredPrefixes/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.peering_name,
+                        &self.registered_prefix_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.registered_prefix).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringRegisteredPrefix =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringRegisteredPrefix =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1190,65 +1559,67 @@ pub mod registered_prefixes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_peering(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringRegisteredPrefixListResult, list_by_peering::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredPrefixes",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_peering::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_peering::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) registered_prefix_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_peering::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_peering::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringRegisteredPrefixListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_peering::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_peering::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_by_peering::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredPrefixes/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.peering_name,
+                        &self.registered_prefix_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1263,66 +1634,151 @@ pub mod registered_prefixes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringRegisteredPrefixListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}/registeredPrefixes",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.peering_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringRegisteredPrefixListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod peerings {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::Peering, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Peering =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            peering: impl Into<models::Peering>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                peering: peering.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn update(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            tags: impl Into<models::ResourceTags>,
+            subscription_id: impl Into<String>,
+        ) -> update::Builder {
+            update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                tags: tags.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_name: peering_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_resource_group(
+            &self,
+            resource_group_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_resource_group::Builder {
+            list_by_resource_group::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
+            list_by_subscription::Builder {
+                client: self.base_clone(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -1336,73 +1792,66 @@ pub mod peerings {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        peering: &models::Peering,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(peering).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Peering = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Peering = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Peering, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.peering_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Peering =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1422,64 +1871,74 @@ pub mod peerings {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        tags: &models::ResourceTags,
-        subscription_id: &str,
-    ) -> std::result::Result<models::Peering, update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) peering: models::Peering,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(tags).map_err(update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Peering =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.peering_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.peering).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Peering =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Peering =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1494,58 +1953,68 @@ pub mod peerings {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) tags: models::ResourceTags,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Peering, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.peering_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.tags).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Peering =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1565,65 +2034,62 @@ pub mod peerings {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_resource_group(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringListResult, list_by_resource_group::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_resource_group::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_resource_group::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_by_resource_group::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_resource_group::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_by_resource_group::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.peering_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1638,61 +2104,65 @@ pub mod peerings {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_subscription(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringListResult, list_by_subscription::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Peering/peerings",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_subscription::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_subscription::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_subscription::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_subscription::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_by_subscription::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peerings",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1707,62 +2177,80 @@ pub mod peerings {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Peering/peerings",
+                        &self.client.endpoint, &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod peering_service_countries {
     use super::{models, API_VERSION};
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringServiceCountryListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServiceCountries",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringServiceCountryListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.base_clone(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -1776,66 +2264,83 @@ pub mod peering_service_countries {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringServiceCountryListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServiceCountries",
+                        &self.client.endpoint, &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringServiceCountryListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod peering_service_locations {
     use super::{models, API_VERSION};
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        country: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringServiceLocationListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServiceLocations",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(country) = country {
-            url.query_pairs_mut().append_pair("country", country);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringServiceLocationListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.base_clone(),
+                subscription_id: subscription_id.into(),
+                country: None,
             }
         }
     }
@@ -1849,72 +2354,146 @@ pub mod peering_service_locations {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) country: Option<String>,
+        }
+        impl Builder {
+            pub fn country(mut self, country: impl Into<String>) -> Self {
+                self.country = Some(country.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringServiceLocationListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServiceLocations",
+                        &self.client.endpoint, &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(country) = &self.country {
+                        url.query_pairs_mut().append_pair("country", country);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringServiceLocationListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod prefixes {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_service_name: &str,
-        prefix_name: &str,
-        expand: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringServicePrefix, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/prefixes/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_service_name,
-            prefix_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringServicePrefix =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_service_name: impl Into<String>,
+            prefix_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_service_name: peering_service_name.into(),
+                prefix_name: prefix_name.into(),
+                subscription_id: subscription_id.into(),
+                expand: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_service_name: impl Into<String>,
+            prefix_name: impl Into<String>,
+            peering_service_prefix: impl Into<models::PeeringServicePrefix>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_service_name: peering_service_name.into(),
+                prefix_name: prefix_name.into(),
+                peering_service_prefix: peering_service_prefix.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_service_name: impl Into<String>,
+            prefix_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_service_name: peering_service_name.into(),
+                prefix_name: prefix_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_peering_service(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_service_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_peering_service::Builder {
+            list_by_peering_service::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_service_name: peering_service_name.into(),
+                subscription_id: subscription_id.into(),
+                expand: None,
             }
         }
     }
@@ -1928,75 +2507,79 @@ pub mod prefixes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_service_name: &str,
-        prefix_name: &str,
-        peering_service_prefix: &models::PeeringServicePrefix,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/prefixes/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_service_name,
-            prefix_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_service_name: String,
+            pub(crate) prefix_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) expand: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(peering_service_prefix).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringServicePrefix = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
+        impl Builder {
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
             }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringServicePrefix = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringServicePrefix, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/prefixes/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.peering_service_name,
+                        &self.prefix_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringServicePrefix =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2016,60 +2599,79 @@ pub mod prefixes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_service_name: &str,
-        prefix_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/prefixes/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_service_name,
-            prefix_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_service_name: String,
+            pub(crate) prefix_name: String,
+            pub(crate) peering_service_prefix: models::PeeringServicePrefix,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/prefixes/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.peering_service_name,
+                        &self.prefix_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.peering_service_prefix).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringServicePrefix =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringServicePrefix =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2089,71 +2691,67 @@ pub mod prefixes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_peering_service(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_service_name: &str,
-        expand: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringServicePrefixListResult, list_by_peering_service::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/prefixes",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_service_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_peering_service::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_peering_service::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_service_name: String,
+            pub(crate) prefix_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_by_peering_service::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_peering_service::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringServicePrefixListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_peering_service::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_peering_service::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_by_peering_service::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/prefixes/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.peering_service_name,
+                        &self.prefix_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2168,62 +2766,92 @@ pub mod prefixes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_service_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) expand: Option<String>,
+        }
+        impl Builder {
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringServicePrefixListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}/prefixes",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.peering_service_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringServicePrefixListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod peering_service_providers {
     use super::{models, API_VERSION};
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringServiceProviderListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServiceProviders",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringServiceProviderListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.base_clone(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -2237,66 +2865,149 @@ pub mod peering_service_providers {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringServiceProviderListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServiceProviders",
+                        &self.client.endpoint, &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringServiceProviderListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod peering_services {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_service_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringService, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_service_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringService =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_service_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_service_name: peering_service_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_service_name: impl Into<String>,
+            peering_service: impl Into<models::PeeringService>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_service_name: peering_service_name.into(),
+                peering_service: peering_service.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn update(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_service_name: impl Into<String>,
+            tags: impl Into<models::ResourceTags>,
+            subscription_id: impl Into<String>,
+        ) -> update::Builder {
+            update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_service_name: peering_service_name.into(),
+                tags: tags.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            peering_service_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                peering_service_name: peering_service_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_resource_group(
+            &self,
+            resource_group_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_resource_group::Builder {
+            list_by_resource_group::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
+            list_by_subscription::Builder {
+                client: self.base_clone(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -2310,73 +3021,66 @@ pub mod peering_services {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_service_name: &str,
-        peering_service: &models::PeeringService,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_service_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_service_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(peering_service).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringService = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringService = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringService, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.peering_service_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringService =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2396,64 +3100,74 @@ pub mod peering_services {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_service_name: &str,
-        tags: &models::ResourceTags,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringService, update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_service_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_service_name: String,
+            pub(crate) peering_service: models::PeeringService,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(tags).map_err(update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringService =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.peering_service_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.peering_service).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringService =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringService =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2468,58 +3182,68 @@ pub mod peering_services {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        peering_service_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            peering_service_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_service_name: String,
+            pub(crate) tags: models::ResourceTags,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringService, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.peering_service_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.tags).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringService =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2539,65 +3263,62 @@ pub mod peering_services {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_resource_group(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringServiceListResult, list_by_resource_group::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_resource_group::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_resource_group::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) peering_service_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_by_resource_group::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_resource_group::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringServiceListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_by_resource_group::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.peering_service_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2612,61 +3333,65 @@ pub mod peering_services {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_subscription(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PeeringServiceListResult, list_by_subscription::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServices",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_subscription::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_subscription::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_subscription::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_subscription::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PeeringServiceListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_subscription::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_by_subscription::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringServiceListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Peering/peeringServices",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringServiceListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2681,17 +3406,66 @@ pub mod peering_services {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PeeringServiceListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.Peering/peeringServices",
+                        &self.client.endpoint, &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PeeringServiceListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }

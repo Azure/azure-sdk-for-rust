@@ -3,6 +3,129 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
+    pub fn authorization_policies(&self) -> authorization_policies::Client {
+        authorization_policies::Client(self.clone())
+    }
+    pub fn connector_mappings(&self) -> connector_mappings::Client {
+        connector_mappings::Client(self.clone())
+    }
+    pub fn connectors(&self) -> connectors::Client {
+        connectors::Client(self.clone())
+    }
+    pub fn hubs(&self) -> hubs::Client {
+        hubs::Client(self.clone())
+    }
+    pub fn images(&self) -> images::Client {
+        images::Client(self.clone())
+    }
+    pub fn interactions(&self) -> interactions::Client {
+        interactions::Client(self.clone())
+    }
+    pub fn kpi(&self) -> kpi::Client {
+        kpi::Client(self.clone())
+    }
+    pub fn links(&self) -> links::Client {
+        links::Client(self.clone())
+    }
+    pub fn operations(&self) -> operations::Client {
+        operations::Client(self.clone())
+    }
+    pub fn predictions(&self) -> predictions::Client {
+        predictions::Client(self.clone())
+    }
+    pub fn profiles(&self) -> profiles::Client {
+        profiles::Client(self.clone())
+    }
+    pub fn relationship_links(&self) -> relationship_links::Client {
+        relationship_links::Client(self.clone())
+    }
+    pub fn relationships(&self) -> relationships::Client {
+        relationships::Client(self.clone())
+    }
+    pub fn role_assignments(&self) -> role_assignments::Client {
+        role_assignments::Client(self.clone())
+    }
+    pub fn roles(&self) -> roles::Client {
+        roles::Client(self.clone())
+    }
+    pub fn views(&self) -> views::Client {
+        views::Client(self.clone())
+    }
+    pub fn widget_types(&self) -> widget_types::Client {
+        widget_types::Client(self.clone())
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -142,38 +265,13 @@ pub enum Error {
 }
 pub mod operations {
     use super::{models, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::OperationListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/providers/Microsoft.CustomerInsights/operations", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::OperationListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
-            }
+        pub fn list(&self) -> list::Builder {
+            list::Builder { client: self.base_clone() }
         }
     }
     pub mod list {
@@ -183,64 +281,141 @@ pub mod operations {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/providers/Microsoft.CustomerInsights/operations", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::OperationListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod hubs {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::Hub, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Hub =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            parameters: impl Into<models::Hub>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            parameters: impl Into<models::Hub>,
+            subscription_id: impl Into<String>,
+        ) -> update::Builder {
+            update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_resource_group(
+            &self,
+            resource_group_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_resource_group::Builder {
+            list_by_resource_group::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.base_clone(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -251,71 +426,64 @@ pub mod hubs {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        parameters: &models::Hub,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Hub = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Hub = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Hub, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Hub =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -332,62 +500,72 @@ pub mod hubs {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        parameters: &models::Hub,
-        subscription_id: &str,
-    ) -> std::result::Result<models::Hub, update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) parameters: models::Hub,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Hub =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Hub =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Hub =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -399,57 +577,66 @@ pub mod hubs {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) parameters: models::Hub,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Hub, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Hub =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -467,63 +654,61 @@ pub mod hubs {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_resource_group(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::HubListResult, list_by_resource_group::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_resource_group::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_resource_group::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_by_resource_group::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_resource_group::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::HubListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_resource_group::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_resource_group::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -535,56 +720,63 @@ pub mod hubs {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        subscription_id: &str,
-    ) -> std::result::Result<models::HubListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/providers/Microsoft.CustomerInsights/hubs",
-            operation_config.base_path(),
-            subscription_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::HubListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::HubListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::HubListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -596,70 +788,150 @@ pub mod hubs {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::HubListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/providers/Microsoft.CustomerInsights/hubs",
+                        &self.client.endpoint, &self.subscription_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::HubListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod profiles {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        profile_name: &str,
-        locale_code: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<models::ProfileResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/profiles/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            profile_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(locale_code) = locale_code {
-            url.query_pairs_mut().append_pair("locale-code", locale_code);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ProfileResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            profile_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                profile_name: profile_name.into(),
+                subscription_id: subscription_id.into(),
+                locale_code: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            profile_name: impl Into<String>,
+            parameters: impl Into<models::ProfileResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                profile_name: profile_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            profile_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                profile_name: profile_name.into(),
+                subscription_id: subscription_id.into(),
+                locale_code: None,
+            }
+        }
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
+                locale_code: None,
+            }
+        }
+        pub fn get_enriching_kpis(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            profile_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get_enriching_kpis::Builder {
+            get_enriching_kpis::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                profile_name: profile_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -670,68 +942,73 @@ pub mod profiles {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        profile_name: &str,
-        parameters: &models::ProfileResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/profiles/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            profile_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) profile_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) locale_code: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ProfileResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
+        impl Builder {
+            pub fn locale_code(mut self, locale_code: impl Into<String>) -> Self {
+                self.locale_code = Some(locale_code.into());
+                self
             }
-            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ProfileResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/profiles/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.profile_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(locale_code) = &self.locale_code {
+                        url.query_pairs_mut().append_pair("locale-code", locale_code);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ProfileResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -748,63 +1025,68 @@ pub mod profiles {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        profile_name: &str,
-        locale_code: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/profiles/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            profile_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) profile_name: String,
+            pub(crate) parameters: models::ProfileResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(locale_code) = locale_code {
-            url.query_pairs_mut().append_pair("locale-code", locale_code);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/profiles/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.profile_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ProfileResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -822,67 +1104,70 @@ pub mod profiles {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        locale_code: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<models::ProfileListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/profiles",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) profile_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) locale_code: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(locale_code) = locale_code {
-            url.query_pairs_mut().append_pair("locale-code", locale_code);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ProfileListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn locale_code(mut self, locale_code: impl Into<String>) -> Self {
+                self.locale_code = Some(locale_code.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/profiles/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.profile_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(locale_code) = &self.locale_code {
+                        url.query_pairs_mut().append_pair("locale-code", locale_code);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -894,66 +1179,72 @@ pub mod profiles {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_enriching_kpis(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        profile_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<Vec<models::KpiDefinition>, get_enriching_kpis::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/profiles/{}/getEnrichingKpis",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            profile_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_enriching_kpis::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_enriching_kpis::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) locale_code: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_enriching_kpis::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_enriching_kpis::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: Vec<models::KpiDefinition> = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_enriching_kpis::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn locale_code(mut self, locale_code: impl Into<String>) -> Self {
+                self.locale_code = Some(locale_code.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get_enriching_kpis::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ProfileListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/profiles",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(locale_code) = &self.locale_code {
+                        url.query_pairs_mut().append_pair("locale-code", locale_code);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ProfileListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -965,70 +1256,138 @@ pub mod profiles {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) profile_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Vec<models::KpiDefinition>, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/profiles/{}/getEnrichingKpis",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.profile_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: Vec<models::KpiDefinition> =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod interactions {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        interaction_name: &str,
-        locale_code: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<models::InteractionResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/interactions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            interaction_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(locale_code) = locale_code {
-            url.query_pairs_mut().append_pair("locale-code", locale_code);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::InteractionResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            interaction_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                interaction_name: interaction_name.into(),
+                subscription_id: subscription_id.into(),
+                locale_code: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            interaction_name: impl Into<String>,
+            parameters: impl Into<models::InteractionResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                interaction_name: interaction_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
+                locale_code: None,
+            }
+        }
+        pub fn suggest_relationship_links(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            interaction_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> suggest_relationship_links::Builder {
+            suggest_relationship_links::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                interaction_name: interaction_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -1039,68 +1398,73 @@ pub mod interactions {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        interaction_name: &str,
-        parameters: &models::InteractionResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/interactions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            interaction_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) interaction_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) locale_code: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::InteractionResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
+        impl Builder {
+            pub fn locale_code(mut self, locale_code: impl Into<String>) -> Self {
+                self.locale_code = Some(locale_code.into());
+                self
             }
-            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::InteractionResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/interactions/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.interaction_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(locale_code) = &self.locale_code {
+                        url.query_pairs_mut().append_pair("locale-code", locale_code);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::InteractionResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1117,67 +1481,68 @@ pub mod interactions {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        locale_code: Option<&str>,
-        subscription_id: &str,
-    ) -> std::result::Result<models::InteractionListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/interactions",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) interaction_name: String,
+            pub(crate) parameters: models::InteractionResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(locale_code) = locale_code {
-            url.query_pairs_mut().append_pair("locale-code", locale_code);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::InteractionListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/interactions/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.interaction_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::InteractionResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1189,68 +1554,72 @@ pub mod interactions {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn suggest_relationship_links(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        interaction_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::SuggestRelationshipLinksResponse, suggest_relationship_links::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/interactions/{}/suggestRelationshipLinks",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            interaction_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(suggest_relationship_links::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(suggest_relationship_links::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) locale_code: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(suggest_relationship_links::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(suggest_relationship_links::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::SuggestRelationshipLinksResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| suggest_relationship_links::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn locale_code(mut self, locale_code: impl Into<String>) -> Self {
+                self.locale_code = Some(locale_code.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(suggest_relationship_links::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::InteractionListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/interactions",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(locale_code) = &self.locale_code {
+                        url.query_pairs_mut().append_pair("locale-code", locale_code);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::InteractionListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1262,66 +1631,135 @@ pub mod interactions {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) interaction_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::SuggestRelationshipLinksResponse, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/interactions/{}/suggestRelationshipLinks" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . hub_name , & self . interaction_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SuggestRelationshipLinksResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod relationships {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        relationship_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::RelationshipResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationships/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            relationship_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::RelationshipResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            relationship_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                relationship_name: relationship_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            relationship_name: impl Into<String>,
+            parameters: impl Into<models::RelationshipResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                relationship_name: relationship_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            relationship_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                relationship_name: relationship_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -1332,68 +1770,67 @@ pub mod relationships {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        relationship_name: &str,
-        parameters: &models::RelationshipResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationships/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            relationship_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) relationship_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::RelationshipResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::RelationshipResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationships/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.relationship_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::RelationshipResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1410,58 +1847,68 @@ pub mod relationships {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        relationship_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationships/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            relationship_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) relationship_name: String,
+            pub(crate) parameters: models::RelationshipResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationships/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.relationship_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::RelationshipResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1478,63 +1925,61 @@ pub mod relationships {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::RelationshipListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationships",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) relationship_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::RelationshipListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationships/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.relationship_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1546,66 +1991,134 @@ pub mod relationships {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RelationshipListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationships",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::RelationshipListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod relationship_links {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        relationship_link_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::RelationshipLinkResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationshipLinks/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            relationship_link_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::RelationshipLinkResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            relationship_link_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                relationship_link_name: relationship_link_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            relationship_link_name: impl Into<String>,
+            parameters: impl Into<models::RelationshipLinkResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                relationship_link_name: relationship_link_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            relationship_link_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                relationship_link_name: relationship_link_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -1616,68 +2129,71 @@ pub mod relationship_links {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        relationship_link_name: &str,
-        parameters: &models::RelationshipLinkResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationshipLinks/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            relationship_link_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) relationship_link_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::RelationshipLinkResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::RelationshipLinkResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationshipLinks/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.hub_name,
+                        &self.relationship_link_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::RelationshipLinkResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1694,58 +2210,72 @@ pub mod relationship_links {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        relationship_link_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationshipLinks/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            relationship_link_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) relationship_link_name: String,
+            pub(crate) parameters: models::RelationshipLinkResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationshipLinks/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.hub_name,
+                        &self.relationship_link_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::RelationshipLinkResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1762,63 +2292,65 @@ pub mod relationship_links {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::RelationshipLinkListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationshipLinks",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) relationship_link_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::RelationshipLinkListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationshipLinks/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.hub_name,
+                        &self.relationship_link_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1830,66 +2362,151 @@ pub mod relationship_links {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::RelationshipLinkListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/relationshipLinks",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::RelationshipLinkListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod authorization_policies {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        authorization_policy_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::AuthorizationPolicyResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/authorizationPolicies/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            authorization_policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AuthorizationPolicyResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            authorization_policy_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                authorization_policy_name: authorization_policy_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            authorization_policy_name: impl Into<String>,
+            parameters: impl Into<models::AuthorizationPolicyResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                authorization_policy_name: authorization_policy_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn regenerate_primary_key(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            authorization_policy_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> regenerate_primary_key::Builder {
+            regenerate_primary_key::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                authorization_policy_name: authorization_policy_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn regenerate_secondary_key(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            authorization_policy_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> regenerate_secondary_key::Builder {
+            regenerate_secondary_key::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                authorization_policy_name: authorization_policy_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -1900,73 +2517,71 @@ pub mod authorization_policies {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        authorization_policy_name: &str,
-        parameters: &models::AuthorizationPolicyResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/authorizationPolicies/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            authorization_policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) authorization_policy_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AuthorizationPolicyResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AuthorizationPolicyResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::AuthorizationPolicyResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/authorizationPolicies/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.hub_name,
+                        &self.authorization_policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AuthorizationPolicyResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1983,63 +2598,77 @@ pub mod authorization_policies {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::AuthorizationPolicyListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/authorizationPolicies",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) authorization_policy_name: String,
+            pub(crate) parameters: models::AuthorizationPolicyResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AuthorizationPolicyListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/authorizationPolicies/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.hub_name,
+                        &self.authorization_policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AuthorizationPolicyResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AuthorizationPolicyResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2051,61 +2680,66 @@ pub mod authorization_policies {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn regenerate_primary_key(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        authorization_policy_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::AuthorizationPolicy, regenerate_primary_key::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/authorizationPolicies/{}/regeneratePrimaryKey" , operation_config . base_path () , subscription_id , resource_group_name , hub_name , authorization_policy_name) ;
-        let mut url = url::Url::parse(url_str).map_err(regenerate_primary_key::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(regenerate_primary_key::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(regenerate_primary_key::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(regenerate_primary_key::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AuthorizationPolicy = serde_json::from_slice(rsp_body)
-                    .map_err(|source| regenerate_primary_key::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(regenerate_primary_key::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::AuthorizationPolicyListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/authorizationPolicies",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AuthorizationPolicyListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2117,61 +2751,63 @@ pub mod authorization_policies {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn regenerate_secondary_key(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        authorization_policy_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::AuthorizationPolicy, regenerate_secondary_key::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/authorizationPolicies/{}/regenerateSecondaryKey" , operation_config . base_path () , subscription_id , resource_group_name , hub_name , authorization_policy_name) ;
-        let mut url = url::Url::parse(url_str).map_err(regenerate_secondary_key::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(regenerate_secondary_key::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) authorization_policy_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(regenerate_secondary_key::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(regenerate_secondary_key::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AuthorizationPolicy = serde_json::from_slice(rsp_body)
-                    .map_err(|source| regenerate_secondary_key::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(regenerate_secondary_key::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AuthorizationPolicy, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/authorizationPolicies/{}/regeneratePrimaryKey" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . hub_name , & self . authorization_policy_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AuthorizationPolicy =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2183,66 +2819,133 @@ pub mod authorization_policies {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) authorization_policy_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AuthorizationPolicy, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/authorizationPolicies/{}/regenerateSecondaryKey" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . hub_name , & self . authorization_policy_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AuthorizationPolicy =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod connectors {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        connector_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::ConnectorResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            connector_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ConnectorResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            connector_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                connector_name: connector_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            connector_name: impl Into<String>,
+            parameters: impl Into<models::ConnectorResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                connector_name: connector_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            connector_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                connector_name: connector_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -2253,68 +2956,65 @@ pub mod connectors {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        connector_name: &str,
-        parameters: &models::ConnectorResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            connector_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) connector_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ConnectorResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ConnectorResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.connector_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ConnectorResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2331,59 +3031,68 @@ pub mod connectors {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        connector_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            connector_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) connector_name: String,
+            pub(crate) parameters: models::ConnectorResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.connector_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ConnectorResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2401,63 +3110,62 @@ pub mod connectors {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::ConnectorListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) connector_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ConnectorListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.connector_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2469,68 +3177,142 @@ pub mod connectors {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ConnectorListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ConnectorListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod connector_mappings {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        connector_name: &str,
-        mapping_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::ConnectorMappingResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}/mappings/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            connector_name,
-            mapping_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ConnectorMappingResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            connector_name: impl Into<String>,
+            mapping_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                connector_name: connector_name.into(),
+                mapping_name: mapping_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            connector_name: impl Into<String>,
+            mapping_name: impl Into<String>,
+            parameters: impl Into<models::ConnectorMappingResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                connector_name: connector_name.into(),
+                mapping_name: mapping_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            connector_name: impl Into<String>,
+            mapping_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                connector_name: connector_name.into(),
+                mapping_name: mapping_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_connector(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            connector_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_connector::Builder {
+            list_by_connector::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                connector_name: connector_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -2541,75 +3323,73 @@ pub mod connector_mappings {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        connector_name: &str,
-        mapping_name: &str,
-        parameters: &models::ConnectorMappingResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}/mappings/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            connector_name,
-            mapping_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) connector_name: String,
+            pub(crate) mapping_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ConnectorMappingResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ConnectorMappingResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Created201(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ConnectorMappingResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}/mappings/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.hub_name,
+                        &self.connector_name,
+                        &self.mapping_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ConnectorMappingResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2626,60 +3406,79 @@ pub mod connector_mappings {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        connector_name: &str,
-        mapping_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}/mappings/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            connector_name,
-            mapping_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) connector_name: String,
+            pub(crate) mapping_name: String,
+            pub(crate) parameters: models::ConnectorMappingResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}/mappings/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.hub_name,
+                        &self.connector_name,
+                        &self.mapping_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ConnectorMappingResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ConnectorMappingResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Created201(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2696,65 +3495,67 @@ pub mod connector_mappings {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_connector(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        connector_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::ConnectorMappingListResult, list_by_connector::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}/mappings",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            connector_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_connector::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_connector::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) connector_name: String,
+            pub(crate) mapping_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_connector::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_connector::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ConnectorMappingListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_by_connector::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_connector::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}/mappings/{}",
+                        &self.client.endpoint,
+                        &self.subscription_id,
+                        &self.resource_group_name,
+                        &self.hub_name,
+                        &self.connector_name,
+                        &self.mapping_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2766,66 +3567,152 @@ pub mod connector_mappings {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) connector_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ConnectorMappingListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/connectors/{}/mappings",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.connector_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ConnectorMappingListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod kpi {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        kpi_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::KpiResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/kpi/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            kpi_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::KpiResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            kpi_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                kpi_name: kpi_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            kpi_name: impl Into<String>,
+            parameters: impl Into<models::KpiResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                kpi_name: kpi_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            kpi_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                kpi_name: kpi_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn reprocess(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            kpi_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> reprocess::Builder {
+            reprocess::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                kpi_name: kpi_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -2836,68 +3723,65 @@ pub mod kpi {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        kpi_name: &str,
-        parameters: &models::KpiResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/kpi/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            kpi_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) kpi_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::KpiResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KpiResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/kpi/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.kpi_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::KpiResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2914,58 +3798,68 @@ pub mod kpi {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        kpi_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/kpi/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            kpi_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) kpi_name: String,
+            pub(crate) parameters: models::KpiResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/kpi/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.kpi_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::KpiResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2982,61 +3876,61 @@ pub mod kpi {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn reprocess(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        kpi_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<(), reprocess::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/kpi/{}/reprocess",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            kpi_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(reprocess::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(reprocess::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) kpi_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(reprocess::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(reprocess::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(reprocess::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/kpi/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.kpi_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3048,63 +3942,61 @@ pub mod kpi {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::KpiListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/kpi",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) kpi_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::KpiListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/kpi/{}/reprocess",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.kpi_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3116,67 +4008,102 @@ pub mod kpi {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KpiListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/kpi",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::KpiListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod widget_types {
     use super::{models, API_VERSION};
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::WidgetTypeListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/widgetTypes",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::WidgetTypeListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            widget_type_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                widget_type_name: widget_type_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -3187,62 +4114,64 @@ pub mod widget_types {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        widget_type_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::WidgetTypeResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/widgetTypes/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            widget_type_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::WidgetTypeResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WidgetTypeListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/widgetTypes",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::WidgetTypeListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3254,69 +4183,141 @@ pub mod widget_types {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) widget_type_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WidgetTypeResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/widgetTypes/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.widget_type_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::WidgetTypeResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod views {
     use super::{models, API_VERSION};
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-        user_id: &str,
-    ) -> std::result::Result<models::ViewListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/views",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("userId", user_id);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ViewListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            user_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
+                user_id: user_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            view_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            user_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                view_name: view_name.into(),
+                subscription_id: subscription_id.into(),
+                user_id: user_id.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            view_name: impl Into<String>,
+            parameters: impl Into<models::ViewResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                view_name: view_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            view_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            user_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                view_name: view_name.into(),
+                subscription_id: subscription_id.into(),
+                user_id: user_id.into(),
             }
         }
     }
@@ -3327,64 +4328,67 @@ pub mod views {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        view_name: &str,
-        subscription_id: &str,
-        user_id: &str,
-    ) -> std::result::Result<models::ViewResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/views/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            view_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) user_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("userId", user_id);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ViewResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ViewListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/views",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let user_id = &self.user_id;
+                    url.query_pairs_mut().append_pair("userId", user_id);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ViewListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3396,67 +4400,68 @@ pub mod views {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        view_name: &str,
-        parameters: &models::ViewResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<models::ViewResourceFormat, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/views/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            view_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) view_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) user_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ViewResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ViewResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/views/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.view_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let user_id = &self.user_id;
+                    url.query_pairs_mut().append_pair("userId", user_id);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ViewResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3468,59 +4473,67 @@ pub mod views {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        view_name: &str,
-        subscription_id: &str,
-        user_id: &str,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/views/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            view_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) view_name: String,
+            pub(crate) parameters: models::ViewResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("userId", user_id);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ViewResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/views/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.view_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ViewResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3532,66 +4545,133 @@ pub mod views {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) view_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) user_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/views/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.view_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let user_id = &self.user_id;
+                    url.query_pairs_mut().append_pair("userId", user_id);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod links {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        link_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::LinkResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/links/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            link_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::LinkResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            link_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                link_name: link_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            link_name: impl Into<String>,
+            parameters: impl Into<models::LinkResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                link_name: link_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            link_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                link_name: link_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -3602,68 +4682,65 @@ pub mod links {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        link_name: &str,
-        parameters: &models::LinkResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/links/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            link_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) link_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::LinkResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LinkResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/links/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.link_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::LinkResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3680,58 +4757,68 @@ pub mod links {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        link_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/links/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            link_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) link_name: String,
+            pub(crate) parameters: models::LinkResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/links/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.link_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::LinkResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3748,63 +4835,61 @@ pub mod links {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::LinkListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/links",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) link_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::LinkListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/links/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.link_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3816,67 +4901,87 @@ pub mod links {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LinkListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/links",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::LinkListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod roles {
     use super::{models, API_VERSION};
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::RoleListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/roles",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::RoleListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -3887,67 +4992,134 @@ pub mod roles {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/roles",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::RoleListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod role_assignments {
     use super::{models, API_VERSION};
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::RoleAssignmentListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/roleAssignments",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::RoleAssignmentListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            assignment_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                assignment_name: assignment_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            assignment_name: impl Into<String>,
+            parameters: impl Into<models::RoleAssignmentResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                assignment_name: assignment_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            assignment_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                assignment_name: assignment_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -3958,62 +5130,64 @@ pub mod role_assignments {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        assignment_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::RoleAssignmentResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/roleAssignments/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            assignment_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::RoleAssignmentResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleAssignmentListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/roleAssignments",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::RoleAssignmentListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4025,68 +5199,67 @@ pub mod role_assignments {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        assignment_name: &str,
-        parameters: &models::RoleAssignmentResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/roleAssignments/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            assignment_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) assignment_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::RoleAssignmentResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleAssignmentResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/roleAssignments/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.assignment_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::RoleAssignmentResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4103,59 +5276,68 @@ pub mod role_assignments {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        assignment_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/roleAssignments/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            assignment_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) assignment_name: String,
+            pub(crate) parameters: models::RoleAssignmentResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            http::StatusCode::NO_CONTENT => Ok(delete::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/roleAssignments/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.assignment_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::RoleAssignmentResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4173,71 +5355,102 @@ pub mod role_assignments {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) assignment_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/roleAssignments/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.assignment_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod images {
     use super::{models, API_VERSION};
-    pub async fn get_upload_url_for_entity_type(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        parameters: &models::GetImageUploadUrlInput,
-        subscription_id: &str,
-    ) -> std::result::Result<models::ImageDefinition, get_upload_url_for_entity_type::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/images/getEntityTypeImageUploadUrl",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_upload_url_for_entity_type::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_upload_url_for_entity_type::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(get_upload_url_for_entity_type::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_upload_url_for_entity_type::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_upload_url_for_entity_type::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ImageDefinition = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_upload_url_for_entity_type::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get_upload_url_for_entity_type(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            parameters: impl Into<models::GetImageUploadUrlInput>,
+            subscription_id: impl Into<String>,
+        ) -> get_upload_url_for_entity_type::Builder {
+            get_upload_url_for_entity_type::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get_upload_url_for_entity_type::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn get_upload_url_for_data(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            parameters: impl Into<models::GetImageUploadUrlInput>,
+            subscription_id: impl Into<String>,
+        ) -> get_upload_url_for_data::Builder {
+            get_upload_url_for_data::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -4248,67 +5461,63 @@ pub mod images {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_upload_url_for_data(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        parameters: &models::GetImageUploadUrlInput,
-        subscription_id: &str,
-    ) -> std::result::Result<models::ImageDefinition, get_upload_url_for_data::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/images/getDataImageUploadUrl",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_upload_url_for_data::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_upload_url_for_data::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) parameters: models::GetImageUploadUrlInput,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(get_upload_url_for_data::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_upload_url_for_data::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_upload_url_for_data::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ImageDefinition = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_upload_url_for_data::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get_upload_url_for_data::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ImageDefinition, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/images/getEntityTypeImageUploadUrl" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . hub_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ImageDefinition =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4320,66 +5529,183 @@ pub mod images {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) parameters: models::GetImageUploadUrlInput,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ImageDefinition, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/images/getDataImageUploadUrl",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ImageDefinition =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod predictions {
     use super::{models, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        prediction_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PredictionResourceFormat, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            prediction_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PredictionResourceFormat =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            prediction_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get::Builder {
+            get::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                prediction_name: prediction_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn create_or_update(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            prediction_name: impl Into<String>,
+            parameters: impl Into<models::PredictionResourceFormat>,
+            subscription_id: impl Into<String>,
+        ) -> create_or_update::Builder {
+            create_or_update::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                prediction_name: prediction_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            prediction_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                prediction_name: prediction_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn get_training_results(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            prediction_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get_training_results::Builder {
+            get_training_results::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                prediction_name: prediction_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn get_model_status(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            prediction_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get_model_status::Builder {
+            get_model_status::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                prediction_name: prediction_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn model_status(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            prediction_name: impl Into<String>,
+            parameters: impl Into<models::PredictionModelStatus>,
+            subscription_id: impl Into<String>,
+        ) -> model_status::Builder {
+            model_status::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                prediction_name: prediction_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list_by_hub(
+            &self,
+            resource_group_name: impl Into<String>,
+            hub_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_hub::Builder {
+            list_by_hub::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                hub_name: hub_name.into(),
+                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -4390,68 +5716,65 @@ pub mod predictions {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        prediction_name: &str,
-        parameters: &models::PredictionResourceFormat,
-        subscription_id: &str,
-    ) -> std::result::Result<create_or_update::Response, create_or_update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            prediction_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) prediction_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_or_update::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PredictionResourceFormat = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(create_or_update::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::ACCEPTED => Ok(create_or_update::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(create_or_update::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PredictionResourceFormat, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.prediction_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PredictionResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4468,58 +5791,68 @@ pub mod predictions {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        prediction_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<delete::Response, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            prediction_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) prediction_name: String,
+            pub(crate) parameters: models::PredictionResourceFormat,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(delete::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(delete::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.prediction_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PredictionResourceFormat =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4536,66 +5869,61 @@ pub mod predictions {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_training_results(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        prediction_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PredictionTrainingResults, get_training_results::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}/getTrainingResults",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            prediction_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_training_results::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_training_results::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) prediction_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_training_results::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_training_results::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PredictionTrainingResults = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_training_results::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get_training_results::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.prediction_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4607,66 +5935,63 @@ pub mod predictions {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_model_status(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        prediction_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PredictionModelStatus, get_model_status::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}/getModelStatus",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            prediction_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_model_status::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_model_status::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) prediction_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_model_status::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_model_status::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PredictionModelStatus = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_model_status::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get_model_status::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PredictionTrainingResults, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}/getTrainingResults" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . hub_name , & self . prediction_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PredictionTrainingResults =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4678,62 +6003,66 @@ pub mod predictions {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn model_status(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        prediction_name: &str,
-        parameters: &models::PredictionModelStatus,
-        subscription_id: &str,
-    ) -> std::result::Result<(), model_status::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}/modelStatus",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name,
-            prediction_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(model_status::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(model_status::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) prediction_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(model_status::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(model_status::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(model_status::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(model_status::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PredictionModelStatus, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}/getModelStatus",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.prediction_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PredictionModelStatus =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4745,63 +6074,62 @@ pub mod predictions {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_by_hub(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        hub_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PredictionListResult, list_by_hub::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            hub_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_by_hub::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_by_hub::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) prediction_name: String,
+            pub(crate) parameters: models::PredictionModelStatus,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_by_hub::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_by_hub::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PredictionListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_by_hub::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_by_hub::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions/{}/modelStatus",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name, &self.prediction_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4813,17 +6141,66 @@ pub mod predictions {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) hub_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PredictionListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.CustomerInsights/hubs/{}/predictions",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.hub_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PredictionListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }

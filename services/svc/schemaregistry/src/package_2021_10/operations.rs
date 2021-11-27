@@ -3,6 +3,84 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
+    pub fn schema(&self) -> schema::Client {
+        schema::Client(self.clone())
+    }
+    pub fn schema_groups(&self) -> schema_groups::Client {
+        schema_groups::Client(self.clone())
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -20,40 +98,13 @@ pub enum Error {
 }
 pub mod schema_groups {
     use super::{models, API_VERSION};
-    pub async fn list(operation_config: &crate::OperationConfig) -> std::result::Result<models::SchemaGroups, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/$schemaGroups", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::SchemaGroups =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Error =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
-            }
+        pub fn list(&self) -> list::Builder {
+            list::Builder { client: self.base_clone() }
         }
     }
     pub mod list {
@@ -66,57 +117,109 @@ pub mod schema_groups {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SchemaGroups, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/$schemaGroups", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SchemaGroups =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod schema {
     use super::{models, API_VERSION};
-    pub async fn get_by_id(operation_config: &crate::OperationConfig, id: &str) -> std::result::Result<bytes::Bytes, get_by_id::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/$schemaGroups/$schemas/{}", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(get_by_id::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_by_id::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_by_id::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_by_id::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value = rsp_body.clone();
-                Ok(rsp_value)
+        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
+            get_by_id::Builder {
+                client: self.base_clone(),
+                id: id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Error =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_by_id::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn get_versions(&self, group_name: impl Into<String>, schema_name: impl Into<String>) -> get_versions::Builder {
+            get_versions::Builder {
+                client: self.base_clone(),
+                group_name: group_name.into(),
+                schema_name: schema_name.into(),
+            }
+        }
+        pub fn query_id_by_content(
+            &self,
+            group_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            schema_content: impl Into<String>,
+        ) -> query_id_by_content::Builder {
+            query_id_by_content::Builder {
+                client: self.base_clone(),
+                group_name: group_name.into(),
+                schema_name: schema_name.into(),
+                schema_content: schema_content.into(),
+            }
+        }
+        pub fn register(
+            &self,
+            group_name: impl Into<String>,
+            schema_name: impl Into<String>,
+            schema_content: impl Into<String>,
+        ) -> register::Builder {
+            register::Builder {
+                client: self.base_clone(),
+                group_name: group_name.into(),
+                schema_name: schema_name.into(),
+                schema_content: schema_content.into(),
             }
         }
     }
@@ -130,63 +233,60 @@ pub mod schema {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_versions(
-        operation_config: &crate::OperationConfig,
-        group_name: &str,
-        schema_name: &str,
-    ) -> std::result::Result<models::SchemaVersions, get_versions::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/$schemaGroups/{}/schemas/{}/versions",
-            operation_config.base_path(),
-            group_name,
-            schema_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_versions::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_versions::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_versions::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_versions::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::SchemaVersions =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_versions::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Error =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_versions::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_versions::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<bytes::Bytes, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/$schemaGroups/$schemas/{}", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value = rsp_body.clone();
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -201,66 +301,65 @@ pub mod schema {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn query_id_by_content(
-        operation_config: &crate::OperationConfig,
-        group_name: &str,
-        schema_name: &str,
-        schema_content: &str,
-    ) -> std::result::Result<(), query_id_by_content::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/$schemaGroups/{}/schemas/{}:get-id",
-            operation_config.base_path(),
-            group_name,
-            schema_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(query_id_by_content::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(query_id_by_content::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) group_name: String,
+            pub(crate) schema_name: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(schema_content).map_err(query_id_by_content::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(query_id_by_content::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(query_id_by_content::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| query_id_by_content::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(query_id_by_content::Error::UnsupportedMediaType415 { value: rsp_value })
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| query_id_by_content::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(query_id_by_content::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SchemaVersions, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/$schemaGroups/{}/schemas/{}/versions",
+                        &self.client.endpoint, &self.group_name, &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SchemaVersions =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -277,66 +376,68 @@ pub mod schema {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn register(
-        operation_config: &crate::OperationConfig,
-        group_name: &str,
-        schema_name: &str,
-        schema_content: &str,
-    ) -> std::result::Result<(), register::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/$schemaGroups/{}/schemas/{}",
-            operation_config.base_path(),
-            group_name,
-            schema_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(register::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(register::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) group_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) schema_content: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(schema_content).map_err(register::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(register::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(register::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Error =
-                    serde_json::from_slice(rsp_body).map_err(|source| register::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(register::Error::UnsupportedMediaType415 { value: rsp_value })
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Error =
-                    serde_json::from_slice(rsp_body).map_err(|source| register::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(register::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/$schemaGroups/{}/schemas/{}:get-id",
+                        &self.client.endpoint, &self.group_name, &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.schema_content).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::UnsupportedMediaType415 { value: rsp_value })
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -353,17 +454,70 @@ pub mod schema {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) group_name: String,
+            pub(crate) schema_name: String,
+            pub(crate) schema_content: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/$schemaGroups/{}/schemas/{}",
+                        &self.client.endpoint, &self.group_name, &self.schema_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.schema_content).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        http::StatusCode::UNSUPPORTED_MEDIA_TYPE => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::UnsupportedMediaType415 { value: rsp_value })
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }

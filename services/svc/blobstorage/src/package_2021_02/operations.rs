@@ -3,6 +3,96 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
+    pub fn append_blob(&self) -> append_blob::Client {
+        append_blob::Client(self.clone())
+    }
+    pub fn blob(&self) -> blob::Client {
+        blob::Client(self.clone())
+    }
+    pub fn block_blob(&self) -> block_blob::Client {
+        block_blob::Client(self.clone())
+    }
+    pub fn container(&self) -> container::Client {
+        container::Client(self.clone())
+    }
+    pub fn page_blob(&self) -> page_blob::Client {
+        page_blob::Client(self.clone())
+    }
+    pub fn service(&self) -> service::Client {
+        service::Client(self.clone())
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -146,57 +236,134 @@ pub enum Error {
 }
 pub mod service {
     use super::{models, API_VERSION};
-    pub async fn get_properties(
-        operation_config: &crate::OperationConfig,
-        restype: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<models::StorageServiceProperties, get_properties::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/?restype=service&comp=properties", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(get_properties::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_properties::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_properties::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_properties::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageServiceProperties =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get_properties(
+            &self,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_properties::Builder {
+            get_properties::Builder {
+                client: self.base_clone(),
+                restype: restype.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_properties::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn set_properties(
+            &self,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            storage_service_properties: impl Into<models::StorageServiceProperties>,
+            x_ms_version: impl Into<String>,
+        ) -> set_properties::Builder {
+            set_properties::Builder {
+                client: self.base_clone(),
+                restype: restype.into(),
+                comp: comp.into(),
+                storage_service_properties: storage_service_properties.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn get_statistics(
+            &self,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_statistics::Builder {
+            get_statistics::Builder {
+                client: self.base_clone(),
+                restype: restype.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn list_containers_segment(
+            &self,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> list_containers_segment::Builder {
+            list_containers_segment::Builder {
+                client: self.base_clone(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                prefix: None,
+                marker: None,
+                maxresults: None,
+                include: Vec::new(),
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn get_user_delegation_key(
+            &self,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            key_info: impl Into<models::KeyInfo>,
+            x_ms_version: impl Into<String>,
+        ) -> get_user_delegation_key::Builder {
+            get_user_delegation_key::Builder {
+                client: self.base_clone(),
+                restype: restype.into(),
+                comp: comp.into(),
+                key_info: key_info.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn get_account_info(
+            &self,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_account_info::Builder {
+            get_account_info::Builder {
+                client: self.base_clone(),
+                restype: restype.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+            }
+        }
+        pub fn submit_batch(
+            &self,
+            comp: impl Into<String>,
+            body: impl Into<serde_json::Value>,
+            content_length: i64,
+            content_type: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> submit_batch::Builder {
+            submit_batch::Builder {
+                client: self.base_clone(),
+                comp: comp.into(),
+                body: body.into(),
+                content_length,
+                content_type: content_type.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn filter_blobs(&self, comp: impl Into<String>, x_ms_version: impl Into<String>) -> filter_blobs::Builder {
+            filter_blobs::Builder {
+                client: self.base_clone(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                where_: None,
+                marker: None,
+                maxresults: None,
             }
         }
     }
@@ -210,66 +377,83 @@ pub mod service {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_properties(
-        operation_config: &crate::OperationConfig,
-        restype: &str,
-        comp: &str,
-        storage_service_properties: &models::StorageServiceProperties,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), set_properties::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/?restype=service&comp=properties", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(set_properties::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_properties::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(storage_service_properties).map_err(set_properties::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_properties::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_properties::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| set_properties::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_properties::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageServiceProperties, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/?restype=service&comp=properties", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageServiceProperties =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -284,69 +468,80 @@ pub mod service {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_statistics(
-        operation_config: &crate::OperationConfig,
-        restype: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<models::StorageServiceStats, get_statistics::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/?restype=service&comp=stats", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(get_statistics::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_statistics::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) storage_service_properties: models::StorageServiceProperties,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_statistics::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_statistics::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageServiceStats =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_statistics::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/?restype=service&comp=properties", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.storage_service_properties).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -361,82 +556,83 @@ pub mod service {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_containers_segment(
-        operation_config: &crate::OperationConfig,
-        comp: &str,
-        prefix: Option<&str>,
-        marker: Option<&str>,
-        maxresults: Option<i64>,
-        include: &[&str],
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<models::ListContainersSegmentResponse, list_containers_segment::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/?comp=list", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list_containers_segment::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_containers_segment::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(prefix) = prefix {
-            url.query_pairs_mut().append_pair("prefix", prefix);
-        }
-        if let Some(marker) = marker {
-            url.query_pairs_mut().append_pair("marker", marker);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_containers_segment::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_containers_segment::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ListContainersSegmentResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_containers_segment::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_containers_segment::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_containers_segment::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StorageServiceStats, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/?restype=service&comp=stats", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageServiceStats =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -451,73 +647,111 @@ pub mod service {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_user_delegation_key(
-        operation_config: &crate::OperationConfig,
-        restype: &str,
-        comp: &str,
-        key_info: &models::KeyInfo,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<models::UserDelegationKey, get_user_delegation_key::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/?restype=service&comp=userdelegationkey", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(get_user_delegation_key::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_user_delegation_key::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) prefix: Option<String>,
+            pub(crate) marker: Option<String>,
+            pub(crate) maxresults: Option<i64>,
+            pub(crate) include: Vec<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(key_info).map_err(get_user_delegation_key::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_user_delegation_key::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_user_delegation_key::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::UserDelegationKey = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_user_delegation_key::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
+                self.prefix = Some(prefix.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_user_delegation_key::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_user_delegation_key::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn marker(mut self, marker: impl Into<String>) -> Self {
+                self.marker = Some(marker.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i64) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn include(mut self, include: Vec<String>) -> Self {
+                self.include = include;
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ListContainersSegmentResponse, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/?comp=list", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(prefix) = &self.prefix {
+                        url.query_pairs_mut().append_pair("prefix", prefix);
+                    }
+                    if let Some(marker) = &self.marker {
+                        url.query_pairs_mut().append_pair("marker", marker);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ListContainersSegmentResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -532,56 +766,85 @@ pub mod service {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_account_info(
-        operation_config: &crate::OperationConfig,
-        restype: &str,
-        comp: &str,
-        x_ms_version: &str,
-    ) -> std::result::Result<(), get_account_info::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/?restype=account&comp=properties", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(get_account_info::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_account_info::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) key_info: models::KeyInfo,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_account_info::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_account_info::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_account_info::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_account_info::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UserDelegationKey, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/?restype=service&comp=userdelegationkey", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.key_info).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::UserDelegationKey =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -596,72 +859,62 @@ pub mod service {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn submit_batch(
-        operation_config: &crate::OperationConfig,
-        comp: &str,
-        body: &serde_json::Value,
-        content_length: i64,
-        content_type: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<serde_json::Value, submit_batch::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/?comp=batch", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(submit_batch::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(submit_batch::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        let req_body = azure_core::to_json(body).map_err(submit_batch::Error::SerializeError)?;
-        req_builder = req_builder.header("Content-Length", content_length);
-        req_builder = req_builder.header("Content-Type", content_type);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(submit_batch::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(submit_batch::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| submit_batch::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| submit_batch::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(submit_batch::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/?restype=account&comp=properties", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -676,79 +929,85 @@ pub mod service {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn filter_blobs(
-        operation_config: &crate::OperationConfig,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        where_: Option<&str>,
-        marker: Option<&str>,
-        maxresults: Option<i64>,
-    ) -> std::result::Result<models::FilterBlobSegment, filter_blobs::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/?comp=blobs", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(filter_blobs::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(filter_blobs::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) comp: String,
+            pub(crate) body: serde_json::Value,
+            pub(crate) content_length: i64,
+            pub(crate) content_type: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(where_) = where_ {
-            url.query_pairs_mut().append_pair("where", where_);
-        }
-        if let Some(marker) = marker {
-            url.query_pairs_mut().append_pair("marker", marker);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(filter_blobs::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(filter_blobs::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::FilterBlobSegment =
-                    serde_json::from_slice(rsp_body).map_err(|source| filter_blobs::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| filter_blobs::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(filter_blobs::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/?comp=batch", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let req_body = azure_core::to_json(&self.body).map_err(Error::Serialize)?;
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    req_builder = req_builder.header("Content-Type", &self.content_type);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -763,71 +1022,464 @@ pub mod service {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) where_: Option<String>,
+            pub(crate) marker: Option<String>,
+            pub(crate) maxresults: Option<i64>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn where_(mut self, where_: impl Into<String>) -> Self {
+                self.where_ = Some(where_.into());
+                self
+            }
+            pub fn marker(mut self, marker: impl Into<String>) -> Self {
+                self.marker = Some(marker.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i64) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FilterBlobSegment, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/?comp=blobs", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(where_) = &self.where_ {
+                        url.query_pairs_mut().append_pair("where", where_);
+                    }
+                    if let Some(marker) = &self.marker {
+                        url.query_pairs_mut().append_pair("marker", marker);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::FilterBlobSegment =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod container {
     use super::{models, API_VERSION};
-    pub async fn get_properties(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), get_properties::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}?restype=container", operation_config.base_path(), container_name);
-        let mut url = url::Url::parse(url_str).map_err(get_properties::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_properties::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
+        pub fn get_properties(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_properties::Builder {
+            get_properties::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_lease_id: None,
+                x_ms_client_request_id: None,
+            }
         }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+        pub fn create(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> create::Builder {
+            create::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_meta: None,
+                x_ms_blob_public_access: None,
+                x_ms_client_request_id: None,
+                x_ms_default_encryption_scope: None,
+                x_ms_deny_encryption_scope_override: None,
+            }
         }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+        pub fn delete(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_lease_id: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                x_ms_client_request_id: None,
+            }
         }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_properties::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_properties::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_properties::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn set_metadata(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> set_metadata::Builder {
+            set_metadata::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_lease_id: None,
+                x_ms_meta: None,
+                if_modified_since: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn get_access_policy(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_access_policy::Builder {
+            get_access_policy::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_lease_id: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn set_access_policy(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> set_access_policy::Builder {
+            set_access_policy::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                container_acl: None,
+                timeout: None,
+                x_ms_lease_id: None,
+                x_ms_blob_public_access: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn restore(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> restore::Builder {
+            restore::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                x_ms_deleted_container_name: None,
+                x_ms_deleted_container_version: None,
+            }
+        }
+        pub fn rename(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+            x_ms_source_container_name: impl Into<String>,
+        ) -> rename::Builder {
+            rename::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                x_ms_source_container_name: x_ms_source_container_name.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                x_ms_source_lease_id: None,
+            }
+        }
+        pub fn submit_batch(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            body: impl Into<serde_json::Value>,
+            content_length: i64,
+            content_type: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> submit_batch::Builder {
+            submit_batch::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                comp: comp.into(),
+                body: body.into(),
+                content_length,
+                content_type: content_type.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn acquire_lease(
+            &self,
+            container_name: impl Into<String>,
+            comp: impl Into<String>,
+            restype: impl Into<String>,
+            x_ms_lease_action: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> acquire_lease::Builder {
+            acquire_lease::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                comp: comp.into(),
+                restype: restype.into(),
+                x_ms_lease_action: x_ms_lease_action.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_lease_duration: None,
+                x_ms_proposed_lease_id: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn release_lease(
+            &self,
+            container_name: impl Into<String>,
+            comp: impl Into<String>,
+            restype: impl Into<String>,
+            x_ms_lease_action: impl Into<String>,
+            x_ms_lease_id: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> release_lease::Builder {
+            release_lease::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                comp: comp.into(),
+                restype: restype.into(),
+                x_ms_lease_action: x_ms_lease_action.into(),
+                x_ms_lease_id: x_ms_lease_id.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn renew_lease(
+            &self,
+            container_name: impl Into<String>,
+            comp: impl Into<String>,
+            restype: impl Into<String>,
+            x_ms_lease_action: impl Into<String>,
+            x_ms_lease_id: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> renew_lease::Builder {
+            renew_lease::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                comp: comp.into(),
+                restype: restype.into(),
+                x_ms_lease_action: x_ms_lease_action.into(),
+                x_ms_lease_id: x_ms_lease_id.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn break_lease(
+            &self,
+            container_name: impl Into<String>,
+            comp: impl Into<String>,
+            restype: impl Into<String>,
+            x_ms_lease_action: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> break_lease::Builder {
+            break_lease::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                comp: comp.into(),
+                restype: restype.into(),
+                x_ms_lease_action: x_ms_lease_action.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_lease_break_period: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn change_lease(
+            &self,
+            container_name: impl Into<String>,
+            comp: impl Into<String>,
+            restype: impl Into<String>,
+            x_ms_lease_action: impl Into<String>,
+            x_ms_lease_id: impl Into<String>,
+            x_ms_proposed_lease_id: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> change_lease::Builder {
+            change_lease::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                comp: comp.into(),
+                restype: restype.into(),
+                x_ms_lease_action: x_ms_lease_action.into(),
+                x_ms_lease_id: x_ms_lease_id.into(),
+                x_ms_proposed_lease_id: x_ms_proposed_lease_id.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn list_blob_flat_segment(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> list_blob_flat_segment::Builder {
+            list_blob_flat_segment::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                prefix: None,
+                marker: None,
+                maxresults: None,
+                include: Vec::new(),
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn list_blob_hierarchy_segment(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            delimiter: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> list_blob_hierarchy_segment::Builder {
+            list_blob_hierarchy_segment::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                comp: comp.into(),
+                delimiter: delimiter.into(),
+                x_ms_version: x_ms_version.into(),
+                prefix: None,
+                marker: None,
+                maxresults: None,
+                include: Vec::new(),
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn get_account_info(
+            &self,
+            container_name: impl Into<String>,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_account_info::Builder {
+            get_account_info::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                restype: restype.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
             }
         }
     }
@@ -841,79 +1493,84 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        timeout: Option<i64>,
-        x_ms_meta: Option<&str>,
-        x_ms_blob_public_access: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_default_encryption_scope: Option<&str>,
-        x_ms_deny_encryption_scope_override: Option<bool>,
-    ) -> std::result::Result<(), create::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}?restype=container", operation_config.base_path(), container_name);
-        let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_meta) = x_ms_meta {
-            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-        }
-        if let Some(x_ms_blob_public_access) = x_ms_blob_public_access {
-            req_builder = req_builder.header("x-ms-blob-public-access", x_ms_blob_public_access);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_default_encryption_scope) = x_ms_default_encryption_scope {
-            req_builder = req_builder.header("x-ms-default-encryption-scope", x_ms_default_encryption_scope);
-        }
-        if let Some(x_ms_deny_encryption_scope_override) = x_ms_deny_encryption_scope_override {
-            req_builder = req_builder.header(
-                "x-ms-deny-encryption-scope-override",
-                x_ms_deny_encryption_scope_override.to_string(),
-            );
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(create::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}?restype=container", &self.client.endpoint, &self.container_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -928,72 +1585,111 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}?restype=container", operation_config.base_path(), container_name);
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_meta: Option<String>,
+            pub(crate) x_ms_blob_public_access: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_default_encryption_scope: Option<String>,
+            pub(crate) x_ms_deny_encryption_scope_override: Option<bool>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
+                self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn x_ms_blob_public_access(mut self, x_ms_blob_public_access: impl Into<String>) -> Self {
+                self.x_ms_blob_public_access = Some(x_ms_blob_public_access.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_default_encryption_scope(mut self, x_ms_default_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_default_encryption_scope = Some(x_ms_default_encryption_scope.into());
+                self
+            }
+            pub fn x_ms_deny_encryption_scope_override(mut self, x_ms_deny_encryption_scope_override: bool) -> Self {
+                self.x_ms_deny_encryption_scope_override = Some(x_ms_deny_encryption_scope_override);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}?restype=container", &self.client.endpoint, &self.container_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_meta) = &self.x_ms_meta {
+                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(x_ms_blob_public_access) = &self.x_ms_blob_public_access {
+                        req_builder = req_builder.header("x-ms-blob-public-access", x_ms_blob_public_access);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_default_encryption_scope) = &self.x_ms_default_encryption_scope {
+                        req_builder = req_builder.header("x-ms-default-encryption-scope", x_ms_default_encryption_scope);
+                    }
+                    if let Some(x_ms_deny_encryption_scope_override) = &self.x_ms_deny_encryption_scope_override {
+                        req_builder = req_builder.header(
+                            "x-ms-deny-encryption-scope-override",
+                            &x_ms_deny_encryption_scope_override.to_string(),
+                        );
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1008,81 +1704,100 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_metadata(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_meta: Option<&str>,
-        if_modified_since: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), set_metadata::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}?restype=container&comp=metadata",
-            operation_config.base_path(),
-            container_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(set_metadata::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_metadata::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_meta) = x_ms_meta {
-            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_metadata::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_metadata::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| set_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_metadata::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}?restype=container", &self.client.endpoint, &self.container_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1097,74 +1812,103 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_access_policy(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<models::SignedIdentifiers, get_access_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}?restype=container&comp=acl", operation_config.base_path(), container_name);
-        let mut url = url::Url::parse(url_str).map_err(get_access_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_access_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_meta: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_access_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_access_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::SignedIdentifiers = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_access_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_access_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_access_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
+                self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}?restype=container&comp=metadata", &self.client.endpoint, &self.container_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_meta) = &self.x_ms_meta {
+                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1179,87 +1923,92 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_access_policy(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        comp: &str,
-        container_acl: Option<&models::SignedIdentifiers>,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_blob_public_access: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), set_access_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}?restype=container&comp=acl", operation_config.base_path(), container_name);
-        let mut url = url::Url::parse(url_str).map_err(set_access_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_access_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        let req_body = if let Some(container_acl) = container_acl {
-            req_builder = req_builder.header("content-type", "application/json");
-            azure_core::to_json(container_acl).map_err(set_access_policy::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_blob_public_access) = x_ms_blob_public_access {
-            req_builder = req_builder.header("x-ms-blob-public-access", x_ms_blob_public_access);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_access_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_access_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| set_access_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_access_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SignedIdentifiers, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}?restype=container&comp=acl", &self.client.endpoint, &self.container_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SignedIdentifiers =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1274,77 +2023,121 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn restore(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_deleted_container_name: Option<&str>,
-        x_ms_deleted_container_version: Option<&str>,
-    ) -> std::result::Result<(), restore::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}?restype=container&comp=undelete",
-            operation_config.base_path(),
-            container_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(restore::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(restore::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) container_acl: Option<models::SignedIdentifiers>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_blob_public_access: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_deleted_container_name) = x_ms_deleted_container_name {
-            req_builder = req_builder.header("x-ms-deleted-container-name", x_ms_deleted_container_name);
-        }
-        if let Some(x_ms_deleted_container_version) = x_ms_deleted_container_version {
-            req_builder = req_builder.header("x-ms-deleted-container-version", x_ms_deleted_container_version);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(restore::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(restore::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| restore::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(restore::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn container_acl(mut self, container_acl: impl Into<models::SignedIdentifiers>) -> Self {
+                self.container_acl = Some(container_acl.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_blob_public_access(mut self, x_ms_blob_public_access: impl Into<String>) -> Self {
+                self.x_ms_blob_public_access = Some(x_ms_blob_public_access.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}?restype=container&comp=acl", &self.client.endpoint, &self.container_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let req_body = if let Some(container_acl) = &self.container_acl {
+                        req_builder = req_builder.header("content-type", "application/json");
+                        azure_core::to_json(container_acl).map_err(Error::Serialize)?
+                    } else {
+                        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    };
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_blob_public_access) = &self.x_ms_blob_public_access {
+                        req_builder = req_builder.header("x-ms-blob-public-access", x_ms_blob_public_access);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1359,68 +2152,95 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn rename(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_source_container_name: &str,
-        x_ms_source_lease_id: Option<&str>,
-    ) -> std::result::Result<(), rename::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}?restype=container&comp=rename", operation_config.base_path(), container_name);
-        let mut url = url::Url::parse(url_str).map_err(rename::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(rename::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_deleted_container_name: Option<String>,
+            pub(crate) x_ms_deleted_container_version: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.header("x-ms-source-container-name", x_ms_source_container_name);
-        if let Some(x_ms_source_lease_id) = x_ms_source_lease_id {
-            req_builder = req_builder.header("x-ms-source-lease-id", x_ms_source_lease_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(rename::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(rename::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| rename::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(rename::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_deleted_container_name(mut self, x_ms_deleted_container_name: impl Into<String>) -> Self {
+                self.x_ms_deleted_container_name = Some(x_ms_deleted_container_name.into());
+                self
+            }
+            pub fn x_ms_deleted_container_version(mut self, x_ms_deleted_container_version: impl Into<String>) -> Self {
+                self.x_ms_deleted_container_version = Some(x_ms_deleted_container_version.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}?restype=container&comp=undelete", &self.client.endpoint, &self.container_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_deleted_container_name) = &self.x_ms_deleted_container_name {
+                        req_builder = req_builder.header("x-ms-deleted-container-name", x_ms_deleted_container_name);
+                    }
+                    if let Some(x_ms_deleted_container_version) = &self.x_ms_deleted_container_version {
+                        req_builder = req_builder.header("x-ms-deleted-container-version", x_ms_deleted_container_version);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1435,75 +2255,89 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn submit_batch(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        comp: &str,
-        body: &serde_json::Value,
-        content_length: i64,
-        content_type: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<serde_json::Value, submit_batch::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}?restype=container&comp=batch", operation_config.base_path(), container_name);
-        let mut url = url::Url::parse(url_str).map_err(submit_batch::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(submit_batch::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) x_ms_source_container_name: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_source_lease_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        let req_body = azure_core::to_json(body).map_err(submit_batch::Error::SerializeError)?;
-        req_builder = req_builder.header("Content-Length", content_length);
-        req_builder = req_builder.header("Content-Type", content_type);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(submit_batch::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(submit_batch::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| submit_batch::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| submit_batch::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(submit_batch::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_source_lease_id(mut self, x_ms_source_lease_id: impl Into<String>) -> Self {
+                self.x_ms_source_lease_id = Some(x_ms_source_lease_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}?restype=container&comp=rename", &self.client.endpoint, &self.container_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.header("x-ms-source-container-name", &self.x_ms_source_container_name);
+                    if let Some(x_ms_source_lease_id) = &self.x_ms_source_lease_id {
+                        req_builder = req_builder.header("x-ms-source-lease-id", x_ms_source_lease_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1518,87 +2352,89 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn acquire_lease(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        comp: &str,
-        restype: &str,
-        x_ms_lease_action: &str,
-        timeout: Option<i64>,
-        x_ms_lease_duration: Option<i64>,
-        x_ms_proposed_lease_id: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), acquire_lease::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}?comp=lease&restype=container&acquire",
-            operation_config.base_path(),
-            container_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(acquire_lease::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(acquire_lease::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) body: serde_json::Value,
+            pub(crate) content_length: i64,
+            pub(crate) content_type: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        url.query_pairs_mut().append_pair("restype", restype);
-        req_builder = req_builder.header("x-ms-lease-action", x_ms_lease_action);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_duration) = x_ms_lease_duration {
-            req_builder = req_builder.header("x-ms-lease-duration", x_ms_lease_duration);
-        }
-        if let Some(x_ms_proposed_lease_id) = x_ms_proposed_lease_id {
-            req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(acquire_lease::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(acquire_lease::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| acquire_lease::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(acquire_lease::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}?restype=container&comp=batch", &self.client.endpoint, &self.container_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let req_body = azure_core::to_json(&self.body).map_err(Error::Serialize)?;
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    req_builder = req_builder.header("Content-Type", &self.content_type);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1613,81 +2449,116 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn release_lease(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        comp: &str,
-        restype: &str,
-        x_ms_lease_action: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: &str,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), release_lease::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}?comp=lease&restype=container&release",
-            operation_config.base_path(),
-            container_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(release_lease::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(release_lease::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) comp: String,
+            pub(crate) restype: String,
+            pub(crate) x_ms_lease_action: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_duration: Option<i64>,
+            pub(crate) x_ms_proposed_lease_id: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        url.query_pairs_mut().append_pair("restype", restype);
-        req_builder = req_builder.header("x-ms-lease-action", x_ms_lease_action);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(release_lease::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(release_lease::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| release_lease::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(release_lease::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_duration(mut self, x_ms_lease_duration: i64) -> Self {
+                self.x_ms_lease_duration = Some(x_ms_lease_duration);
+                self
+            }
+            pub fn x_ms_proposed_lease_id(mut self, x_ms_proposed_lease_id: impl Into<String>) -> Self {
+                self.x_ms_proposed_lease_id = Some(x_ms_proposed_lease_id.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}?comp=lease&restype=container&acquire",
+                        &self.client.endpoint, &self.container_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_duration) = &self.x_ms_lease_duration {
+                        req_builder = req_builder.header("x-ms-lease-duration", &x_ms_lease_duration.to_string());
+                    }
+                    if let Some(x_ms_proposed_lease_id) = &self.x_ms_proposed_lease_id {
+                        req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1702,81 +2573,102 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn renew_lease(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        comp: &str,
-        restype: &str,
-        x_ms_lease_action: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: &str,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), renew_lease::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}?comp=lease&restype=container&renew",
-            operation_config.base_path(),
-            container_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(renew_lease::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(renew_lease::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) comp: String,
+            pub(crate) restype: String,
+            pub(crate) x_ms_lease_action: String,
+            pub(crate) x_ms_lease_id: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        url.query_pairs_mut().append_pair("restype", restype);
-        req_builder = req_builder.header("x-ms-lease-action", x_ms_lease_action);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(renew_lease::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(renew_lease::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| renew_lease::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(renew_lease::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}?comp=lease&restype=container&release",
+                        &self.client.endpoint, &self.container_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-lease-id", &self.x_ms_lease_id);
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1791,83 +2683,102 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn break_lease(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        comp: &str,
-        restype: &str,
-        x_ms_lease_action: &str,
-        timeout: Option<i64>,
-        x_ms_lease_break_period: Option<i64>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), break_lease::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}?comp=lease&restype=container&break",
-            operation_config.base_path(),
-            container_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(break_lease::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(break_lease::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) comp: String,
+            pub(crate) restype: String,
+            pub(crate) x_ms_lease_action: String,
+            pub(crate) x_ms_lease_id: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        url.query_pairs_mut().append_pair("restype", restype);
-        req_builder = req_builder.header("x-ms-lease-action", x_ms_lease_action);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_break_period) = x_ms_lease_break_period {
-            req_builder = req_builder.header("x-ms-lease-break-period", x_ms_lease_break_period);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(break_lease::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(break_lease::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| break_lease::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(break_lease::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}?comp=lease&restype=container&renew",
+                        &self.client.endpoint, &self.container_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-lease-id", &self.x_ms_lease_id);
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1882,83 +2793,108 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn change_lease(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        comp: &str,
-        restype: &str,
-        x_ms_lease_action: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: &str,
-        x_ms_proposed_lease_id: &str,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), change_lease::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}?comp=lease&restype=container&change",
-            operation_config.base_path(),
-            container_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(change_lease::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(change_lease::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) comp: String,
+            pub(crate) restype: String,
+            pub(crate) x_ms_lease_action: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_break_period: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        url.query_pairs_mut().append_pair("restype", restype);
-        req_builder = req_builder.header("x-ms-lease-action", x_ms_lease_action);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(change_lease::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(change_lease::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| change_lease::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(change_lease::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_break_period(mut self, x_ms_lease_break_period: i64) -> Self {
+                self.x_ms_lease_break_period = Some(x_ms_lease_break_period);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}?comp=lease&restype=container&break",
+                        &self.client.endpoint, &self.container_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_break_period) = &self.x_ms_lease_break_period {
+                        req_builder = req_builder.header("x-ms-lease-break-period", &x_ms_lease_break_period.to_string());
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1973,89 +2909,104 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_blob_flat_segment(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        comp: &str,
-        prefix: Option<&str>,
-        marker: Option<&str>,
-        maxresults: Option<i64>,
-        include: &[&str],
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<models::ListBlobsFlatSegmentResponse, list_blob_flat_segment::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}?restype=container&comp=list&flat",
-            operation_config.base_path(),
-            container_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_blob_flat_segment::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_blob_flat_segment::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) comp: String,
+            pub(crate) restype: String,
+            pub(crate) x_ms_lease_action: String,
+            pub(crate) x_ms_lease_id: String,
+            pub(crate) x_ms_proposed_lease_id: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(prefix) = prefix {
-            url.query_pairs_mut().append_pair("prefix", prefix);
-        }
-        if let Some(marker) = marker {
-            url.query_pairs_mut().append_pair("marker", marker);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_blob_flat_segment::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_blob_flat_segment::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ListBlobsFlatSegmentResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_blob_flat_segment::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_blob_flat_segment::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_blob_flat_segment::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}?comp=lease&restype=container&change",
+                        &self.client.endpoint, &self.container_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-lease-id", &self.x_ms_lease_id);
+                    req_builder = req_builder.header("x-ms-proposed-lease-id", &self.x_ms_proposed_lease_id);
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2070,91 +3021,118 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_blob_hierarchy_segment(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        comp: &str,
-        prefix: Option<&str>,
-        delimiter: &str,
-        marker: Option<&str>,
-        maxresults: Option<i64>,
-        include: &[&str],
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<models::ListBlobsHierarchySegmentResponse, list_blob_hierarchy_segment::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}?restype=container&comp=list&hierarchy",
-            operation_config.base_path(),
-            container_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_blob_hierarchy_segment::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_blob_hierarchy_segment::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) prefix: Option<String>,
+            pub(crate) marker: Option<String>,
+            pub(crate) maxresults: Option<i64>,
+            pub(crate) include: Vec<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(prefix) = prefix {
-            url.query_pairs_mut().append_pair("prefix", prefix);
-        }
-        url.query_pairs_mut().append_pair("delimiter", delimiter);
-        if let Some(marker) = marker {
-            url.query_pairs_mut().append_pair("marker", marker);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_blob_hierarchy_segment::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_blob_hierarchy_segment::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ListBlobsHierarchySegmentResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_blob_hierarchy_segment::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
+                self.prefix = Some(prefix.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_blob_hierarchy_segment::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_blob_hierarchy_segment::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn marker(mut self, marker: impl Into<String>) -> Self {
+                self.marker = Some(marker.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i64) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn include(mut self, include: Vec<String>) -> Self {
+                self.include = include;
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ListBlobsFlatSegmentResponse, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}?restype=container&comp=list&flat",
+                        &self.client.endpoint, &self.container_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(prefix) = &self.prefix {
+                        url.query_pairs_mut().append_pair("prefix", prefix);
+                    }
+                    if let Some(marker) = &self.marker {
+                        url.query_pairs_mut().append_pair("marker", marker);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ListBlobsFlatSegmentResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2169,61 +3147,121 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_account_info(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        restype: &str,
-        comp: &str,
-        x_ms_version: &str,
-    ) -> std::result::Result<(), get_account_info::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}?restype=account&comp=properties",
-            operation_config.base_path(),
-            container_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_account_info::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_account_info::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) delimiter: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) prefix: Option<String>,
+            pub(crate) marker: Option<String>,
+            pub(crate) maxresults: Option<i64>,
+            pub(crate) include: Vec<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_account_info::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_account_info::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_account_info::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_account_info::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
+                self.prefix = Some(prefix.into());
+                self
+            }
+            pub fn marker(mut self, marker: impl Into<String>) -> Self {
+                self.marker = Some(marker.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i64) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn include(mut self, include: Vec<String>) -> Self {
+                self.include = include;
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ListBlobsHierarchySegmentResponse, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}?restype=container&comp=list&hierarchy",
+                        &self.client.endpoint, &self.container_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(prefix) = &self.prefix {
+                        url.query_pairs_mut().append_pair("prefix", prefix);
+                    }
+                    let delimiter = &self.delimiter;
+                    url.query_pairs_mut().append_pair("delimiter", delimiter);
+                    if let Some(marker) = &self.marker {
+                        url.query_pairs_mut().append_pair("marker", marker);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ListBlobsHierarchySegmentResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2238,133 +3276,671 @@ pub mod container {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}?restype=account&comp=properties", &self.client.endpoint, &self.container_name);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod blob {
     use super::{models, API_VERSION};
-    pub async fn download(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        snapshot: Option<&str>,
-        versionid: Option<&str>,
-        timeout: Option<i64>,
-        x_ms_range: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_range_get_content_md5: Option<bool>,
-        x_ms_range_get_content_crc64: Option<bool>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<download::Response, download::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(download::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(download::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        if let Some(snapshot) = snapshot {
-            url.query_pairs_mut().append_pair("snapshot", snapshot);
-        }
-        if let Some(versionid) = versionid {
-            url.query_pairs_mut().append_pair("versionid", versionid);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_range) = x_ms_range {
-            req_builder = req_builder.header("x-ms-range", x_ms_range);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_range_get_content_md5) = x_ms_range_get_content_md5 {
-            req_builder = req_builder.header("x-ms-range-get-content-md5", x_ms_range_get_content_md5.to_string());
-        }
-        if let Some(x_ms_range_get_content_crc64) = x_ms_range_get_content_crc64 {
-            req_builder = req_builder.header("x-ms-range-get-content-crc64", x_ms_range_get_content_crc64.to_string());
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(download::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(download::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| download::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(download::Response::Ok200(rsp_value))
+        pub fn download(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> download::Builder {
+            download::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                x_ms_version: x_ms_version.into(),
+                snapshot: None,
+                versionid: None,
+                timeout: None,
+                x_ms_range: None,
+                x_ms_lease_id: None,
+                x_ms_range_get_content_md5: None,
+                x_ms_range_get_content_crc64: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
             }
-            http::StatusCode::PARTIAL_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| download::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(download::Response::PartialContent206(rsp_value))
+        }
+        pub fn delete(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                x_ms_version: x_ms_version.into(),
+                snapshot: None,
+                versionid: None,
+                timeout: None,
+                x_ms_lease_id: None,
+                x_ms_delete_snapshots: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+                deletetype: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| download::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(download::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn get_properties(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_properties::Builder {
+            get_properties::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                x_ms_version: x_ms_version.into(),
+                snapshot: None,
+                versionid: None,
+                timeout: None,
+                x_ms_lease_id: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn undelete(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> undelete::Builder {
+            undelete::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn set_expiry(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+            x_ms_expiry_option: impl Into<String>,
+        ) -> set_expiry::Builder {
+            set_expiry::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                x_ms_expiry_option: x_ms_expiry_option.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                x_ms_expiry_time: None,
+            }
+        }
+        pub fn set_http_headers(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> set_http_headers::Builder {
+            set_http_headers::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_blob_cache_control: None,
+                x_ms_blob_content_type: None,
+                x_ms_blob_content_md5: None,
+                x_ms_blob_content_encoding: None,
+                x_ms_blob_content_language: None,
+                x_ms_lease_id: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_blob_content_disposition: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn set_immutability_policy(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> set_immutability_policy::Builder {
+            set_immutability_policy::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                if_unmodified_since: None,
+                x_ms_immutability_policy_until_date: None,
+                x_ms_immutability_policy_mode: None,
+            }
+        }
+        pub fn delete_immutability_policy(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> delete_immutability_policy::Builder {
+            delete_immutability_policy::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn set_legal_hold(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+            x_ms_legal_hold: bool,
+        ) -> set_legal_hold::Builder {
+            set_legal_hold::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                x_ms_legal_hold,
+                timeout: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn set_metadata(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> set_metadata::Builder {
+            set_metadata::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_meta: None,
+                x_ms_lease_id: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn acquire_lease(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_lease_action: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> acquire_lease::Builder {
+            acquire_lease::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_lease_action: x_ms_lease_action.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_lease_duration: None,
+                x_ms_proposed_lease_id: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn release_lease(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_lease_action: impl Into<String>,
+            x_ms_lease_id: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> release_lease::Builder {
+            release_lease::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_lease_action: x_ms_lease_action.into(),
+                x_ms_lease_id: x_ms_lease_id.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn renew_lease(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_lease_action: impl Into<String>,
+            x_ms_lease_id: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> renew_lease::Builder {
+            renew_lease::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_lease_action: x_ms_lease_action.into(),
+                x_ms_lease_id: x_ms_lease_id.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn change_lease(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_lease_action: impl Into<String>,
+            x_ms_lease_id: impl Into<String>,
+            x_ms_proposed_lease_id: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> change_lease::Builder {
+            change_lease::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_lease_action: x_ms_lease_action.into(),
+                x_ms_lease_id: x_ms_lease_id.into(),
+                x_ms_proposed_lease_id: x_ms_proposed_lease_id.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn break_lease(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_lease_action: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> break_lease::Builder {
+            break_lease::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_lease_action: x_ms_lease_action.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_lease_break_period: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn create_snapshot(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> create_snapshot::Builder {
+            create_snapshot::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_meta: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_lease_id: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn start_copy_from_url(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            x_ms_copy_source: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> start_copy_from_url::Builder {
+            start_copy_from_url::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                x_ms_copy_source: x_ms_copy_source.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_meta: None,
+                x_ms_access_tier: None,
+                x_ms_rehydrate_priority: None,
+                x_ms_source_if_modified_since: None,
+                x_ms_source_if_unmodified_since: None,
+                x_ms_source_if_match: None,
+                x_ms_source_if_none_match: None,
+                x_ms_source_if_tags: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_lease_id: None,
+                x_ms_client_request_id: None,
+                x_ms_tags: None,
+                x_ms_seal_blob: None,
+                x_ms_immutability_policy_until_date: None,
+                x_ms_immutability_policy_mode: None,
+                x_ms_legal_hold: None,
+            }
+        }
+        pub fn copy_from_url(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            x_ms_requires_sync: impl Into<String>,
+            x_ms_copy_source: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> copy_from_url::Builder {
+            copy_from_url::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                x_ms_requires_sync: x_ms_requires_sync.into(),
+                x_ms_copy_source: x_ms_copy_source.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_meta: None,
+                x_ms_access_tier: None,
+                x_ms_source_if_modified_since: None,
+                x_ms_source_if_unmodified_since: None,
+                x_ms_source_if_match: None,
+                x_ms_source_if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_lease_id: None,
+                x_ms_client_request_id: None,
+                x_ms_source_content_md5: None,
+                x_ms_tags: None,
+                x_ms_immutability_policy_until_date: None,
+                x_ms_immutability_policy_mode: None,
+                x_ms_legal_hold: None,
+                x_ms_copy_source_authorization: None,
+                x_ms_encryption_scope: None,
+            }
+        }
+        pub fn abort_copy_from_url(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_copy_action: impl Into<String>,
+            copyid: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> abort_copy_from_url::Builder {
+            abort_copy_from_url::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_copy_action: x_ms_copy_action.into(),
+                copyid: copyid.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_lease_id: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn set_tier(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_access_tier: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> set_tier::Builder {
+            set_tier::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_access_tier: x_ms_access_tier.into(),
+                x_ms_version: x_ms_version.into(),
+                snapshot: None,
+                versionid: None,
+                timeout: None,
+                x_ms_rehydrate_priority: None,
+                x_ms_client_request_id: None,
+                x_ms_lease_id: None,
+                x_ms_if_tags: None,
+            }
+        }
+        pub fn get_account_info(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            restype: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_account_info::Builder {
+            get_account_info::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                restype: restype.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+            }
+        }
+        pub fn query(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> query::Builder {
+            query::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                query_request: None,
+                snapshot: None,
+                timeout: None,
+                x_ms_lease_id: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
+        }
+        pub fn get_tags(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_tags::Builder {
+            get_tags::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                snapshot: None,
+                versionid: None,
+                x_ms_if_tags: None,
+                x_ms_lease_id: None,
+            }
+        }
+        pub fn set_tags(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> set_tags::Builder {
+            set_tags::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                versionid: None,
+                content_md5: None,
+                x_ms_content_crc64: None,
+                x_ms_client_request_id: None,
+                x_ms_if_tags: None,
+                x_ms_lease_id: None,
+                tags: None,
             }
         }
     }
@@ -2383,99 +3959,197 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        snapshot: Option<&str>,
-        versionid: Option<&str>,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_delete_snapshots: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        deletetype: Option<&str>,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) snapshot: Option<String>,
+            pub(crate) versionid: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_range: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_range_get_content_md5: Option<bool>,
+            pub(crate) x_ms_range_get_content_crc64: Option<bool>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        if let Some(snapshot) = snapshot {
-            url.query_pairs_mut().append_pair("snapshot", snapshot);
-        }
-        if let Some(versionid) = versionid {
-            url.query_pairs_mut().append_pair("versionid", versionid);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_delete_snapshots) = x_ms_delete_snapshots {
-            req_builder = req_builder.header("x-ms-delete-snapshots", x_ms_delete_snapshots);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(deletetype) = deletetype {
-            url.query_pairs_mut().append_pair("deletetype", deletetype);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
+                self.snapshot = Some(snapshot.into());
+                self
+            }
+            pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
+                self.versionid = Some(versionid.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
+                self.x_ms_range = Some(x_ms_range.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_range_get_content_md5(mut self, x_ms_range_get_content_md5: bool) -> Self {
+                self.x_ms_range_get_content_md5 = Some(x_ms_range_get_content_md5);
+                self
+            }
+            pub fn x_ms_range_get_content_crc64(mut self, x_ms_range_get_content_crc64: bool) -> Self {
+                self.x_ms_range_get_content_crc64 = Some(x_ms_range_get_content_crc64);
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(snapshot) = &self.snapshot {
+                        url.query_pairs_mut().append_pair("snapshot", snapshot);
+                    }
+                    if let Some(versionid) = &self.versionid {
+                        url.query_pairs_mut().append_pair("versionid", versionid);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_range) = &self.x_ms_range {
+                        req_builder = req_builder.header("x-ms-range", x_ms_range);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_range_get_content_md5) = &self.x_ms_range_get_content_md5 {
+                        req_builder = req_builder.header("x-ms-range-get-content-md5", &x_ms_range_get_content_md5.to_string());
+                    }
+                    if let Some(x_ms_range_get_content_crc64) = &self.x_ms_range_get_content_crc64 {
+                        req_builder = req_builder.header("x-ms-range-get-content-crc64", &x_ms_range_get_content_crc64.to_string());
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::PARTIAL_CONTENT => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::PartialContent206(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2490,106 +4164,154 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_properties(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        snapshot: Option<&str>,
-        versionid: Option<&str>,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), get_properties::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(get_properties::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::HEAD);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_properties::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) snapshot: Option<String>,
+            pub(crate) versionid: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_delete_snapshots: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) deletetype: Option<String>,
         }
-        if let Some(snapshot) = snapshot {
-            url.query_pairs_mut().append_pair("snapshot", snapshot);
-        }
-        if let Some(versionid) = versionid {
-            url.query_pairs_mut().append_pair("versionid", versionid);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_properties::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_properties::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_properties::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_properties::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
+                self.snapshot = Some(snapshot.into());
+                self
+            }
+            pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
+                self.versionid = Some(versionid.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_delete_snapshots(mut self, x_ms_delete_snapshots: impl Into<String>) -> Self {
+                self.x_ms_delete_snapshots = Some(x_ms_delete_snapshots.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn deletetype(mut self, deletetype: impl Into<String>) -> Self {
+                self.deletetype = Some(deletetype.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(snapshot) = &self.snapshot {
+                        url.query_pairs_mut().append_pair("snapshot", snapshot);
+                    }
+                    if let Some(versionid) = &self.versionid {
+                        url.query_pairs_mut().append_pair("versionid", versionid);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_delete_snapshots) = &self.x_ms_delete_snapshots {
+                        req_builder = req_builder.header("x-ms-delete-snapshots", x_ms_delete_snapshots);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(deletetype) = &self.deletetype {
+                        url.query_pairs_mut().append_pair("deletetype", deletetype);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2604,64 +4326,162 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn undelete(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), undelete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=undelete", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(undelete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(undelete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) snapshot: Option<String>,
+            pub(crate) versionid: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(undelete::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(undelete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| undelete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(undelete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
+                self.snapshot = Some(snapshot.into());
+                self
+            }
+            pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
+                self.versionid = Some(versionid.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::HEAD);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(snapshot) = &self.snapshot {
+                        url.query_pairs_mut().append_pair("snapshot", snapshot);
+                    }
+                    if let Some(versionid) = &self.versionid {
+                        url.query_pairs_mut().append_pair("versionid", versionid);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2676,70 +4496,77 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_expiry(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_expiry_option: &str,
-        x_ms_expiry_time: Option<&str>,
-    ) -> std::result::Result<(), set_expiry::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=expiry", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(set_expiry::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_expiry::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.header("x-ms-expiry-option", x_ms_expiry_option);
-        if let Some(x_ms_expiry_time) = x_ms_expiry_time {
-            req_builder = req_builder.header("x-ms-expiry-time", x_ms_expiry_time);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_expiry::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_expiry::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| set_expiry::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_expiry::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=undelete", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2754,117 +4581,87 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_http_headers(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_blob_cache_control: Option<&str>,
-        x_ms_blob_content_type: Option<&str>,
-        x_ms_blob_content_md5: Option<&str>,
-        x_ms_blob_content_encoding: Option<&str>,
-        x_ms_blob_content_language: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_blob_content_disposition: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), set_http_headers::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/{}?comp=properties&SetHTTPHeaders",
-            operation_config.base_path(),
-            container_name,
-            blob
-        );
-        let mut url = url::Url::parse(url_str).map_err(set_http_headers::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_http_headers::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) x_ms_expiry_option: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_expiry_time: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_blob_cache_control) = x_ms_blob_cache_control {
-            req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
-        }
-        if let Some(x_ms_blob_content_type) = x_ms_blob_content_type {
-            req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
-        }
-        if let Some(x_ms_blob_content_md5) = x_ms_blob_content_md5 {
-            req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
-        }
-        if let Some(x_ms_blob_content_encoding) = x_ms_blob_content_encoding {
-            req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
-        }
-        if let Some(x_ms_blob_content_language) = x_ms_blob_content_language {
-            req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        if let Some(x_ms_blob_content_disposition) = x_ms_blob_content_disposition {
-            req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_http_headers::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_http_headers::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| set_http_headers::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_http_headers::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_expiry_time(mut self, x_ms_expiry_time: impl Into<String>) -> Self {
+                self.x_ms_expiry_time = Some(x_ms_expiry_time.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=expiry", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.header("x-ms-expiry-option", &self.x_ms_expiry_option);
+                    if let Some(x_ms_expiry_time) = &self.x_ms_expiry_time {
+                        req_builder = req_builder.header("x-ms-expiry-time", x_ms_expiry_time);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2879,83 +4676,176 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_immutability_policy(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        x_ms_immutability_policy_until_date: Option<&str>,
-        x_ms_immutability_policy_mode: Option<&str>,
-    ) -> std::result::Result<(), set_immutability_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/{}?comp=immutabilityPolicies",
-            operation_config.base_path(),
-            container_name,
-            blob
-        );
-        let mut url = url::Url::parse(url_str).map_err(set_immutability_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_immutability_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_blob_cache_control: Option<String>,
+            pub(crate) x_ms_blob_content_type: Option<String>,
+            pub(crate) x_ms_blob_content_md5: Option<String>,
+            pub(crate) x_ms_blob_content_encoding: Option<String>,
+            pub(crate) x_ms_blob_content_language: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_blob_content_disposition: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(x_ms_immutability_policy_until_date) = x_ms_immutability_policy_until_date {
-            req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
-        }
-        if let Some(x_ms_immutability_policy_mode) = x_ms_immutability_policy_mode {
-            req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(set_immutability_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_immutability_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| set_immutability_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_immutability_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
+                self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
+                self
+            }
+            pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
+                self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
+                self
+            }
+            pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
+                self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
+                self
+            }
+            pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
+                self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
+                self
+            }
+            pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
+                self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
+                self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=properties&SetHTTPHeaders",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_blob_cache_control) = &self.x_ms_blob_cache_control {
+                        req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
+                    }
+                    if let Some(x_ms_blob_content_type) = &self.x_ms_blob_content_type {
+                        req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
+                    }
+                    if let Some(x_ms_blob_content_md5) = &self.x_ms_blob_content_md5 {
+                        req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
+                    }
+                    if let Some(x_ms_blob_content_encoding) = &self.x_ms_blob_content_encoding {
+                        req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
+                    }
+                    if let Some(x_ms_blob_content_language) = &self.x_ms_blob_content_language {
+                        req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    if let Some(x_ms_blob_content_disposition) = &self.x_ms_blob_content_disposition {
+                        req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -2970,71 +4860,104 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete_immutability_policy(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), delete_immutability_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/{}?comp=immutabilityPolicies",
-            operation_config.base_path(),
-            container_name,
-            blob
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_immutability_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_immutability_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_mode: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(delete_immutability_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_immutability_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| delete_immutability_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_immutability_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=immutabilityPolicies",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(x_ms_immutability_policy_until_date) = &self.x_ms_immutability_policy_until_date {
+                        req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                    }
+                    if let Some(x_ms_immutability_policy_mode) = &self.x_ms_immutability_policy_mode {
+                        req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3049,66 +4972,80 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_legal_hold(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_legal_hold: bool,
-    ) -> std::result::Result<(), set_legal_hold::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=legalhold", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(set_legal_hold::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_legal_hold::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.header("x-ms-legal-hold", x_ms_legal_hold.to_string());
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_legal_hold::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_legal_hold::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| set_legal_hold::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_legal_hold::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=immutabilityPolicies",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3123,108 +5060,79 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_metadata(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_meta: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), set_metadata::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=metadata", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(set_metadata::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_metadata::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) x_ms_legal_hold: bool,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_meta) = x_ms_meta {
-            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_metadata::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_metadata::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| set_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_metadata::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=legalhold", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.header("x-ms-legal-hold", &self.x_ms_legal_hold.to_string());
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3239,94 +5147,165 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn acquire_lease(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        x_ms_lease_action: &str,
-        timeout: Option<i64>,
-        x_ms_lease_duration: Option<i64>,
-        x_ms_proposed_lease_id: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), acquire_lease::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=lease&acquire", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(acquire_lease::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(acquire_lease::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_meta: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-lease-action", x_ms_lease_action);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_duration) = x_ms_lease_duration {
-            req_builder = req_builder.header("x-ms-lease-duration", x_ms_lease_duration);
-        }
-        if let Some(x_ms_proposed_lease_id) = x_ms_proposed_lease_id {
-            req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(acquire_lease::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(acquire_lease::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| acquire_lease::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(acquire_lease::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
+                self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=metadata", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_meta) = &self.x_ms_meta {
+                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3341,88 +5320,138 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn release_lease(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        x_ms_lease_action: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: &str,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), release_lease::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=lease&release", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(release_lease::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(release_lease::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_lease_action: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_duration: Option<i64>,
+            pub(crate) x_ms_proposed_lease_id: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-lease-action", x_ms_lease_action);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(release_lease::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(release_lease::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| release_lease::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(release_lease::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_duration(mut self, x_ms_lease_duration: i64) -> Self {
+                self.x_ms_lease_duration = Some(x_ms_lease_duration);
+                self
+            }
+            pub fn x_ms_proposed_lease_id(mut self, x_ms_proposed_lease_id: impl Into<String>) -> Self {
+                self.x_ms_proposed_lease_id = Some(x_ms_proposed_lease_id.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=lease&acquire",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_duration) = &self.x_ms_lease_duration {
+                        req_builder = req_builder.header("x-ms-lease-duration", &x_ms_lease_duration.to_string());
+                    }
+                    if let Some(x_ms_proposed_lease_id) = &self.x_ms_proposed_lease_id {
+                        req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3437,88 +5466,124 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn renew_lease(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        x_ms_lease_action: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: &str,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), renew_lease::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=lease&renew", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(renew_lease::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(renew_lease::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_lease_action: String,
+            pub(crate) x_ms_lease_id: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-lease-action", x_ms_lease_action);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(renew_lease::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(renew_lease::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| renew_lease::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(renew_lease::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=lease&release",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-lease-id", &self.x_ms_lease_id);
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3533,90 +5598,121 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn change_lease(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        x_ms_lease_action: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: &str,
-        x_ms_proposed_lease_id: &str,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), change_lease::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=lease&change", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(change_lease::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(change_lease::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_lease_action: String,
+            pub(crate) x_ms_lease_id: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-lease-action", x_ms_lease_action);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        req_builder = req_builder.header("x-ms-proposed-lease-id", x_ms_proposed_lease_id);
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(change_lease::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(change_lease::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| change_lease::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(change_lease::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=lease&renew", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-lease-id", &self.x_ms_lease_id);
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3631,90 +5727,126 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn break_lease(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        x_ms_lease_action: &str,
-        timeout: Option<i64>,
-        x_ms_lease_break_period: Option<i64>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), break_lease::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=lease&break", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(break_lease::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(break_lease::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_lease_action: String,
+            pub(crate) x_ms_lease_id: String,
+            pub(crate) x_ms_proposed_lease_id: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-lease-action", x_ms_lease_action);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_break_period) = x_ms_lease_break_period {
-            req_builder = req_builder.header("x-ms-lease-break-period", x_ms_lease_break_period);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(break_lease::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(break_lease::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| break_lease::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(break_lease::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=lease&change",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-lease-id", &self.x_ms_lease_id);
+                    req_builder = req_builder.header("x-ms-proposed-lease-id", &self.x_ms_proposed_lease_id);
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3729,108 +5861,127 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_snapshot(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_meta: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), create_snapshot::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=snapshot", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(create_snapshot::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_snapshot::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_lease_action: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_break_period: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_meta) = x_ms_meta {
-            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create_snapshot::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_snapshot::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_snapshot::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_snapshot::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_break_period(mut self, x_ms_lease_break_period: i64) -> Self {
+                self.x_ms_lease_break_period = Some(x_ms_lease_break_period);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=lease&break", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-lease-action", &self.x_ms_lease_action);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_break_period) = &self.x_ms_lease_break_period {
+                        req_builder = req_builder.header("x-ms-lease-break-period", &x_ms_lease_break_period.to_string());
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3845,140 +5996,165 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn start_copy_from_url(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        timeout: Option<i64>,
-        x_ms_meta: Option<&str>,
-        x_ms_access_tier: Option<&str>,
-        x_ms_rehydrate_priority: Option<&str>,
-        x_ms_source_if_modified_since: Option<&str>,
-        x_ms_source_if_unmodified_since: Option<&str>,
-        x_ms_source_if_match: Option<&str>,
-        x_ms_source_if_none_match: Option<&str>,
-        x_ms_source_if_tags: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_copy_source: &str,
-        x_ms_lease_id: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_tags: Option<&str>,
-        x_ms_seal_blob: Option<bool>,
-        x_ms_immutability_policy_until_date: Option<&str>,
-        x_ms_immutability_policy_mode: Option<&str>,
-        x_ms_legal_hold: Option<bool>,
-    ) -> std::result::Result<(), start_copy_from_url::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=copy", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(start_copy_from_url::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(start_copy_from_url::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_meta: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_meta) = x_ms_meta {
-            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-        }
-        if let Some(x_ms_access_tier) = x_ms_access_tier {
-            req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
-        }
-        if let Some(x_ms_rehydrate_priority) = x_ms_rehydrate_priority {
-            req_builder = req_builder.header("x-ms-rehydrate-priority", x_ms_rehydrate_priority);
-        }
-        if let Some(x_ms_source_if_modified_since) = x_ms_source_if_modified_since {
-            req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
-        }
-        if let Some(x_ms_source_if_unmodified_since) = x_ms_source_if_unmodified_since {
-            req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
-        }
-        if let Some(x_ms_source_if_match) = x_ms_source_if_match {
-            req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
-        }
-        if let Some(x_ms_source_if_none_match) = x_ms_source_if_none_match {
-            req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
-        }
-        if let Some(x_ms_source_if_tags) = x_ms_source_if_tags {
-            req_builder = req_builder.header("x-ms-source-if-tags", x_ms_source_if_tags);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-copy-source", x_ms_copy_source);
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_tags) = x_ms_tags {
-            req_builder = req_builder.header("x-ms-tags", x_ms_tags);
-        }
-        if let Some(x_ms_seal_blob) = x_ms_seal_blob {
-            req_builder = req_builder.header("x-ms-seal-blob", x_ms_seal_blob.to_string());
-        }
-        if let Some(x_ms_immutability_policy_until_date) = x_ms_immutability_policy_until_date {
-            req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
-        }
-        if let Some(x_ms_immutability_policy_mode) = x_ms_immutability_policy_mode {
-            req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
-        }
-        if let Some(x_ms_legal_hold) = x_ms_legal_hold {
-            req_builder = req_builder.header("x-ms-legal-hold", x_ms_legal_hold.to_string());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(start_copy_from_url::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(start_copy_from_url::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| start_copy_from_url::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(start_copy_from_url::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
+                self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=snapshot", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_meta) = &self.x_ms_meta {
+                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -3993,142 +6169,228 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn copy_from_url(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        x_ms_requires_sync: &str,
-        timeout: Option<i64>,
-        x_ms_meta: Option<&str>,
-        x_ms_access_tier: Option<&str>,
-        x_ms_source_if_modified_since: Option<&str>,
-        x_ms_source_if_unmodified_since: Option<&str>,
-        x_ms_source_if_match: Option<&str>,
-        x_ms_source_if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_copy_source: &str,
-        x_ms_lease_id: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_source_content_md5: Option<&str>,
-        x_ms_tags: Option<&str>,
-        x_ms_immutability_policy_until_date: Option<&str>,
-        x_ms_immutability_policy_mode: Option<&str>,
-        x_ms_legal_hold: Option<bool>,
-        x_ms_copy_source_authorization: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-    ) -> std::result::Result<(), copy_from_url::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=copy&sync", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(copy_from_url::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(copy_from_url::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) x_ms_copy_source: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_meta: Option<String>,
+            pub(crate) x_ms_access_tier: Option<String>,
+            pub(crate) x_ms_rehydrate_priority: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<String>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_match: Option<String>,
+            pub(crate) x_ms_source_if_none_match: Option<String>,
+            pub(crate) x_ms_source_if_tags: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_tags: Option<String>,
+            pub(crate) x_ms_seal_blob: Option<bool>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_mode: Option<String>,
+            pub(crate) x_ms_legal_hold: Option<bool>,
         }
-        req_builder = req_builder.header("x-ms-requires-sync", x_ms_requires_sync);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_meta) = x_ms_meta {
-            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-        }
-        if let Some(x_ms_access_tier) = x_ms_access_tier {
-            req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
-        }
-        if let Some(x_ms_source_if_modified_since) = x_ms_source_if_modified_since {
-            req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
-        }
-        if let Some(x_ms_source_if_unmodified_since) = x_ms_source_if_unmodified_since {
-            req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
-        }
-        if let Some(x_ms_source_if_match) = x_ms_source_if_match {
-            req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
-        }
-        if let Some(x_ms_source_if_none_match) = x_ms_source_if_none_match {
-            req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-copy-source", x_ms_copy_source);
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_source_content_md5) = x_ms_source_content_md5 {
-            req_builder = req_builder.header("x-ms-source-content-md5", x_ms_source_content_md5);
-        }
-        if let Some(x_ms_tags) = x_ms_tags {
-            req_builder = req_builder.header("x-ms-tags", x_ms_tags);
-        }
-        if let Some(x_ms_immutability_policy_until_date) = x_ms_immutability_policy_until_date {
-            req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
-        }
-        if let Some(x_ms_immutability_policy_mode) = x_ms_immutability_policy_mode {
-            req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
-        }
-        if let Some(x_ms_legal_hold) = x_ms_legal_hold {
-            req_builder = req_builder.header("x-ms-legal-hold", x_ms_legal_hold.to_string());
-        }
-        if let Some(x_ms_copy_source_authorization) = x_ms_copy_source_authorization {
-            req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(copy_from_url::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(copy_from_url::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| copy_from_url::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(copy_from_url::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
+                self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
+                self.x_ms_access_tier = Some(x_ms_access_tier.into());
+                self
+            }
+            pub fn x_ms_rehydrate_priority(mut self, x_ms_rehydrate_priority: impl Into<String>) -> Self {
+                self.x_ms_rehydrate_priority = Some(x_ms_rehydrate_priority.into());
+                self
+            }
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
+                self
+            }
+            pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
+                self
+            }
+            pub fn x_ms_source_if_tags(mut self, x_ms_source_if_tags: impl Into<String>) -> Self {
+                self.x_ms_source_if_tags = Some(x_ms_source_if_tags.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
+                self.x_ms_tags = Some(x_ms_tags.into());
+                self
+            }
+            pub fn x_ms_seal_blob(mut self, x_ms_seal_blob: bool) -> Self {
+                self.x_ms_seal_blob = Some(x_ms_seal_blob);
+                self
+            }
+            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
+                self
+            }
+            pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
+                self.x_ms_legal_hold = Some(x_ms_legal_hold);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=copy", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_meta) = &self.x_ms_meta {
+                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(x_ms_access_tier) = &self.x_ms_access_tier {
+                        req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
+                    }
+                    if let Some(x_ms_rehydrate_priority) = &self.x_ms_rehydrate_priority {
+                        req_builder = req_builder.header("x-ms-rehydrate-priority", x_ms_rehydrate_priority);
+                    }
+                    if let Some(x_ms_source_if_modified_since) = &self.x_ms_source_if_modified_since {
+                        req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                    }
+                    if let Some(x_ms_source_if_unmodified_since) = &self.x_ms_source_if_unmodified_since {
+                        req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                    }
+                    if let Some(x_ms_source_if_match) = &self.x_ms_source_if_match {
+                        req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
+                    }
+                    if let Some(x_ms_source_if_none_match) = &self.x_ms_source_if_none_match {
+                        req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
+                    }
+                    if let Some(x_ms_source_if_tags) = &self.x_ms_source_if_tags {
+                        req_builder = req_builder.header("x-ms-source-if-tags", x_ms_source_if_tags);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-copy-source", &self.x_ms_copy_source);
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_tags) = &self.x_ms_tags {
+                        req_builder = req_builder.header("x-ms-tags", x_ms_tags);
+                    }
+                    if let Some(x_ms_seal_blob) = &self.x_ms_seal_blob {
+                        req_builder = req_builder.header("x-ms-seal-blob", &x_ms_seal_blob.to_string());
+                    }
+                    if let Some(x_ms_immutability_policy_until_date) = &self.x_ms_immutability_policy_until_date {
+                        req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                    }
+                    if let Some(x_ms_immutability_policy_mode) = &self.x_ms_immutability_policy_mode {
+                        req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
+                    }
+                    if let Some(x_ms_legal_hold) = &self.x_ms_legal_hold {
+                        req_builder = req_builder.header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4143,72 +6405,230 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn abort_copy_from_url(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        x_ms_copy_action: &str,
-        copyid: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), abort_copy_from_url::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=copy&copyid", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(abort_copy_from_url::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(abort_copy_from_url::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) x_ms_requires_sync: String,
+            pub(crate) x_ms_copy_source: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_meta: Option<String>,
+            pub(crate) x_ms_access_tier: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<String>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_match: Option<String>,
+            pub(crate) x_ms_source_if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_source_content_md5: Option<String>,
+            pub(crate) x_ms_tags: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_mode: Option<String>,
+            pub(crate) x_ms_legal_hold: Option<bool>,
+            pub(crate) x_ms_copy_source_authorization: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-copy-action", x_ms_copy_action);
-        url.query_pairs_mut().append_pair("copyid", copyid);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(abort_copy_from_url::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(abort_copy_from_url::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| abort_copy_from_url::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(abort_copy_from_url::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
+                self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
+                self.x_ms_access_tier = Some(x_ms_access_tier.into());
+                self
+            }
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
+                self
+            }
+            pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_source_content_md5(mut self, x_ms_source_content_md5: impl Into<String>) -> Self {
+                self.x_ms_source_content_md5 = Some(x_ms_source_content_md5.into());
+                self
+            }
+            pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
+                self.x_ms_tags = Some(x_ms_tags.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
+                self
+            }
+            pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
+                self.x_ms_legal_hold = Some(x_ms_legal_hold);
+                self
+            }
+            pub fn x_ms_copy_source_authorization(mut self, x_ms_copy_source_authorization: impl Into<String>) -> Self {
+                self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=copy&sync", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("x-ms-requires-sync", &self.x_ms_requires_sync);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_meta) = &self.x_ms_meta {
+                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(x_ms_access_tier) = &self.x_ms_access_tier {
+                        req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
+                    }
+                    if let Some(x_ms_source_if_modified_since) = &self.x_ms_source_if_modified_since {
+                        req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                    }
+                    if let Some(x_ms_source_if_unmodified_since) = &self.x_ms_source_if_unmodified_since {
+                        req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                    }
+                    if let Some(x_ms_source_if_match) = &self.x_ms_source_if_match {
+                        req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
+                    }
+                    if let Some(x_ms_source_if_none_match) = &self.x_ms_source_if_none_match {
+                        req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-copy-source", &self.x_ms_copy_source);
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_source_content_md5) = &self.x_ms_source_content_md5 {
+                        req_builder = req_builder.header("x-ms-source-content-md5", x_ms_source_content_md5);
+                    }
+                    if let Some(x_ms_tags) = &self.x_ms_tags {
+                        req_builder = req_builder.header("x-ms-tags", x_ms_tags);
+                    }
+                    if let Some(x_ms_immutability_policy_until_date) = &self.x_ms_immutability_policy_until_date {
+                        req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                    }
+                    if let Some(x_ms_immutability_policy_mode) = &self.x_ms_immutability_policy_mode {
+                        req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
+                    }
+                    if let Some(x_ms_legal_hold) = &self.x_ms_legal_hold {
+                        req_builder = req_builder.header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                    }
+                    if let Some(x_ms_copy_source_authorization) = &self.x_ms_copy_source_authorization {
+                        req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4223,87 +6643,90 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_tier(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        snapshot: Option<&str>,
-        versionid: Option<&str>,
-        timeout: Option<i64>,
-        x_ms_access_tier: &str,
-        x_ms_rehydrate_priority: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-    ) -> std::result::Result<set_tier::Response, set_tier::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=tier", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(set_tier::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_tier::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_copy_action: String,
+            pub(crate) copyid: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(snapshot) = snapshot {
-            url.query_pairs_mut().append_pair("snapshot", snapshot);
-        }
-        if let Some(versionid) = versionid {
-            url.query_pairs_mut().append_pair("versionid", versionid);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
-        if let Some(x_ms_rehydrate_priority) = x_ms_rehydrate_priority {
-            req_builder = req_builder.header("x-ms-rehydrate-priority", x_ms_rehydrate_priority);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_tier::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_tier::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(set_tier::Response::Ok200),
-            http::StatusCode::ACCEPTED => Ok(set_tier::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| set_tier::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_tier::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=copy&copyid", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-copy-action", &self.x_ms_copy_action);
+                    let copyid = &self.copyid;
+                    url.query_pairs_mut().append_pair("copyid", copyid);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4323,63 +6746,120 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_account_info(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        restype: &str,
-        comp: &str,
-        x_ms_version: &str,
-    ) -> std::result::Result<(), get_account_info::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/{}?restype=account&comp=properties",
-            operation_config.base_path(),
-            container_name,
-            blob
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_account_info::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_account_info::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_access_tier: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) snapshot: Option<String>,
+            pub(crate) versionid: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_rehydrate_priority: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
         }
-        url.query_pairs_mut().append_pair("restype", restype);
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_account_info::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_account_info::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_account_info::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_account_info::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
+                self.snapshot = Some(snapshot.into());
+                self
+            }
+            pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
+                self.versionid = Some(versionid.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_rehydrate_priority(mut self, x_ms_rehydrate_priority: impl Into<String>) -> Self {
+                self.x_ms_rehydrate_priority = Some(x_ms_rehydrate_priority.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=tier", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(snapshot) = &self.snapshot {
+                        url.query_pairs_mut().append_pair("snapshot", snapshot);
+                    }
+                    if let Some(versionid) = &self.versionid {
+                        url.query_pairs_mut().append_pair("versionid", versionid);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-access-tier", &self.x_ms_access_tier);
+                    if let Some(x_ms_rehydrate_priority) = &self.x_ms_rehydrate_priority {
+                        req_builder = req_builder.header("x-ms-rehydrate-priority", x_ms_rehydrate_priority);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4394,118 +6874,67 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn query(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        query_request: Option<&models::QueryRequest>,
-        snapshot: Option<&str>,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<query::Response, query::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=query", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(query::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(query::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) restype: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        let req_body = if let Some(query_request) = query_request {
-            req_builder = req_builder.header("content-type", "application/json");
-            azure_core::to_json(query_request).map_err(query::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        if let Some(snapshot) = snapshot {
-            url.query_pairs_mut().append_pair("snapshot", snapshot);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(query::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(query::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| query::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(query::Response::Ok200(rsp_value))
-            }
-            http::StatusCode::PARTIAL_CONTENT => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| query::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(query::Response::PartialContent206(rsp_value))
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| query::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(query::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?restype=account&comp=properties",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let restype = &self.restype;
+                    url.query_pairs_mut().append_pair("restype", restype);
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4525,85 +6954,178 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_tags(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        snapshot: Option<&str>,
-        versionid: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-    ) -> std::result::Result<models::BlobTags, get_tags::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=tags", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(get_tags::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_tags::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) query_request: Option<models::QueryRequest>,
+            pub(crate) snapshot: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(snapshot) = snapshot {
-            url.query_pairs_mut().append_pair("snapshot", snapshot);
-        }
-        if let Some(versionid) = versionid {
-            url.query_pairs_mut().append_pair("versionid", versionid);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_tags::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_tags::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::BlobTags =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_tags::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn query_request(mut self, query_request: impl Into<models::QueryRequest>) -> Self {
+                self.query_request = Some(query_request.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_tags::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_tags::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
+                self.snapshot = Some(snapshot.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=query", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let req_body = if let Some(query_request) = &self.query_request {
+                        req_builder = req_builder.header("content-type", "application/json");
+                        azure_core::to_json(query_request).map_err(Error::Serialize)?
+                    } else {
+                        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    };
+                    if let Some(snapshot) = &self.snapshot {
+                        url.query_pairs_mut().append_pair("snapshot", snapshot);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::PARTIAL_CONTENT => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::PartialContent206(rsp_value))
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4618,90 +7140,114 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_tags(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        x_ms_version: &str,
-        timeout: Option<i64>,
-        versionid: Option<&str>,
-        content_md5: Option<&str>,
-        x_ms_content_crc64: Option<&str>,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        tags: Option<&models::BlobTags>,
-    ) -> std::result::Result<(), set_tags::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=tags", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(set_tags::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_tags::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) snapshot: Option<String>,
+            pub(crate) versionid: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(versionid) = versionid {
-            url.query_pairs_mut().append_pair("versionid", versionid);
-        }
-        if let Some(content_md5) = content_md5 {
-            req_builder = req_builder.header("Content-MD5", content_md5);
-        }
-        if let Some(x_ms_content_crc64) = x_ms_content_crc64 {
-            req_builder = req_builder.header("x-ms-content-crc64", x_ms_content_crc64);
-        }
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        let req_body = if let Some(tags) = tags {
-            req_builder = req_builder.header("content-type", "application/json");
-            azure_core::to_json(tags).map_err(set_tags::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_tags::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_tags::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| set_tags::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_tags::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
+                self.snapshot = Some(snapshot.into());
+                self
+            }
+            pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
+                self.versionid = Some(versionid.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::BlobTags, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=tags", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(snapshot) = &self.snapshot {
+                        url.query_pairs_mut().append_pair("snapshot", snapshot);
+                    }
+                    if let Some(versionid) = &self.versionid {
+                        url.query_pairs_mut().append_pair("versionid", versionid);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BlobTags =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -4716,161 +7262,433 @@ pub mod blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) versionid: Option<String>,
+            pub(crate) content_md5: Option<String>,
+            pub(crate) x_ms_content_crc64: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) tags: Option<models::BlobTags>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
+                self.versionid = Some(versionid.into());
+                self
+            }
+            pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
+                self.content_md5 = Some(content_md5.into());
+                self
+            }
+            pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
+                self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn tags(mut self, tags: impl Into<models::BlobTags>) -> Self {
+                self.tags = Some(tags.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=tags", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(versionid) = &self.versionid {
+                        url.query_pairs_mut().append_pair("versionid", versionid);
+                    }
+                    if let Some(content_md5) = &self.content_md5 {
+                        req_builder = req_builder.header("Content-MD5", content_md5);
+                    }
+                    if let Some(x_ms_content_crc64) = &self.x_ms_content_crc64 {
+                        req_builder = req_builder.header("x-ms-content-crc64", x_ms_content_crc64);
+                    }
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    let req_body = if let Some(tags) = &self.tags {
+                        req_builder = req_builder.header("content-type", "application/json");
+                        azure_core::to_json(tags).map_err(Error::Serialize)?
+                    } else {
+                        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    };
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod page_blob {
     use super::{models, API_VERSION};
-    pub async fn create(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        x_ms_blob_type: &str,
-        timeout: Option<i64>,
-        content_length: i64,
-        x_ms_access_tier: Option<&str>,
-        x_ms_blob_content_type: Option<&str>,
-        x_ms_blob_content_encoding: Option<&str>,
-        x_ms_blob_content_language: Option<&str>,
-        x_ms_blob_content_md5: Option<&str>,
-        x_ms_blob_cache_control: Option<&str>,
-        x_ms_meta: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_blob_content_disposition: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_blob_content_length: i64,
-        x_ms_blob_sequence_number: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_tags: Option<&str>,
-        x_ms_immutability_policy_until_date: Option<&str>,
-        x_ms_immutability_policy_mode: Option<&str>,
-        x_ms_legal_hold: Option<bool>,
-    ) -> std::result::Result<(), create::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?PageBlob", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        req_builder = req_builder.header("x-ms-blob-type", x_ms_blob_type);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
+        pub fn create(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            x_ms_blob_type: impl Into<String>,
+            content_length: i64,
+            x_ms_blob_content_length: i64,
+            x_ms_version: impl Into<String>,
+        ) -> create::Builder {
+            create::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                x_ms_blob_type: x_ms_blob_type.into(),
+                content_length,
+                x_ms_blob_content_length,
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_access_tier: None,
+                x_ms_blob_content_type: None,
+                x_ms_blob_content_encoding: None,
+                x_ms_blob_content_language: None,
+                x_ms_blob_content_md5: None,
+                x_ms_blob_cache_control: None,
+                x_ms_meta: None,
+                x_ms_lease_id: None,
+                x_ms_blob_content_disposition: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_blob_sequence_number: None,
+                x_ms_client_request_id: None,
+                x_ms_tags: None,
+                x_ms_immutability_policy_until_date: None,
+                x_ms_immutability_policy_mode: None,
+                x_ms_legal_hold: None,
+            }
         }
-        req_builder = req_builder.header("Content-Length", content_length);
-        if let Some(x_ms_access_tier) = x_ms_access_tier {
-            req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
+        pub fn upload_pages(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_page_write: impl Into<String>,
+            body: impl Into<serde_json::Value>,
+            content_length: i64,
+            x_ms_version: impl Into<String>,
+        ) -> upload_pages::Builder {
+            upload_pages::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_page_write: x_ms_page_write.into(),
+                body: body.into(),
+                content_length,
+                x_ms_version: x_ms_version.into(),
+                content_md5: None,
+                x_ms_content_crc64: None,
+                timeout: None,
+                x_ms_range: None,
+                x_ms_lease_id: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                x_ms_if_sequence_number_le: None,
+                x_ms_if_sequence_number_lt: None,
+                x_ms_if_sequence_number_eq: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
         }
-        if let Some(x_ms_blob_content_type) = x_ms_blob_content_type {
-            req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
+        pub fn clear_pages(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_page_write: impl Into<String>,
+            content_length: i64,
+            x_ms_version: impl Into<String>,
+        ) -> clear_pages::Builder {
+            clear_pages::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_page_write: x_ms_page_write.into(),
+                content_length,
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_range: None,
+                x_ms_lease_id: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                x_ms_if_sequence_number_le: None,
+                x_ms_if_sequence_number_lt: None,
+                x_ms_if_sequence_number_eq: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
         }
-        if let Some(x_ms_blob_content_encoding) = x_ms_blob_content_encoding {
-            req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
+        pub fn upload_pages_from_url(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_page_write: impl Into<String>,
+            x_ms_copy_source: impl Into<String>,
+            x_ms_source_range: impl Into<String>,
+            content_length: i64,
+            x_ms_range: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> upload_pages_from_url::Builder {
+            upload_pages_from_url::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_page_write: x_ms_page_write.into(),
+                x_ms_copy_source: x_ms_copy_source.into(),
+                x_ms_source_range: x_ms_source_range.into(),
+                content_length,
+                x_ms_range: x_ms_range.into(),
+                x_ms_version: x_ms_version.into(),
+                x_ms_source_content_md5: None,
+                x_ms_source_content_crc64: None,
+                timeout: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                x_ms_lease_id: None,
+                x_ms_if_sequence_number_le: None,
+                x_ms_if_sequence_number_lt: None,
+                x_ms_if_sequence_number_eq: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_source_if_modified_since: None,
+                x_ms_source_if_unmodified_since: None,
+                x_ms_source_if_match: None,
+                x_ms_source_if_none_match: None,
+                x_ms_client_request_id: None,
+                x_ms_copy_source_authorization: None,
+            }
         }
-        if let Some(x_ms_blob_content_language) = x_ms_blob_content_language {
-            req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
+        pub fn get_page_ranges(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_page_ranges::Builder {
+            get_page_ranges::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                snapshot: None,
+                timeout: None,
+                x_ms_range: None,
+                x_ms_lease_id: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
         }
-        if let Some(x_ms_blob_content_md5) = x_ms_blob_content_md5 {
-            req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
+        pub fn get_page_ranges_diff(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_page_ranges_diff::Builder {
+            get_page_ranges_diff::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                snapshot: None,
+                timeout: None,
+                prevsnapshot: None,
+                x_ms_previous_snapshot_url: None,
+                x_ms_range: None,
+                x_ms_lease_id: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
         }
-        if let Some(x_ms_blob_cache_control) = x_ms_blob_cache_control {
-            req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
+        pub fn resize(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_blob_content_length: i64,
+            x_ms_version: impl Into<String>,
+        ) -> resize::Builder {
+            resize::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_blob_content_length,
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_lease_id: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
         }
-        if let Some(x_ms_meta) = x_ms_meta {
-            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+        pub fn update_sequence_number(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_sequence_number_action: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> update_sequence_number::Builder {
+            update_sequence_number::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_sequence_number_action: x_ms_sequence_number_action.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_lease_id: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_blob_sequence_number: None,
+                x_ms_client_request_id: None,
+            }
         }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_blob_content_disposition) = x_ms_blob_content_disposition {
-            req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-blob-content-length", x_ms_blob_content_length);
-        if let Some(x_ms_blob_sequence_number) = x_ms_blob_sequence_number {
-            req_builder = req_builder.header("x-ms-blob-sequence-number", x_ms_blob_sequence_number);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_tags) = x_ms_tags {
-            req_builder = req_builder.header("x-ms-tags", x_ms_tags);
-        }
-        if let Some(x_ms_immutability_policy_until_date) = x_ms_immutability_policy_until_date {
-            req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
-        }
-        if let Some(x_ms_immutability_policy_mode) = x_ms_immutability_policy_mode {
-            req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
-        }
-        if let Some(x_ms_legal_hold) = x_ms_legal_hold {
-            req_builder = req_builder.header("x-ms-legal-hold", x_ms_legal_hold.to_string());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(create::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn copy_incremental(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_copy_source: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> copy_incremental::Builder {
+            copy_incremental::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_copy_source: x_ms_copy_source.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
             }
         }
     }
@@ -4884,134 +7702,264 @@ pub mod page_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn upload_pages(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        x_ms_page_write: &str,
-        body: &serde_json::Value,
-        content_length: i64,
-        content_md5: Option<&str>,
-        x_ms_content_crc64: Option<&str>,
-        timeout: Option<i64>,
-        x_ms_range: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        x_ms_if_sequence_number_le: Option<i64>,
-        x_ms_if_sequence_number_lt: Option<i64>,
-        x_ms_if_sequence_number_eq: Option<i64>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), upload_pages::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=page&update", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(upload_pages::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(upload_pages::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) x_ms_blob_type: String,
+            pub(crate) content_length: i64,
+            pub(crate) x_ms_blob_content_length: i64,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_access_tier: Option<String>,
+            pub(crate) x_ms_blob_content_type: Option<String>,
+            pub(crate) x_ms_blob_content_encoding: Option<String>,
+            pub(crate) x_ms_blob_content_language: Option<String>,
+            pub(crate) x_ms_blob_content_md5: Option<String>,
+            pub(crate) x_ms_blob_cache_control: Option<String>,
+            pub(crate) x_ms_meta: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_blob_content_disposition: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_blob_sequence_number: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_tags: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_mode: Option<String>,
+            pub(crate) x_ms_legal_hold: Option<bool>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-page-write", x_ms_page_write);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(body).map_err(upload_pages::Error::SerializeError)?;
-        req_builder = req_builder.header("Content-Length", content_length);
-        if let Some(content_md5) = content_md5 {
-            req_builder = req_builder.header("Content-MD5", content_md5);
-        }
-        if let Some(x_ms_content_crc64) = x_ms_content_crc64 {
-            req_builder = req_builder.header("x-ms-content-crc64", x_ms_content_crc64);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_range) = x_ms_range {
-            req_builder = req_builder.header("x-ms-range", x_ms_range);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(x_ms_if_sequence_number_le) = x_ms_if_sequence_number_le {
-            req_builder = req_builder.header("x-ms-if-sequence-number-le", x_ms_if_sequence_number_le);
-        }
-        if let Some(x_ms_if_sequence_number_lt) = x_ms_if_sequence_number_lt {
-            req_builder = req_builder.header("x-ms-if-sequence-number-lt", x_ms_if_sequence_number_lt);
-        }
-        if let Some(x_ms_if_sequence_number_eq) = x_ms_if_sequence_number_eq {
-            req_builder = req_builder.header("x-ms-if-sequence-number-eq", x_ms_if_sequence_number_eq);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(upload_pages::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(upload_pages::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| upload_pages::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(upload_pages::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
+                self.x_ms_access_tier = Some(x_ms_access_tier.into());
+                self
+            }
+            pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
+                self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
+                self
+            }
+            pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
+                self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
+                self
+            }
+            pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
+                self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
+                self
+            }
+            pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
+                self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
+                self
+            }
+            pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
+                self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
+                self
+            }
+            pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
+                self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
+                self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_blob_sequence_number(mut self, x_ms_blob_sequence_number: i64) -> Self {
+                self.x_ms_blob_sequence_number = Some(x_ms_blob_sequence_number);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
+                self.x_ms_tags = Some(x_ms_tags.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
+                self
+            }
+            pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
+                self.x_ms_legal_hold = Some(x_ms_legal_hold);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?PageBlob", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("x-ms-blob-type", &self.x_ms_blob_type);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    if let Some(x_ms_access_tier) = &self.x_ms_access_tier {
+                        req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
+                    }
+                    if let Some(x_ms_blob_content_type) = &self.x_ms_blob_content_type {
+                        req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
+                    }
+                    if let Some(x_ms_blob_content_encoding) = &self.x_ms_blob_content_encoding {
+                        req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
+                    }
+                    if let Some(x_ms_blob_content_language) = &self.x_ms_blob_content_language {
+                        req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
+                    }
+                    if let Some(x_ms_blob_content_md5) = &self.x_ms_blob_content_md5 {
+                        req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
+                    }
+                    if let Some(x_ms_blob_cache_control) = &self.x_ms_blob_cache_control {
+                        req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
+                    }
+                    if let Some(x_ms_meta) = &self.x_ms_meta {
+                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_blob_content_disposition) = &self.x_ms_blob_content_disposition {
+                        req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-blob-content-length", &self.x_ms_blob_content_length.to_string());
+                    if let Some(x_ms_blob_sequence_number) = &self.x_ms_blob_sequence_number {
+                        req_builder = req_builder.header("x-ms-blob-sequence-number", &x_ms_blob_sequence_number.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_tags) = &self.x_ms_tags {
+                        req_builder = req_builder.header("x-ms-tags", x_ms_tags);
+                    }
+                    if let Some(x_ms_immutability_policy_until_date) = &self.x_ms_immutability_policy_until_date {
+                        req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                    }
+                    if let Some(x_ms_immutability_policy_mode) = &self.x_ms_immutability_policy_mode {
+                        req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
+                    }
+                    if let Some(x_ms_legal_hold) = &self.x_ms_legal_hold {
+                        req_builder = req_builder.header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -5026,124 +7974,211 @@ pub mod page_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn clear_pages(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        x_ms_page_write: &str,
-        content_length: i64,
-        timeout: Option<i64>,
-        x_ms_range: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        x_ms_if_sequence_number_le: Option<i64>,
-        x_ms_if_sequence_number_lt: Option<i64>,
-        x_ms_if_sequence_number_eq: Option<i64>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), clear_pages::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=page&clear", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(clear_pages::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(clear_pages::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_page_write: String,
+            pub(crate) body: serde_json::Value,
+            pub(crate) content_length: i64,
+            pub(crate) x_ms_version: String,
+            pub(crate) content_md5: Option<String>,
+            pub(crate) x_ms_content_crc64: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_range: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) x_ms_if_sequence_number_le: Option<i64>,
+            pub(crate) x_ms_if_sequence_number_lt: Option<i64>,
+            pub(crate) x_ms_if_sequence_number_eq: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-page-write", x_ms_page_write);
-        req_builder = req_builder.header("Content-Length", content_length);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_range) = x_ms_range {
-            req_builder = req_builder.header("x-ms-range", x_ms_range);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(x_ms_if_sequence_number_le) = x_ms_if_sequence_number_le {
-            req_builder = req_builder.header("x-ms-if-sequence-number-le", x_ms_if_sequence_number_le);
-        }
-        if let Some(x_ms_if_sequence_number_lt) = x_ms_if_sequence_number_lt {
-            req_builder = req_builder.header("x-ms-if-sequence-number-lt", x_ms_if_sequence_number_lt);
-        }
-        if let Some(x_ms_if_sequence_number_eq) = x_ms_if_sequence_number_eq {
-            req_builder = req_builder.header("x-ms-if-sequence-number-eq", x_ms_if_sequence_number_eq);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(clear_pages::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(clear_pages::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| clear_pages::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(clear_pages::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
+                self.content_md5 = Some(content_md5.into());
+                self
+            }
+            pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
+                self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
+                self.x_ms_range = Some(x_ms_range.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn x_ms_if_sequence_number_le(mut self, x_ms_if_sequence_number_le: i64) -> Self {
+                self.x_ms_if_sequence_number_le = Some(x_ms_if_sequence_number_le);
+                self
+            }
+            pub fn x_ms_if_sequence_number_lt(mut self, x_ms_if_sequence_number_lt: i64) -> Self {
+                self.x_ms_if_sequence_number_lt = Some(x_ms_if_sequence_number_lt);
+                self
+            }
+            pub fn x_ms_if_sequence_number_eq(mut self, x_ms_if_sequence_number_eq: i64) -> Self {
+                self.x_ms_if_sequence_number_eq = Some(x_ms_if_sequence_number_eq);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=page&update", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-page-write", &self.x_ms_page_write);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.body).map_err(Error::Serialize)?;
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    if let Some(content_md5) = &self.content_md5 {
+                        req_builder = req_builder.header("Content-MD5", content_md5);
+                    }
+                    if let Some(x_ms_content_crc64) = &self.x_ms_content_crc64 {
+                        req_builder = req_builder.header("x-ms-content-crc64", x_ms_content_crc64);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_range) = &self.x_ms_range {
+                        req_builder = req_builder.header("x-ms-range", x_ms_range);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(x_ms_if_sequence_number_le) = &self.x_ms_if_sequence_number_le {
+                        req_builder = req_builder.header("x-ms-if-sequence-number-le", &x_ms_if_sequence_number_le.to_string());
+                    }
+                    if let Some(x_ms_if_sequence_number_lt) = &self.x_ms_if_sequence_number_lt {
+                        req_builder = req_builder.header("x-ms-if-sequence-number-lt", &x_ms_if_sequence_number_lt.to_string());
+                    }
+                    if let Some(x_ms_if_sequence_number_eq) = &self.x_ms_if_sequence_number_eq {
+                        req_builder = req_builder.header("x-ms-if-sequence-number-eq", &x_ms_if_sequence_number_eq.to_string());
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -5158,161 +8193,193 @@ pub mod page_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn upload_pages_from_url(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        x_ms_page_write: &str,
-        x_ms_copy_source: &str,
-        x_ms_source_range: &str,
-        x_ms_source_content_md5: Option<&str>,
-        x_ms_source_content_crc64: Option<&str>,
-        content_length: i64,
-        timeout: Option<i64>,
-        x_ms_range: &str,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_if_sequence_number_le: Option<i64>,
-        x_ms_if_sequence_number_lt: Option<i64>,
-        x_ms_if_sequence_number_eq: Option<i64>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_source_if_modified_since: Option<&str>,
-        x_ms_source_if_unmodified_since: Option<&str>,
-        x_ms_source_if_match: Option<&str>,
-        x_ms_source_if_none_match: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_copy_source_authorization: Option<&str>,
-    ) -> std::result::Result<(), upload_pages_from_url::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/{}?comp=page&update&fromUrl",
-            operation_config.base_path(),
-            container_name,
-            blob
-        );
-        let mut url = url::Url::parse(url_str).map_err(upload_pages_from_url::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(upload_pages_from_url::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_page_write: String,
+            pub(crate) content_length: i64,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_range: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) x_ms_if_sequence_number_le: Option<i64>,
+            pub(crate) x_ms_if_sequence_number_lt: Option<i64>,
+            pub(crate) x_ms_if_sequence_number_eq: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-page-write", x_ms_page_write);
-        req_builder = req_builder.header("x-ms-copy-source", x_ms_copy_source);
-        req_builder = req_builder.header("x-ms-source-range", x_ms_source_range);
-        if let Some(x_ms_source_content_md5) = x_ms_source_content_md5 {
-            req_builder = req_builder.header("x-ms-source-content-md5", x_ms_source_content_md5);
-        }
-        if let Some(x_ms_source_content_crc64) = x_ms_source_content_crc64 {
-            req_builder = req_builder.header("x-ms-source-content-crc64", x_ms_source_content_crc64);
-        }
-        req_builder = req_builder.header("Content-Length", content_length);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-range", x_ms_range);
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_if_sequence_number_le) = x_ms_if_sequence_number_le {
-            req_builder = req_builder.header("x-ms-if-sequence-number-le", x_ms_if_sequence_number_le);
-        }
-        if let Some(x_ms_if_sequence_number_lt) = x_ms_if_sequence_number_lt {
-            req_builder = req_builder.header("x-ms-if-sequence-number-lt", x_ms_if_sequence_number_lt);
-        }
-        if let Some(x_ms_if_sequence_number_eq) = x_ms_if_sequence_number_eq {
-            req_builder = req_builder.header("x-ms-if-sequence-number-eq", x_ms_if_sequence_number_eq);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        if let Some(x_ms_source_if_modified_since) = x_ms_source_if_modified_since {
-            req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
-        }
-        if let Some(x_ms_source_if_unmodified_since) = x_ms_source_if_unmodified_since {
-            req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
-        }
-        if let Some(x_ms_source_if_match) = x_ms_source_if_match {
-            req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
-        }
-        if let Some(x_ms_source_if_none_match) = x_ms_source_if_none_match {
-            req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_copy_source_authorization) = x_ms_copy_source_authorization {
-            req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(upload_pages_from_url::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(upload_pages_from_url::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| upload_pages_from_url::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(upload_pages_from_url::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
+                self.x_ms_range = Some(x_ms_range.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn x_ms_if_sequence_number_le(mut self, x_ms_if_sequence_number_le: i64) -> Self {
+                self.x_ms_if_sequence_number_le = Some(x_ms_if_sequence_number_le);
+                self
+            }
+            pub fn x_ms_if_sequence_number_lt(mut self, x_ms_if_sequence_number_lt: i64) -> Self {
+                self.x_ms_if_sequence_number_lt = Some(x_ms_if_sequence_number_lt);
+                self
+            }
+            pub fn x_ms_if_sequence_number_eq(mut self, x_ms_if_sequence_number_eq: i64) -> Self {
+                self.x_ms_if_sequence_number_eq = Some(x_ms_if_sequence_number_eq);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=page&clear", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-page-write", &self.x_ms_page_write);
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_range) = &self.x_ms_range {
+                        req_builder = req_builder.header("x-ms-range", x_ms_range);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(x_ms_if_sequence_number_le) = &self.x_ms_if_sequence_number_le {
+                        req_builder = req_builder.header("x-ms-if-sequence-number-le", &x_ms_if_sequence_number_le.to_string());
+                    }
+                    if let Some(x_ms_if_sequence_number_lt) = &self.x_ms_if_sequence_number_lt {
+                        req_builder = req_builder.header("x-ms-if-sequence-number-lt", &x_ms_if_sequence_number_lt.to_string());
+                    }
+                    if let Some(x_ms_if_sequence_number_eq) = &self.x_ms_if_sequence_number_eq {
+                        req_builder = req_builder.header("x-ms-if-sequence-number-eq", &x_ms_if_sequence_number_eq.to_string());
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -5327,101 +8394,250 @@ pub mod page_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_page_ranges(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        snapshot: Option<&str>,
-        timeout: Option<i64>,
-        x_ms_range: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<models::PageList, get_page_ranges::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=pagelist", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(get_page_ranges::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_page_ranges::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_page_write: String,
+            pub(crate) x_ms_copy_source: String,
+            pub(crate) x_ms_source_range: String,
+            pub(crate) content_length: i64,
+            pub(crate) x_ms_range: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) x_ms_source_content_md5: Option<String>,
+            pub(crate) x_ms_source_content_crc64: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_if_sequence_number_le: Option<i64>,
+            pub(crate) x_ms_if_sequence_number_lt: Option<i64>,
+            pub(crate) x_ms_if_sequence_number_eq: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<String>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_match: Option<String>,
+            pub(crate) x_ms_source_if_none_match: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_copy_source_authorization: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(snapshot) = snapshot {
-            url.query_pairs_mut().append_pair("snapshot", snapshot);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_range) = x_ms_range {
-            req_builder = req_builder.header("x-ms-range", x_ms_range);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_page_ranges::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_page_ranges::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PageList = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_page_ranges::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn x_ms_source_content_md5(mut self, x_ms_source_content_md5: impl Into<String>) -> Self {
+                self.x_ms_source_content_md5 = Some(x_ms_source_content_md5.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_page_ranges::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_page_ranges::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn x_ms_source_content_crc64(mut self, x_ms_source_content_crc64: impl Into<String>) -> Self {
+                self.x_ms_source_content_crc64 = Some(x_ms_source_content_crc64.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_if_sequence_number_le(mut self, x_ms_if_sequence_number_le: i64) -> Self {
+                self.x_ms_if_sequence_number_le = Some(x_ms_if_sequence_number_le);
+                self
+            }
+            pub fn x_ms_if_sequence_number_lt(mut self, x_ms_if_sequence_number_lt: i64) -> Self {
+                self.x_ms_if_sequence_number_lt = Some(x_ms_if_sequence_number_lt);
+                self
+            }
+            pub fn x_ms_if_sequence_number_eq(mut self, x_ms_if_sequence_number_eq: i64) -> Self {
+                self.x_ms_if_sequence_number_eq = Some(x_ms_if_sequence_number_eq);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
+                self
+            }
+            pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_copy_source_authorization(mut self, x_ms_copy_source_authorization: impl Into<String>) -> Self {
+                self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=page&update&fromUrl",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-page-write", &self.x_ms_page_write);
+                    req_builder = req_builder.header("x-ms-copy-source", &self.x_ms_copy_source);
+                    req_builder = req_builder.header("x-ms-source-range", &self.x_ms_source_range);
+                    if let Some(x_ms_source_content_md5) = &self.x_ms_source_content_md5 {
+                        req_builder = req_builder.header("x-ms-source-content-md5", x_ms_source_content_md5);
+                    }
+                    if let Some(x_ms_source_content_crc64) = &self.x_ms_source_content_crc64 {
+                        req_builder = req_builder.header("x-ms-source-content-crc64", x_ms_source_content_crc64);
+                    }
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-range", &self.x_ms_range);
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_if_sequence_number_le) = &self.x_ms_if_sequence_number_le {
+                        req_builder = req_builder.header("x-ms-if-sequence-number-le", &x_ms_if_sequence_number_le.to_string());
+                    }
+                    if let Some(x_ms_if_sequence_number_lt) = &self.x_ms_if_sequence_number_lt {
+                        req_builder = req_builder.header("x-ms-if-sequence-number-lt", &x_ms_if_sequence_number_lt.to_string());
+                    }
+                    if let Some(x_ms_if_sequence_number_eq) = &self.x_ms_if_sequence_number_eq {
+                        req_builder = req_builder.header("x-ms-if-sequence-number-eq", &x_ms_if_sequence_number_eq.to_string());
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    if let Some(x_ms_source_if_modified_since) = &self.x_ms_source_if_modified_since {
+                        req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                    }
+                    if let Some(x_ms_source_if_unmodified_since) = &self.x_ms_source_if_unmodified_since {
+                        req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                    }
+                    if let Some(x_ms_source_if_match) = &self.x_ms_source_if_match {
+                        req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
+                    }
+                    if let Some(x_ms_source_if_none_match) = &self.x_ms_source_if_none_match {
+                        req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_copy_source_authorization) = &self.x_ms_copy_source_authorization {
+                        req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -5436,109 +8652,146 @@ pub mod page_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_page_ranges_diff(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        snapshot: Option<&str>,
-        timeout: Option<i64>,
-        prevsnapshot: Option<&str>,
-        x_ms_previous_snapshot_url: Option<&str>,
-        x_ms_range: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<models::PageList, get_page_ranges_diff::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=pagelist&diff", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(get_page_ranges_diff::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_page_ranges_diff::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) snapshot: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_range: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(snapshot) = snapshot {
-            url.query_pairs_mut().append_pair("snapshot", snapshot);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(prevsnapshot) = prevsnapshot {
-            url.query_pairs_mut().append_pair("prevsnapshot", prevsnapshot);
-        }
-        if let Some(x_ms_previous_snapshot_url) = x_ms_previous_snapshot_url {
-            req_builder = req_builder.header("x-ms-previous-snapshot-url", x_ms_previous_snapshot_url);
-        }
-        if let Some(x_ms_range) = x_ms_range {
-            req_builder = req_builder.header("x-ms-range", x_ms_range);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_page_ranges_diff::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_page_ranges_diff::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PageList = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_page_ranges_diff::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
+                self.snapshot = Some(snapshot.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_page_ranges_diff::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_page_ranges_diff::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
+                self.x_ms_range = Some(x_ms_range.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=pagelist", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(snapshot) = &self.snapshot {
+                        url.query_pairs_mut().append_pair("snapshot", snapshot);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_range) = &self.x_ms_range {
+                        req_builder = req_builder.header("x-ms-range", x_ms_range);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -5553,108 +8806,165 @@ pub mod page_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn resize(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_blob_content_length: i64,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), resize::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/{}?comp=properties&Resize",
-            operation_config.base_path(),
-            container_name,
-            blob
-        );
-        let mut url = url::Url::parse(url_str).map_err(resize::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(resize::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) snapshot: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) prevsnapshot: Option<String>,
+            pub(crate) x_ms_previous_snapshot_url: Option<String>,
+            pub(crate) x_ms_range: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-blob-content-length", x_ms_blob_content_length);
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(resize::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(resize::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| resize::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(resize::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
+                self.snapshot = Some(snapshot.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn prevsnapshot(mut self, prevsnapshot: impl Into<String>) -> Self {
+                self.prevsnapshot = Some(prevsnapshot.into());
+                self
+            }
+            pub fn x_ms_previous_snapshot_url(mut self, x_ms_previous_snapshot_url: impl Into<String>) -> Self {
+                self.x_ms_previous_snapshot_url = Some(x_ms_previous_snapshot_url.into());
+                self
+            }
+            pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
+                self.x_ms_range = Some(x_ms_range.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PageList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=pagelist&diff",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(snapshot) = &self.snapshot {
+                        url.query_pairs_mut().append_pair("snapshot", snapshot);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(prevsnapshot) = &self.prevsnapshot {
+                        url.query_pairs_mut().append_pair("prevsnapshot", prevsnapshot);
+                    }
+                    if let Some(x_ms_previous_snapshot_url) = &self.x_ms_previous_snapshot_url {
+                        req_builder = req_builder.header("x-ms-previous-snapshot-url", x_ms_previous_snapshot_url);
+                    }
+                    if let Some(x_ms_range) = &self.x_ms_range {
+                        req_builder = req_builder.header("x-ms-range", x_ms_range);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PageList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -5669,101 +8979,162 @@ pub mod page_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update_sequence_number(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_sequence_number_action: &str,
-        x_ms_blob_sequence_number: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), update_sequence_number::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/{}?comp=properties&UpdateSequenceNumber",
-            operation_config.base_path(),
-            container_name,
-            blob
-        );
-        let mut url = url::Url::parse(url_str).map_err(update_sequence_number::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update_sequence_number::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_blob_content_length: i64,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-sequence-number-action", x_ms_sequence_number_action);
-        if let Some(x_ms_blob_sequence_number) = x_ms_blob_sequence_number {
-            req_builder = req_builder.header("x-ms-blob-sequence-number", x_ms_blob_sequence_number);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(update_sequence_number::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(update_sequence_number::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| update_sequence_number::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update_sequence_number::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=properties&Resize",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-blob-content-length", &self.x_ms_blob_content_length.to_string());
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -5778,86 +9149,138 @@ pub mod page_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn copy_incremental(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_copy_source: &str,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), copy_incremental::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=incrementalcopy", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(copy_incremental::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(copy_incremental::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_sequence_number_action: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_blob_sequence_number: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-copy-source", x_ms_copy_source);
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(copy_incremental::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(copy_incremental::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| copy_incremental::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(copy_incremental::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_blob_sequence_number(mut self, x_ms_blob_sequence_number: i64) -> Self {
+                self.x_ms_blob_sequence_number = Some(x_ms_blob_sequence_number);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=properties&UpdateSequenceNumber",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-sequence-number-action", &self.x_ms_sequence_number_action);
+                    if let Some(x_ms_blob_sequence_number) = &self.x_ms_blob_sequence_number {
+                        req_builder = req_builder.header("x-ms-blob-sequence-number", &x_ms_blob_sequence_number.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -5872,151 +9295,272 @@ pub mod page_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_copy_source: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=incrementalcopy",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-copy-source", &self.x_ms_copy_source);
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod append_blob {
     use super::{models, API_VERSION};
-    pub async fn create(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        x_ms_blob_type: &str,
-        timeout: Option<i64>,
-        content_length: i64,
-        x_ms_blob_content_type: Option<&str>,
-        x_ms_blob_content_encoding: Option<&str>,
-        x_ms_blob_content_language: Option<&str>,
-        x_ms_blob_content_md5: Option<&str>,
-        x_ms_blob_cache_control: Option<&str>,
-        x_ms_meta: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_blob_content_disposition: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_tags: Option<&str>,
-        x_ms_immutability_policy_until_date: Option<&str>,
-        x_ms_immutability_policy_mode: Option<&str>,
-        x_ms_legal_hold: Option<bool>,
-    ) -> std::result::Result<(), create::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?AppendBlob", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        req_builder = req_builder.header("x-ms-blob-type", x_ms_blob_type);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
+        pub fn create(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            x_ms_blob_type: impl Into<String>,
+            content_length: i64,
+            x_ms_version: impl Into<String>,
+        ) -> create::Builder {
+            create::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                x_ms_blob_type: x_ms_blob_type.into(),
+                content_length,
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_blob_content_type: None,
+                x_ms_blob_content_encoding: None,
+                x_ms_blob_content_language: None,
+                x_ms_blob_content_md5: None,
+                x_ms_blob_cache_control: None,
+                x_ms_meta: None,
+                x_ms_lease_id: None,
+                x_ms_blob_content_disposition: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+                x_ms_tags: None,
+                x_ms_immutability_policy_until_date: None,
+                x_ms_immutability_policy_mode: None,
+                x_ms_legal_hold: None,
+            }
         }
-        req_builder = req_builder.header("Content-Length", content_length);
-        if let Some(x_ms_blob_content_type) = x_ms_blob_content_type {
-            req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
+        pub fn append_block(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            body: impl Into<serde_json::Value>,
+            content_length: i64,
+            x_ms_version: impl Into<String>,
+        ) -> append_block::Builder {
+            append_block::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                body: body.into(),
+                content_length,
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                content_md5: None,
+                x_ms_content_crc64: None,
+                x_ms_lease_id: None,
+                x_ms_blob_condition_maxsize: None,
+                x_ms_blob_condition_appendpos: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
         }
-        if let Some(x_ms_blob_content_encoding) = x_ms_blob_content_encoding {
-            req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
+        pub fn append_block_from_url(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_copy_source: impl Into<String>,
+            content_length: i64,
+            x_ms_version: impl Into<String>,
+        ) -> append_block_from_url::Builder {
+            append_block_from_url::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_copy_source: x_ms_copy_source.into(),
+                content_length,
+                x_ms_version: x_ms_version.into(),
+                x_ms_source_range: None,
+                x_ms_source_content_md5: None,
+                x_ms_source_content_crc64: None,
+                timeout: None,
+                content_md5: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                x_ms_lease_id: None,
+                x_ms_blob_condition_maxsize: None,
+                x_ms_blob_condition_appendpos: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_source_if_modified_since: None,
+                x_ms_source_if_unmodified_since: None,
+                x_ms_source_if_match: None,
+                x_ms_source_if_none_match: None,
+                x_ms_client_request_id: None,
+                x_ms_copy_source_authorization: None,
+            }
         }
-        if let Some(x_ms_blob_content_language) = x_ms_blob_content_language {
-            req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
-        }
-        if let Some(x_ms_blob_content_md5) = x_ms_blob_content_md5 {
-            req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
-        }
-        if let Some(x_ms_blob_cache_control) = x_ms_blob_cache_control {
-            req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
-        }
-        if let Some(x_ms_meta) = x_ms_meta {
-            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_blob_content_disposition) = x_ms_blob_content_disposition {
-            req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_tags) = x_ms_tags {
-            req_builder = req_builder.header("x-ms-tags", x_ms_tags);
-        }
-        if let Some(x_ms_immutability_policy_until_date) = x_ms_immutability_policy_until_date {
-            req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
-        }
-        if let Some(x_ms_immutability_policy_mode) = x_ms_immutability_policy_mode {
-            req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
-        }
-        if let Some(x_ms_legal_hold) = x_ms_legal_hold {
-            req_builder = req_builder.header("x-ms-legal-hold", x_ms_legal_hold.to_string());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(create::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn seal(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> seal::Builder {
+            seal::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_client_request_id: None,
+                x_ms_lease_id: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_blob_condition_appendpos: None,
             }
         }
     }
@@ -6030,124 +9574,246 @@ pub mod append_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn append_block(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        body: &serde_json::Value,
-        timeout: Option<i64>,
-        content_length: i64,
-        content_md5: Option<&str>,
-        x_ms_content_crc64: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_blob_condition_maxsize: Option<i64>,
-        x_ms_blob_condition_appendpos: Option<i64>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), append_block::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=appendblock", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(append_block::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(append_block::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) x_ms_blob_type: String,
+            pub(crate) content_length: i64,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_blob_content_type: Option<String>,
+            pub(crate) x_ms_blob_content_encoding: Option<String>,
+            pub(crate) x_ms_blob_content_language: Option<String>,
+            pub(crate) x_ms_blob_content_md5: Option<String>,
+            pub(crate) x_ms_blob_cache_control: Option<String>,
+            pub(crate) x_ms_meta: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_blob_content_disposition: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_tags: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_mode: Option<String>,
+            pub(crate) x_ms_legal_hold: Option<bool>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(body).map_err(append_block::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("Content-Length", content_length);
-        if let Some(content_md5) = content_md5 {
-            req_builder = req_builder.header("Content-MD5", content_md5);
-        }
-        if let Some(x_ms_content_crc64) = x_ms_content_crc64 {
-            req_builder = req_builder.header("x-ms-content-crc64", x_ms_content_crc64);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_blob_condition_maxsize) = x_ms_blob_condition_maxsize {
-            req_builder = req_builder.header("x-ms-blob-condition-maxsize", x_ms_blob_condition_maxsize);
-        }
-        if let Some(x_ms_blob_condition_appendpos) = x_ms_blob_condition_appendpos {
-            req_builder = req_builder.header("x-ms-blob-condition-appendpos", x_ms_blob_condition_appendpos);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(append_block::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(append_block::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| append_block::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(append_block::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
+                self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
+                self
+            }
+            pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
+                self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
+                self
+            }
+            pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
+                self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
+                self
+            }
+            pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
+                self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
+                self
+            }
+            pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
+                self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
+                self
+            }
+            pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
+                self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
+                self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
+                self.x_ms_tags = Some(x_ms_tags.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
+                self
+            }
+            pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
+                self.x_ms_legal_hold = Some(x_ms_legal_hold);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?AppendBlob", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("x-ms-blob-type", &self.x_ms_blob_type);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    if let Some(x_ms_blob_content_type) = &self.x_ms_blob_content_type {
+                        req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
+                    }
+                    if let Some(x_ms_blob_content_encoding) = &self.x_ms_blob_content_encoding {
+                        req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
+                    }
+                    if let Some(x_ms_blob_content_language) = &self.x_ms_blob_content_language {
+                        req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
+                    }
+                    if let Some(x_ms_blob_content_md5) = &self.x_ms_blob_content_md5 {
+                        req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
+                    }
+                    if let Some(x_ms_blob_cache_control) = &self.x_ms_blob_cache_control {
+                        req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
+                    }
+                    if let Some(x_ms_meta) = &self.x_ms_meta {
+                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_blob_content_disposition) = &self.x_ms_blob_content_disposition {
+                        req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_tags) = &self.x_ms_tags {
+                        req_builder = req_builder.header("x-ms-tags", x_ms_tags);
+                    }
+                    if let Some(x_ms_immutability_policy_until_date) = &self.x_ms_immutability_policy_until_date {
+                        req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                    }
+                    if let Some(x_ms_immutability_policy_mode) = &self.x_ms_immutability_policy_mode {
+                        req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
+                    }
+                    if let Some(x_ms_legal_hold) = &self.x_ms_legal_hold {
+                        req_builder = req_builder.header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -6162,159 +9828,193 @@ pub mod append_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn append_block_from_url(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        x_ms_copy_source: &str,
-        x_ms_source_range: Option<&str>,
-        x_ms_source_content_md5: Option<&str>,
-        x_ms_source_content_crc64: Option<&str>,
-        timeout: Option<i64>,
-        content_length: i64,
-        content_md5: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_blob_condition_maxsize: Option<i64>,
-        x_ms_blob_condition_appendpos: Option<i64>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_source_if_modified_since: Option<&str>,
-        x_ms_source_if_unmodified_since: Option<&str>,
-        x_ms_source_if_match: Option<&str>,
-        x_ms_source_if_none_match: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_copy_source_authorization: Option<&str>,
-    ) -> std::result::Result<(), append_block_from_url::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/{}/{}?comp=appendblock&fromUrl",
-            operation_config.base_path(),
-            container_name,
-            blob
-        );
-        let mut url = url::Url::parse(url_str).map_err(append_block_from_url::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(append_block_from_url::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) body: serde_json::Value,
+            pub(crate) content_length: i64,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) content_md5: Option<String>,
+            pub(crate) x_ms_content_crc64: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_blob_condition_maxsize: Option<i64>,
+            pub(crate) x_ms_blob_condition_appendpos: Option<i64>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        req_builder = req_builder.header("x-ms-copy-source", x_ms_copy_source);
-        if let Some(x_ms_source_range) = x_ms_source_range {
-            req_builder = req_builder.header("x-ms-source-range", x_ms_source_range);
-        }
-        if let Some(x_ms_source_content_md5) = x_ms_source_content_md5 {
-            req_builder = req_builder.header("x-ms-source-content-md5", x_ms_source_content_md5);
-        }
-        if let Some(x_ms_source_content_crc64) = x_ms_source_content_crc64 {
-            req_builder = req_builder.header("x-ms-source-content-crc64", x_ms_source_content_crc64);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("Content-Length", content_length);
-        if let Some(content_md5) = content_md5 {
-            req_builder = req_builder.header("Content-MD5", content_md5);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_blob_condition_maxsize) = x_ms_blob_condition_maxsize {
-            req_builder = req_builder.header("x-ms-blob-condition-maxsize", x_ms_blob_condition_maxsize);
-        }
-        if let Some(x_ms_blob_condition_appendpos) = x_ms_blob_condition_appendpos {
-            req_builder = req_builder.header("x-ms-blob-condition-appendpos", x_ms_blob_condition_appendpos);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        if let Some(x_ms_source_if_modified_since) = x_ms_source_if_modified_since {
-            req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
-        }
-        if let Some(x_ms_source_if_unmodified_since) = x_ms_source_if_unmodified_since {
-            req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
-        }
-        if let Some(x_ms_source_if_match) = x_ms_source_if_match {
-            req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
-        }
-        if let Some(x_ms_source_if_none_match) = x_ms_source_if_none_match {
-            req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_copy_source_authorization) = x_ms_copy_source_authorization {
-            req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(append_block_from_url::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(append_block_from_url::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| append_block_from_url::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(append_block_from_url::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
+                self.content_md5 = Some(content_md5.into());
+                self
+            }
+            pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
+                self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_blob_condition_maxsize(mut self, x_ms_blob_condition_maxsize: i64) -> Self {
+                self.x_ms_blob_condition_maxsize = Some(x_ms_blob_condition_maxsize);
+                self
+            }
+            pub fn x_ms_blob_condition_appendpos(mut self, x_ms_blob_condition_appendpos: i64) -> Self {
+                self.x_ms_blob_condition_appendpos = Some(x_ms_blob_condition_appendpos);
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=appendblock", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.body).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    if let Some(content_md5) = &self.content_md5 {
+                        req_builder = req_builder.header("Content-MD5", content_md5);
+                    }
+                    if let Some(x_ms_content_crc64) = &self.x_ms_content_crc64 {
+                        req_builder = req_builder.header("x-ms-content-crc64", x_ms_content_crc64);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_blob_condition_maxsize) = &self.x_ms_blob_condition_maxsize {
+                        req_builder = req_builder.header("x-ms-blob-condition-maxsize", &x_ms_blob_condition_maxsize.to_string());
+                    }
+                    if let Some(x_ms_blob_condition_appendpos) = &self.x_ms_blob_condition_appendpos {
+                        req_builder = req_builder.header("x-ms-blob-condition-appendpos", &x_ms_blob_condition_appendpos.to_string());
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -6329,85 +10029,252 @@ pub mod append_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn seal(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_blob_condition_appendpos: Option<i64>,
-    ) -> std::result::Result<(), seal::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=seal", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(seal::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(seal::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_copy_source: String,
+            pub(crate) content_length: i64,
+            pub(crate) x_ms_version: String,
+            pub(crate) x_ms_source_range: Option<String>,
+            pub(crate) x_ms_source_content_md5: Option<String>,
+            pub(crate) x_ms_source_content_crc64: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) content_md5: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_blob_condition_maxsize: Option<i64>,
+            pub(crate) x_ms_blob_condition_appendpos: Option<i64>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<String>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_match: Option<String>,
+            pub(crate) x_ms_source_if_none_match: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_copy_source_authorization: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_blob_condition_appendpos) = x_ms_blob_condition_appendpos {
-            req_builder = req_builder.header("x-ms-blob-condition-appendpos", x_ms_blob_condition_appendpos);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(seal::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(seal::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| seal::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(seal::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn x_ms_source_range(mut self, x_ms_source_range: impl Into<String>) -> Self {
+                self.x_ms_source_range = Some(x_ms_source_range.into());
+                self
+            }
+            pub fn x_ms_source_content_md5(mut self, x_ms_source_content_md5: impl Into<String>) -> Self {
+                self.x_ms_source_content_md5 = Some(x_ms_source_content_md5.into());
+                self
+            }
+            pub fn x_ms_source_content_crc64(mut self, x_ms_source_content_crc64: impl Into<String>) -> Self {
+                self.x_ms_source_content_crc64 = Some(x_ms_source_content_crc64.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
+                self.content_md5 = Some(content_md5.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_blob_condition_maxsize(mut self, x_ms_blob_condition_maxsize: i64) -> Self {
+                self.x_ms_blob_condition_maxsize = Some(x_ms_blob_condition_maxsize);
+                self
+            }
+            pub fn x_ms_blob_condition_appendpos(mut self, x_ms_blob_condition_appendpos: i64) -> Self {
+                self.x_ms_blob_condition_appendpos = Some(x_ms_blob_condition_appendpos);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
+                self
+            }
+            pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_copy_source_authorization(mut self, x_ms_copy_source_authorization: impl Into<String>) -> Self {
+                self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=appendblock&fromUrl",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    req_builder = req_builder.header("x-ms-copy-source", &self.x_ms_copy_source);
+                    if let Some(x_ms_source_range) = &self.x_ms_source_range {
+                        req_builder = req_builder.header("x-ms-source-range", x_ms_source_range);
+                    }
+                    if let Some(x_ms_source_content_md5) = &self.x_ms_source_content_md5 {
+                        req_builder = req_builder.header("x-ms-source-content-md5", x_ms_source_content_md5);
+                    }
+                    if let Some(x_ms_source_content_crc64) = &self.x_ms_source_content_crc64 {
+                        req_builder = req_builder.header("x-ms-source-content-crc64", x_ms_source_content_crc64);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    if let Some(content_md5) = &self.content_md5 {
+                        req_builder = req_builder.header("Content-MD5", content_md5);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_blob_condition_maxsize) = &self.x_ms_blob_condition_maxsize {
+                        req_builder = req_builder.header("x-ms-blob-condition-maxsize", &x_ms_blob_condition_maxsize.to_string());
+                    }
+                    if let Some(x_ms_blob_condition_appendpos) = &self.x_ms_blob_condition_appendpos {
+                        req_builder = req_builder.header("x-ms-blob-condition-appendpos", &x_ms_blob_condition_appendpos.to_string());
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    if let Some(x_ms_source_if_modified_since) = &self.x_ms_source_if_modified_since {
+                        req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                    }
+                    if let Some(x_ms_source_if_unmodified_since) = &self.x_ms_source_if_unmodified_since {
+                        req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                    }
+                    if let Some(x_ms_source_if_match) = &self.x_ms_source_if_match {
+                        req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
+                    }
+                    if let Some(x_ms_source_if_none_match) = &self.x_ms_source_if_none_match {
+                        req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_copy_source_authorization) = &self.x_ms_copy_source_authorization {
+                        req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -6422,161 +10289,359 @@ pub mod append_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_blob_condition_appendpos: Option<i64>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_blob_condition_appendpos(mut self, x_ms_blob_condition_appendpos: i64) -> Self {
+                self.x_ms_blob_condition_appendpos = Some(x_ms_blob_condition_appendpos);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=seal", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_blob_condition_appendpos) = &self.x_ms_blob_condition_appendpos {
+                        req_builder = req_builder.header("x-ms-blob-condition-appendpos", &x_ms_blob_condition_appendpos.to_string());
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod block_blob {
     use super::{models, API_VERSION};
-    pub async fn upload(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        x_ms_blob_type: &str,
-        body: &serde_json::Value,
-        timeout: Option<i64>,
-        content_md5: Option<&str>,
-        content_length: i64,
-        x_ms_blob_content_type: Option<&str>,
-        x_ms_blob_content_encoding: Option<&str>,
-        x_ms_blob_content_language: Option<&str>,
-        x_ms_blob_content_md5: Option<&str>,
-        x_ms_blob_cache_control: Option<&str>,
-        x_ms_meta: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_blob_content_disposition: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        x_ms_access_tier: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_tags: Option<&str>,
-        x_ms_immutability_policy_until_date: Option<&str>,
-        x_ms_immutability_policy_mode: Option<&str>,
-        x_ms_legal_hold: Option<bool>,
-    ) -> std::result::Result<(), upload::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?BlockBlob", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(upload::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(upload::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        req_builder = req_builder.header("x-ms-blob-type", x_ms_blob_type);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(body).map_err(upload::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
+        pub fn upload(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            x_ms_blob_type: impl Into<String>,
+            body: impl Into<serde_json::Value>,
+            content_length: i64,
+            x_ms_version: impl Into<String>,
+        ) -> upload::Builder {
+            upload::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                x_ms_blob_type: x_ms_blob_type.into(),
+                body: body.into(),
+                content_length,
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                content_md5: None,
+                x_ms_blob_content_type: None,
+                x_ms_blob_content_encoding: None,
+                x_ms_blob_content_language: None,
+                x_ms_blob_content_md5: None,
+                x_ms_blob_cache_control: None,
+                x_ms_meta: None,
+                x_ms_lease_id: None,
+                x_ms_blob_content_disposition: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                x_ms_access_tier: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+                x_ms_tags: None,
+                x_ms_immutability_policy_until_date: None,
+                x_ms_immutability_policy_mode: None,
+                x_ms_legal_hold: None,
+            }
         }
-        if let Some(content_md5) = content_md5 {
-            req_builder = req_builder.header("Content-MD5", content_md5);
+        pub fn put_blob_from_url(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            x_ms_blob_type: impl Into<String>,
+            content_length: i64,
+            x_ms_version: impl Into<String>,
+            x_ms_copy_source: impl Into<String>,
+        ) -> put_blob_from_url::Builder {
+            put_blob_from_url::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                x_ms_blob_type: x_ms_blob_type.into(),
+                content_length,
+                x_ms_version: x_ms_version.into(),
+                x_ms_copy_source: x_ms_copy_source.into(),
+                timeout: None,
+                content_md5: None,
+                x_ms_blob_content_type: None,
+                x_ms_blob_content_encoding: None,
+                x_ms_blob_content_language: None,
+                x_ms_blob_content_md5: None,
+                x_ms_blob_cache_control: None,
+                x_ms_meta: None,
+                x_ms_lease_id: None,
+                x_ms_blob_content_disposition: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                x_ms_access_tier: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_source_if_modified_since: None,
+                x_ms_source_if_unmodified_since: None,
+                x_ms_source_if_match: None,
+                x_ms_source_if_none_match: None,
+                x_ms_source_if_tags: None,
+                x_ms_client_request_id: None,
+                x_ms_source_content_md5: None,
+                x_ms_tags: None,
+                x_ms_copy_source_blob_properties: None,
+                x_ms_copy_source_authorization: None,
+            }
         }
-        req_builder = req_builder.header("Content-Length", content_length);
-        if let Some(x_ms_blob_content_type) = x_ms_blob_content_type {
-            req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
+        pub fn stage_block(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            blockid: impl Into<String>,
+            content_length: i64,
+            body: impl Into<serde_json::Value>,
+            x_ms_version: impl Into<String>,
+        ) -> stage_block::Builder {
+            stage_block::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                blockid: blockid.into(),
+                content_length,
+                body: body.into(),
+                x_ms_version: x_ms_version.into(),
+                content_md5: None,
+                x_ms_content_crc64: None,
+                timeout: None,
+                x_ms_lease_id: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                x_ms_client_request_id: None,
+            }
         }
-        if let Some(x_ms_blob_content_encoding) = x_ms_blob_content_encoding {
-            req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
+        pub fn stage_block_from_url(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            blockid: impl Into<String>,
+            content_length: i64,
+            x_ms_copy_source: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> stage_block_from_url::Builder {
+            stage_block_from_url::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                blockid: blockid.into(),
+                content_length,
+                x_ms_copy_source: x_ms_copy_source.into(),
+                x_ms_version: x_ms_version.into(),
+                x_ms_source_range: None,
+                x_ms_source_content_md5: None,
+                x_ms_source_content_crc64: None,
+                timeout: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                x_ms_lease_id: None,
+                x_ms_source_if_modified_since: None,
+                x_ms_source_if_unmodified_since: None,
+                x_ms_source_if_match: None,
+                x_ms_source_if_none_match: None,
+                x_ms_client_request_id: None,
+                x_ms_copy_source_authorization: None,
+            }
         }
-        if let Some(x_ms_blob_content_language) = x_ms_blob_content_language {
-            req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
+        pub fn get_block_list(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            blocklisttype: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> get_block_list::Builder {
+            get_block_list::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                blocklisttype: blocklisttype.into(),
+                x_ms_version: x_ms_version.into(),
+                snapshot: None,
+                timeout: None,
+                x_ms_lease_id: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+            }
         }
-        if let Some(x_ms_blob_content_md5) = x_ms_blob_content_md5 {
-            req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
-        }
-        if let Some(x_ms_blob_cache_control) = x_ms_blob_cache_control {
-            req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
-        }
-        if let Some(x_ms_meta) = x_ms_meta {
-            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_blob_content_disposition) = x_ms_blob_content_disposition {
-            req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(x_ms_access_tier) = x_ms_access_tier {
-            req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_tags) = x_ms_tags {
-            req_builder = req_builder.header("x-ms-tags", x_ms_tags);
-        }
-        if let Some(x_ms_immutability_policy_until_date) = x_ms_immutability_policy_until_date {
-            req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
-        }
-        if let Some(x_ms_immutability_policy_mode) = x_ms_immutability_policy_mode {
-            req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
-        }
-        if let Some(x_ms_legal_hold) = x_ms_legal_hold {
-            req_builder = req_builder.header("x-ms-legal-hold", x_ms_legal_hold.to_string());
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(upload::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(upload::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| upload::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(upload::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn commit_block_list(
+            &self,
+            container_name: impl Into<String>,
+            blob: impl Into<String>,
+            comp: impl Into<String>,
+            blocks: impl Into<models::BlockLookupList>,
+            x_ms_version: impl Into<String>,
+        ) -> commit_block_list::Builder {
+            commit_block_list::Builder {
+                client: self.base_clone(),
+                container_name: container_name.into(),
+                blob: blob.into(),
+                comp: comp.into(),
+                blocks: blocks.into(),
+                x_ms_version: x_ms_version.into(),
+                timeout: None,
+                x_ms_blob_cache_control: None,
+                x_ms_blob_content_type: None,
+                x_ms_blob_content_encoding: None,
+                x_ms_blob_content_language: None,
+                x_ms_blob_content_md5: None,
+                content_md5: None,
+                x_ms_content_crc64: None,
+                x_ms_meta: None,
+                x_ms_lease_id: None,
+                x_ms_blob_content_disposition: None,
+                x_ms_encryption_key: None,
+                x_ms_encryption_key_sha256: None,
+                x_ms_encryption_algorithm: None,
+                x_ms_encryption_scope: None,
+                x_ms_access_tier: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+                if_match: None,
+                if_none_match: None,
+                x_ms_if_tags: None,
+                x_ms_client_request_id: None,
+                x_ms_tags: None,
+                x_ms_immutability_policy_until_date: None,
+                x_ms_immutability_policy_mode: None,
+                x_ms_legal_hold: None,
             }
         }
     }
@@ -6590,180 +10655,264 @@ pub mod block_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn put_blob_from_url(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        x_ms_blob_type: &str,
-        timeout: Option<i64>,
-        content_md5: Option<&str>,
-        content_length: i64,
-        x_ms_blob_content_type: Option<&str>,
-        x_ms_blob_content_encoding: Option<&str>,
-        x_ms_blob_content_language: Option<&str>,
-        x_ms_blob_content_md5: Option<&str>,
-        x_ms_blob_cache_control: Option<&str>,
-        x_ms_meta: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_blob_content_disposition: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        x_ms_access_tier: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_source_if_modified_since: Option<&str>,
-        x_ms_source_if_unmodified_since: Option<&str>,
-        x_ms_source_if_match: Option<&str>,
-        x_ms_source_if_none_match: Option<&str>,
-        x_ms_source_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_source_content_md5: Option<&str>,
-        x_ms_tags: Option<&str>,
-        x_ms_copy_source: &str,
-        x_ms_copy_source_blob_properties: Option<bool>,
-        x_ms_copy_source_authorization: Option<&str>,
-    ) -> std::result::Result<(), put_blob_from_url::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?BlockBlob&fromUrl", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(put_blob_from_url::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(put_blob_from_url::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) x_ms_blob_type: String,
+            pub(crate) body: serde_json::Value,
+            pub(crate) content_length: i64,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) content_md5: Option<String>,
+            pub(crate) x_ms_blob_content_type: Option<String>,
+            pub(crate) x_ms_blob_content_encoding: Option<String>,
+            pub(crate) x_ms_blob_content_language: Option<String>,
+            pub(crate) x_ms_blob_content_md5: Option<String>,
+            pub(crate) x_ms_blob_cache_control: Option<String>,
+            pub(crate) x_ms_meta: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_blob_content_disposition: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) x_ms_access_tier: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_tags: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_mode: Option<String>,
+            pub(crate) x_ms_legal_hold: Option<bool>,
         }
-        req_builder = req_builder.header("x-ms-blob-type", x_ms_blob_type);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(content_md5) = content_md5 {
-            req_builder = req_builder.header("Content-MD5", content_md5);
-        }
-        req_builder = req_builder.header("Content-Length", content_length);
-        if let Some(x_ms_blob_content_type) = x_ms_blob_content_type {
-            req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
-        }
-        if let Some(x_ms_blob_content_encoding) = x_ms_blob_content_encoding {
-            req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
-        }
-        if let Some(x_ms_blob_content_language) = x_ms_blob_content_language {
-            req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
-        }
-        if let Some(x_ms_blob_content_md5) = x_ms_blob_content_md5 {
-            req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
-        }
-        if let Some(x_ms_blob_cache_control) = x_ms_blob_cache_control {
-            req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
-        }
-        if let Some(x_ms_meta) = x_ms_meta {
-            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_blob_content_disposition) = x_ms_blob_content_disposition {
-            req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(x_ms_access_tier) = x_ms_access_tier {
-            req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        if let Some(x_ms_source_if_modified_since) = x_ms_source_if_modified_since {
-            req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
-        }
-        if let Some(x_ms_source_if_unmodified_since) = x_ms_source_if_unmodified_since {
-            req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
-        }
-        if let Some(x_ms_source_if_match) = x_ms_source_if_match {
-            req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
-        }
-        if let Some(x_ms_source_if_none_match) = x_ms_source_if_none_match {
-            req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
-        }
-        if let Some(x_ms_source_if_tags) = x_ms_source_if_tags {
-            req_builder = req_builder.header("x-ms-source-if-tags", x_ms_source_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_source_content_md5) = x_ms_source_content_md5 {
-            req_builder = req_builder.header("x-ms-source-content-md5", x_ms_source_content_md5);
-        }
-        if let Some(x_ms_tags) = x_ms_tags {
-            req_builder = req_builder.header("x-ms-tags", x_ms_tags);
-        }
-        req_builder = req_builder.header("x-ms-copy-source", x_ms_copy_source);
-        if let Some(x_ms_copy_source_blob_properties) = x_ms_copy_source_blob_properties {
-            req_builder = req_builder.header("x-ms-copy-source-blob-properties", x_ms_copy_source_blob_properties.to_string());
-        }
-        if let Some(x_ms_copy_source_authorization) = x_ms_copy_source_authorization {
-            req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(put_blob_from_url::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(put_blob_from_url::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| put_blob_from_url::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(put_blob_from_url::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
+                self.content_md5 = Some(content_md5.into());
+                self
+            }
+            pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
+                self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
+                self
+            }
+            pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
+                self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
+                self
+            }
+            pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
+                self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
+                self
+            }
+            pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
+                self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
+                self
+            }
+            pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
+                self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
+                self
+            }
+            pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
+                self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
+                self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
+                self.x_ms_access_tier = Some(x_ms_access_tier.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
+                self.x_ms_tags = Some(x_ms_tags.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
+                self
+            }
+            pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
+                self.x_ms_legal_hold = Some(x_ms_legal_hold);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?BlockBlob", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("x-ms-blob-type", &self.x_ms_blob_type);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.body).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(content_md5) = &self.content_md5 {
+                        req_builder = req_builder.header("Content-MD5", content_md5);
+                    }
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    if let Some(x_ms_blob_content_type) = &self.x_ms_blob_content_type {
+                        req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
+                    }
+                    if let Some(x_ms_blob_content_encoding) = &self.x_ms_blob_content_encoding {
+                        req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
+                    }
+                    if let Some(x_ms_blob_content_language) = &self.x_ms_blob_content_language {
+                        req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
+                    }
+                    if let Some(x_ms_blob_content_md5) = &self.x_ms_blob_content_md5 {
+                        req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
+                    }
+                    if let Some(x_ms_blob_cache_control) = &self.x_ms_blob_cache_control {
+                        req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
+                    }
+                    if let Some(x_ms_meta) = &self.x_ms_meta {
+                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_blob_content_disposition) = &self.x_ms_blob_content_disposition {
+                        req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(x_ms_access_tier) = &self.x_ms_access_tier {
+                        req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_tags) = &self.x_ms_tags {
+                        req_builder = req_builder.header("x-ms-tags", x_ms_tags);
+                    }
+                    if let Some(x_ms_immutability_policy_until_date) = &self.x_ms_immutability_policy_until_date {
+                        req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                    }
+                    if let Some(x_ms_immutability_policy_mode) = &self.x_ms_immutability_policy_mode {
+                        req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
+                    }
+                    if let Some(x_ms_legal_hold) = &self.x_ms_legal_hold {
+                        req_builder = req_builder.header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -6778,98 +10927,307 @@ pub mod block_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn stage_block(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        blockid: &str,
-        content_length: i64,
-        content_md5: Option<&str>,
-        x_ms_content_crc64: Option<&str>,
-        body: &serde_json::Value,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<(), stage_block::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=block", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(stage_block::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(stage_block::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) x_ms_blob_type: String,
+            pub(crate) content_length: i64,
+            pub(crate) x_ms_version: String,
+            pub(crate) x_ms_copy_source: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) content_md5: Option<String>,
+            pub(crate) x_ms_blob_content_type: Option<String>,
+            pub(crate) x_ms_blob_content_encoding: Option<String>,
+            pub(crate) x_ms_blob_content_language: Option<String>,
+            pub(crate) x_ms_blob_content_md5: Option<String>,
+            pub(crate) x_ms_blob_cache_control: Option<String>,
+            pub(crate) x_ms_meta: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_blob_content_disposition: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) x_ms_access_tier: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<String>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_match: Option<String>,
+            pub(crate) x_ms_source_if_none_match: Option<String>,
+            pub(crate) x_ms_source_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_source_content_md5: Option<String>,
+            pub(crate) x_ms_tags: Option<String>,
+            pub(crate) x_ms_copy_source_blob_properties: Option<bool>,
+            pub(crate) x_ms_copy_source_authorization: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        url.query_pairs_mut().append_pair("blockid", blockid);
-        req_builder = req_builder.header("Content-Length", content_length);
-        if let Some(content_md5) = content_md5 {
-            req_builder = req_builder.header("Content-MD5", content_md5);
-        }
-        if let Some(x_ms_content_crc64) = x_ms_content_crc64 {
-            req_builder = req_builder.header("x-ms-content-crc64", x_ms_content_crc64);
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(body).map_err(stage_block::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(stage_block::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(stage_block::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| stage_block::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(stage_block::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
+                self.content_md5 = Some(content_md5.into());
+                self
+            }
+            pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
+                self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
+                self
+            }
+            pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
+                self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
+                self
+            }
+            pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
+                self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
+                self
+            }
+            pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
+                self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
+                self
+            }
+            pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
+                self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
+                self
+            }
+            pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
+                self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
+                self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
+                self.x_ms_access_tier = Some(x_ms_access_tier.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
+                self
+            }
+            pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
+                self
+            }
+            pub fn x_ms_source_if_tags(mut self, x_ms_source_if_tags: impl Into<String>) -> Self {
+                self.x_ms_source_if_tags = Some(x_ms_source_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_source_content_md5(mut self, x_ms_source_content_md5: impl Into<String>) -> Self {
+                self.x_ms_source_content_md5 = Some(x_ms_source_content_md5.into());
+                self
+            }
+            pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
+                self.x_ms_tags = Some(x_ms_tags.into());
+                self
+            }
+            pub fn x_ms_copy_source_blob_properties(mut self, x_ms_copy_source_blob_properties: bool) -> Self {
+                self.x_ms_copy_source_blob_properties = Some(x_ms_copy_source_blob_properties);
+                self
+            }
+            pub fn x_ms_copy_source_authorization(mut self, x_ms_copy_source_authorization: impl Into<String>) -> Self {
+                self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?BlockBlob&fromUrl",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    req_builder = req_builder.header("x-ms-blob-type", &self.x_ms_blob_type);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(content_md5) = &self.content_md5 {
+                        req_builder = req_builder.header("Content-MD5", content_md5);
+                    }
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    if let Some(x_ms_blob_content_type) = &self.x_ms_blob_content_type {
+                        req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
+                    }
+                    if let Some(x_ms_blob_content_encoding) = &self.x_ms_blob_content_encoding {
+                        req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
+                    }
+                    if let Some(x_ms_blob_content_language) = &self.x_ms_blob_content_language {
+                        req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
+                    }
+                    if let Some(x_ms_blob_content_md5) = &self.x_ms_blob_content_md5 {
+                        req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
+                    }
+                    if let Some(x_ms_blob_cache_control) = &self.x_ms_blob_cache_control {
+                        req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
+                    }
+                    if let Some(x_ms_meta) = &self.x_ms_meta {
+                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_blob_content_disposition) = &self.x_ms_blob_content_disposition {
+                        req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(x_ms_access_tier) = &self.x_ms_access_tier {
+                        req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    if let Some(x_ms_source_if_modified_since) = &self.x_ms_source_if_modified_since {
+                        req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                    }
+                    if let Some(x_ms_source_if_unmodified_since) = &self.x_ms_source_if_unmodified_since {
+                        req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                    }
+                    if let Some(x_ms_source_if_match) = &self.x_ms_source_if_match {
+                        req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
+                    }
+                    if let Some(x_ms_source_if_none_match) = &self.x_ms_source_if_none_match {
+                        req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
+                    }
+                    if let Some(x_ms_source_if_tags) = &self.x_ms_source_if_tags {
+                        req_builder = req_builder.header("x-ms-source-if-tags", x_ms_source_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_source_content_md5) = &self.x_ms_source_content_md5 {
+                        req_builder = req_builder.header("x-ms-source-content-md5", x_ms_source_content_md5);
+                    }
+                    if let Some(x_ms_tags) = &self.x_ms_tags {
+                        req_builder = req_builder.header("x-ms-tags", x_ms_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-copy-source", &self.x_ms_copy_source);
+                    if let Some(x_ms_copy_source_blob_properties) = &self.x_ms_copy_source_blob_properties {
+                        req_builder = req_builder.header("x-ms-copy-source-blob-properties", &x_ms_copy_source_blob_properties.to_string());
+                    }
+                    if let Some(x_ms_copy_source_authorization) = &self.x_ms_copy_source_authorization {
+                        req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -6884,122 +11242,140 @@ pub mod block_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn stage_block_from_url(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        blockid: &str,
-        content_length: i64,
-        x_ms_copy_source: &str,
-        x_ms_source_range: Option<&str>,
-        x_ms_source_content_md5: Option<&str>,
-        x_ms_source_content_crc64: Option<&str>,
-        timeout: Option<i64>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_source_if_modified_since: Option<&str>,
-        x_ms_source_if_unmodified_since: Option<&str>,
-        x_ms_source_if_match: Option<&str>,
-        x_ms_source_if_none_match: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_copy_source_authorization: Option<&str>,
-    ) -> std::result::Result<(), stage_block_from_url::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=block&fromURL", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(stage_block_from_url::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(stage_block_from_url::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) blockid: String,
+            pub(crate) content_length: i64,
+            pub(crate) body: serde_json::Value,
+            pub(crate) x_ms_version: String,
+            pub(crate) content_md5: Option<String>,
+            pub(crate) x_ms_content_crc64: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        url.query_pairs_mut().append_pair("blockid", blockid);
-        req_builder = req_builder.header("Content-Length", content_length);
-        req_builder = req_builder.header("x-ms-copy-source", x_ms_copy_source);
-        if let Some(x_ms_source_range) = x_ms_source_range {
-            req_builder = req_builder.header("x-ms-source-range", x_ms_source_range);
-        }
-        if let Some(x_ms_source_content_md5) = x_ms_source_content_md5 {
-            req_builder = req_builder.header("x-ms-source-content-md5", x_ms_source_content_md5);
-        }
-        if let Some(x_ms_source_content_crc64) = x_ms_source_content_crc64 {
-            req_builder = req_builder.header("x-ms-source-content-crc64", x_ms_source_content_crc64);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_source_if_modified_since) = x_ms_source_if_modified_since {
-            req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
-        }
-        if let Some(x_ms_source_if_unmodified_since) = x_ms_source_if_unmodified_since {
-            req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
-        }
-        if let Some(x_ms_source_if_match) = x_ms_source_if_match {
-            req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
-        }
-        if let Some(x_ms_source_if_none_match) = x_ms_source_if_none_match {
-            req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_copy_source_authorization) = x_ms_copy_source_authorization {
-            req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(stage_block_from_url::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(stage_block_from_url::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| stage_block_from_url::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(stage_block_from_url::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
+                self.content_md5 = Some(content_md5.into());
+                self
+            }
+            pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
+                self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=block", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let blockid = &self.blockid;
+                    url.query_pairs_mut().append_pair("blockid", blockid);
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    if let Some(content_md5) = &self.content_md5 {
+                        req_builder = req_builder.header("Content-MD5", content_md5);
+                    }
+                    if let Some(x_ms_content_crc64) = &self.x_ms_content_crc64 {
+                        req_builder = req_builder.header("x-ms-content-crc64", x_ms_content_crc64);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.body).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -7014,83 +11390,191 @@ pub mod block_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_block_list(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        snapshot: Option<&str>,
-        blocklisttype: &str,
-        timeout: Option<i64>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-    ) -> std::result::Result<models::BlockList, get_block_list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=blocklist", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(get_block_list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_block_list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) blockid: String,
+            pub(crate) content_length: i64,
+            pub(crate) x_ms_copy_source: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) x_ms_source_range: Option<String>,
+            pub(crate) x_ms_source_content_md5: Option<String>,
+            pub(crate) x_ms_source_content_crc64: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_source_if_modified_since: Option<String>,
+            pub(crate) x_ms_source_if_unmodified_since: Option<String>,
+            pub(crate) x_ms_source_if_match: Option<String>,
+            pub(crate) x_ms_source_if_none_match: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_copy_source_authorization: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(snapshot) = snapshot {
-            url.query_pairs_mut().append_pair("snapshot", snapshot);
-        }
-        url.query_pairs_mut().append_pair("blocklisttype", blocklisttype);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_block_list::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_block_list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::BlockList =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_block_list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn x_ms_source_range(mut self, x_ms_source_range: impl Into<String>) -> Self {
+                self.x_ms_source_range = Some(x_ms_source_range.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_block_list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_block_list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn x_ms_source_content_md5(mut self, x_ms_source_content_md5: impl Into<String>) -> Self {
+                self.x_ms_source_content_md5 = Some(x_ms_source_content_md5.into());
+                self
+            }
+            pub fn x_ms_source_content_crc64(mut self, x_ms_source_content_crc64: impl Into<String>) -> Self {
+                self.x_ms_source_content_crc64 = Some(x_ms_source_content_crc64.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
+                self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
+                self
+            }
+            pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
+                self
+            }
+            pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
+                self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_copy_source_authorization(mut self, x_ms_copy_source_authorization: impl Into<String>) -> Self {
+                self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/{}/{}?comp=block&fromURL",
+                        &self.client.endpoint, &self.container_name, &self.blob
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    let blockid = &self.blockid;
+                    url.query_pairs_mut().append_pair("blockid", blockid);
+                    req_builder = req_builder.header("Content-Length", &self.content_length.to_string());
+                    req_builder = req_builder.header("x-ms-copy-source", &self.x_ms_copy_source);
+                    if let Some(x_ms_source_range) = &self.x_ms_source_range {
+                        req_builder = req_builder.header("x-ms-source-range", x_ms_source_range);
+                    }
+                    if let Some(x_ms_source_content_md5) = &self.x_ms_source_content_md5 {
+                        req_builder = req_builder.header("x-ms-source-content-md5", x_ms_source_content_md5);
+                    }
+                    if let Some(x_ms_source_content_crc64) = &self.x_ms_source_content_crc64 {
+                        req_builder = req_builder.header("x-ms-source-content-crc64", x_ms_source_content_crc64);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_source_if_modified_since) = &self.x_ms_source_if_modified_since {
+                        req_builder = req_builder.header("x-ms-source-if-modified-since", x_ms_source_if_modified_since);
+                    }
+                    if let Some(x_ms_source_if_unmodified_since) = &self.x_ms_source_if_unmodified_since {
+                        req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
+                    }
+                    if let Some(x_ms_source_if_match) = &self.x_ms_source_if_match {
+                        req_builder = req_builder.header("x-ms-source-if-match", x_ms_source_if_match);
+                    }
+                    if let Some(x_ms_source_if_none_match) = &self.x_ms_source_if_none_match {
+                        req_builder = req_builder.header("x-ms-source-if-none-match", x_ms_source_if_none_match);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_copy_source_authorization) = &self.x_ms_copy_source_authorization {
+                        req_builder = req_builder.header("x-ms-copy-source-authorization", x_ms_copy_source_authorization);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -7105,162 +11589,109 @@ pub mod block_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn commit_block_list(
-        operation_config: &crate::OperationConfig,
-        container_name: &str,
-        blob: &str,
-        comp: &str,
-        timeout: Option<i64>,
-        x_ms_blob_cache_control: Option<&str>,
-        x_ms_blob_content_type: Option<&str>,
-        x_ms_blob_content_encoding: Option<&str>,
-        x_ms_blob_content_language: Option<&str>,
-        x_ms_blob_content_md5: Option<&str>,
-        content_md5: Option<&str>,
-        x_ms_content_crc64: Option<&str>,
-        x_ms_meta: Option<&str>,
-        x_ms_lease_id: Option<&str>,
-        x_ms_blob_content_disposition: Option<&str>,
-        x_ms_encryption_key: Option<&str>,
-        x_ms_encryption_key_sha256: Option<&str>,
-        x_ms_encryption_algorithm: Option<&str>,
-        x_ms_encryption_scope: Option<&str>,
-        x_ms_access_tier: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        x_ms_if_tags: Option<&str>,
-        blocks: &models::BlockLookupList,
-        x_ms_version: &str,
-        x_ms_client_request_id: Option<&str>,
-        x_ms_tags: Option<&str>,
-        x_ms_immutability_policy_until_date: Option<&str>,
-        x_ms_immutability_policy_mode: Option<&str>,
-        x_ms_legal_hold: Option<bool>,
-    ) -> std::result::Result<(), commit_block_list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/{}/{}?comp=blocklist", operation_config.base_path(), container_name, blob);
-        let mut url = url::Url::parse(url_str).map_err(commit_block_list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(commit_block_list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) blocklisttype: String,
+            pub(crate) x_ms_version: String,
+            pub(crate) snapshot: Option<String>,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("comp", comp);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(x_ms_blob_cache_control) = x_ms_blob_cache_control {
-            req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
-        }
-        if let Some(x_ms_blob_content_type) = x_ms_blob_content_type {
-            req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
-        }
-        if let Some(x_ms_blob_content_encoding) = x_ms_blob_content_encoding {
-            req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
-        }
-        if let Some(x_ms_blob_content_language) = x_ms_blob_content_language {
-            req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
-        }
-        if let Some(x_ms_blob_content_md5) = x_ms_blob_content_md5 {
-            req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
-        }
-        if let Some(content_md5) = content_md5 {
-            req_builder = req_builder.header("Content-MD5", content_md5);
-        }
-        if let Some(x_ms_content_crc64) = x_ms_content_crc64 {
-            req_builder = req_builder.header("x-ms-content-crc64", x_ms_content_crc64);
-        }
-        if let Some(x_ms_meta) = x_ms_meta {
-            req_builder = req_builder.header("x-ms-meta", x_ms_meta);
-        }
-        if let Some(x_ms_lease_id) = x_ms_lease_id {
-            req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
-        }
-        if let Some(x_ms_blob_content_disposition) = x_ms_blob_content_disposition {
-            req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
-        }
-        if let Some(x_ms_encryption_key) = x_ms_encryption_key {
-            req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
-        }
-        if let Some(x_ms_encryption_key_sha256) = x_ms_encryption_key_sha256 {
-            req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
-        }
-        if let Some(x_ms_encryption_algorithm) = x_ms_encryption_algorithm {
-            req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
-        }
-        if let Some(x_ms_encryption_scope) = x_ms_encryption_scope {
-            req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
-        }
-        if let Some(x_ms_access_tier) = x_ms_access_tier {
-            req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(x_ms_if_tags) = x_ms_if_tags {
-            req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(blocks).map_err(commit_block_list::Error::SerializeError)?;
-        req_builder = req_builder.header("x-ms-version", x_ms_version);
-        if let Some(x_ms_client_request_id) = x_ms_client_request_id {
-            req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
-        }
-        if let Some(x_ms_tags) = x_ms_tags {
-            req_builder = req_builder.header("x-ms-tags", x_ms_tags);
-        }
-        if let Some(x_ms_immutability_policy_until_date) = x_ms_immutability_policy_until_date {
-            req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
-        }
-        if let Some(x_ms_immutability_policy_mode) = x_ms_immutability_policy_mode {
-            req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
-        }
-        if let Some(x_ms_legal_hold) = x_ms_legal_hold {
-            req_builder = req_builder.header("x-ms-legal-hold", x_ms_legal_hold.to_string());
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(commit_block_list::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(commit_block_list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::StorageError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| commit_block_list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(commit_block_list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
+                self.snapshot = Some(snapshot.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::BlockList, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=blocklist", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(snapshot) = &self.snapshot {
+                        url.query_pairs_mut().append_pair("snapshot", snapshot);
+                    }
+                    let blocklisttype = &self.blocklisttype;
+                    url.query_pairs_mut().append_pair("blocklisttype", blocklisttype);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BlockList =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -7275,17 +11706,273 @@ pub mod block_blob {
                 value: models::StorageError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) container_name: String,
+            pub(crate) blob: String,
+            pub(crate) comp: String,
+            pub(crate) blocks: models::BlockLookupList,
+            pub(crate) x_ms_version: String,
+            pub(crate) timeout: Option<i64>,
+            pub(crate) x_ms_blob_cache_control: Option<String>,
+            pub(crate) x_ms_blob_content_type: Option<String>,
+            pub(crate) x_ms_blob_content_encoding: Option<String>,
+            pub(crate) x_ms_blob_content_language: Option<String>,
+            pub(crate) x_ms_blob_content_md5: Option<String>,
+            pub(crate) content_md5: Option<String>,
+            pub(crate) x_ms_content_crc64: Option<String>,
+            pub(crate) x_ms_meta: Option<String>,
+            pub(crate) x_ms_lease_id: Option<String>,
+            pub(crate) x_ms_blob_content_disposition: Option<String>,
+            pub(crate) x_ms_encryption_key: Option<String>,
+            pub(crate) x_ms_encryption_key_sha256: Option<String>,
+            pub(crate) x_ms_encryption_algorithm: Option<String>,
+            pub(crate) x_ms_encryption_scope: Option<String>,
+            pub(crate) x_ms_access_tier: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) x_ms_if_tags: Option<String>,
+            pub(crate) x_ms_client_request_id: Option<String>,
+            pub(crate) x_ms_tags: Option<String>,
+            pub(crate) x_ms_immutability_policy_until_date: Option<String>,
+            pub(crate) x_ms_immutability_policy_mode: Option<String>,
+            pub(crate) x_ms_legal_hold: Option<bool>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i64) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
+                self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
+                self
+            }
+            pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
+                self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
+                self
+            }
+            pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
+                self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
+                self
+            }
+            pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
+                self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
+                self
+            }
+            pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
+                self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
+                self
+            }
+            pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
+                self.content_md5 = Some(content_md5.into());
+                self
+            }
+            pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
+                self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
+                self
+            }
+            pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
+                self.x_ms_meta = Some(x_ms_meta.into());
+                self
+            }
+            pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
+                self.x_ms_lease_id = Some(x_ms_lease_id.into());
+                self
+            }
+            pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
+                self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
+                self
+            }
+            pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
+                self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
+                self
+            }
+            pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
+                self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
+                self
+            }
+            pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
+                self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
+                self
+            }
+            pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
+                self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
+                self
+            }
+            pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
+                self.x_ms_access_tier = Some(x_ms_access_tier.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
+                self.x_ms_if_tags = Some(x_ms_if_tags.into());
+                self
+            }
+            pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
+                self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
+                self
+            }
+            pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
+                self.x_ms_tags = Some(x_ms_tags.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
+                self
+            }
+            pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
+                self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
+                self
+            }
+            pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
+                self.x_ms_legal_hold = Some(x_ms_legal_hold);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/{}/{}?comp=blocklist", &self.client.endpoint, &self.container_name, &self.blob);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    let comp = &self.comp;
+                    url.query_pairs_mut().append_pair("comp", comp);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(x_ms_blob_cache_control) = &self.x_ms_blob_cache_control {
+                        req_builder = req_builder.header("x-ms-blob-cache-control", x_ms_blob_cache_control);
+                    }
+                    if let Some(x_ms_blob_content_type) = &self.x_ms_blob_content_type {
+                        req_builder = req_builder.header("x-ms-blob-content-type", x_ms_blob_content_type);
+                    }
+                    if let Some(x_ms_blob_content_encoding) = &self.x_ms_blob_content_encoding {
+                        req_builder = req_builder.header("x-ms-blob-content-encoding", x_ms_blob_content_encoding);
+                    }
+                    if let Some(x_ms_blob_content_language) = &self.x_ms_blob_content_language {
+                        req_builder = req_builder.header("x-ms-blob-content-language", x_ms_blob_content_language);
+                    }
+                    if let Some(x_ms_blob_content_md5) = &self.x_ms_blob_content_md5 {
+                        req_builder = req_builder.header("x-ms-blob-content-md5", x_ms_blob_content_md5);
+                    }
+                    if let Some(content_md5) = &self.content_md5 {
+                        req_builder = req_builder.header("Content-MD5", content_md5);
+                    }
+                    if let Some(x_ms_content_crc64) = &self.x_ms_content_crc64 {
+                        req_builder = req_builder.header("x-ms-content-crc64", x_ms_content_crc64);
+                    }
+                    if let Some(x_ms_meta) = &self.x_ms_meta {
+                        req_builder = req_builder.header("x-ms-meta", x_ms_meta);
+                    }
+                    if let Some(x_ms_lease_id) = &self.x_ms_lease_id {
+                        req_builder = req_builder.header("x-ms-lease-id", x_ms_lease_id);
+                    }
+                    if let Some(x_ms_blob_content_disposition) = &self.x_ms_blob_content_disposition {
+                        req_builder = req_builder.header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
+                    }
+                    if let Some(x_ms_encryption_key) = &self.x_ms_encryption_key {
+                        req_builder = req_builder.header("x-ms-encryption-key", x_ms_encryption_key);
+                    }
+                    if let Some(x_ms_encryption_key_sha256) = &self.x_ms_encryption_key_sha256 {
+                        req_builder = req_builder.header("x-ms-encryption-key-sha256", x_ms_encryption_key_sha256);
+                    }
+                    if let Some(x_ms_encryption_algorithm) = &self.x_ms_encryption_algorithm {
+                        req_builder = req_builder.header("x-ms-encryption-algorithm", x_ms_encryption_algorithm);
+                    }
+                    if let Some(x_ms_encryption_scope) = &self.x_ms_encryption_scope {
+                        req_builder = req_builder.header("x-ms-encryption-scope", x_ms_encryption_scope);
+                    }
+                    if let Some(x_ms_access_tier) = &self.x_ms_access_tier {
+                        req_builder = req_builder.header("x-ms-access-tier", x_ms_access_tier);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(x_ms_if_tags) = &self.x_ms_if_tags {
+                        req_builder = req_builder.header("x-ms-if-tags", x_ms_if_tags);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.blocks).map_err(Error::Serialize)?;
+                    req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
+                    if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
+                        req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
+                    }
+                    if let Some(x_ms_tags) = &self.x_ms_tags {
+                        req_builder = req_builder.header("x-ms-tags", x_ms_tags);
+                    }
+                    if let Some(x_ms_immutability_policy_until_date) = &self.x_ms_immutability_policy_until_date {
+                        req_builder = req_builder.header("x-ms-immutability-policy-until-date", x_ms_immutability_policy_until_date);
+                    }
+                    if let Some(x_ms_immutability_policy_mode) = &self.x_ms_immutability_policy_mode {
+                        req_builder = req_builder.header("x-ms-immutability-policy-mode", x_ms_immutability_policy_mode);
+                    }
+                    if let Some(x_ms_legal_hold) = &self.x_ms_legal_hold {
+                        req_builder = req_builder.header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::StorageError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }

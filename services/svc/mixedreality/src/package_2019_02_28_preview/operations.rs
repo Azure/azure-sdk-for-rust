@@ -3,6 +3,78 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -10,45 +82,13 @@ pub enum Error {
     #[error(transparent)]
     GetToken(#[from] get_token::Error),
 }
-pub async fn get_token(
-    operation_config: &crate::OperationConfig,
-    account_id: &str,
-    x_mrc_cv: Option<&str>,
-) -> std::result::Result<models::StsTokenResponseMessage, get_token::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/Accounts/{}/token", operation_config.base_path(), account_id);
-    let mut url = url::Url::parse(url_str).map_err(get_token::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_token::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(x_mrc_cv) = x_mrc_cv {
-        req_builder = req_builder.header("X-MRC-CV", x_mrc_cv);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_token::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_token::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::StsTokenResponseMessage =
-                serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+impl Client {
+    pub fn get_token(&self, account_id: impl Into<String>) -> get_token::Builder {
+        get_token::Builder {
+            client: self.base_clone(),
+            account_id: account_id.into(),
+            x_mrc_cv: None,
         }
-        http::StatusCode::BAD_REQUEST => Err(get_token::Error::BadRequest400 {}),
-        http::StatusCode::UNAUTHORIZED => Err(get_token::Error::Unauthorized401 {}),
-        http::StatusCode::TOO_MANY_REQUESTS => Err(get_token::Error::TooManyRequests429 {}),
-        status_code => Err(get_token::Error::DefaultResponse { status_code }),
     }
 }
 pub mod get_token {
@@ -64,16 +104,65 @@ pub mod get_token {
         #[error("HTTP status code {}", status_code)]
         DefaultResponse { status_code: http::StatusCode },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
+    }
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) account_id: String,
+        pub(crate) x_mrc_cv: Option<String>,
+    }
+    impl Builder {
+        pub fn x_mrc_cv(mut self, x_mrc_cv: impl Into<String>) -> Self {
+            self.x_mrc_cv = Some(x_mrc_cv.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StsTokenResponseMessage, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/Accounts/{}/token", &self.client.endpoint, &self.account_id);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(x_mrc_cv) = &self.x_mrc_cv {
+                    req_builder = req_builder.header("X-MRC-CV", x_mrc_cv);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::StsTokenResponseMessage =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    http::StatusCode::BAD_REQUEST => Err(Error::BadRequest400 {}),
+                    http::StatusCode::UNAUTHORIZED => Err(Error::Unauthorized401 {}),
+                    http::StatusCode::TOO_MANY_REQUESTS => Err(Error::TooManyRequests429 {}),
+                    status_code => Err(Error::DefaultResponse { status_code }),
+                }
+            })
+        }
     }
 }

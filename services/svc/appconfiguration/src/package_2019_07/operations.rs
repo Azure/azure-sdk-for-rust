@@ -3,6 +3,78 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -36,60 +108,151 @@ pub enum Error {
     #[error(transparent)]
     CheckRevisions(#[from] check_revisions::Error),
 }
-pub async fn get_keys(
-    operation_config: &crate::OperationConfig,
-    name: Option<&str>,
-    sync_token: Option<&str>,
-    after: Option<&str>,
-    accept_datetime: Option<&str>,
-) -> std::result::Result<models::KeyListResult, get_keys::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/keys", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(get_keys::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_keys::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(name) = name {
-        url.query_pairs_mut().append_pair("name", name);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(after) = after {
-        url.query_pairs_mut().append_pair("After", after);
-    }
-    if let Some(accept_datetime) = accept_datetime {
-        req_builder = req_builder.header("Accept-Datetime", accept_datetime);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_keys::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_keys::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::KeyListResult =
-                serde_json::from_slice(rsp_body).map_err(|source| get_keys::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+impl Client {
+    pub fn get_keys(&self) -> get_keys::Builder {
+        get_keys::Builder {
+            client: self.base_clone(),
+            name: None,
+            sync_token: None,
+            after: None,
+            accept_datetime: None,
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Error =
-                serde_json::from_slice(rsp_body).map_err(|source| get_keys::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_keys::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            })
+    }
+    pub fn check_keys(&self) -> check_keys::Builder {
+        check_keys::Builder {
+            client: self.base_clone(),
+            name: None,
+            sync_token: None,
+            after: None,
+            accept_datetime: None,
+        }
+    }
+    pub fn get_key_values(&self) -> get_key_values::Builder {
+        get_key_values::Builder {
+            client: self.base_clone(),
+            key: None,
+            label: None,
+            sync_token: None,
+            after: None,
+            accept_datetime: None,
+            select: Vec::new(),
+        }
+    }
+    pub fn check_key_values(&self) -> check_key_values::Builder {
+        check_key_values::Builder {
+            client: self.base_clone(),
+            key: None,
+            label: None,
+            sync_token: None,
+            after: None,
+            accept_datetime: None,
+            select: Vec::new(),
+        }
+    }
+    pub fn get_key_value(&self, key: impl Into<String>) -> get_key_value::Builder {
+        get_key_value::Builder {
+            client: self.base_clone(),
+            key: key.into(),
+            label: None,
+            sync_token: None,
+            accept_datetime: None,
+            if_match: None,
+            if_none_match: None,
+            select: Vec::new(),
+        }
+    }
+    pub fn put_key_value(&self, key: impl Into<String>) -> put_key_value::Builder {
+        put_key_value::Builder {
+            client: self.base_clone(),
+            key: key.into(),
+            label: None,
+            entity: None,
+            sync_token: None,
+            if_match: None,
+            if_none_match: None,
+        }
+    }
+    pub fn delete_key_value(&self, key: impl Into<String>) -> delete_key_value::Builder {
+        delete_key_value::Builder {
+            client: self.base_clone(),
+            key: key.into(),
+            label: None,
+            sync_token: None,
+            if_match: None,
+        }
+    }
+    pub fn check_key_value(&self, key: impl Into<String>) -> check_key_value::Builder {
+        check_key_value::Builder {
+            client: self.base_clone(),
+            key: key.into(),
+            label: None,
+            sync_token: None,
+            accept_datetime: None,
+            if_match: None,
+            if_none_match: None,
+            select: Vec::new(),
+        }
+    }
+    pub fn get_labels(&self) -> get_labels::Builder {
+        get_labels::Builder {
+            client: self.base_clone(),
+            name: None,
+            sync_token: None,
+            after: None,
+            accept_datetime: None,
+            select: Vec::new(),
+        }
+    }
+    pub fn check_labels(&self) -> check_labels::Builder {
+        check_labels::Builder {
+            client: self.base_clone(),
+            name: None,
+            sync_token: None,
+            after: None,
+            accept_datetime: None,
+            select: Vec::new(),
+        }
+    }
+    pub fn put_lock(&self, key: impl Into<String>) -> put_lock::Builder {
+        put_lock::Builder {
+            client: self.base_clone(),
+            key: key.into(),
+            label: None,
+            sync_token: None,
+            if_match: None,
+            if_none_match: None,
+        }
+    }
+    pub fn delete_lock(&self, key: impl Into<String>) -> delete_lock::Builder {
+        delete_lock::Builder {
+            client: self.base_clone(),
+            key: key.into(),
+            label: None,
+            sync_token: None,
+            if_match: None,
+            if_none_match: None,
+        }
+    }
+    pub fn get_revisions(&self) -> get_revisions::Builder {
+        get_revisions::Builder {
+            client: self.base_clone(),
+            key: None,
+            label: None,
+            sync_token: None,
+            after: None,
+            accept_datetime: None,
+            select: Vec::new(),
+        }
+    }
+    pub fn check_revisions(&self) -> check_revisions::Builder {
+        check_revisions::Builder {
+            client: self.base_clone(),
+            key: None,
+            label: None,
+            sync_token: None,
+            after: None,
+            accept_datetime: None,
+            select: Vec::new(),
         }
     }
 }
@@ -103,61 +266,94 @@ pub mod get_keys {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn check_keys(
-    operation_config: &crate::OperationConfig,
-    name: Option<&str>,
-    sync_token: Option<&str>,
-    after: Option<&str>,
-    accept_datetime: Option<&str>,
-) -> std::result::Result<(), check_keys::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/keys", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(check_keys::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::HEAD);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(check_keys::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) name: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) after: Option<String>,
+        pub(crate) accept_datetime: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(name) = name {
-        url.query_pairs_mut().append_pair("name", name);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(after) = after {
-        url.query_pairs_mut().append_pair("After", after);
-    }
-    if let Some(accept_datetime) = accept_datetime {
-        req_builder = req_builder.header("Accept-Datetime", accept_datetime);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(check_keys::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(check_keys::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => Ok(()),
-        status_code => Err(check_keys::Error::DefaultResponse { status_code }),
+    impl Builder {
+        pub fn name(mut self, name: impl Into<String>) -> Self {
+            self.name = Some(name.into());
+            self
+        }
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn after(mut self, after: impl Into<String>) -> Self {
+            self.after = Some(after.into());
+            self
+        }
+        pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
+            self.accept_datetime = Some(accept_datetime.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyListResult, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/keys", &self.client.endpoint,);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(name) = &self.name {
+                    url.query_pairs_mut().append_pair("name", name);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(after) = &self.after {
+                    url.query_pairs_mut().append_pair("After", after);
+                }
+                if let Some(accept_datetime) = &self.accept_datetime {
+                    req_builder = req_builder.header("Accept-Datetime", accept_datetime);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::KeyListResult =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
     }
 }
 pub mod check_keys {
@@ -167,77 +363,79 @@ pub mod check_keys {
         #[error("HTTP status code {}", status_code)]
         DefaultResponse { status_code: http::StatusCode },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_key_values(
-    operation_config: &crate::OperationConfig,
-    key: Option<&str>,
-    label: Option<&str>,
-    sync_token: Option<&str>,
-    after: Option<&str>,
-    accept_datetime: Option<&str>,
-    select: &[&str],
-) -> std::result::Result<models::KeyValueListResult, get_key_values::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/kv", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(get_key_values::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_key_values::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) name: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) after: Option<String>,
+        pub(crate) accept_datetime: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(key) = key {
-        url.query_pairs_mut().append_pair("key", key);
-    }
-    if let Some(label) = label {
-        url.query_pairs_mut().append_pair("label", label);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(after) = after {
-        url.query_pairs_mut().append_pair("After", after);
-    }
-    if let Some(accept_datetime) = accept_datetime {
-        req_builder = req_builder.header("Accept-Datetime", accept_datetime);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_key_values::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_key_values::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::KeyValueListResult =
-                serde_json::from_slice(rsp_body).map_err(|source| get_key_values::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn name(mut self, name: impl Into<String>) -> Self {
+            self.name = Some(name.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Error =
-                serde_json::from_slice(rsp_body).map_err(|source| get_key_values::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_key_values::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn after(mut self, after: impl Into<String>) -> Self {
+            self.after = Some(after.into());
+            self
+        }
+        pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
+            self.accept_datetime = Some(accept_datetime.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/keys", &self.client.endpoint,);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::HEAD);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(name) = &self.name {
+                    url.query_pairs_mut().append_pair("name", name);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(after) = &self.after {
+                    url.query_pairs_mut().append_pair("After", after);
+                }
+                if let Some(accept_datetime) = &self.accept_datetime {
+                    req_builder = req_builder.header("Accept-Datetime", accept_datetime);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => Ok(()),
+                    status_code => Err(Error::DefaultResponse { status_code }),
+                }
             })
         }
     }
@@ -252,66 +450,107 @@ pub mod get_key_values {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn check_key_values(
-    operation_config: &crate::OperationConfig,
-    key: Option<&str>,
-    label: Option<&str>,
-    sync_token: Option<&str>,
-    after: Option<&str>,
-    accept_datetime: Option<&str>,
-    select: &[&str],
-) -> std::result::Result<(), check_key_values::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/kv", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(check_key_values::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::HEAD);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(check_key_values::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) key: Option<String>,
+        pub(crate) label: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) after: Option<String>,
+        pub(crate) accept_datetime: Option<String>,
+        pub(crate) select: Vec<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(key) = key {
-        url.query_pairs_mut().append_pair("key", key);
-    }
-    if let Some(label) = label {
-        url.query_pairs_mut().append_pair("label", label);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(after) = after {
-        url.query_pairs_mut().append_pair("After", after);
-    }
-    if let Some(accept_datetime) = accept_datetime {
-        req_builder = req_builder.header("Accept-Datetime", accept_datetime);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(check_key_values::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(check_key_values::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => Ok(()),
-        status_code => Err(check_key_values::Error::DefaultResponse { status_code }),
+    impl Builder {
+        pub fn key(mut self, key: impl Into<String>) -> Self {
+            self.key = Some(key.into());
+            self
+        }
+        pub fn label(mut self, label: impl Into<String>) -> Self {
+            self.label = Some(label.into());
+            self
+        }
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn after(mut self, after: impl Into<String>) -> Self {
+            self.after = Some(after.into());
+            self
+        }
+        pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
+            self.accept_datetime = Some(accept_datetime.into());
+            self
+        }
+        pub fn select(mut self, select: Vec<String>) -> Self {
+            self.select = select;
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValueListResult, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/kv", &self.client.endpoint,);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(key) = &self.key {
+                    url.query_pairs_mut().append_pair("key", key);
+                }
+                if let Some(label) = &self.label {
+                    url.query_pairs_mut().append_pair("label", label);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(after) = &self.after {
+                    url.query_pairs_mut().append_pair("After", after);
+                }
+                if let Some(accept_datetime) = &self.accept_datetime {
+                    req_builder = req_builder.header("Accept-Datetime", accept_datetime);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::KeyValueListResult =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
     }
 }
 pub mod check_key_values {
@@ -321,78 +560,92 @@ pub mod check_key_values {
         #[error("HTTP status code {}", status_code)]
         DefaultResponse { status_code: http::StatusCode },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_key_value(
-    operation_config: &crate::OperationConfig,
-    key: &str,
-    label: Option<&str>,
-    sync_token: Option<&str>,
-    accept_datetime: Option<&str>,
-    if_match: Option<&str>,
-    if_none_match: Option<&str>,
-    select: &[&str],
-) -> std::result::Result<models::KeyValue, get_key_value::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/kv/{}", operation_config.base_path(), key);
-    let mut url = url::Url::parse(url_str).map_err(get_key_value::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_key_value::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) key: Option<String>,
+        pub(crate) label: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) after: Option<String>,
+        pub(crate) accept_datetime: Option<String>,
+        pub(crate) select: Vec<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(label) = label {
-        url.query_pairs_mut().append_pair("label", label);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(accept_datetime) = accept_datetime {
-        req_builder = req_builder.header("Accept-Datetime", accept_datetime);
-    }
-    if let Some(if_match) = if_match {
-        req_builder = req_builder.header("If-Match", if_match);
-    }
-    if let Some(if_none_match) = if_none_match {
-        req_builder = req_builder.header("If-None-Match", if_none_match);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_key_value::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_key_value::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::KeyValue =
-                serde_json::from_slice(rsp_body).map_err(|source| get_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn key(mut self, key: impl Into<String>) -> Self {
+            self.key = Some(key.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Error =
-                serde_json::from_slice(rsp_body).map_err(|source| get_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_key_value::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn label(mut self, label: impl Into<String>) -> Self {
+            self.label = Some(label.into());
+            self
+        }
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn after(mut self, after: impl Into<String>) -> Self {
+            self.after = Some(after.into());
+            self
+        }
+        pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
+            self.accept_datetime = Some(accept_datetime.into());
+            self
+        }
+        pub fn select(mut self, select: Vec<String>) -> Self {
+            self.select = select;
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/kv", &self.client.endpoint,);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::HEAD);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(key) = &self.key {
+                    url.query_pairs_mut().append_pair("key", key);
+                }
+                if let Some(label) = &self.label {
+                    url.query_pairs_mut().append_pair("label", label);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(after) = &self.after {
+                    url.query_pairs_mut().append_pair("After", after);
+                }
+                if let Some(accept_datetime) = &self.accept_datetime {
+                    req_builder = req_builder.header("Accept-Datetime", accept_datetime);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => Ok(()),
+                    status_code => Err(Error::DefaultResponse { status_code }),
+                }
             })
         }
     }
@@ -407,79 +660,106 @@ pub mod get_key_value {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn put_key_value(
-    operation_config: &crate::OperationConfig,
-    key: &str,
-    label: Option<&str>,
-    entity: Option<&models::KeyValue>,
-    sync_token: Option<&str>,
-    if_match: Option<&str>,
-    if_none_match: Option<&str>,
-) -> std::result::Result<models::KeyValue, put_key_value::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/kv/{}", operation_config.base_path(), key);
-    let mut url = url::Url::parse(url_str).map_err(put_key_value::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::PUT);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(put_key_value::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) key: String,
+        pub(crate) label: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) accept_datetime: Option<String>,
+        pub(crate) if_match: Option<String>,
+        pub(crate) if_none_match: Option<String>,
+        pub(crate) select: Vec<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(label) = label {
-        url.query_pairs_mut().append_pair("label", label);
-    }
-    let req_body = if let Some(entity) = entity {
-        req_builder = req_builder.header("content-type", "application/json");
-        azure_core::to_json(entity).map_err(put_key_value::Error::SerializeError)?
-    } else {
-        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-    };
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(if_match) = if_match {
-        req_builder = req_builder.header("If-Match", if_match);
-    }
-    if let Some(if_none_match) = if_none_match {
-        req_builder = req_builder.header("If-None-Match", if_none_match);
-    }
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(put_key_value::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(put_key_value::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::KeyValue =
-                serde_json::from_slice(rsp_body).map_err(|source| put_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn label(mut self, label: impl Into<String>) -> Self {
+            self.label = Some(label.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Error =
-                serde_json::from_slice(rsp_body).map_err(|source| put_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(put_key_value::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
+            self.accept_datetime = Some(accept_datetime.into());
+            self
+        }
+        pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+            self.if_match = Some(if_match.into());
+            self
+        }
+        pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+            self.if_none_match = Some(if_none_match.into());
+            self
+        }
+        pub fn select(mut self, select: Vec<String>) -> Self {
+            self.select = select;
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValue, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/kv/{}", &self.client.endpoint, &self.key);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(label) = &self.label {
+                    url.query_pairs_mut().append_pair("label", label);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(accept_datetime) = &self.accept_datetime {
+                    req_builder = req_builder.header("Accept-Datetime", accept_datetime);
+                }
+                if let Some(if_match) = &self.if_match {
+                    req_builder = req_builder.header("If-Match", if_match);
+                }
+                if let Some(if_none_match) = &self.if_none_match {
+                    req_builder = req_builder.header("If-None-Match", if_none_match);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::KeyValue =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -494,70 +774,103 @@ pub mod put_key_value {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn delete_key_value(
-    operation_config: &crate::OperationConfig,
-    key: &str,
-    label: Option<&str>,
-    sync_token: Option<&str>,
-    if_match: Option<&str>,
-) -> std::result::Result<delete_key_value::Response, delete_key_value::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/kv/{}", operation_config.base_path(), key);
-    let mut url = url::Url::parse(url_str).map_err(delete_key_value::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::DELETE);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(delete_key_value::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) key: String,
+        pub(crate) label: Option<String>,
+        pub(crate) entity: Option<models::KeyValue>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) if_match: Option<String>,
+        pub(crate) if_none_match: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(label) = label {
-        url.query_pairs_mut().append_pair("label", label);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(if_match) = if_match {
-        req_builder = req_builder.header("If-Match", if_match);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(delete_key_value::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(delete_key_value::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::KeyValue =
-                serde_json::from_slice(rsp_body).map_err(|source| delete_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(delete_key_value::Response::Ok200(rsp_value))
+    impl Builder {
+        pub fn label(mut self, label: impl Into<String>) -> Self {
+            self.label = Some(label.into());
+            self
         }
-        http::StatusCode::NO_CONTENT => Ok(delete_key_value::Response::NoContent204),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Error =
-                serde_json::from_slice(rsp_body).map_err(|source| delete_key_value::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(delete_key_value::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn entity(mut self, entity: impl Into<models::KeyValue>) -> Self {
+            self.entity = Some(entity.into());
+            self
+        }
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+            self.if_match = Some(if_match.into());
+            self
+        }
+        pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+            self.if_none_match = Some(if_none_match.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValue, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/kv/{}", &self.client.endpoint, &self.key);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::PUT);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(label) = &self.label {
+                    url.query_pairs_mut().append_pair("label", label);
+                }
+                let req_body = if let Some(entity) = &self.entity {
+                    req_builder = req_builder.header("content-type", "application/json");
+                    azure_core::to_json(entity).map_err(Error::Serialize)?
+                } else {
+                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                };
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(if_match) = &self.if_match {
+                    req_builder = req_builder.header("If-Match", if_match);
+                }
+                if let Some(if_none_match) = &self.if_none_match {
+                    req_builder = req_builder.header("If-None-Match", if_none_match);
+                }
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::KeyValue =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -577,67 +890,88 @@ pub mod delete_key_value {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn check_key_value(
-    operation_config: &crate::OperationConfig,
-    key: &str,
-    label: Option<&str>,
-    sync_token: Option<&str>,
-    accept_datetime: Option<&str>,
-    if_match: Option<&str>,
-    if_none_match: Option<&str>,
-    select: &[&str],
-) -> std::result::Result<(), check_key_value::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/kv/{}", operation_config.base_path(), key);
-    let mut url = url::Url::parse(url_str).map_err(check_key_value::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::HEAD);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(check_key_value::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) key: String,
+        pub(crate) label: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) if_match: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(label) = label {
-        url.query_pairs_mut().append_pair("label", label);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(accept_datetime) = accept_datetime {
-        req_builder = req_builder.header("Accept-Datetime", accept_datetime);
-    }
-    if let Some(if_match) = if_match {
-        req_builder = req_builder.header("If-Match", if_match);
-    }
-    if let Some(if_none_match) = if_none_match {
-        req_builder = req_builder.header("If-None-Match", if_none_match);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(check_key_value::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(check_key_value::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => Ok(()),
-        status_code => Err(check_key_value::Error::DefaultResponse { status_code }),
+    impl Builder {
+        pub fn label(mut self, label: impl Into<String>) -> Self {
+            self.label = Some(label.into());
+            self
+        }
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+            self.if_match = Some(if_match.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/kv/{}", &self.client.endpoint, &self.key);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::DELETE);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(label) = &self.label {
+                    url.query_pairs_mut().append_pair("label", label);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(if_match) = &self.if_match {
+                    req_builder = req_builder.header("If-Match", if_match);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::KeyValue =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(Response::Ok200(rsp_value))
+                    }
+                    http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
     }
 }
 pub mod check_key_value {
@@ -647,73 +981,93 @@ pub mod check_key_value {
         #[error("HTTP status code {}", status_code)]
         DefaultResponse { status_code: http::StatusCode },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_labels(
-    operation_config: &crate::OperationConfig,
-    name: Option<&str>,
-    sync_token: Option<&str>,
-    after: Option<&str>,
-    accept_datetime: Option<&str>,
-    select: &[&str],
-) -> std::result::Result<models::LabelListResult, get_labels::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/labels", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(get_labels::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_labels::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) key: String,
+        pub(crate) label: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) accept_datetime: Option<String>,
+        pub(crate) if_match: Option<String>,
+        pub(crate) if_none_match: Option<String>,
+        pub(crate) select: Vec<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(name) = name {
-        url.query_pairs_mut().append_pair("name", name);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(after) = after {
-        url.query_pairs_mut().append_pair("After", after);
-    }
-    if let Some(accept_datetime) = accept_datetime {
-        req_builder = req_builder.header("Accept-Datetime", accept_datetime);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_labels::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_labels::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::LabelListResult =
-                serde_json::from_slice(rsp_body).map_err(|source| get_labels::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn label(mut self, label: impl Into<String>) -> Self {
+            self.label = Some(label.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Error =
-                serde_json::from_slice(rsp_body).map_err(|source| get_labels::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_labels::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
+            self.accept_datetime = Some(accept_datetime.into());
+            self
+        }
+        pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+            self.if_match = Some(if_match.into());
+            self
+        }
+        pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+            self.if_none_match = Some(if_none_match.into());
+            self
+        }
+        pub fn select(mut self, select: Vec<String>) -> Self {
+            self.select = select;
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/kv/{}", &self.client.endpoint, &self.key);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::HEAD);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(label) = &self.label {
+                    url.query_pairs_mut().append_pair("label", label);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(accept_datetime) = &self.accept_datetime {
+                    req_builder = req_builder.header("Accept-Datetime", accept_datetime);
+                }
+                if let Some(if_match) = &self.if_match {
+                    req_builder = req_builder.header("If-Match", if_match);
+                }
+                if let Some(if_none_match) = &self.if_none_match {
+                    req_builder = req_builder.header("If-None-Match", if_none_match);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => Ok(()),
+                    status_code => Err(Error::DefaultResponse { status_code }),
+                }
             })
         }
     }
@@ -728,62 +1082,99 @@ pub mod get_labels {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn check_labels(
-    operation_config: &crate::OperationConfig,
-    name: Option<&str>,
-    sync_token: Option<&str>,
-    after: Option<&str>,
-    accept_datetime: Option<&str>,
-    select: &[&str],
-) -> std::result::Result<(), check_labels::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/labels", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(check_labels::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::HEAD);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(check_labels::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) name: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) after: Option<String>,
+        pub(crate) accept_datetime: Option<String>,
+        pub(crate) select: Vec<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(name) = name {
-        url.query_pairs_mut().append_pair("name", name);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(after) = after {
-        url.query_pairs_mut().append_pair("After", after);
-    }
-    if let Some(accept_datetime) = accept_datetime {
-        req_builder = req_builder.header("Accept-Datetime", accept_datetime);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(check_labels::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(check_labels::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => Ok(()),
-        status_code => Err(check_labels::Error::DefaultResponse { status_code }),
+    impl Builder {
+        pub fn name(mut self, name: impl Into<String>) -> Self {
+            self.name = Some(name.into());
+            self
+        }
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn after(mut self, after: impl Into<String>) -> Self {
+            self.after = Some(after.into());
+            self
+        }
+        pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
+            self.accept_datetime = Some(accept_datetime.into());
+            self
+        }
+        pub fn select(mut self, select: Vec<String>) -> Self {
+            self.select = select;
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LabelListResult, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/labels", &self.client.endpoint,);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(name) = &self.name {
+                    url.query_pairs_mut().append_pair("name", name);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(after) = &self.after {
+                    url.query_pairs_mut().append_pair("After", after);
+                }
+                if let Some(accept_datetime) = &self.accept_datetime {
+                    req_builder = req_builder.header("Accept-Datetime", accept_datetime);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::LabelListResult =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
     }
 }
 pub mod check_labels {
@@ -793,73 +1184,84 @@ pub mod check_labels {
         #[error("HTTP status code {}", status_code)]
         DefaultResponse { status_code: http::StatusCode },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn put_lock(
-    operation_config: &crate::OperationConfig,
-    key: &str,
-    label: Option<&str>,
-    sync_token: Option<&str>,
-    if_match: Option<&str>,
-    if_none_match: Option<&str>,
-) -> std::result::Result<models::KeyValue, put_lock::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/locks/{}", operation_config.base_path(), key);
-    let mut url = url::Url::parse(url_str).map_err(put_lock::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::PUT);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(put_lock::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) name: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) after: Option<String>,
+        pub(crate) accept_datetime: Option<String>,
+        pub(crate) select: Vec<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(label) = label {
-        url.query_pairs_mut().append_pair("label", label);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(if_match) = if_match {
-        req_builder = req_builder.header("If-Match", if_match);
-    }
-    if let Some(if_none_match) = if_none_match {
-        req_builder = req_builder.header("If-None-Match", if_none_match);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(put_lock::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(put_lock::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::KeyValue =
-                serde_json::from_slice(rsp_body).map_err(|source| put_lock::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn name(mut self, name: impl Into<String>) -> Self {
+            self.name = Some(name.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Error =
-                serde_json::from_slice(rsp_body).map_err(|source| put_lock::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(put_lock::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn after(mut self, after: impl Into<String>) -> Self {
+            self.after = Some(after.into());
+            self
+        }
+        pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
+            self.accept_datetime = Some(accept_datetime.into());
+            self
+        }
+        pub fn select(mut self, select: Vec<String>) -> Self {
+            self.select = select;
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/labels", &self.client.endpoint,);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::HEAD);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(name) = &self.name {
+                    url.query_pairs_mut().append_pair("name", name);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(after) = &self.after {
+                    url.query_pairs_mut().append_pair("After", after);
+                }
+                if let Some(accept_datetime) = &self.accept_datetime {
+                    req_builder = req_builder.header("Accept-Datetime", accept_datetime);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => Ok(()),
+                    status_code => Err(Error::DefaultResponse { status_code }),
+                }
             })
         }
     }
@@ -874,73 +1276,93 @@ pub mod put_lock {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn delete_lock(
-    operation_config: &crate::OperationConfig,
-    key: &str,
-    label: Option<&str>,
-    sync_token: Option<&str>,
-    if_match: Option<&str>,
-    if_none_match: Option<&str>,
-) -> std::result::Result<models::KeyValue, delete_lock::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/locks/{}", operation_config.base_path(), key);
-    let mut url = url::Url::parse(url_str).map_err(delete_lock::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::DELETE);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(delete_lock::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) key: String,
+        pub(crate) label: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) if_match: Option<String>,
+        pub(crate) if_none_match: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(label) = label {
-        url.query_pairs_mut().append_pair("label", label);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(if_match) = if_match {
-        req_builder = req_builder.header("If-Match", if_match);
-    }
-    if let Some(if_none_match) = if_none_match {
-        req_builder = req_builder.header("If-None-Match", if_none_match);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(delete_lock::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(delete_lock::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::KeyValue =
-                serde_json::from_slice(rsp_body).map_err(|source| delete_lock::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn label(mut self, label: impl Into<String>) -> Self {
+            self.label = Some(label.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Error =
-                serde_json::from_slice(rsp_body).map_err(|source| delete_lock::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(delete_lock::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+            self.if_match = Some(if_match.into());
+            self
+        }
+        pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+            self.if_none_match = Some(if_none_match.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValue, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/locks/{}", &self.client.endpoint, &self.key);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::PUT);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(label) = &self.label {
+                    url.query_pairs_mut().append_pair("label", label);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(if_match) = &self.if_match {
+                    req_builder = req_builder.header("If-Match", if_match);
+                }
+                if let Some(if_none_match) = &self.if_none_match {
+                    req_builder = req_builder.header("If-None-Match", if_none_match);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::KeyValue =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -955,77 +1377,93 @@ pub mod delete_lock {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_revisions(
-    operation_config: &crate::OperationConfig,
-    key: Option<&str>,
-    label: Option<&str>,
-    sync_token: Option<&str>,
-    after: Option<&str>,
-    accept_datetime: Option<&str>,
-    select: &[&str],
-) -> std::result::Result<models::KeyValueListResult, get_revisions::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/revisions", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(get_revisions::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_revisions::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) key: String,
+        pub(crate) label: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) if_match: Option<String>,
+        pub(crate) if_none_match: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(key) = key {
-        url.query_pairs_mut().append_pair("key", key);
-    }
-    if let Some(label) = label {
-        url.query_pairs_mut().append_pair("label", label);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(after) = after {
-        url.query_pairs_mut().append_pair("After", after);
-    }
-    if let Some(accept_datetime) = accept_datetime {
-        req_builder = req_builder.header("Accept-Datetime", accept_datetime);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_revisions::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_revisions::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::KeyValueListResult =
-                serde_json::from_slice(rsp_body).map_err(|source| get_revisions::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn label(mut self, label: impl Into<String>) -> Self {
+            self.label = Some(label.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Error =
-                serde_json::from_slice(rsp_body).map_err(|source| get_revisions::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_revisions::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+            self.if_match = Some(if_match.into());
+            self
+        }
+        pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+            self.if_none_match = Some(if_none_match.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValue, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/locks/{}", &self.client.endpoint, &self.key);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::DELETE);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(label) = &self.label {
+                    url.query_pairs_mut().append_pair("label", label);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(if_match) = &self.if_match {
+                    req_builder = req_builder.header("If-Match", if_match);
+                }
+                if let Some(if_none_match) = &self.if_none_match {
+                    req_builder = req_builder.header("If-None-Match", if_none_match);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::KeyValue =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -1040,66 +1478,107 @@ pub mod get_revisions {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn check_revisions(
-    operation_config: &crate::OperationConfig,
-    key: Option<&str>,
-    label: Option<&str>,
-    sync_token: Option<&str>,
-    after: Option<&str>,
-    accept_datetime: Option<&str>,
-    select: &[&str],
-) -> std::result::Result<(), check_revisions::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/revisions", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(check_revisions::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::HEAD);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(check_revisions::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) key: Option<String>,
+        pub(crate) label: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) after: Option<String>,
+        pub(crate) accept_datetime: Option<String>,
+        pub(crate) select: Vec<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(key) = key {
-        url.query_pairs_mut().append_pair("key", key);
-    }
-    if let Some(label) = label {
-        url.query_pairs_mut().append_pair("label", label);
-    }
-    if let Some(sync_token) = sync_token {
-        req_builder = req_builder.header("Sync-Token", sync_token);
-    }
-    if let Some(after) = after {
-        url.query_pairs_mut().append_pair("After", after);
-    }
-    if let Some(accept_datetime) = accept_datetime {
-        req_builder = req_builder.header("Accept-Datetime", accept_datetime);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(check_revisions::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(check_revisions::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => Ok(()),
-        status_code => Err(check_revisions::Error::DefaultResponse { status_code }),
+    impl Builder {
+        pub fn key(mut self, key: impl Into<String>) -> Self {
+            self.key = Some(key.into());
+            self
+        }
+        pub fn label(mut self, label: impl Into<String>) -> Self {
+            self.label = Some(label.into());
+            self
+        }
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn after(mut self, after: impl Into<String>) -> Self {
+            self.after = Some(after.into());
+            self
+        }
+        pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
+            self.accept_datetime = Some(accept_datetime.into());
+            self
+        }
+        pub fn select(mut self, select: Vec<String>) -> Self {
+            self.select = select;
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyValueListResult, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/revisions", &self.client.endpoint,);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(key) = &self.key {
+                    url.query_pairs_mut().append_pair("key", key);
+                }
+                if let Some(label) = &self.label {
+                    url.query_pairs_mut().append_pair("label", label);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(after) = &self.after {
+                    url.query_pairs_mut().append_pair("After", after);
+                }
+                if let Some(accept_datetime) = &self.accept_datetime {
+                    req_builder = req_builder.header("Accept-Datetime", accept_datetime);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::KeyValueListResult =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
     }
 }
 pub mod check_revisions {
@@ -1109,16 +1588,93 @@ pub mod check_revisions {
         #[error("HTTP status code {}", status_code)]
         DefaultResponse { status_code: http::StatusCode },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
+    }
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: crate::operations::Client,
+        pub(crate) key: Option<String>,
+        pub(crate) label: Option<String>,
+        pub(crate) sync_token: Option<String>,
+        pub(crate) after: Option<String>,
+        pub(crate) accept_datetime: Option<String>,
+        pub(crate) select: Vec<String>,
+    }
+    impl Builder {
+        pub fn key(mut self, key: impl Into<String>) -> Self {
+            self.key = Some(key.into());
+            self
+        }
+        pub fn label(mut self, label: impl Into<String>) -> Self {
+            self.label = Some(label.into());
+            self
+        }
+        pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
+            self.sync_token = Some(sync_token.into());
+            self
+        }
+        pub fn after(mut self, after: impl Into<String>) -> Self {
+            self.after = Some(after.into());
+            self
+        }
+        pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
+            self.accept_datetime = Some(accept_datetime.into());
+            self
+        }
+        pub fn select(mut self, select: Vec<String>) -> Self {
+            self.select = select;
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/revisions", &self.client.endpoint,);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::HEAD);
+                let credential = self.client.credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(key) = &self.key {
+                    url.query_pairs_mut().append_pair("key", key);
+                }
+                if let Some(label) = &self.label {
+                    url.query_pairs_mut().append_pair("label", label);
+                }
+                if let Some(sync_token) = &self.sync_token {
+                    req_builder = req_builder.header("Sync-Token", sync_token);
+                }
+                if let Some(after) = &self.after {
+                    url.query_pairs_mut().append_pair("After", after);
+                }
+                if let Some(accept_datetime) = &self.accept_datetime {
+                    req_builder = req_builder.header("Accept-Datetime", accept_datetime);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => Ok(()),
+                    status_code => Err(Error::DefaultResponse { status_code }),
+                }
+            })
+        }
     }
 }

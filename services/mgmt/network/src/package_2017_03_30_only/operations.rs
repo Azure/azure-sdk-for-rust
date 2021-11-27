@@ -3,6 +3,84 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
+    pub fn network_interfaces(&self) -> network_interfaces::Client {
+        network_interfaces::Client(self.clone())
+    }
+    pub fn public_ip_addresses(&self) -> public_ip_addresses::Client {
+        public_ip_addresses::Client(self.clone())
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -42,49 +120,93 @@ pub enum Error {
 }
 pub mod network_interfaces {
     use super::{models, API_VERSION};
-    pub async fn list_virtual_machine_scale_set_vm_network_interfaces(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        virtual_machine_scale_set_name: &str,
-        virtualmachine_index: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::NetworkInterfaceListResult, list_virtual_machine_scale_set_vm_network_interfaces::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index) ;
-        let mut url = url::Url::parse(url_str).map_err(list_virtual_machine_scale_set_vm_network_interfaces::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_virtual_machine_scale_set_vm_network_interfaces::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_virtual_machine_scale_set_vm_network_interfaces::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_virtual_machine_scale_set_vm_network_interfaces::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::NetworkInterfaceListResult = serde_json::from_slice(rsp_body).map_err(|source| {
-                    list_virtual_machine_scale_set_vm_network_interfaces::Error::DeserializeError(source, rsp_body.clone())
-                })?;
-                Ok(rsp_value)
+        pub fn list_virtual_machine_scale_set_vm_network_interfaces(
+            &self,
+            resource_group_name: impl Into<String>,
+            virtual_machine_scale_set_name: impl Into<String>,
+            virtualmachine_index: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_virtual_machine_scale_set_vm_network_interfaces::Builder {
+            list_virtual_machine_scale_set_vm_network_interfaces::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
+                virtualmachine_index: virtualmachine_index.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_virtual_machine_scale_set_vm_network_interfaces::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn list_virtual_machine_scale_set_network_interfaces(
+            &self,
+            resource_group_name: impl Into<String>,
+            virtual_machine_scale_set_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_virtual_machine_scale_set_network_interfaces::Builder {
+            list_virtual_machine_scale_set_network_interfaces::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn get_virtual_machine_scale_set_network_interface(
+            &self,
+            resource_group_name: impl Into<String>,
+            virtual_machine_scale_set_name: impl Into<String>,
+            virtualmachine_index: impl Into<String>,
+            network_interface_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get_virtual_machine_scale_set_network_interface::Builder {
+            get_virtual_machine_scale_set_network_interface::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
+                virtualmachine_index: virtualmachine_index.into(),
+                network_interface_name: network_interface_name.into(),
+                subscription_id: subscription_id.into(),
+                expand: None,
+            }
+        }
+        pub fn list_virtual_machine_scale_set_ip_configurations(
+            &self,
+            resource_group_name: impl Into<String>,
+            virtual_machine_scale_set_name: impl Into<String>,
+            virtualmachine_index: impl Into<String>,
+            network_interface_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_virtual_machine_scale_set_ip_configurations::Builder {
+            list_virtual_machine_scale_set_ip_configurations::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
+                virtualmachine_index: virtualmachine_index.into(),
+                network_interface_name: network_interface_name.into(),
+                subscription_id: subscription_id.into(),
+                expand: None,
+            }
+        }
+        pub fn get_virtual_machine_scale_set_ip_configuration(
+            &self,
+            resource_group_name: impl Into<String>,
+            virtual_machine_scale_set_name: impl Into<String>,
+            virtualmachine_index: impl Into<String>,
+            network_interface_name: impl Into<String>,
+            ip_configuration_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get_virtual_machine_scale_set_ip_configuration::Builder {
+            get_virtual_machine_scale_set_ip_configuration::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
+                virtualmachine_index: virtualmachine_index.into(),
+                network_interface_name: network_interface_name.into(),
+                ip_configuration_name: ip_configuration_name.into(),
+                subscription_id: subscription_id.into(),
+                expand: None,
             }
         }
     }
@@ -95,66 +217,64 @@ pub mod network_interfaces {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_virtual_machine_scale_set_network_interfaces(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        virtual_machine_scale_set_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::NetworkInterfaceListResult, list_virtual_machine_scale_set_network_interfaces::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/networkInterfaces",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            virtual_machine_scale_set_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_virtual_machine_scale_set_network_interfaces::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_virtual_machine_scale_set_network_interfaces::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) virtual_machine_scale_set_name: String,
+            pub(crate) virtualmachine_index: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_virtual_machine_scale_set_network_interfaces::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_virtual_machine_scale_set_network_interfaces::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::NetworkInterfaceListResult = serde_json::from_slice(rsp_body).map_err(|source| {
-                    list_virtual_machine_scale_set_network_interfaces::Error::DeserializeError(source, rsp_body.clone())
-                })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_virtual_machine_scale_set_network_interfaces::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::NetworkInterfaceListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::NetworkInterfaceListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -166,65 +286,66 @@ pub mod network_interfaces {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_virtual_machine_scale_set_network_interface(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        virtual_machine_scale_set_name: &str,
-        virtualmachine_index: &str,
-        network_interface_name: &str,
-        subscription_id: &str,
-        expand: Option<&str>,
-    ) -> std::result::Result<models::NetworkInterface, get_virtual_machine_scale_set_network_interface::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name) ;
-        let mut url = url::Url::parse(url_str).map_err(get_virtual_machine_scale_set_network_interface::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_virtual_machine_scale_set_network_interface::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) virtual_machine_scale_set_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_virtual_machine_scale_set_network_interface::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_virtual_machine_scale_set_network_interface::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::NetworkInterface = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_virtual_machine_scale_set_network_interface::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get_virtual_machine_scale_set_network_interface::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::NetworkInterfaceListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/networkInterfaces",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.virtual_machine_scale_set_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::NetworkInterfaceListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -236,67 +357,71 @@ pub mod network_interfaces {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_virtual_machine_scale_set_ip_configurations(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        virtual_machine_scale_set_name: &str,
-        virtualmachine_index: &str,
-        network_interface_name: &str,
-        subscription_id: &str,
-        expand: Option<&str>,
-    ) -> std::result::Result<models::NetworkInterfaceIpConfigurationListResult, list_virtual_machine_scale_set_ip_configurations::Error>
-    {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipConfigurations" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name) ;
-        let mut url = url::Url::parse(url_str).map_err(list_virtual_machine_scale_set_ip_configurations::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_virtual_machine_scale_set_ip_configurations::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) virtual_machine_scale_set_name: String,
+            pub(crate) virtualmachine_index: String,
+            pub(crate) network_interface_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) expand: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_virtual_machine_scale_set_ip_configurations::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_virtual_machine_scale_set_ip_configurations::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::NetworkInterfaceIpConfigurationListResult = serde_json::from_slice(rsp_body).map_err(|source| {
-                    list_virtual_machine_scale_set_ip_configurations::Error::DeserializeError(source, rsp_body.clone())
-                })?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_virtual_machine_scale_set_ip_configurations::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NetworkInterface, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::NetworkInterface =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -308,66 +433,74 @@ pub mod network_interfaces {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_virtual_machine_scale_set_ip_configuration(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        virtual_machine_scale_set_name: &str,
-        virtualmachine_index: &str,
-        network_interface_name: &str,
-        ip_configuration_name: &str,
-        subscription_id: &str,
-        expand: Option<&str>,
-    ) -> std::result::Result<models::NetworkInterfaceIpConfiguration, get_virtual_machine_scale_set_ip_configuration::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipConfigurations/{}" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name , ip_configuration_name) ;
-        let mut url = url::Url::parse(url_str).map_err(get_virtual_machine_scale_set_ip_configuration::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_virtual_machine_scale_set_ip_configuration::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) virtual_machine_scale_set_name: String,
+            pub(crate) virtualmachine_index: String,
+            pub(crate) network_interface_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) expand: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_virtual_machine_scale_set_ip_configuration::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_virtual_machine_scale_set_ip_configuration::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::NetworkInterfaceIpConfiguration = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_virtual_machine_scale_set_ip_configuration::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get_virtual_machine_scale_set_ip_configuration::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::NetworkInterfaceIpConfigurationListResult, Error>>
+            {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipConfigurations" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::NetworkInterfaceIpConfigurationListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -379,70 +512,138 @@ pub mod network_interfaces {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) virtual_machine_scale_set_name: String,
+            pub(crate) virtualmachine_index: String,
+            pub(crate) network_interface_name: String,
+            pub(crate) ip_configuration_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) expand: Option<String>,
+        }
+        impl Builder {
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::NetworkInterfaceIpConfiguration, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipConfigurations/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name , & self . ip_configuration_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::NetworkInterfaceIpConfiguration =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod public_ip_addresses {
     use super::{models, API_VERSION};
-    pub async fn list_virtual_machine_scale_set_public_ip_addresses(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        virtual_machine_scale_set_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PublicIpAddressListResult, list_virtual_machine_scale_set_public_ip_addresses::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/publicipaddresses",
-            operation_config.base_path(),
-            subscription_id,
-            resource_group_name,
-            virtual_machine_scale_set_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_virtual_machine_scale_set_public_ip_addresses::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_virtual_machine_scale_set_public_ip_addresses::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_virtual_machine_scale_set_public_ip_addresses::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_virtual_machine_scale_set_public_ip_addresses::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PublicIpAddressListResult = serde_json::from_slice(rsp_body).map_err(|source| {
-                    list_virtual_machine_scale_set_public_ip_addresses::Error::DeserializeError(source, rsp_body.clone())
-                })?;
-                Ok(rsp_value)
+        pub fn list_virtual_machine_scale_set_public_ip_addresses(
+            &self,
+            resource_group_name: impl Into<String>,
+            virtual_machine_scale_set_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_virtual_machine_scale_set_public_ip_addresses::Builder {
+            list_virtual_machine_scale_set_public_ip_addresses::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
+                subscription_id: subscription_id.into(),
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_virtual_machine_scale_set_public_ip_addresses::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
-                })
+        }
+        pub fn list_virtual_machine_scale_set_vm_public_ip_addresses(
+            &self,
+            resource_group_name: impl Into<String>,
+            virtual_machine_scale_set_name: impl Into<String>,
+            virtualmachine_index: impl Into<String>,
+            network_interface_name: impl Into<String>,
+            ip_configuration_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_virtual_machine_scale_set_vm_public_ip_addresses::Builder {
+            list_virtual_machine_scale_set_vm_public_ip_addresses::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
+                virtualmachine_index: virtualmachine_index.into(),
+                network_interface_name: network_interface_name.into(),
+                ip_configuration_name: ip_configuration_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn get_virtual_machine_scale_set_public_ip_address(
+            &self,
+            resource_group_name: impl Into<String>,
+            virtual_machine_scale_set_name: impl Into<String>,
+            virtualmachine_index: impl Into<String>,
+            network_interface_name: impl Into<String>,
+            ip_configuration_name: impl Into<String>,
+            public_ip_address_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get_virtual_machine_scale_set_public_ip_address::Builder {
+            get_virtual_machine_scale_set_public_ip_address::Builder {
+                client: self.base_clone(),
+                resource_group_name: resource_group_name.into(),
+                virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
+                virtualmachine_index: virtualmachine_index.into(),
+                network_interface_name: network_interface_name.into(),
+                ip_configuration_name: ip_configuration_name.into(),
+                public_ip_address_name: public_ip_address_name.into(),
+                subscription_id: subscription_id.into(),
+                expand: None,
             }
         }
     }
@@ -453,63 +654,64 @@ pub mod public_ip_addresses {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_virtual_machine_scale_set_vm_public_ip_addresses(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        virtual_machine_scale_set_name: &str,
-        virtualmachine_index: &str,
-        network_interface_name: &str,
-        ip_configuration_name: &str,
-        subscription_id: &str,
-    ) -> std::result::Result<models::PublicIpAddressListResult, list_virtual_machine_scale_set_vm_public_ip_addresses::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name , ip_configuration_name) ;
-        let mut url = url::Url::parse(url_str).map_err(list_virtual_machine_scale_set_vm_public_ip_addresses::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_virtual_machine_scale_set_vm_public_ip_addresses::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) virtual_machine_scale_set_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_virtual_machine_scale_set_vm_public_ip_addresses::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_virtual_machine_scale_set_vm_public_ip_addresses::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PublicIpAddressListResult = serde_json::from_slice(rsp_body).map_err(|source| {
-                    list_virtual_machine_scale_set_vm_public_ip_addresses::Error::DeserializeError(source, rsp_body.clone())
-                })?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(list_virtual_machine_scale_set_vm_public_ip_addresses::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PublicIpAddressListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/publicipaddresses",
+                        &self.client.endpoint, &self.subscription_id, &self.resource_group_name, &self.virtual_machine_scale_set_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PublicIpAddressListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -521,67 +723,64 @@ pub mod public_ip_addresses {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_virtual_machine_scale_set_public_ip_address(
-        operation_config: &crate::OperationConfig,
-        resource_group_name: &str,
-        virtual_machine_scale_set_name: &str,
-        virtualmachine_index: &str,
-        network_interface_name: &str,
-        ip_configuration_name: &str,
-        public_ip_address_name: &str,
-        subscription_id: &str,
-        expand: Option<&str>,
-    ) -> std::result::Result<models::PublicIpAddress, get_virtual_machine_scale_set_public_ip_address::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses/{}" , operation_config . base_path () , subscription_id , resource_group_name , virtual_machine_scale_set_name , virtualmachine_index , network_interface_name , ip_configuration_name , public_ip_address_name) ;
-        let mut url = url::Url::parse(url_str).map_err(get_virtual_machine_scale_set_public_ip_address::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_virtual_machine_scale_set_public_ip_address::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) virtual_machine_scale_set_name: String,
+            pub(crate) virtualmachine_index: String,
+            pub(crate) network_interface_name: String,
+            pub(crate) ip_configuration_name: String,
+            pub(crate) subscription_id: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_virtual_machine_scale_set_public_ip_address::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_virtual_machine_scale_set_public_ip_address::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PublicIpAddress = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_virtual_machine_scale_set_public_ip_address::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                Err(get_virtual_machine_scale_set_public_ip_address::Error::UnexpectedResponse {
-                    status_code,
-                    body: rsp_body.clone(),
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PublicIpAddressListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name , & self . ip_configuration_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PublicIpAddressListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -593,17 +792,75 @@ pub mod public_ip_addresses {
             #[error("Unexpected HTTP status code {}", status_code)]
             UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) virtual_machine_scale_set_name: String,
+            pub(crate) virtualmachine_index: String,
+            pub(crate) network_interface_name: String,
+            pub(crate) ip_configuration_name: String,
+            pub(crate) public_ip_address_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) expand: Option<String>,
+        }
+        impl Builder {
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PublicIpAddress, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/virtualMachines/{}/networkInterfaces/{}/ipconfigurations/{}/publicipaddresses/{}" , & self . client . endpoint , & self . subscription_id , & self . resource_group_name , & self . virtual_machine_scale_set_name , & self . virtualmachine_index , & self . network_interface_name , & self . ip_configuration_name , & self . public_ip_address_name) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PublicIpAddress =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body.clone(),
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }

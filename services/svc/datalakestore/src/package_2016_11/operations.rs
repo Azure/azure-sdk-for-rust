@@ -3,6 +3,81 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
+    pub fn file_system(&self) -> file_system::Client {
+        file_system::Client(self.clone())
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -48,48 +123,197 @@ pub enum Error {
 }
 pub mod file_system {
     use super::{models, API_VERSION};
-    pub async fn mkdirs(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        permission: Option<i32>,
-        op: &str,
-    ) -> std::result::Result<models::FileOperationResult, mkdirs::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=MKDIRS", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(mkdirs::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(mkdirs::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(permission) = permission {
-            url.query_pairs_mut().append_pair("permission", permission.to_string().as_str());
-        }
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(mkdirs::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(mkdirs::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::FileOperationResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| mkdirs::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn mkdirs(&self, path: impl Into<String>, op: impl Into<String>) -> mkdirs::Builder {
+            mkdirs::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                op: op.into(),
+                permission: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| mkdirs::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(mkdirs::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn concat(&self, path: impl Into<String>, sources: Vec<String>, op: impl Into<String>) -> concat::Builder {
+            concat::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                sources,
+                op: op.into(),
+            }
+        }
+        pub fn ms_concat(
+            &self,
+            path: impl Into<String>,
+            stream_contents: impl Into<serde_json::Value>,
+            op: impl Into<String>,
+        ) -> ms_concat::Builder {
+            ms_concat::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                stream_contents: stream_contents.into(),
+                op: op.into(),
+                delete_source_directory: None,
+            }
+        }
+        pub fn list_file_status(&self, path: impl Into<String>, op: impl Into<String>) -> list_file_status::Builder {
+            list_file_status::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                op: op.into(),
+                list_size: None,
+                list_after: None,
+                list_before: None,
+                too_id: None,
+            }
+        }
+        pub fn get_content_summary(&self, path: impl Into<String>, op: impl Into<String>) -> get_content_summary::Builder {
+            get_content_summary::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                op: op.into(),
+            }
+        }
+        pub fn get_file_status(&self, path: impl Into<String>, op: impl Into<String>) -> get_file_status::Builder {
+            get_file_status::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                op: op.into(),
+                too_id: None,
+            }
+        }
+        pub fn open(&self, path: impl Into<String>, read: impl Into<String>, op: impl Into<String>) -> open::Builder {
+            open::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                read: read.into(),
+                op: op.into(),
+                length: None,
+                offset: None,
+                file_session_id: None,
+            }
+        }
+        pub fn append(
+            &self,
+            path: impl Into<String>,
+            stream_contents: impl Into<serde_json::Value>,
+            append: impl Into<String>,
+            op: impl Into<String>,
+        ) -> append::Builder {
+            append::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                stream_contents: stream_contents.into(),
+                append: append.into(),
+                op: op.into(),
+                offset: None,
+                sync_flag: None,
+                lease_id: None,
+                file_session_id: None,
+            }
+        }
+        pub fn create(&self, path: impl Into<String>, write: impl Into<String>, op: impl Into<String>) -> create::Builder {
+            create::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                write: write.into(),
+                op: op.into(),
+                stream_contents: None,
+                overwrite: None,
+                sync_flag: None,
+                lease_id: None,
+                permission: None,
+            }
+        }
+        pub fn set_acl(&self, path: impl Into<String>, aclspec: impl Into<String>, op: impl Into<String>) -> set_acl::Builder {
+            set_acl::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                aclspec: aclspec.into(),
+                op: op.into(),
+            }
+        }
+        pub fn modify_acl_entries(
+            &self,
+            path: impl Into<String>,
+            aclspec: impl Into<String>,
+            op: impl Into<String>,
+        ) -> modify_acl_entries::Builder {
+            modify_acl_entries::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                aclspec: aclspec.into(),
+                op: op.into(),
+            }
+        }
+        pub fn remove_acl_entries(
+            &self,
+            path: impl Into<String>,
+            aclspec: impl Into<String>,
+            op: impl Into<String>,
+        ) -> remove_acl_entries::Builder {
+            remove_acl_entries::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                aclspec: aclspec.into(),
+                op: op.into(),
+            }
+        }
+        pub fn remove_default_acl(&self, path: impl Into<String>, op: impl Into<String>) -> remove_default_acl::Builder {
+            remove_default_acl::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                op: op.into(),
+            }
+        }
+        pub fn remove_acl(&self, path: impl Into<String>, op: impl Into<String>) -> remove_acl::Builder {
+            remove_acl::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                op: op.into(),
+            }
+        }
+        pub fn get_acl_status(&self, path: impl Into<String>, op: impl Into<String>) -> get_acl_status::Builder {
+            get_acl_status::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                op: op.into(),
+                too_id: None,
+            }
+        }
+        pub fn delete(&self, path: impl Into<String>, op: impl Into<String>) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                op: op.into(),
+                recursive: None,
+            }
+        }
+        pub fn rename(&self, path: impl Into<String>, destination: impl Into<String>, op: impl Into<String>) -> rename::Builder {
+            rename::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                destination: destination.into(),
+                op: op.into(),
+            }
+        }
+        pub fn set_owner(&self, path: impl Into<String>, op: impl Into<String>) -> set_owner::Builder {
+            set_owner::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                op: op.into(),
+                owner: None,
+                group: None,
+            }
+        }
+        pub fn set_permission(&self, path: impl Into<String>, op: impl Into<String>) -> set_permission::Builder {
+            set_permission::Builder {
+                client: self.base_clone(),
+                path: path.into(),
+                op: op.into(),
+                permission: None,
             }
         }
     }
@@ -103,53 +327,72 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn concat(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        sources: &[&str],
-        op: &str,
-    ) -> std::result::Result<(), concat::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=CONCAT", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(concat::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(concat::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) op: String,
+            pub(crate) permission: Option<i32>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(concat::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(concat::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| concat::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(concat::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn permission(mut self, permission: i32) -> Self {
+                self.permission = Some(permission);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FileOperationResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=MKDIRS", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(permission) = &self.permission {
+                        url.query_pairs_mut().append_pair("permission", &permission.to_string());
+                    }
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::FileOperationResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -164,61 +407,61 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn ms_concat(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        delete_source_directory: Option<bool>,
-        stream_contents: &serde_json::Value,
-        op: &str,
-    ) -> std::result::Result<(), ms_concat::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=MSCONCAT", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(ms_concat::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(ms_concat::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) sources: Vec<String>,
+            pub(crate) op: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(delete_source_directory) = delete_source_directory {
-            url.query_pairs_mut()
-                .append_pair("deleteSourceDirectory", delete_source_directory.to_string().as_str());
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(stream_contents).map_err(ms_concat::Error::SerializeError)?;
-        url.query_pairs_mut().append_pair("op", op);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(ms_concat::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(ms_concat::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| ms_concat::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(ms_concat::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=CONCAT", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -233,75 +476,70 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_file_status(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        list_size: Option<i32>,
-        list_after: Option<&str>,
-        list_before: Option<&str>,
-        too_id: Option<bool>,
-        op: &str,
-    ) -> std::result::Result<models::FileStatusesResult, list_file_status::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=LISTSTATUS", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(list_file_status::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_file_status::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) stream_contents: serde_json::Value,
+            pub(crate) op: String,
+            pub(crate) delete_source_directory: Option<bool>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(list_size) = list_size {
-            url.query_pairs_mut().append_pair("listSize", list_size.to_string().as_str());
-        }
-        if let Some(list_after) = list_after {
-            url.query_pairs_mut().append_pair("listAfter", list_after);
-        }
-        if let Some(list_before) = list_before {
-            url.query_pairs_mut().append_pair("listBefore", list_before);
-        }
-        if let Some(too_id) = too_id {
-            url.query_pairs_mut().append_pair("tooId", too_id.to_string().as_str());
-        }
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_file_status::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_file_status::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::FileStatusesResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_file_status::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn delete_source_directory(mut self, delete_source_directory: bool) -> Self {
+                self.delete_source_directory = Some(delete_source_directory);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_file_status::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_file_status::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=MSCONCAT", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(delete_source_directory) = &self.delete_source_directory {
+                        url.query_pairs_mut()
+                            .append_pair("deleteSourceDirectory", &delete_source_directory.to_string());
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.stream_contents).map_err(Error::Serialize)?;
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -316,59 +554,96 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_content_summary(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        op: &str,
-    ) -> std::result::Result<models::ContentSummaryResult, get_content_summary::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=GETCONTENTSUMMARY", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(get_content_summary::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_content_summary::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) op: String,
+            pub(crate) list_size: Option<i32>,
+            pub(crate) list_after: Option<String>,
+            pub(crate) list_before: Option<String>,
+            pub(crate) too_id: Option<bool>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_content_summary::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_content_summary::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ContentSummaryResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_content_summary::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn list_size(mut self, list_size: i32) -> Self {
+                self.list_size = Some(list_size);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_content_summary::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_content_summary::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn list_after(mut self, list_after: impl Into<String>) -> Self {
+                self.list_after = Some(list_after.into());
+                self
+            }
+            pub fn list_before(mut self, list_before: impl Into<String>) -> Self {
+                self.list_before = Some(list_before.into());
+                self
+            }
+            pub fn too_id(mut self, too_id: bool) -> Self {
+                self.too_id = Some(too_id);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FileStatusesResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=LISTSTATUS", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(list_size) = &self.list_size {
+                        url.query_pairs_mut().append_pair("listSize", &list_size.to_string());
+                    }
+                    if let Some(list_after) = &self.list_after {
+                        url.query_pairs_mut().append_pair("listAfter", list_after);
+                    }
+                    if let Some(list_before) = &self.list_before {
+                        url.query_pairs_mut().append_pair("listBefore", list_before);
+                    }
+                    if let Some(too_id) = &self.too_id {
+                        url.query_pairs_mut().append_pair("tooId", &too_id.to_string());
+                    }
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::FileStatusesResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -383,63 +658,64 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_file_status(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        too_id: Option<bool>,
-        op: &str,
-    ) -> std::result::Result<models::FileStatusResult, get_file_status::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=GETFILESTATUS", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(get_file_status::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_file_status::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) op: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(too_id) = too_id {
-            url.query_pairs_mut().append_pair("tooId", too_id.to_string().as_str());
-        }
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_file_status::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_file_status::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::FileStatusResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_file_status::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_file_status::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_file_status::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ContentSummaryResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=GETCONTENTSUMMARY", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ContentSummaryResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -454,69 +730,72 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn open(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        length: Option<i64>,
-        offset: Option<i64>,
-        file_session_id: Option<&str>,
-        read: &str,
-        op: &str,
-    ) -> std::result::Result<bytes::Bytes, open::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=OPEN", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(open::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(open::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) op: String,
+            pub(crate) too_id: Option<bool>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(length) = length {
-            url.query_pairs_mut().append_pair("length", length.to_string().as_str());
-        }
-        if let Some(offset) = offset {
-            url.query_pairs_mut().append_pair("offset", offset.to_string().as_str());
-        }
-        if let Some(file_session_id) = file_session_id {
-            url.query_pairs_mut().append_pair("fileSessionId", file_session_id);
-        }
-        url.query_pairs_mut().append_pair("read", read);
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(open::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(open::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value = rsp_body.clone();
-                Ok(rsp_value)
+        impl Builder {
+            pub fn too_id(mut self, too_id: bool) -> Self {
+                self.too_id = Some(too_id);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| open::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(open::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FileStatusResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=GETFILESTATUS", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(too_id) = &self.too_id {
+                        url.query_pairs_mut().append_pair("tooId", &too_id.to_string());
+                    }
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::FileStatusResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -531,71 +810,90 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn append(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        stream_contents: &serde_json::Value,
-        offset: Option<i64>,
-        sync_flag: Option<&str>,
-        lease_id: Option<&str>,
-        file_session_id: Option<&str>,
-        append: &str,
-        op: &str,
-    ) -> std::result::Result<(), append::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=APPEND", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(append::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(append::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) read: String,
+            pub(crate) op: String,
+            pub(crate) length: Option<i64>,
+            pub(crate) offset: Option<i64>,
+            pub(crate) file_session_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(stream_contents).map_err(append::Error::SerializeError)?;
-        if let Some(offset) = offset {
-            url.query_pairs_mut().append_pair("offset", offset.to_string().as_str());
-        }
-        if let Some(sync_flag) = sync_flag {
-            url.query_pairs_mut().append_pair("syncFlag", sync_flag);
-        }
-        if let Some(lease_id) = lease_id {
-            url.query_pairs_mut().append_pair("leaseId", lease_id);
-        }
-        if let Some(file_session_id) = file_session_id {
-            url.query_pairs_mut().append_pair("fileSessionId", file_session_id);
-        }
-        url.query_pairs_mut().append_pair("append", append);
-        url.query_pairs_mut().append_pair("op", op);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(append::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(append::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| append::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(append::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn length(mut self, length: i64) -> Self {
+                self.length = Some(length);
+                self
+            }
+            pub fn offset(mut self, offset: i64) -> Self {
+                self.offset = Some(offset);
+                self
+            }
+            pub fn file_session_id(mut self, file_session_id: impl Into<String>) -> Self {
+                self.file_session_id = Some(file_session_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<bytes::Bytes, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=OPEN", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(length) = &self.length {
+                        url.query_pairs_mut().append_pair("length", &length.to_string());
+                    }
+                    if let Some(offset) = &self.offset {
+                        url.query_pairs_mut().append_pair("offset", &offset.to_string());
+                    }
+                    if let Some(file_session_id) = &self.file_session_id {
+                        url.query_pairs_mut().append_pair("fileSessionId", file_session_id);
+                    }
+                    let read = &self.read;
+                    url.query_pairs_mut().append_pair("read", read);
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value = rsp_body.clone();
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -610,75 +908,96 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        stream_contents: Option<&serde_json::Value>,
-        overwrite: Option<bool>,
-        sync_flag: Option<&str>,
-        lease_id: Option<&str>,
-        permission: Option<i32>,
-        write: &str,
-        op: &str,
-    ) -> std::result::Result<(), create::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=CREATE", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(create::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) stream_contents: serde_json::Value,
+            pub(crate) append: String,
+            pub(crate) op: String,
+            pub(crate) offset: Option<i64>,
+            pub(crate) sync_flag: Option<String>,
+            pub(crate) lease_id: Option<String>,
+            pub(crate) file_session_id: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = if let Some(stream_contents) = stream_contents {
-            req_builder = req_builder.header("content-type", "application/json");
-            azure_core::to_json(stream_contents).map_err(create::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        if let Some(overwrite) = overwrite {
-            url.query_pairs_mut().append_pair("overwrite", overwrite.to_string().as_str());
-        }
-        if let Some(sync_flag) = sync_flag {
-            url.query_pairs_mut().append_pair("syncFlag", sync_flag);
-        }
-        if let Some(lease_id) = lease_id {
-            url.query_pairs_mut().append_pair("leaseId", lease_id);
-        }
-        if let Some(permission) = permission {
-            url.query_pairs_mut().append_pair("permission", permission.to_string().as_str());
-        }
-        url.query_pairs_mut().append_pair("write", write);
-        url.query_pairs_mut().append_pair("op", op);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(create::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(create::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| create::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn offset(mut self, offset: i64) -> Self {
+                self.offset = Some(offset);
+                self
+            }
+            pub fn sync_flag(mut self, sync_flag: impl Into<String>) -> Self {
+                self.sync_flag = Some(sync_flag.into());
+                self
+            }
+            pub fn lease_id(mut self, lease_id: impl Into<String>) -> Self {
+                self.lease_id = Some(lease_id.into());
+                self
+            }
+            pub fn file_session_id(mut self, file_session_id: impl Into<String>) -> Self {
+                self.file_session_id = Some(file_session_id.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=APPEND", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.stream_contents).map_err(Error::Serialize)?;
+                    if let Some(offset) = &self.offset {
+                        url.query_pairs_mut().append_pair("offset", &offset.to_string());
+                    }
+                    if let Some(sync_flag) = &self.sync_flag {
+                        url.query_pairs_mut().append_pair("syncFlag", sync_flag);
+                    }
+                    if let Some(lease_id) = &self.lease_id {
+                        url.query_pairs_mut().append_pair("leaseId", lease_id);
+                    }
+                    if let Some(file_session_id) = &self.file_session_id {
+                        url.query_pairs_mut().append_pair("fileSessionId", file_session_id);
+                    }
+                    let append = &self.append;
+                    url.query_pairs_mut().append_pair("append", append);
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -693,56 +1012,104 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_acl(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        aclspec: &str,
-        op: &str,
-    ) -> std::result::Result<(), set_acl::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=SETACL", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(set_acl::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_acl::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) write: String,
+            pub(crate) op: String,
+            pub(crate) stream_contents: Option<serde_json::Value>,
+            pub(crate) overwrite: Option<bool>,
+            pub(crate) sync_flag: Option<String>,
+            pub(crate) lease_id: Option<String>,
+            pub(crate) permission: Option<i32>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("aclspec", aclspec);
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_acl::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_acl::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| set_acl::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_acl::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn stream_contents(mut self, stream_contents: impl Into<serde_json::Value>) -> Self {
+                self.stream_contents = Some(stream_contents.into());
+                self
+            }
+            pub fn overwrite(mut self, overwrite: bool) -> Self {
+                self.overwrite = Some(overwrite);
+                self
+            }
+            pub fn sync_flag(mut self, sync_flag: impl Into<String>) -> Self {
+                self.sync_flag = Some(sync_flag.into());
+                self
+            }
+            pub fn lease_id(mut self, lease_id: impl Into<String>) -> Self {
+                self.lease_id = Some(lease_id.into());
+                self
+            }
+            pub fn permission(mut self, permission: i32) -> Self {
+                self.permission = Some(permission);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=CREATE", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = if let Some(stream_contents) = &self.stream_contents {
+                        req_builder = req_builder.header("content-type", "application/json");
+                        azure_core::to_json(stream_contents).map_err(Error::Serialize)?
+                    } else {
+                        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    };
+                    if let Some(overwrite) = &self.overwrite {
+                        url.query_pairs_mut().append_pair("overwrite", &overwrite.to_string());
+                    }
+                    if let Some(sync_flag) = &self.sync_flag {
+                        url.query_pairs_mut().append_pair("syncFlag", sync_flag);
+                    }
+                    if let Some(lease_id) = &self.lease_id {
+                        url.query_pairs_mut().append_pair("leaseId", lease_id);
+                    }
+                    if let Some(permission) = &self.permission {
+                        url.query_pairs_mut().append_pair("permission", &permission.to_string());
+                    }
+                    let write = &self.write;
+                    url.query_pairs_mut().append_pair("write", write);
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -757,56 +1124,62 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn modify_acl_entries(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        aclspec: &str,
-        op: &str,
-    ) -> std::result::Result<(), modify_acl_entries::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=MODIFYACLENTRIES", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(modify_acl_entries::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(modify_acl_entries::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) aclspec: String,
+            pub(crate) op: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("aclspec", aclspec);
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(modify_acl_entries::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(modify_acl_entries::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| modify_acl_entries::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(modify_acl_entries::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=SETACL", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let aclspec = &self.aclspec;
+                    url.query_pairs_mut().append_pair("aclspec", aclspec);
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -821,56 +1194,62 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn remove_acl_entries(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        aclspec: &str,
-        op: &str,
-    ) -> std::result::Result<(), remove_acl_entries::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=REMOVEACLENTRIES", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(remove_acl_entries::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(remove_acl_entries::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) aclspec: String,
+            pub(crate) op: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("aclspec", aclspec);
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(remove_acl_entries::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(remove_acl_entries::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| remove_acl_entries::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(remove_acl_entries::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=MODIFYACLENTRIES", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let aclspec = &self.aclspec;
+                    url.query_pairs_mut().append_pair("aclspec", aclspec);
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -885,54 +1264,62 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn remove_default_acl(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        op: &str,
-    ) -> std::result::Result<(), remove_default_acl::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=REMOVEDEFAULTACL", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(remove_default_acl::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(remove_default_acl::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) aclspec: String,
+            pub(crate) op: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(remove_default_acl::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(remove_default_acl::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| remove_default_acl::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(remove_default_acl::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=REMOVEACLENTRIES", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let aclspec = &self.aclspec;
+                    url.query_pairs_mut().append_pair("aclspec", aclspec);
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -947,50 +1334,59 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn remove_acl(operation_config: &crate::OperationConfig, path: &str, op: &str) -> std::result::Result<(), remove_acl::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=REMOVEACL", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(remove_acl::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(remove_acl::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) op: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(remove_acl::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(remove_acl::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| remove_acl::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(remove_acl::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=REMOVEDEFAULTACL", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1005,63 +1401,59 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_acl_status(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        too_id: Option<bool>,
-        op: &str,
-    ) -> std::result::Result<models::AclStatusResult, get_acl_status::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=GETACLSTATUS", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(get_acl_status::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_acl_status::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) op: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(too_id) = too_id {
-            url.query_pairs_mut().append_pair("tooId", too_id.to_string().as_str());
-        }
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_acl_status::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_acl_status::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AclStatusResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_acl_status::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_acl_status::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_acl_status::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=REMOVEACL", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1076,60 +1468,72 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        recursive: Option<bool>,
-        op: &str,
-    ) -> std::result::Result<models::FileOperationResult, delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=DELETE", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) op: String,
+            pub(crate) too_id: Option<bool>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(recursive) = recursive {
-            url.query_pairs_mut().append_pair("recursive", recursive.to_string().as_str());
-        }
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::FileOperationResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn too_id(mut self, too_id: bool) -> Self {
+                self.too_id = Some(too_id);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AclStatusResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=GETACLSTATUS", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(too_id) = &self.too_id {
+                        url.query_pairs_mut().append_pair("tooId", &too_id.to_string());
+                    }
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AclStatusResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1144,58 +1548,72 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn rename(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        destination: &str,
-        op: &str,
-    ) -> std::result::Result<models::FileOperationResult, rename::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=RENAME", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(rename::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(rename::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) op: String,
+            pub(crate) recursive: Option<bool>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        url.query_pairs_mut().append_pair("destination", destination);
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(rename::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(rename::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::FileOperationResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| rename::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn recursive(mut self, recursive: bool) -> Self {
+                self.recursive = Some(recursive);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| rename::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(rename::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FileOperationResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=DELETE", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(recursive) = &self.recursive {
+                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
+                    }
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::FileOperationResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1210,62 +1628,67 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_owner(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        owner: Option<&str>,
-        group: Option<&str>,
-        op: &str,
-    ) -> std::result::Result<(), set_owner::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=SETOWNER", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(set_owner::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_owner::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) destination: String,
+            pub(crate) op: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(owner) = owner {
-            url.query_pairs_mut().append_pair("owner", owner);
-        }
-        if let Some(group) = group {
-            url.query_pairs_mut().append_pair("group", group);
-        }
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_owner::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_owner::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| set_owner::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_owner::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FileOperationResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=RENAME", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let destination = &self.destination;
+                    url.query_pairs_mut().append_pair("destination", destination);
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::FileOperationResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1280,58 +1703,75 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn set_permission(
-        operation_config: &crate::OperationConfig,
-        path: &str,
-        permission: Option<&str>,
-        op: &str,
-    ) -> std::result::Result<(), set_permission::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/webhdfs/v1/{}?op=SETPERMISSION", operation_config.base_path(), path);
-        let mut url = url::Url::parse(url_str).map_err(set_permission::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(set_permission::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) op: String,
+            pub(crate) owner: Option<String>,
+            pub(crate) group: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(permission) = permission {
-            url.query_pairs_mut().append_pair("permission", permission);
-        }
-        url.query_pairs_mut().append_pair("op", op);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(set_permission::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(set_permission::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AdlsError =
-                    serde_json::from_slice(rsp_body).map_err(|source| set_permission::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(set_permission::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn owner(mut self, owner: impl Into<String>) -> Self {
+                self.owner = Some(owner.into());
+                self
+            }
+            pub fn group(mut self, group: impl Into<String>) -> Self {
+                self.group = Some(group.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=SETOWNER", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(owner) = &self.owner {
+                        url.query_pairs_mut().append_pair("owner", owner);
+                    }
+                    if let Some(group) = &self.group {
+                        url.query_pairs_mut().append_pair("group", group);
+                    }
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1346,17 +1786,69 @@ pub mod file_system {
                 value: models::AdlsError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) path: String,
+            pub(crate) op: String,
+            pub(crate) permission: Option<String>,
+        }
+        impl Builder {
+            pub fn permission(mut self, permission: impl Into<String>) -> Self {
+                self.permission = Some(permission.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/webhdfs/v1/{}?op=SETPERMISSION", &self.client.endpoint, &self.path);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(permission) = &self.permission {
+                        url.query_pairs_mut().append_pair("permission", permission);
+                    }
+                    let op = &self.op;
+                    url.query_pairs_mut().append_pair("op", op);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AdlsError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }

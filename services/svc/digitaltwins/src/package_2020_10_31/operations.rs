@@ -3,6 +3,90 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
+    pub fn digital_twin_models(&self) -> digital_twin_models::Client {
+        digital_twin_models::Client(self.clone())
+    }
+    pub fn digital_twins(&self) -> digital_twins::Client {
+        digital_twins::Client(self.clone())
+    }
+    pub fn event_routes(&self) -> event_routes::Client {
+        event_routes::Client(self.clone())
+    }
+    pub fn query(&self) -> query::Client {
+        query::Client(self.clone())
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -58,62 +142,53 @@ pub enum Error {
 }
 pub mod digital_twin_models {
     use super::{models, API_VERSION};
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        dependencies_for: &[&str],
-        include_model_definition: Option<bool>,
-        max_items_per_page: Option<i64>,
-    ) -> std::result::Result<models::PagedDigitalTwinsModelDataCollection, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/models", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        for value in dependencies_for {
-            url.query_pairs_mut().append_pair("dependenciesFor", value.to_string().as_str());
-        }
-        if let Some(include_model_definition) = include_model_definition {
-            url.query_pairs_mut()
-                .append_pair("includeModelDefinition", include_model_definition.to_string().as_str());
-        }
-        if let Some(max_items_per_page) = max_items_per_page {
-            req_builder = req_builder.header("max-items-per-page", max_items_per_page);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::PagedDigitalTwinsModelDataCollection =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn list(&self) -> list::Builder {
+            list::Builder {
+                client: self.base_clone(),
+                traceparent: None,
+                tracestate: None,
+                dependencies_for: Vec::new(),
+                include_model_definition: None,
+                max_items_per_page: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn add(&self) -> add::Builder {
+            add::Builder {
+                client: self.base_clone(),
+                traceparent: None,
+                tracestate: None,
+                models: None,
+            }
+        }
+        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
+            get_by_id::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                traceparent: None,
+                tracestate: None,
+                include_model_definition: None,
+            }
+        }
+        pub fn update(&self, id: impl Into<String>, update_model: impl Into<Vec<serde_json::Value>>) -> update::Builder {
+            update::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                update_model: update_model.into(),
+                traceparent: None,
+                tracestate: None,
+            }
+        }
+        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                traceparent: None,
+                tracestate: None,
             }
         }
     }
@@ -127,67 +202,104 @@ pub mod digital_twin_models {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        models: Option<&[&serde_json::Value]>,
-    ) -> std::result::Result<models::NonPagedDigitalTwinsModelDataCollection, add::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/models", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(add::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) dependencies_for: Vec<String>,
+            pub(crate) include_model_definition: Option<bool>,
+            pub(crate) max_items_per_page: Option<i64>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        let req_body = if let Some(models) = models {
-            req_builder = req_builder.header("content-type", "application/json");
-            azure_core::to_json(models).map_err(add::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(add::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(add::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::NonPagedDigitalTwinsModelDataCollection =
-                    serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn dependencies_for(mut self, dependencies_for: Vec<String>) -> Self {
+                self.dependencies_for = dependencies_for;
+                self
+            }
+            pub fn include_model_definition(mut self, include_model_definition: bool) -> Self {
+                self.include_model_definition = Some(include_model_definition);
+                self
+            }
+            pub fn max_items_per_page(mut self, max_items_per_page: i64) -> Self {
+                self.max_items_per_page = Some(max_items_per_page);
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PagedDigitalTwinsModelDataCollection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/models", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    let dependencies_for = &self.dependencies_for;
+                    for value in &self.dependencies_for {
+                        url.query_pairs_mut().append_pair("dependenciesFor", &value.to_string());
+                    }
+                    if let Some(include_model_definition) = &self.include_model_definition {
+                        url.query_pairs_mut()
+                            .append_pair("includeModelDefinition", &include_model_definition.to_string());
+                    }
+                    if let Some(max_items_per_page) = &self.max_items_per_page {
+                        req_builder = req_builder.header("max-items-per-page", &max_items_per_page.to_string());
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PagedDigitalTwinsModelDataCollection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -202,70 +314,89 @@ pub mod digital_twin_models {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_by_id(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        include_model_definition: Option<bool>,
-    ) -> std::result::Result<models::DigitalTwinsModelData, get_by_id::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/models/{}", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(get_by_id::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_by_id::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) models: Option<Vec<serde_json::Value>>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        if let Some(include_model_definition) = include_model_definition {
-            url.query_pairs_mut()
-                .append_pair("includeModelDefinition", include_model_definition.to_string().as_str());
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_by_id::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_by_id::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::DigitalTwinsModelData =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_by_id::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn models(mut self, models: impl Into<Vec<serde_json::Value>>) -> Self {
+                self.models = Some(models.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::NonPagedDigitalTwinsModelDataCollection, Error>>
+            {
+                Box::pin(async move {
+                    let url_str = &format!("{}/models", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    let req_body = if let Some(models) = &self.models {
+                        req_builder = req_builder.header("content-type", "application/json");
+                        azure_core::to_json(models).map_err(Error::Serialize)?
+                    } else {
+                        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    };
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::NonPagedDigitalTwinsModelDataCollection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -280,59 +411,86 @@ pub mod digital_twin_models {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        update_model: &[&serde_json::Value],
-    ) -> std::result::Result<(), update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/models/{}", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) include_model_definition: Option<bool>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(update_model).map_err(update::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn include_model_definition(mut self, include_model_definition: bool) -> Self {
+                self.include_model_definition = Some(include_model_definition);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DigitalTwinsModelData, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/models/{}", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    if let Some(include_model_definition) = &self.include_model_definition {
+                        url.query_pairs_mut()
+                            .append_pair("includeModelDefinition", &include_model_definition.to_string());
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::DigitalTwinsModelData =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -347,57 +505,74 @@ pub mod digital_twin_models {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/models/{}", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) update_model: Vec<serde_json::Value>,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/models/{}", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.update_model).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -412,74 +587,91 @@ pub mod digital_twin_models {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+        }
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/models/{}", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod query {
     use super::{models, API_VERSION};
-    pub async fn query_twins(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        query_specification: &models::QuerySpecification,
-        max_items_per_page: Option<i64>,
-    ) -> std::result::Result<models::QueryResult, query_twins::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/query", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(query_twins::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(query_twins::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(query_specification).map_err(query_twins::Error::SerializeError)?;
-        if let Some(max_items_per_page) = max_items_per_page {
-            req_builder = req_builder.header("max-items-per-page", max_items_per_page);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(query_twins::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(query_twins::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::QueryResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| query_twins::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| query_twins::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(query_twins::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn query_twins(&self, query_specification: impl Into<models::QuerySpecification>) -> query_twins::Builder {
+            query_twins::Builder {
+                client: self.base_clone(),
+                query_specification: query_specification.into(),
+                traceparent: None,
+                tracestate: None,
+                max_items_per_page: None,
             }
         }
     }
@@ -493,69 +685,260 @@ pub mod query {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) query_specification: models::QuerySpecification,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) max_items_per_page: Option<i64>,
+        }
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn max_items_per_page(mut self, max_items_per_page: i64) -> Self {
+                self.max_items_per_page = Some(max_items_per_page);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::QueryResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/query", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.query_specification).map_err(Error::Serialize)?;
+                    if let Some(max_items_per_page) = &self.max_items_per_page {
+                        req_builder = req_builder.header("max-items-per-page", &max_items_per_page.to_string());
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::QueryResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod digital_twins {
     use super::{models, API_VERSION};
-    pub async fn get_by_id(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-    ) -> std::result::Result<serde_json::Value, get_by_id::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/digitaltwins/{}", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(get_by_id::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_by_id::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_by_id::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_by_id::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
+            get_by_id::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                traceparent: None,
+                tracestate: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_by_id::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn add(&self, id: impl Into<String>, twin: impl Into<serde_json::Value>) -> add::Builder {
+            add::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                twin: twin.into(),
+                traceparent: None,
+                tracestate: None,
+                if_none_match: None,
+            }
+        }
+        pub fn update(&self, id: impl Into<String>, patch_document: impl Into<Vec<serde_json::Value>>) -> update::Builder {
+            update::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                patch_document: patch_document.into(),
+                traceparent: None,
+                tracestate: None,
+                if_match: None,
+            }
+        }
+        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                traceparent: None,
+                tracestate: None,
+                if_match: None,
+            }
+        }
+        pub fn get_relationship_by_id(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> get_relationship_by_id::Builder {
+            get_relationship_by_id::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                relationship_id: relationship_id.into(),
+                traceparent: None,
+                tracestate: None,
+            }
+        }
+        pub fn add_relationship(
+            &self,
+            id: impl Into<String>,
+            relationship_id: impl Into<String>,
+            relationship: impl Into<serde_json::Value>,
+        ) -> add_relationship::Builder {
+            add_relationship::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                relationship_id: relationship_id.into(),
+                relationship: relationship.into(),
+                traceparent: None,
+                tracestate: None,
+                if_none_match: None,
+            }
+        }
+        pub fn update_relationship(
+            &self,
+            id: impl Into<String>,
+            relationship_id: impl Into<String>,
+            patch_document: impl Into<Vec<serde_json::Value>>,
+        ) -> update_relationship::Builder {
+            update_relationship::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                relationship_id: relationship_id.into(),
+                patch_document: patch_document.into(),
+                traceparent: None,
+                tracestate: None,
+                if_match: None,
+            }
+        }
+        pub fn delete_relationship(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> delete_relationship::Builder {
+            delete_relationship::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                relationship_id: relationship_id.into(),
+                traceparent: None,
+                tracestate: None,
+                if_match: None,
+            }
+        }
+        pub fn list_relationships(&self, id: impl Into<String>) -> list_relationships::Builder {
+            list_relationships::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                traceparent: None,
+                tracestate: None,
+                relationship_name: None,
+            }
+        }
+        pub fn list_incoming_relationships(&self, id: impl Into<String>) -> list_incoming_relationships::Builder {
+            list_incoming_relationships::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                traceparent: None,
+                tracestate: None,
+            }
+        }
+        pub fn send_telemetry(
+            &self,
+            id: impl Into<String>,
+            telemetry: impl Into<serde_json::Value>,
+            message_id: impl Into<String>,
+        ) -> send_telemetry::Builder {
+            send_telemetry::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                telemetry: telemetry.into(),
+                message_id: message_id.into(),
+                traceparent: None,
+                tracestate: None,
+                telemetry_source_time: None,
+            }
+        }
+        pub fn send_component_telemetry(
+            &self,
+            id: impl Into<String>,
+            component_path: impl Into<String>,
+            telemetry: impl Into<serde_json::Value>,
+            message_id: impl Into<String>,
+        ) -> send_component_telemetry::Builder {
+            send_component_telemetry::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                component_path: component_path.into(),
+                telemetry: telemetry.into(),
+                message_id: message_id.into(),
+                traceparent: None,
+                tracestate: None,
+                telemetry_source_time: None,
+            }
+        }
+        pub fn get_component(&self, id: impl Into<String>, component_path: impl Into<String>) -> get_component::Builder {
+            get_component::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                component_path: component_path.into(),
+                traceparent: None,
+                tracestate: None,
+            }
+        }
+        pub fn update_component(
+            &self,
+            id: impl Into<String>,
+            component_path: impl Into<String>,
+            patch_document: impl Into<Vec<serde_json::Value>>,
+        ) -> update_component::Builder {
+            update_component::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                component_path: component_path.into(),
+                patch_document: patch_document.into(),
+                traceparent: None,
+                tracestate: None,
+                if_match: None,
             }
         }
     }
@@ -569,69 +952,77 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        twin: &serde_json::Value,
-        if_none_match: Option<&str>,
-    ) -> std::result::Result<add::Response, add::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/digitaltwins/{}", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(add::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(twin).map_err(add::Error::SerializeError)?;
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(add::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(add::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(add::Response::Ok200(rsp_value))
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
             }
-            http::StatusCode::ACCEPTED => Ok(add::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/digitaltwins/{}", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -651,64 +1042,88 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        patch_document: &[&serde_json::Value],
-        if_match: Option<&str>,
-    ) -> std::result::Result<update::Response, update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/digitaltwins/{}", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) twin: serde_json::Value,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) if_none_match: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(patch_document).map_err(update::Error::SerializeError)?;
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(update::Response::NoContent204),
-            http::StatusCode::ACCEPTED => Ok(update::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/digitaltwins/{}", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.twin).map_err(Error::Serialize)?;
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -728,61 +1143,83 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        if_match: Option<&str>,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/digitaltwins/{}", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) patch_document: Vec<serde_json::Value>,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) if_match: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/digitaltwins/{}", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.patch_document).map_err(Error::Serialize)?;
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -797,73 +1234,80 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_relationship_by_id(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        relationship_id: &str,
-    ) -> std::result::Result<serde_json::Value, get_relationship_by_id::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/digitaltwins/{}/relationships/{}",
-            operation_config.base_path(),
-            id,
-            relationship_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_relationship_by_id::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_relationship_by_id::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) if_match: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_relationship_by_id::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_relationship_by_id::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_relationship_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_relationship_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_relationship_by_id::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/digitaltwins/{}", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -878,77 +1322,81 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add_relationship(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        relationship_id: &str,
-        relationship: &serde_json::Value,
-        if_none_match: Option<&str>,
-    ) -> std::result::Result<serde_json::Value, add_relationship::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/digitaltwins/{}/relationships/{}",
-            operation_config.base_path(),
-            id,
-            relationship_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(add_relationship::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add_relationship::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) relationship_id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(relationship).map_err(add_relationship::Error::SerializeError)?;
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(add_relationship::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(add_relationship::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body)
-                    .map_err(|source| add_relationship::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| add_relationship::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add_relationship::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/digitaltwins/{}/relationships/{}",
+                        &self.client.endpoint, &self.id, &self.relationship_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -963,72 +1411,91 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update_relationship(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        relationship_id: &str,
-        patch_document: &[&serde_json::Value],
-        if_match: Option<&str>,
-    ) -> std::result::Result<(), update_relationship::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/digitaltwins/{}/relationships/{}",
-            operation_config.base_path(),
-            id,
-            relationship_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(update_relationship::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update_relationship::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) relationship_id: String,
+            pub(crate) relationship: serde_json::Value,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) if_none_match: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(patch_document).map_err(update_relationship::Error::SerializeError)?;
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update_relationship::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(update_relationship::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| update_relationship::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update_relationship::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/digitaltwins/{}/relationships/{}",
+                        &self.client.endpoint, &self.id, &self.relationship_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.relationship).map_err(Error::Serialize)?;
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1043,70 +1510,86 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete_relationship(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        relationship_id: &str,
-        if_match: Option<&str>,
-    ) -> std::result::Result<(), delete_relationship::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/digitaltwins/{}/relationships/{}",
-            operation_config.base_path(),
-            id,
-            relationship_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_relationship::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_relationship::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) relationship_id: String,
+            pub(crate) patch_document: Vec<serde_json::Value>,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) if_match: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete_relationship::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_relationship::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| delete_relationship::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_relationship::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/digitaltwins/{}/relationships/{}",
+                        &self.client.endpoint, &self.id, &self.relationship_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.patch_document).map_err(Error::Serialize)?;
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1121,69 +1604,84 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_relationships(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        relationship_name: Option<&str>,
-    ) -> std::result::Result<models::RelationshipCollection, list_relationships::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/digitaltwins/{}/relationships", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(list_relationships::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_relationships::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) relationship_id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) if_match: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        if let Some(relationship_name) = relationship_name {
-            url.query_pairs_mut().append_pair("relationshipName", relationship_name);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_relationships::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_relationships::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::RelationshipCollection = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_relationships::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_relationships::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_relationships::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/digitaltwins/{}/relationships/{}",
+                        &self.client.endpoint, &self.id, &self.relationship_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1198,67 +1696,85 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_incoming_relationships(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-    ) -> std::result::Result<models::IncomingRelationshipCollection, list_incoming_relationships::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/digitaltwins/{}/incomingrelationships", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(list_incoming_relationships::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_incoming_relationships::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) relationship_name: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_incoming_relationships::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_incoming_relationships::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IncomingRelationshipCollection = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_incoming_relationships::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_incoming_relationships::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_incoming_relationships::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn relationship_name(mut self, relationship_name: impl Into<String>) -> Self {
+                self.relationship_name = Some(relationship_name.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RelationshipCollection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/digitaltwins/{}/relationships", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    if let Some(relationship_name) = &self.relationship_name {
+                        url.query_pairs_mut().append_pair("relationshipName", relationship_name);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::RelationshipCollection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1273,68 +1789,79 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn send_telemetry(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        telemetry: &serde_json::Value,
-        message_id: &str,
-        telemetry_source_time: Option<&str>,
-    ) -> std::result::Result<(), send_telemetry::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/digitaltwins/{}/telemetry", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(send_telemetry::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(send_telemetry::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(telemetry).map_err(send_telemetry::Error::SerializeError)?;
-        req_builder = req_builder.header("Message-Id", message_id);
-        if let Some(telemetry_source_time) = telemetry_source_time {
-            req_builder = req_builder.header("Telemetry-Source-Time", telemetry_source_time);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(send_telemetry::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(send_telemetry::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| send_telemetry::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(send_telemetry::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::IncomingRelationshipCollection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/digitaltwins/{}/incomingrelationships", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IncomingRelationshipCollection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1349,76 +1876,84 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn send_component_telemetry(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        component_path: &str,
-        telemetry: &serde_json::Value,
-        message_id: &str,
-        telemetry_source_time: Option<&str>,
-    ) -> std::result::Result<(), send_component_telemetry::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/digitaltwins/{}/components/{}/telemetry",
-            operation_config.base_path(),
-            id,
-            component_path
-        );
-        let mut url = url::Url::parse(url_str).map_err(send_component_telemetry::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(send_component_telemetry::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) telemetry: serde_json::Value,
+            pub(crate) message_id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) telemetry_source_time: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(telemetry).map_err(send_component_telemetry::Error::SerializeError)?;
-        req_builder = req_builder.header("Message-Id", message_id);
-        if let Some(telemetry_source_time) = telemetry_source_time {
-            req_builder = req_builder.header("Telemetry-Source-Time", telemetry_source_time);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(send_component_telemetry::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(send_component_telemetry::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| send_component_telemetry::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(send_component_telemetry::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn telemetry_source_time(mut self, telemetry_source_time: impl Into<String>) -> Self {
+                self.telemetry_source_time = Some(telemetry_source_time.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/digitaltwins/{}/telemetry", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.telemetry).map_err(Error::Serialize)?;
+                    req_builder = req_builder.header("Message-Id", &self.message_id);
+                    if let Some(telemetry_source_time) = &self.telemetry_source_time {
+                        req_builder = req_builder.header("Telemetry-Source-Time", telemetry_source_time);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1433,66 +1968,88 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_component(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        component_path: &str,
-    ) -> std::result::Result<serde_json::Value, get_component::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/digitaltwins/{}/components/{}", operation_config.base_path(), id, component_path);
-        let mut url = url::Url::parse(url_str).map_err(get_component::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_component::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) component_path: String,
+            pub(crate) telemetry: serde_json::Value,
+            pub(crate) message_id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) telemetry_source_time: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_component::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_component::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_component::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_component::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_component::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn telemetry_source_time(mut self, telemetry_source_time: impl Into<String>) -> Self {
+                self.telemetry_source_time = Some(telemetry_source_time.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/digitaltwins/{}/components/{}/telemetry",
+                        &self.client.endpoint, &self.id, &self.component_path
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.telemetry).map_err(Error::Serialize)?;
+                    req_builder = req_builder.header("Message-Id", &self.message_id);
+                    if let Some(telemetry_source_time) = &self.telemetry_source_time {
+                        req_builder = req_builder.header("Telemetry-Source-Time", telemetry_source_time);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1507,68 +2064,81 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update_component(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        component_path: &str,
-        patch_document: &[&serde_json::Value],
-        if_match: Option<&str>,
-    ) -> std::result::Result<update_component::Response, update_component::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/digitaltwins/{}/components/{}", operation_config.base_path(), id, component_path);
-        let mut url = url::Url::parse(url_str).map_err(update_component::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update_component::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) component_path: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(patch_document).map_err(update_component::Error::SerializeError)?;
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update_component::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(update_component::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(update_component::Response::NoContent204),
-            http::StatusCode::ACCEPTED => Ok(update_component::Response::Accepted202),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse = serde_json::from_slice(rsp_body)
-                    .map_err(|source| update_component::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update_component::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/digitaltwins/{}/components/{}",
+                        &self.client.endpoint, &self.id, &self.component_path
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1588,69 +2158,130 @@ pub mod digital_twins {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) component_path: String,
+            pub(crate) patch_document: Vec<serde_json::Value>,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) if_match: Option<String>,
+        }
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/digitaltwins/{}/components/{}",
+                        &self.client.endpoint, &self.id, &self.component_path
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.patch_document).map_err(Error::Serialize)?;
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod event_routes {
     use super::{models, API_VERSION};
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        max_items_per_page: Option<i64>,
-    ) -> std::result::Result<models::EventRouteCollection, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/eventroutes", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        if let Some(max_items_per_page) = max_items_per_page {
-            req_builder = req_builder.header("max-items-per-page", max_items_per_page);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::EventRouteCollection =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        pub fn list(&self) -> list::Builder {
+            list::Builder {
+                client: self.base_clone(),
+                traceparent: None,
+                tracestate: None,
+                max_items_per_page: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
+            get_by_id::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                traceparent: None,
+                tracestate: None,
+            }
+        }
+        pub fn add(&self, id: impl Into<String>) -> add::Builder {
+            add::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                traceparent: None,
+                tracestate: None,
+                event_route: None,
+            }
+        }
+        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
+            delete::Builder {
+                client: self.base_clone(),
+                id: id.into(),
+                traceparent: None,
+                tracestate: None,
             }
         }
     }
@@ -1664,65 +2295,84 @@ pub mod event_routes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_by_id(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-    ) -> std::result::Result<models::EventRoute, get_by_id::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/eventroutes/{}", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(get_by_id::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_by_id::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) max_items_per_page: Option<i64>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_by_id::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_by_id::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::EventRoute =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_by_id::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_by_id::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn max_items_per_page(mut self, max_items_per_page: i64) -> Self {
+                self.max_items_per_page = Some(max_items_per_page);
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EventRouteCollection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/eventroutes", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    if let Some(max_items_per_page) = &self.max_items_per_page {
+                        req_builder = req_builder.header("max-items-per-page", &max_items_per_page.to_string());
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::EventRouteCollection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1737,63 +2387,77 @@ pub mod event_routes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-        event_route: Option<&models::EventRoute>,
-    ) -> std::result::Result<(), add::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/eventroutes/{}", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(add::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        let req_body = if let Some(event_route) = event_route {
-            req_builder = req_builder.header("content-type", "application/json");
-            azure_core::to_json(event_route).map_err(add::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(add::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(add::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EventRoute, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/eventroutes/{}", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::EventRoute =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1808,57 +2472,82 @@ pub mod event_routes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        traceparent: Option<&str>,
-        tracestate: Option<&str>,
-        id: &str,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/eventroutes/{}", operation_config.base_path(), id);
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+            pub(crate) event_route: Option<models::EventRoute>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(traceparent) = traceparent {
-            req_builder = req_builder.header("traceparent", traceparent);
-        }
-        if let Some(tracestate) = tracestate {
-            req_builder = req_builder.header("tracestate", tracestate);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn event_route(mut self, event_route: impl Into<models::EventRoute>) -> Self {
+                self.event_route = Some(event_route.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/eventroutes/{}", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    let req_body = if let Some(event_route) = &self.event_route {
+                        req_builder = req_builder.header("content-type", "application/json");
+                        azure_core::to_json(event_route).map_err(Error::Serialize)?
+                    } else {
+                        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    };
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -1873,17 +2562,74 @@ pub mod event_routes {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) id: String,
+            pub(crate) traceparent: Option<String>,
+            pub(crate) tracestate: Option<String>,
+        }
+        impl Builder {
+            pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
+                self.traceparent = Some(traceparent.into());
+                self
+            }
+            pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
+                self.tracestate = Some(tracestate.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/eventroutes/{}", &self.client.endpoint, &self.id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(traceparent) = &self.traceparent {
+                        req_builder = req_builder.header("traceparent", traceparent);
+                    }
+                    if let Some(tracestate) = &self.tracestate {
+                        req_builder = req_builder.header("tracestate", tracestate);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }

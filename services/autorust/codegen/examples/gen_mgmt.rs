@@ -5,7 +5,7 @@ use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
 
-const ONLY_SERVICES: &[&str] = &["vmware"];
+const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
     "datamigration",

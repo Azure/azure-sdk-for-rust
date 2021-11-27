@@ -70,6 +70,10 @@ impl Client {
             pipeline,
         }
     }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
     pub fn account(&self) -> account::Client {
         account::Client(self.clone())
     }
@@ -261,9 +265,12 @@ pub mod application {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
+        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 maxresults: None,
                 timeout: None,
                 client_request_id: None,
@@ -273,7 +280,7 @@ pub mod application {
         }
         pub fn get(&self, application_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 application_id: application_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -359,7 +366,7 @@ pub mod application {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -460,7 +467,7 @@ pub mod application {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -496,9 +503,12 @@ pub mod pool {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
+        }
         pub fn list_usage_metrics(&self) -> list_usage_metrics::Builder {
             list_usage_metrics::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 starttime: None,
                 endtime: None,
                 filter: None,
@@ -511,7 +521,7 @@ pub mod pool {
         }
         pub fn get_all_lifetime_statistics(&self) -> get_all_lifetime_statistics::Builder {
             get_all_lifetime_statistics::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 timeout: None,
                 client_request_id: None,
                 return_client_request_id: None,
@@ -520,7 +530,7 @@ pub mod pool {
         }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 filter: None,
                 select: None,
                 expand: None,
@@ -533,7 +543,7 @@ pub mod pool {
         }
         pub fn add(&self, pool: impl Into<models::PoolAddParameter>) -> add::Builder {
             add::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool: pool.into(),
                 timeout: None,
                 client_request_id: None,
@@ -543,7 +553,7 @@ pub mod pool {
         }
         pub fn get(&self, pool_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 select: None,
                 expand: None,
@@ -559,7 +569,7 @@ pub mod pool {
         }
         pub fn patch(&self, pool_id: impl Into<String>, pool_patch_parameter: impl Into<models::PoolPatchParameter>) -> patch::Builder {
             patch::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 pool_patch_parameter: pool_patch_parameter.into(),
                 timeout: None,
@@ -574,7 +584,7 @@ pub mod pool {
         }
         pub fn delete(&self, pool_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -588,7 +598,7 @@ pub mod pool {
         }
         pub fn exists(&self, pool_id: impl Into<String>) -> exists::Builder {
             exists::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -602,7 +612,7 @@ pub mod pool {
         }
         pub fn disable_auto_scale(&self, pool_id: impl Into<String>) -> disable_auto_scale::Builder {
             disable_auto_scale::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -616,7 +626,7 @@ pub mod pool {
             pool_enable_auto_scale_parameter: impl Into<models::PoolEnableAutoScaleParameter>,
         ) -> enable_auto_scale::Builder {
             enable_auto_scale::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 pool_enable_auto_scale_parameter: pool_enable_auto_scale_parameter.into(),
                 timeout: None,
@@ -635,7 +645,7 @@ pub mod pool {
             pool_evaluate_auto_scale_parameter: impl Into<models::PoolEvaluateAutoScaleParameter>,
         ) -> evaluate_auto_scale::Builder {
             evaluate_auto_scale::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 pool_evaluate_auto_scale_parameter: pool_evaluate_auto_scale_parameter.into(),
                 timeout: None,
@@ -646,7 +656,7 @@ pub mod pool {
         }
         pub fn resize(&self, pool_id: impl Into<String>, pool_resize_parameter: impl Into<models::PoolResizeParameter>) -> resize::Builder {
             resize::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 pool_resize_parameter: pool_resize_parameter.into(),
                 timeout: None,
@@ -661,7 +671,7 @@ pub mod pool {
         }
         pub fn stop_resize(&self, pool_id: impl Into<String>) -> stop_resize::Builder {
             stop_resize::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -679,7 +689,7 @@ pub mod pool {
             pool_update_properties_parameter: impl Into<models::PoolUpdatePropertiesParameter>,
         ) -> update_properties::Builder {
             update_properties::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 pool_update_properties_parameter: pool_update_properties_parameter.into(),
                 timeout: None,
@@ -694,7 +704,7 @@ pub mod pool {
             pool_upgrade_os_parameter: impl Into<models::PoolUpgradeOsParameter>,
         ) -> upgrade_os::Builder {
             upgrade_os::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 pool_upgrade_os_parameter: pool_upgrade_os_parameter.into(),
                 timeout: None,
@@ -713,7 +723,7 @@ pub mod pool {
             node_remove_parameter: impl Into<models::NodeRemoveParameter>,
         ) -> remove_nodes::Builder {
             remove_nodes::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_remove_parameter: node_remove_parameter.into(),
                 timeout: None,
@@ -830,7 +840,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -930,7 +940,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -1062,7 +1072,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -1165,7 +1175,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -1296,7 +1306,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -1432,7 +1442,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -1559,7 +1569,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -1689,7 +1699,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -1798,7 +1808,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -1918,7 +1928,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -2028,7 +2038,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -2151,7 +2161,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -2278,7 +2288,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -2390,7 +2400,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -2508,7 +2518,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -2638,7 +2648,7 @@ pub mod pool {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -2680,9 +2690,12 @@ pub mod account {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
+        }
         pub fn list_node_agent_skus(&self) -> list_node_agent_skus::Builder {
             list_node_agent_skus::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 filter: None,
                 maxresults: None,
                 timeout: None,
@@ -2693,7 +2706,7 @@ pub mod account {
         }
         pub fn list_pool_node_counts(&self) -> list_pool_node_counts::Builder {
             list_pool_node_counts::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 filter: None,
                 maxresults: None,
                 timeout: None,
@@ -2790,7 +2803,7 @@ pub mod account {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -2906,7 +2919,7 @@ pub mod account {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -2942,9 +2955,12 @@ pub mod job {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
+        }
         pub fn get_all_lifetime_statistics(&self) -> get_all_lifetime_statistics::Builder {
             get_all_lifetime_statistics::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 timeout: None,
                 client_request_id: None,
                 return_client_request_id: None,
@@ -2953,7 +2969,7 @@ pub mod job {
         }
         pub fn get(&self, job_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 select: None,
                 expand: None,
@@ -2969,7 +2985,7 @@ pub mod job {
         }
         pub fn update(&self, job_id: impl Into<String>, job_update_parameter: impl Into<models::JobUpdateParameter>) -> update::Builder {
             update::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 job_update_parameter: job_update_parameter.into(),
                 timeout: None,
@@ -2984,7 +3000,7 @@ pub mod job {
         }
         pub fn patch(&self, job_id: impl Into<String>, job_patch_parameter: impl Into<models::JobPatchParameter>) -> patch::Builder {
             patch::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 job_patch_parameter: job_patch_parameter.into(),
                 timeout: None,
@@ -2999,7 +3015,7 @@ pub mod job {
         }
         pub fn delete(&self, job_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -3017,7 +3033,7 @@ pub mod job {
             job_disable_parameter: impl Into<models::JobDisableParameter>,
         ) -> disable::Builder {
             disable::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 job_disable_parameter: job_disable_parameter.into(),
                 timeout: None,
@@ -3032,7 +3048,7 @@ pub mod job {
         }
         pub fn enable(&self, job_id: impl Into<String>) -> enable::Builder {
             enable::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -3046,7 +3062,7 @@ pub mod job {
         }
         pub fn terminate(&self, job_id: impl Into<String>) -> terminate::Builder {
             terminate::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 job_terminate_parameter: None,
                 timeout: None,
@@ -3061,7 +3077,7 @@ pub mod job {
         }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 filter: None,
                 select: None,
                 expand: None,
@@ -3074,7 +3090,7 @@ pub mod job {
         }
         pub fn add(&self, job: impl Into<models::JobAddParameter>) -> add::Builder {
             add::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job: job.into(),
                 timeout: None,
                 client_request_id: None,
@@ -3084,7 +3100,7 @@ pub mod job {
         }
         pub fn list_from_job_schedule(&self, job_schedule_id: impl Into<String>) -> list_from_job_schedule::Builder {
             list_from_job_schedule::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_schedule_id: job_schedule_id.into(),
                 filter: None,
                 select: None,
@@ -3101,7 +3117,7 @@ pub mod job {
             job_id: impl Into<String>,
         ) -> list_preparation_and_release_task_status::Builder {
             list_preparation_and_release_task_status::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 filter: None,
                 select: None,
@@ -3114,7 +3130,7 @@ pub mod job {
         }
         pub fn get_task_counts(&self, job_id: impl Into<String>) -> get_task_counts::Builder {
             get_task_counts::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -3192,7 +3208,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -3329,7 +3345,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -3465,7 +3481,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -3595,7 +3611,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -3722,7 +3738,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -3853,7 +3869,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -3980,7 +3996,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -4120,7 +4136,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -4258,7 +4274,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -4361,7 +4377,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -4488,7 +4504,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -4616,7 +4632,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -4717,7 +4733,7 @@ pub mod job {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -4753,9 +4769,12 @@ pub mod certificate {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
+        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 filter: None,
                 select: None,
                 maxresults: None,
@@ -4767,7 +4786,7 @@ pub mod certificate {
         }
         pub fn add(&self, certificate: impl Into<models::CertificateAddParameter>) -> add::Builder {
             add::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 certificate: certificate.into(),
                 timeout: None,
                 client_request_id: None,
@@ -4777,7 +4796,7 @@ pub mod certificate {
         }
         pub fn cancel_deletion(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> cancel_deletion::Builder {
             cancel_deletion::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 thumbprint_algorithm: thumbprint_algorithm.into(),
                 thumbprint: thumbprint.into(),
                 timeout: None,
@@ -4788,7 +4807,7 @@ pub mod certificate {
         }
         pub fn get(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 thumbprint_algorithm: thumbprint_algorithm.into(),
                 thumbprint: thumbprint.into(),
                 select: None,
@@ -4800,7 +4819,7 @@ pub mod certificate {
         }
         pub fn delete(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 thumbprint_algorithm: thumbprint_algorithm.into(),
                 thumbprint: thumbprint.into(),
                 timeout: None,
@@ -4903,7 +4922,7 @@ pub mod certificate {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -5006,7 +5025,7 @@ pub mod certificate {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -5105,7 +5124,7 @@ pub mod certificate {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -5214,7 +5233,7 @@ pub mod certificate {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -5319,7 +5338,7 @@ pub mod certificate {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -5350,6 +5369,9 @@ pub mod file {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
+        }
         pub fn get_from_task(
             &self,
             job_id: impl Into<String>,
@@ -5357,7 +5379,7 @@ pub mod file {
             file_path: impl Into<String>,
         ) -> get_from_task::Builder {
             get_from_task::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
                 file_path: file_path.into(),
@@ -5377,7 +5399,7 @@ pub mod file {
             file_path: impl Into<String>,
         ) -> delete_from_task::Builder {
             delete_from_task::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
                 file_path: file_path.into(),
@@ -5395,7 +5417,7 @@ pub mod file {
             file_path: impl Into<String>,
         ) -> get_properties_from_task::Builder {
             get_properties_from_task::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
                 file_path: file_path.into(),
@@ -5414,7 +5436,7 @@ pub mod file {
             file_path: impl Into<String>,
         ) -> get_from_compute_node::Builder {
             get_from_compute_node::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 file_path: file_path.into(),
@@ -5434,7 +5456,7 @@ pub mod file {
             file_path: impl Into<String>,
         ) -> delete_from_compute_node::Builder {
             delete_from_compute_node::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 file_path: file_path.into(),
@@ -5452,7 +5474,7 @@ pub mod file {
             file_path: impl Into<String>,
         ) -> get_properties_from_compute_node::Builder {
             get_properties_from_compute_node::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 file_path: file_path.into(),
@@ -5466,7 +5488,7 @@ pub mod file {
         }
         pub fn list_from_task(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> list_from_task::Builder {
             list_from_task::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
                 filter: None,
@@ -5480,7 +5502,7 @@ pub mod file {
         }
         pub fn list_from_compute_node(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> list_from_compute_node::Builder {
             list_from_compute_node::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 filter: None,
@@ -5583,7 +5605,7 @@ pub mod file {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -5705,7 +5727,7 @@ pub mod file {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -5816,7 +5838,7 @@ pub mod file {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -5938,7 +5960,7 @@ pub mod file {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -6060,7 +6082,7 @@ pub mod file {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -6171,7 +6193,7 @@ pub mod file {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -6298,7 +6320,7 @@ pub mod file {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -6424,7 +6446,7 @@ pub mod file {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -6460,9 +6482,12 @@ pub mod job_schedule {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
+        }
         pub fn get(&self, job_schedule_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_schedule_id: job_schedule_id.into(),
                 select: None,
                 expand: None,
@@ -6482,7 +6507,7 @@ pub mod job_schedule {
             job_schedule_update_parameter: impl Into<models::JobScheduleUpdateParameter>,
         ) -> update::Builder {
             update::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_schedule_id: job_schedule_id.into(),
                 job_schedule_update_parameter: job_schedule_update_parameter.into(),
                 timeout: None,
@@ -6501,7 +6526,7 @@ pub mod job_schedule {
             job_schedule_patch_parameter: impl Into<models::JobSchedulePatchParameter>,
         ) -> patch::Builder {
             patch::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_schedule_id: job_schedule_id.into(),
                 job_schedule_patch_parameter: job_schedule_patch_parameter.into(),
                 timeout: None,
@@ -6516,7 +6541,7 @@ pub mod job_schedule {
         }
         pub fn delete(&self, job_schedule_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_schedule_id: job_schedule_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -6530,7 +6555,7 @@ pub mod job_schedule {
         }
         pub fn exists(&self, job_schedule_id: impl Into<String>) -> exists::Builder {
             exists::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_schedule_id: job_schedule_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -6544,7 +6569,7 @@ pub mod job_schedule {
         }
         pub fn disable(&self, job_schedule_id: impl Into<String>) -> disable::Builder {
             disable::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_schedule_id: job_schedule_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -6558,7 +6583,7 @@ pub mod job_schedule {
         }
         pub fn enable(&self, job_schedule_id: impl Into<String>) -> enable::Builder {
             enable::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_schedule_id: job_schedule_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -6572,7 +6597,7 @@ pub mod job_schedule {
         }
         pub fn terminate(&self, job_schedule_id: impl Into<String>) -> terminate::Builder {
             terminate::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_schedule_id: job_schedule_id.into(),
                 timeout: None,
                 client_request_id: None,
@@ -6586,7 +6611,7 @@ pub mod job_schedule {
         }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 filter: None,
                 select: None,
                 expand: None,
@@ -6599,7 +6624,7 @@ pub mod job_schedule {
         }
         pub fn add(&self, cloud_job_schedule: impl Into<models::JobScheduleAddParameter>) -> add::Builder {
             add::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 cloud_job_schedule: cloud_job_schedule.into(),
                 timeout: None,
                 client_request_id: None,
@@ -6714,7 +6739,7 @@ pub mod job_schedule {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -6850,7 +6875,7 @@ pub mod job_schedule {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -6980,7 +7005,7 @@ pub mod job_schedule {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -7107,7 +7132,7 @@ pub mod job_schedule {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -7237,7 +7262,7 @@ pub mod job_schedule {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -7366,7 +7391,7 @@ pub mod job_schedule {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -7495,7 +7520,7 @@ pub mod job_schedule {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -7624,7 +7649,7 @@ pub mod job_schedule {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -7766,7 +7791,7 @@ pub mod job_schedule {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -7869,7 +7894,7 @@ pub mod job_schedule {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -7899,9 +7924,12 @@ pub mod task {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
+        }
         pub fn list(&self, job_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 filter: None,
                 select: None,
@@ -7915,7 +7943,7 @@ pub mod task {
         }
         pub fn add(&self, job_id: impl Into<String>, task: impl Into<models::TaskAddParameter>) -> add::Builder {
             add::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task: task.into(),
                 timeout: None,
@@ -7930,7 +7958,7 @@ pub mod task {
             task_collection: impl Into<models::TaskAddCollectionParameter>,
         ) -> add_collection::Builder {
             add_collection::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task_collection: task_collection.into(),
                 timeout: None,
@@ -7941,7 +7969,7 @@ pub mod task {
         }
         pub fn get(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
                 select: None,
@@ -7963,7 +7991,7 @@ pub mod task {
             task_update_parameter: impl Into<models::TaskUpdateParameter>,
         ) -> update::Builder {
             update::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
                 task_update_parameter: task_update_parameter.into(),
@@ -7979,7 +8007,7 @@ pub mod task {
         }
         pub fn delete(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
                 timeout: None,
@@ -7994,7 +8022,7 @@ pub mod task {
         }
         pub fn list_subtasks(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> list_subtasks::Builder {
             list_subtasks::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
                 select: None,
@@ -8006,7 +8034,7 @@ pub mod task {
         }
         pub fn terminate(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> terminate::Builder {
             terminate::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
                 timeout: None,
@@ -8021,7 +8049,7 @@ pub mod task {
         }
         pub fn reactivate(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> reactivate::Builder {
             reactivate::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 job_id: job_id.into(),
                 task_id: task_id.into(),
                 timeout: None,
@@ -8137,7 +8165,7 @@ pub mod task {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -8241,7 +8269,7 @@ pub mod task {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -8339,7 +8367,7 @@ pub mod task {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -8476,7 +8504,7 @@ pub mod task {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -8613,7 +8641,7 @@ pub mod task {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -8741,7 +8769,7 @@ pub mod task {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -8863,7 +8891,7 @@ pub mod task {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -8985,7 +9013,7 @@ pub mod task {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -9115,7 +9143,7 @@ pub mod task {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -9159,6 +9187,9 @@ pub mod compute_node {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
+        }
         pub fn add_user(
             &self,
             pool_id: impl Into<String>,
@@ -9166,7 +9197,7 @@ pub mod compute_node {
             user: impl Into<models::ComputeNodeUser>,
         ) -> add_user::Builder {
             add_user::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 user: user.into(),
@@ -9184,7 +9215,7 @@ pub mod compute_node {
             node_update_user_parameter: impl Into<models::NodeUpdateUserParameter>,
         ) -> update_user::Builder {
             update_user::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 user_name: user_name.into(),
@@ -9202,7 +9233,7 @@ pub mod compute_node {
             user_name: impl Into<String>,
         ) -> delete_user::Builder {
             delete_user::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 user_name: user_name.into(),
@@ -9214,7 +9245,7 @@ pub mod compute_node {
         }
         pub fn get(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 select: None,
@@ -9226,7 +9257,7 @@ pub mod compute_node {
         }
         pub fn reboot(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> reboot::Builder {
             reboot::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 node_reboot_parameter: None,
@@ -9238,7 +9269,7 @@ pub mod compute_node {
         }
         pub fn reimage(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> reimage::Builder {
             reimage::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 node_reimage_parameter: None,
@@ -9250,7 +9281,7 @@ pub mod compute_node {
         }
         pub fn disable_scheduling(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> disable_scheduling::Builder {
             disable_scheduling::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 node_disable_scheduling_parameter: None,
@@ -9262,7 +9293,7 @@ pub mod compute_node {
         }
         pub fn enable_scheduling(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> enable_scheduling::Builder {
             enable_scheduling::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 timeout: None,
@@ -9277,7 +9308,7 @@ pub mod compute_node {
             node_id: impl Into<String>,
         ) -> get_remote_login_settings::Builder {
             get_remote_login_settings::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 timeout: None,
@@ -9288,7 +9319,7 @@ pub mod compute_node {
         }
         pub fn get_remote_desktop(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> get_remote_desktop::Builder {
             get_remote_desktop::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 timeout: None,
@@ -9304,7 +9335,7 @@ pub mod compute_node {
             upload_batch_service_logs_configuration: impl Into<models::UploadBatchServiceLogsConfiguration>,
         ) -> upload_batch_service_logs::Builder {
             upload_batch_service_logs::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 node_id: node_id.into(),
                 upload_batch_service_logs_configuration: upload_batch_service_logs_configuration.into(),
@@ -9316,7 +9347,7 @@ pub mod compute_node {
         }
         pub fn list(&self, pool_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.0.clone(),
+                client: self.base_clone(),
                 pool_id: pool_id.into(),
                 filter: None,
                 select: None,
@@ -9402,7 +9433,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -9505,7 +9536,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -9605,7 +9636,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -9710,7 +9741,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -9823,7 +9854,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -9930,7 +9961,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -10043,7 +10074,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -10142,7 +10173,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -10246,7 +10277,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -10348,7 +10379,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -10455,7 +10486,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);
@@ -10581,7 +10612,7 @@ pub mod compute_node {
                         req_builder = req_builder.header("client-request-id", client_request_id);
                     }
                     if let Some(return_client_request_id) = &self.return_client_request_id {
-                        req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
                     }
                     if let Some(ocp_date) = &self.ocp_date {
                         req_builder = req_builder.header("ocp-date", ocp_date);

@@ -3,6 +3,87 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub fn credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    #[allow(dead_code)]
+    pub(crate) fn base_clone(&self) -> Self {
+        self.clone()
+    }
+    pub fn attested(&self) -> attested::Client {
+        attested::Client(self.clone())
+    }
+    pub fn identity(&self) -> identity::Client {
+        identity::Client(self.clone())
+    }
+    pub fn instances(&self) -> instances::Client {
+        instances::Client(self.clone())
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -18,88 +99,15 @@ pub enum Error {
 }
 pub mod instances {
     use super::{models, API_VERSION};
-    pub async fn get_metadata(
-        operation_config: &crate::OperationConfig,
-        metadata: &str,
-    ) -> std::result::Result<models::Instance, get_metadata::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/instance", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(get_metadata::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_metadata::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("Metadata", metadata);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_metadata::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_metadata::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::Instance =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            http::StatusCode::BAD_REQUEST => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_metadata::Error::BadRequest400 { value: rsp_value })
-            }
-            http::StatusCode::FORBIDDEN => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_metadata::Error::Forbidden403 { value: rsp_value })
-            }
-            http::StatusCode::NOT_FOUND => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_metadata::Error::NotFound404 { value: rsp_value })
-            }
-            http::StatusCode::METHOD_NOT_ALLOWED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_metadata::Error::MethodNotAllowed405 { value: rsp_value })
-            }
-            http::StatusCode::TOO_MANY_REQUESTS => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_metadata::Error::TooManyRequests429 { value: rsp_value })
-            }
-            http::StatusCode::SERVICE_UNAVAILABLE => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_metadata::Error::ServiceUnavailable503 { value: rsp_value })
-            }
-            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_metadata::Error::InternalServerError500 { value: rsp_value })
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_metadata::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_metadata::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn get_metadata(&self, metadata: impl Into<String>) -> get_metadata::Builder {
+            get_metadata::Builder {
+                client: self.base_clone(),
+                metadata: metadata.into(),
             }
         }
     }
@@ -127,108 +135,121 @@ pub mod instances {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) metadata: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Instance, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/instance", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("Metadata", &self.metadata);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Instance =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::BAD_REQUEST => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::BadRequest400 { value: rsp_value })
+                        }
+                        http::StatusCode::FORBIDDEN => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::Forbidden403 { value: rsp_value })
+                        }
+                        http::StatusCode::NOT_FOUND => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::NotFound404 { value: rsp_value })
+                        }
+                        http::StatusCode::METHOD_NOT_ALLOWED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::MethodNotAllowed405 { value: rsp_value })
+                        }
+                        http::StatusCode::TOO_MANY_REQUESTS => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::TooManyRequests429 { value: rsp_value })
+                        }
+                        http::StatusCode::SERVICE_UNAVAILABLE => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::ServiceUnavailable503 { value: rsp_value })
+                        }
+                        http::StatusCode::INTERNAL_SERVER_ERROR => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::InternalServerError500 { value: rsp_value })
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod attested {
     use super::{models, API_VERSION};
-    pub async fn get_document(
-        operation_config: &crate::OperationConfig,
-        nonce: Option<&str>,
-        metadata: &str,
-    ) -> std::result::Result<models::AttestedData, get_document::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/attested/document", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(get_document::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_document::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(nonce) = nonce {
-            url.query_pairs_mut().append_pair("nonce", nonce);
-        }
-        req_builder = req_builder.header("Metadata", metadata);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_document::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_document::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::AttestedData =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            http::StatusCode::BAD_REQUEST => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_document::Error::BadRequest400 { value: rsp_value })
-            }
-            http::StatusCode::FORBIDDEN => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_document::Error::Forbidden403 { value: rsp_value })
-            }
-            http::StatusCode::NOT_FOUND => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_document::Error::NotFound404 { value: rsp_value })
-            }
-            http::StatusCode::METHOD_NOT_ALLOWED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_document::Error::MethodNotAllowed405 { value: rsp_value })
-            }
-            http::StatusCode::TOO_MANY_REQUESTS => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_document::Error::TooManyRequests429 { value: rsp_value })
-            }
-            http::StatusCode::SERVICE_UNAVAILABLE => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_document::Error::ServiceUnavailable503 { value: rsp_value })
-            }
-            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_document::Error::InternalServerError500 { value: rsp_value })
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::ErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_document::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_document::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn get_document(&self, metadata: impl Into<String>) -> get_document::Builder {
+            get_document::Builder {
+                client: self.base_clone(),
+                metadata: metadata.into(),
+                nonce: None,
             }
         }
     }
@@ -256,114 +277,140 @@ pub mod attested {
                 value: models::ErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) metadata: String,
+            pub(crate) nonce: Option<String>,
+        }
+        impl Builder {
+            pub fn nonce(mut self, nonce: impl Into<String>) -> Self {
+                self.nonce = Some(nonce.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AttestedData, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/attested/document", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(nonce) = &self.nonce {
+                        url.query_pairs_mut().append_pair("nonce", nonce);
+                    }
+                    req_builder = req_builder.header("Metadata", &self.metadata);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AttestedData =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::BAD_REQUEST => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::BadRequest400 { value: rsp_value })
+                        }
+                        http::StatusCode::FORBIDDEN => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::Forbidden403 { value: rsp_value })
+                        }
+                        http::StatusCode::NOT_FOUND => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::NotFound404 { value: rsp_value })
+                        }
+                        http::StatusCode::METHOD_NOT_ALLOWED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::MethodNotAllowed405 { value: rsp_value })
+                        }
+                        http::StatusCode::TOO_MANY_REQUESTS => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::TooManyRequests429 { value: rsp_value })
+                        }
+                        http::StatusCode::SERVICE_UNAVAILABLE => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::ServiceUnavailable503 { value: rsp_value })
+                        }
+                        http::StatusCode::INTERNAL_SERVER_ERROR => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::InternalServerError500 { value: rsp_value })
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod identity {
     use super::{models, API_VERSION};
-    pub async fn get_token(
-        operation_config: &crate::OperationConfig,
-        metadata: &str,
-        resource: &str,
-        client_id: Option<&str>,
-        object_id: Option<&str>,
-        msi_res_id: Option<&str>,
-        authority: Option<&str>,
-        bypass_cache: Option<&str>,
-    ) -> std::result::Result<models::IdentityTokenResponse, get_token::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/identity/oauth2/token", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(get_token::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_token::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub(crate) fn base_clone(&self) -> super::Client {
+            self.0.clone()
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("Metadata", metadata);
-        url.query_pairs_mut().append_pair("resource", resource);
-        if let Some(client_id) = client_id {
-            url.query_pairs_mut().append_pair("client_id", client_id);
+        pub fn get_token(&self, metadata: impl Into<String>, resource: impl Into<String>) -> get_token::Builder {
+            get_token::Builder {
+                client: self.base_clone(),
+                metadata: metadata.into(),
+                resource: resource.into(),
+                client_id: None,
+                object_id: None,
+                msi_res_id: None,
+                authority: None,
+                bypass_cache: None,
+            }
         }
-        if let Some(object_id) = object_id {
-            url.query_pairs_mut().append_pair("object_id", object_id);
-        }
-        if let Some(msi_res_id) = msi_res_id {
-            url.query_pairs_mut().append_pair("msi_res_id", msi_res_id);
-        }
-        if let Some(authority) = authority {
-            url.query_pairs_mut().append_pair("authority", authority);
-        }
-        if let Some(bypass_cache) = bypass_cache {
-            url.query_pairs_mut().append_pair("bypass_cache", bypass_cache);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_token::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_token::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityTokenResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            http::StatusCode::BAD_REQUEST => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_token::Error::BadRequest400 { value: rsp_value })
-            }
-            http::StatusCode::NOT_FOUND => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_token::Error::NotFound404 { value: rsp_value })
-            }
-            http::StatusCode::METHOD_NOT_ALLOWED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_token::Error::MethodNotAllowed405 { value: rsp_value })
-            }
-            http::StatusCode::TOO_MANY_REQUESTS => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_token::Error::TooManyRequests429 { value: rsp_value })
-            }
-            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_token::Error::InternalServerError500 { value: rsp_value })
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_token::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_token::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        pub fn get_info(&self, metadata: impl Into<String>) -> get_info::Builder {
+            get_info::Builder {
+                client: self.base_clone(),
+                metadata: metadata.into(),
             }
         }
     }
@@ -387,88 +434,135 @@ pub mod identity {
                 value: models::IdentityErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_info(
-        operation_config: &crate::OperationConfig,
-        metadata: &str,
-    ) -> std::result::Result<models::IdentityInfoResponse, get_info::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/identity/info", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(get_info::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_info::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) metadata: String,
+            pub(crate) resource: String,
+            pub(crate) client_id: Option<String>,
+            pub(crate) object_id: Option<String>,
+            pub(crate) msi_res_id: Option<String>,
+            pub(crate) authority: Option<String>,
+            pub(crate) bypass_cache: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("Metadata", metadata);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_info::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_info::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityInfoResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn client_id(mut self, client_id: impl Into<String>) -> Self {
+                self.client_id = Some(client_id.into());
+                self
             }
-            http::StatusCode::BAD_REQUEST => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_info::Error::BadRequest400 { value: rsp_value })
+            pub fn object_id(mut self, object_id: impl Into<String>) -> Self {
+                self.object_id = Some(object_id.into());
+                self
             }
-            http::StatusCode::NOT_FOUND => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_info::Error::NotFound404 { value: rsp_value })
+            pub fn msi_res_id(mut self, msi_res_id: impl Into<String>) -> Self {
+                self.msi_res_id = Some(msi_res_id.into());
+                self
             }
-            http::StatusCode::METHOD_NOT_ALLOWED => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_info::Error::MethodNotAllowed405 { value: rsp_value })
+            pub fn authority(mut self, authority: impl Into<String>) -> Self {
+                self.authority = Some(authority.into());
+                self
             }
-            http::StatusCode::TOO_MANY_REQUESTS => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_info::Error::TooManyRequests429 { value: rsp_value })
+            pub fn bypass_cache(mut self, bypass_cache: impl Into<String>) -> Self {
+                self.bypass_cache = Some(bypass_cache.into());
+                self
             }
-            http::StatusCode::INTERNAL_SERVER_ERROR => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_info::Error::InternalServerError500 { value: rsp_value })
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: models::IdentityErrorResponse =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_info::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_info::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IdentityTokenResponse, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/identity/oauth2/token", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("Metadata", &self.metadata);
+                    let resource = &self.resource;
+                    url.query_pairs_mut().append_pair("resource", resource);
+                    if let Some(client_id) = &self.client_id {
+                        url.query_pairs_mut().append_pair("client_id", client_id);
+                    }
+                    if let Some(object_id) = &self.object_id {
+                        url.query_pairs_mut().append_pair("object_id", object_id);
+                    }
+                    if let Some(msi_res_id) = &self.msi_res_id {
+                        url.query_pairs_mut().append_pair("msi_res_id", msi_res_id);
+                    }
+                    if let Some(authority) = &self.authority {
+                        url.query_pairs_mut().append_pair("authority", authority);
+                    }
+                    if let Some(bypass_cache) = &self.bypass_cache {
+                        url.query_pairs_mut().append_pair("bypass_cache", bypass_cache);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityTokenResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::BAD_REQUEST => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::BadRequest400 { value: rsp_value })
+                        }
+                        http::StatusCode::NOT_FOUND => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::NotFound404 { value: rsp_value })
+                        }
+                        http::StatusCode::METHOD_NOT_ALLOWED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::MethodNotAllowed405 { value: rsp_value })
+                        }
+                        http::StatusCode::TOO_MANY_REQUESTS => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::TooManyRequests429 { value: rsp_value })
+                        }
+                        http::StatusCode::INTERNAL_SERVER_ERROR => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::InternalServerError500 { value: rsp_value })
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
@@ -493,17 +587,94 @@ pub mod identity {
                 value: models::IdentityErrorResponse,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: crate::operations::Client,
+            pub(crate) metadata: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IdentityInfoResponse, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/identity/info", &self.client.endpoint,);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("Metadata", &self.metadata);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityInfoResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        http::StatusCode::BAD_REQUEST => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::BadRequest400 { value: rsp_value })
+                        }
+                        http::StatusCode::NOT_FOUND => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::NotFound404 { value: rsp_value })
+                        }
+                        http::StatusCode::METHOD_NOT_ALLOWED => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::MethodNotAllowed405 { value: rsp_value })
+                        }
+                        http::StatusCode::TOO_MANY_REQUESTS => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::TooManyRequests429 { value: rsp_value })
+                        }
+                        http::StatusCode::INTERNAL_SERVER_ERROR => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::InternalServerError500 { value: rsp_value })
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IdentityErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
