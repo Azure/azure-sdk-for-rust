@@ -124,6 +124,10 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
                     pipeline,
                 }
             }
+            #[allow(dead_code)]
+            pub(crate) fn base_clone(&self) -> Self {
+                self.clone()
+            }
 
             #clients
         }
@@ -199,6 +203,9 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
                         use super::{API_VERSION, models};
                         pub struct Client(pub(crate) super::Client);
                         impl Client {
+                            pub(crate) fn base_clone(&self) -> super::Client {
+                                self.0.clone()
+                            }
                             #builder_instance_code
                         }
                         #module_code
@@ -707,7 +714,7 @@ fn create_function_params_code(parameters: &[&WebParameter]) -> Result<TokenStre
 fn create_builder_instance_code(fname: &TokenStream, parameters: &[&WebParameter]) -> Result<TokenStream, Error> {
     let fparams = create_function_params_code(parameters)?;
     let mut params: Vec<TokenStream> = Vec::new();
-    params.push(quote! { client: self.0.clone() });
+    params.push(quote! { client: self.base_clone() });
     for param in parameters.iter().filter(|p| p.required()) {
         let name = get_param_name(param)?;
         if param.type_is_ref()? {
