@@ -296,7 +296,6 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
         let param_name = param.name();
         let param_name_var = get_param_name(param)?;
         let required = param.required();
-        let is_bool = param.is_bool();
         match param.type_() {
             ParameterType::Path => {} // handled above
             ParameterType::Query => {
@@ -337,7 +336,10 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                 };
                 if let Some(query_body) = query_body {
                     if required || is_array {
-                        ts_request_builder.extend(query_body);
+                        ts_request_builder.extend(quote! {
+                            let #param_name_var = &self.#param_name_var;
+                            #query_body
+                        });
                     } else {
                         ts_request_builder.extend(quote! {
                             if let Some(#param_name_var) = &self.#param_name_var {
@@ -350,25 +352,25 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
             ParameterType::Header => {
                 // println!("header builder: {:?}", param);
                 if required {
-                    if is_bool {
-                        ts_request_builder.extend(quote! {
-                            req_builder = req_builder.header(#param_name, &self.#param_name_var .to_string());
-                        });
-                    } else {
+                    if param.is_string() {
                         ts_request_builder.extend(quote! {
                             req_builder = req_builder.header(#param_name, &self.#param_name_var);
                         });
+                    } else {
+                        ts_request_builder.extend(quote! {
+                            req_builder = req_builder.header(#param_name, &self.#param_name_var.to_string());
+                        });
                     }
-                } else if is_bool {
+                } else if param.is_string() {
                     ts_request_builder.extend(quote! {
                         if let Some(#param_name_var) = &self.#param_name_var {
-                            req_builder = req_builder.header(#param_name, #param_name_var .to_string());
+                            req_builder = req_builder.header(#param_name, #param_name_var);
                         }
                     });
                 } else {
                     ts_request_builder.extend(quote! {
                         if let Some(#param_name_var) = &self.#param_name_var {
-                            req_builder = req_builder.header(#param_name, #param_name_var);
+                            req_builder = req_builder.header(#param_name, &#param_name_var.to_string());
                         }
                     });
                 }
@@ -716,7 +718,11 @@ fn create_builder_instance_code(fname: &TokenStream, parameters: &[&WebParameter
     }
     for param in parameters.iter().filter(|p| !p.required()) {
         let name = get_param_name(param)?;
-        params.push(quote! { #name: None });
+        if param.is_array() {
+            params.push(quote! { #name: Vec::new() });
+        } else {
+            params.push(quote! { #name: None });
+        }
     }
     Ok(quote! {
         pub fn #fname(#fparams) -> #fname::Builder {
@@ -752,18 +758,28 @@ fn create_builder_setters_code(parameters: &[&WebParameter]) -> Result<TokenStre
     let mut setters = TokenStream::new();
     for param in parameters.iter().filter(|p| !p.required()) {
         let name = &get_param_name(param)?;
-        let tp = get_param_type(param, true, false)?;
         let value = if param.type_is_ref()? {
             quote! { #name.into() }
         } else {
             name.clone()
         };
-        setters.extend(quote! {
-            pub fn #name(mut self, #name: #tp) -> Self {
-                self.#name = Some(#value);
-                self
-            }
-        });
+        if param.is_array() {
+            let tp = get_param_type(param, false, false)?;
+            setters.extend(quote! {
+                pub fn #name(mut self, #name: impl Into<#tp>) -> Self {
+                    self.#name = #value.into();
+                    self
+                }
+            });
+        } else {
+            let tp = get_param_type(param, true, false)?;
+            setters.extend(quote! {
+                pub fn #name(mut self, #name: #tp) -> Self {
+                    self.#name = Some(#value);
+                    self
+                }
+            });
+        }
     }
     Ok(setters)
 }
