@@ -324,16 +324,16 @@ pub mod application {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationListResult, Error>> {
@@ -428,16 +428,16 @@ pub mod application {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationSummary, Error>> {
@@ -764,16 +764,16 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn starttime(mut self, starttime: String) -> Self {
-                self.starttime = Some(starttime);
+            pub fn starttime(mut self, starttime: impl Into<String>) -> Self {
+                self.starttime = Some(starttime.into());
                 self
             }
-            pub fn endtime(mut self, endtime: String) -> Self {
-                self.endtime = Some(endtime);
+            pub fn endtime(mut self, endtime: impl Into<String>) -> Self {
+                self.endtime = Some(endtime.into());
                 self
             }
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
             pub fn maxresults(mut self, maxresults: i32) -> Self {
@@ -784,16 +784,16 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(
@@ -898,16 +898,16 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PoolStatistics, Error>> {
@@ -998,16 +998,16 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
-            pub fn expand(mut self, expand: String) -> Self {
-                self.expand = Some(expand);
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
                 self
             }
             pub fn maxresults(mut self, maxresults: i32) -> Self {
@@ -1018,16 +1018,16 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudPoolListResult, Error>> {
@@ -1131,16 +1131,16 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -1230,44 +1230,44 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
-            pub fn expand(mut self, expand: String) -> Self {
-                self.expand = Some(expand);
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
                 self
             }
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudPool, Error>> {
@@ -1382,32 +1382,32 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -1511,32 +1511,32 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -1641,32 +1641,32 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -1766,16 +1766,16 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -1868,32 +1868,32 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -1994,16 +1994,16 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AutoScaleRun, Error>> {
@@ -2101,32 +2101,32 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -2230,32 +2230,32 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -2356,16 +2356,16 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -2458,32 +2458,32 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -2588,32 +2588,32 @@ pub mod pool {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -2738,8 +2738,8 @@ pub mod account {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
             pub fn maxresults(mut self, maxresults: i32) -> Self {
@@ -2750,16 +2750,16 @@ pub mod account {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(
@@ -2856,8 +2856,8 @@ pub mod account {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
             pub fn maxresults(mut self, maxresults: i32) -> Self {
@@ -2868,16 +2868,16 @@ pub mod account {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PoolNodeCountsListResult, Error>> {
@@ -3160,16 +3160,16 @@ pub mod job {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobStatistics, Error>> {
@@ -3263,44 +3263,44 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
-            pub fn expand(mut self, expand: String) -> Self {
-                self.expand = Some(expand);
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
                 self
             }
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJob, Error>> {
@@ -3415,32 +3415,32 @@ pub mod job {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -3545,32 +3545,32 @@ pub mod job {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -3674,32 +3674,32 @@ pub mod job {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -3803,32 +3803,32 @@ pub mod job {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -3932,32 +3932,32 @@ pub mod job {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -4058,40 +4058,40 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
-            pub fn job_terminate_parameter(mut self, job_terminate_parameter: models::JobTerminateParameter) -> Self {
-                self.job_terminate_parameter = Some(job_terminate_parameter);
+            pub fn job_terminate_parameter(mut self, job_terminate_parameter: impl Into<models::JobTerminateParameter>) -> Self {
+                self.job_terminate_parameter = Some(job_terminate_parameter.into());
                 self
             }
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -4194,16 +4194,16 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
-            pub fn expand(mut self, expand: String) -> Self {
-                self.expand = Some(expand);
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
                 self
             }
             pub fn maxresults(mut self, maxresults: i32) -> Self {
@@ -4214,16 +4214,16 @@ pub mod job {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobListResult, Error>> {
@@ -4327,16 +4327,16 @@ pub mod job {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -4424,16 +4424,16 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
-            pub fn expand(mut self, expand: String) -> Self {
-                self.expand = Some(expand);
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
                 self
             }
             pub fn maxresults(mut self, maxresults: i32) -> Self {
@@ -4444,16 +4444,16 @@ pub mod job {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobListResult, Error>> {
@@ -4556,12 +4556,12 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
             pub fn maxresults(mut self, maxresults: i32) -> Self {
@@ -4572,16 +4572,16 @@ pub mod job {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(
@@ -4685,16 +4685,16 @@ pub mod job {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TaskCounts, Error>> {
@@ -4846,12 +4846,12 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
             pub fn maxresults(mut self, maxresults: i32) -> Self {
@@ -4862,16 +4862,16 @@ pub mod certificate {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateListResult, Error>> {
@@ -4972,16 +4972,16 @@ pub mod certificate {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -5070,16 +5070,16 @@ pub mod certificate {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -5168,24 +5168,24 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Certificate, Error>> {
@@ -5284,16 +5284,16 @@ pub mod certificate {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -5536,28 +5536,28 @@ pub mod file {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn ocp_range(mut self, ocp_range: String) -> Self {
-                self.ocp_range = Some(ocp_range);
+            pub fn ocp_range(mut self, ocp_range: impl Into<String>) -> Self {
+                self.ocp_range = Some(ocp_range.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<bytes::Bytes, Error>> {
@@ -5667,16 +5667,16 @@ pub mod file {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -5773,24 +5773,24 @@ pub mod file {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -5891,28 +5891,28 @@ pub mod file {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn ocp_range(mut self, ocp_range: String) -> Self {
-                self.ocp_range = Some(ocp_range);
+            pub fn ocp_range(mut self, ocp_range: impl Into<String>) -> Self {
+                self.ocp_range = Some(ocp_range.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<bytes::Bytes, Error>> {
@@ -6022,16 +6022,16 @@ pub mod file {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -6128,24 +6128,24 @@ pub mod file {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -6241,8 +6241,8 @@ pub mod file {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
             pub fn recursive(mut self, recursive: bool) -> Self {
@@ -6257,16 +6257,16 @@ pub mod file {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NodeFileListResult, Error>> {
@@ -6367,8 +6367,8 @@ pub mod file {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
             pub fn recursive(mut self, recursive: bool) -> Self {
@@ -6383,16 +6383,16 @@ pub mod file {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NodeFileListResult, Error>> {
@@ -6648,44 +6648,44 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
-            pub fn expand(mut self, expand: String) -> Self {
-                self.expand = Some(expand);
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
                 self
             }
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobSchedule, Error>> {
@@ -6800,32 +6800,32 @@ pub mod job_schedule {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -6930,32 +6930,32 @@ pub mod job_schedule {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -7059,32 +7059,32 @@ pub mod job_schedule {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -7189,32 +7189,32 @@ pub mod job_schedule {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -7318,32 +7318,32 @@ pub mod job_schedule {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -7447,32 +7447,32 @@ pub mod job_schedule {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -7576,32 +7576,32 @@ pub mod job_schedule {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -7700,16 +7700,16 @@ pub mod job_schedule {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
-            pub fn expand(mut self, expand: String) -> Self {
-                self.expand = Some(expand);
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
                 self
             }
             pub fn maxresults(mut self, maxresults: i32) -> Self {
@@ -7720,16 +7720,16 @@ pub mod job_schedule {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(
@@ -7835,16 +7835,16 @@ pub mod job_schedule {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -8073,16 +8073,16 @@ pub mod task {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
-            pub fn expand(mut self, expand: String) -> Self {
-                self.expand = Some(expand);
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
                 self
             }
             pub fn maxresults(mut self, maxresults: i32) -> Self {
@@ -8093,16 +8093,16 @@ pub mod task {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudTaskListResult, Error>> {
@@ -8207,16 +8207,16 @@ pub mod task {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -8305,16 +8305,16 @@ pub mod task {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TaskAddCollectionResult, Error>> {
@@ -8410,44 +8410,44 @@ pub mod task {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
-            pub fn expand(mut self, expand: String) -> Self {
-                self.expand = Some(expand);
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
                 self
             }
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudTask, Error>> {
@@ -8563,32 +8563,32 @@ pub mod task {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -8693,32 +8693,32 @@ pub mod task {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -8815,24 +8815,24 @@ pub mod task {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(
@@ -8937,32 +8937,32 @@ pub mod task {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -9067,32 +9067,32 @@ pub mod task {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
-            pub fn if_match(mut self, if_match: String) -> Self {
-                self.if_match = Some(if_match);
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
                 self
             }
-            pub fn if_none_match(mut self, if_none_match: String) -> Self {
-                self.if_none_match = Some(if_none_match);
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
                 self
             }
-            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
-                self.if_modified_since = Some(if_modified_since);
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
                 self
             }
-            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
-                self.if_unmodified_since = Some(if_unmodified_since);
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -9368,16 +9368,16 @@ pub mod compute_node {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -9468,16 +9468,16 @@ pub mod compute_node {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -9570,16 +9570,16 @@ pub mod compute_node {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -9667,24 +9667,24 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ComputeNode, Error>> {
@@ -9777,24 +9777,24 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn node_reboot_parameter(mut self, node_reboot_parameter: models::NodeRebootParameter) -> Self {
-                self.node_reboot_parameter = Some(node_reboot_parameter);
+            pub fn node_reboot_parameter(mut self, node_reboot_parameter: impl Into<models::NodeRebootParameter>) -> Self {
+                self.node_reboot_parameter = Some(node_reboot_parameter.into());
                 self
             }
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -9884,24 +9884,24 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn node_reimage_parameter(mut self, node_reimage_parameter: models::NodeReimageParameter) -> Self {
-                self.node_reimage_parameter = Some(node_reimage_parameter);
+            pub fn node_reimage_parameter(mut self, node_reimage_parameter: impl Into<models::NodeReimageParameter>) -> Self {
+                self.node_reimage_parameter = Some(node_reimage_parameter.into());
                 self
             }
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -9993,25 +9993,25 @@ pub mod compute_node {
         impl Builder {
             pub fn node_disable_scheduling_parameter(
                 mut self,
-                node_disable_scheduling_parameter: models::NodeDisableSchedulingParameter,
+                node_disable_scheduling_parameter: impl Into<models::NodeDisableSchedulingParameter>,
             ) -> Self {
-                self.node_disable_scheduling_parameter = Some(node_disable_scheduling_parameter);
+                self.node_disable_scheduling_parameter = Some(node_disable_scheduling_parameter.into());
                 self
             }
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -10107,16 +10107,16 @@ pub mod compute_node {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -10208,16 +10208,16 @@ pub mod compute_node {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(
@@ -10316,16 +10316,16 @@ pub mod compute_node {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<bytes::Bytes, Error>> {
@@ -10418,16 +10418,16 @@ pub mod compute_node {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(
@@ -10524,12 +10524,12 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
-            pub fn filter(mut self, filter: String) -> Self {
-                self.filter = Some(filter);
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
                 self
             }
-            pub fn select(mut self, select: String) -> Self {
-                self.select = Some(select);
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
                 self
             }
             pub fn maxresults(mut self, maxresults: i32) -> Self {
@@ -10540,16 +10540,16 @@ pub mod compute_node {
                 self.timeout = Some(timeout);
                 self
             }
-            pub fn client_request_id(mut self, client_request_id: String) -> Self {
-                self.client_request_id = Some(client_request_id);
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
                 self
             }
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
-            pub fn ocp_date(mut self, ocp_date: String) -> Self {
-                self.ocp_date = Some(ocp_date);
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
                 self
             }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ComputeNodeListResult, Error>> {

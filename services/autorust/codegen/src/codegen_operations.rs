@@ -753,12 +753,11 @@ fn create_builder_setters_code(parameters: &[&WebParameter]) -> Result<TokenStre
     for param in parameters.iter().filter(|p| !p.required()) {
         let name = &get_param_name(param)?;
         let tp = get_param_type(param, true, false)?;
-        let value =
-            if param.type_is_ref()? {
-                quote! { #name.into() }
-            } else {
-                name.clone()
-            };
+        let value = if param.type_is_ref()? {
+            quote! { #name.into() }
+        } else {
+            name.clone()
+        };
         setters.extend(quote! {
             pub fn #name(mut self, #name: #tp) -> Self {
                 self.#name = Some(#value);
