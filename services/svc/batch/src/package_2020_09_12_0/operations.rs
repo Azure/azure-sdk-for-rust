@@ -314,6 +314,26 @@ pub mod application {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationListResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/applications", &self.client.endpoint,);
@@ -402,6 +422,22 @@ pub mod application {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationSummary, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/applications/{}", &self.client.endpoint, &self.application_id);
@@ -707,6 +743,38 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn starttime(mut self, starttime: String) -> Self {
+                self.starttime = Some(starttime);
+                self
+            }
+            pub fn endtime(mut self, endtime: String) -> Self {
+                self.endtime = Some(endtime);
+                self
+            }
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::PoolListUsageMetricsResult, Error>> {
@@ -805,6 +873,22 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PoolStatistics, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/lifetimepoolstats", &self.client.endpoint,);
@@ -893,6 +977,38 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn expand(mut self, expand: String) -> Self {
+                self.expand = Some(expand);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudPoolListResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools", &self.client.endpoint,);
@@ -990,6 +1106,22 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools", &self.client.endpoint,);
@@ -1077,6 +1209,46 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn expand(mut self, expand: String) -> Self {
+                self.expand = Some(expand);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudPool, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}", &self.client.endpoint, &self.pool_id);
@@ -1185,6 +1357,38 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}", &self.client.endpoint, &self.pool_id);
@@ -1282,6 +1486,38 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}", &self.client.endpoint, &self.pool_id);
@@ -1380,6 +1616,38 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}", &self.client.endpoint, &self.pool_id);
@@ -1473,6 +1741,22 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/disableautoscale", &self.client.endpoint, &self.pool_id);
@@ -1559,6 +1843,38 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/enableautoscale", &self.client.endpoint, &self.pool_id);
@@ -1653,6 +1969,22 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AutoScaleRun, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/evaluateautoscale", &self.client.endpoint, &self.pool_id);
@@ -1744,6 +2076,38 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/resize", &self.client.endpoint, &self.pool_id);
@@ -1841,6 +2205,38 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/stopresize", &self.client.endpoint, &self.pool_id);
@@ -1935,6 +2331,22 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/updateproperties", &self.client.endpoint, &self.pool_id);
@@ -2021,6 +2433,38 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/removenodes", &self.client.endpoint, &self.pool_id);
@@ -2143,6 +2587,30 @@ pub mod account {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::AccountListSupportedImagesResult, Error>> {
@@ -2237,6 +2705,30 @@ pub mod account {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PoolNodeCountsListResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/nodecounts", &self.client.endpoint,);
@@ -2513,6 +3005,22 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobStatistics, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/lifetimejobstats", &self.client.endpoint,);
@@ -2604,6 +3112,46 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn expand(mut self, expand: String) -> Self {
+                self.expand = Some(expand);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJob, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}", &self.client.endpoint, &self.job_id);
@@ -2712,6 +3260,38 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}", &self.client.endpoint, &self.job_id);
@@ -2810,6 +3390,38 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}", &self.client.endpoint, &self.job_id);
@@ -2907,6 +3519,38 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}", &self.client.endpoint, &self.job_id);
@@ -3004,6 +3648,38 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/disable", &self.client.endpoint, &self.job_id);
@@ -3101,6 +3777,38 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/enable", &self.client.endpoint, &self.job_id);
@@ -3199,6 +3907,42 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn job_terminate_parameter(mut self, job_terminate_parameter: models::JobTerminateParameter) -> Self {
+                self.job_terminate_parameter = Some(job_terminate_parameter);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/terminate", &self.client.endpoint, &self.job_id);
@@ -3299,6 +4043,38 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn expand(mut self, expand: String) -> Self {
+                self.expand = Some(expand);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobListResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs", &self.client.endpoint,);
@@ -3396,6 +4172,22 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs", &self.client.endpoint,);
@@ -3481,6 +4273,38 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn expand(mut self, expand: String) -> Self {
+                self.expand = Some(expand);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobListResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobschedules/{}/jobs", &self.client.endpoint, &self.job_schedule_id);
@@ -3581,6 +4405,34 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobListPreparationAndReleaseTaskStatusResult, Error>>
@@ -3678,6 +4530,22 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TaskCountsResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/taskcounts", &self.client.endpoint, &self.job_id);
@@ -3827,6 +4695,34 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateListResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/certificates", &self.client.endpoint,);
@@ -3921,6 +4817,22 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/certificates", &self.client.endpoint,);
@@ -4003,6 +4915,22 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -4089,6 +5017,26 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Certificate, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -4181,6 +5129,22 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -4417,6 +5381,34 @@ pub mod file {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn ocp_range(mut self, ocp_range: String) -> Self {
+                self.ocp_range = Some(ocp_range);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -4517,6 +5509,26 @@ pub mod file {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn recursive(mut self, recursive: bool) -> Self {
+                self.recursive = Some(recursive);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -4607,6 +5619,30 @@ pub mod file {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -4701,6 +5737,34 @@ pub mod file {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn ocp_range(mut self, ocp_range: String) -> Self {
+                self.ocp_range = Some(ocp_range);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -4801,6 +5865,26 @@ pub mod file {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn recursive(mut self, recursive: bool) -> Self {
+                self.recursive = Some(recursive);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -4891,6 +5975,30 @@ pub mod file {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -4984,6 +6092,34 @@ pub mod file {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn recursive(mut self, recursive: bool) -> Self {
+                self.recursive = Some(recursive);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NodeFileListResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/tasks/{}/files", &self.client.endpoint, &self.job_id, &self.task_id);
@@ -5082,6 +6218,34 @@ pub mod file {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn recursive(mut self, recursive: bool) -> Self {
+                self.recursive = Some(recursive);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NodeFileListResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/nodes/{}/files", &self.client.endpoint, &self.pool_id, &self.node_id);
@@ -5335,6 +6499,46 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn expand(mut self, expand: String) -> Self {
+                self.expand = Some(expand);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobSchedule, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobschedules/{}", &self.client.endpoint, &self.job_schedule_id);
@@ -5443,6 +6647,38 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobschedules/{}", &self.client.endpoint, &self.job_schedule_id);
@@ -5541,6 +6777,38 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobschedules/{}", &self.client.endpoint, &self.job_schedule_id);
@@ -5638,6 +6906,38 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobschedules/{}", &self.client.endpoint, &self.job_schedule_id);
@@ -5736,6 +7036,38 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobschedules/{}", &self.client.endpoint, &self.job_schedule_id);
@@ -5833,6 +7165,38 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobschedules/{}/disable", &self.client.endpoint, &self.job_schedule_id);
@@ -5930,6 +7294,38 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobschedules/{}/enable", &self.client.endpoint, &self.job_schedule_id);
@@ -6027,6 +7423,38 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobschedules/{}/terminate", &self.client.endpoint, &self.job_schedule_id);
@@ -6123,6 +7551,38 @@ pub mod job_schedule {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn expand(mut self, expand: String) -> Self {
+                self.expand = Some(expand);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobScheduleListResult, Error>> {
@@ -6222,6 +7682,22 @@ pub mod job_schedule {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobschedules", &self.client.endpoint,);
@@ -6448,6 +7924,38 @@ pub mod task {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn expand(mut self, expand: String) -> Self {
+                self.expand = Some(expand);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudTaskListResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/tasks", &self.client.endpoint, &self.job_id);
@@ -6546,6 +8054,22 @@ pub mod task {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/tasks", &self.client.endpoint, &self.job_id);
@@ -6628,6 +8152,22 @@ pub mod task {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TaskAddCollectionResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/addtaskcollection", &self.client.endpoint, &self.job_id);
@@ -6721,6 +8261,46 @@ pub mod task {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn expand(mut self, expand: String) -> Self {
+                self.expand = Some(expand);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudTask, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/tasks/{}", &self.client.endpoint, &self.job_id, &self.task_id);
@@ -6830,6 +8410,38 @@ pub mod task {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/tasks/{}", &self.client.endpoint, &self.job_id, &self.task_id);
@@ -6928,6 +8540,38 @@ pub mod task {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/tasks/{}", &self.client.endpoint, &self.job_id, &self.task_id);
@@ -7022,6 +8666,26 @@ pub mod task {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudTaskListSubtasksResult, Error>> {
@@ -7120,6 +8784,38 @@ pub mod task {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/tasks/{}/terminate", &self.client.endpoint, &self.job_id, &self.task_id);
@@ -7218,6 +8914,38 @@ pub mod task {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
+            pub fn if_match(mut self, if_match: String) -> Self {
+                self.if_match = Some(if_match);
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: String) -> Self {
+                self.if_none_match = Some(if_none_match);
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: String) -> Self {
+                self.if_modified_since = Some(if_modified_since);
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: String) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/jobs/{}/tasks/{}/reactivate", &self.client.endpoint, &self.job_id, &self.task_id);
@@ -7487,6 +9215,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/nodes/{}/users", &self.client.endpoint, &self.pool_id, &self.node_id);
@@ -7571,6 +9315,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -7657,6 +9417,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -7742,6 +9518,26 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ComputeNode, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/nodes/{}", &self.client.endpoint, &self.pool_id, &self.node_id);
@@ -7832,6 +9628,26 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn node_reboot_parameter(mut self, node_reboot_parameter: models::NodeRebootParameter) -> Self {
+                self.node_reboot_parameter = Some(node_reboot_parameter);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/nodes/{}/reboot", &self.client.endpoint, &self.pool_id, &self.node_id);
@@ -7919,6 +9735,26 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn node_reimage_parameter(mut self, node_reimage_parameter: models::NodeReimageParameter) -> Self {
+                self.node_reimage_parameter = Some(node_reimage_parameter);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/nodes/{}/reimage", &self.client.endpoint, &self.pool_id, &self.node_id);
@@ -8006,6 +9842,29 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn node_disable_scheduling_parameter(
+                mut self,
+                node_disable_scheduling_parameter: models::NodeDisableSchedulingParameter,
+            ) -> Self {
+                self.node_disable_scheduling_parameter = Some(node_disable_scheduling_parameter);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -8095,6 +9954,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
@@ -8180,6 +10055,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::ComputeNodeGetRemoteLoginSettingsResult, Error>>
@@ -8272,6 +10163,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/nodes/{}/rdp", &self.client.endpoint, &self.pool_id, &self.node_id);
@@ -8359,6 +10266,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(
                 self,
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::UploadBatchServiceLogsResult, Error>> {
@@ -8453,6 +10376,34 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            pub fn filter(mut self, filter: String) -> Self {
+                self.filter = Some(filter);
+                self
+            }
+            pub fn select(mut self, select: String) -> Self {
+                self.select = Some(select);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: String) -> Self {
+                self.client_request_id = Some(client_request_id);
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: String) -> Self {
+                self.ocp_date = Some(ocp_date);
+                self
+            }
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ComputeNodeListResult, Error>> {
                 Box::pin(async move {
                     let url_str = &format!("{}/pools/{}/nodes", &self.client.endpoint, &self.pool_id);
