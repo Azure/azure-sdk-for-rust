@@ -617,7 +617,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
         match_status.extend(quote! {
             status_code => {
                 let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                Err(Error::UnexpectedResponse{status_code, body: rsp_body.clone()})
+                Err(Error::UnexpectedResponse{status_code, body: rsp_body})
             }
         });
     }
