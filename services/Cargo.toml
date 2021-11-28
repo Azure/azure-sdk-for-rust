@@ -1,5 +1,6 @@
 [workspace]
 members = [
   "mgmt/*",
+  "mgmt/resources/examples/*",
   "svc/*",
 ]
