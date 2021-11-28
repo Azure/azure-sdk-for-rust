@@ -483,6 +483,17 @@ impl WebOperation {
         self.parameters.iter().collect()
     }
 
+    pub fn id_parts(&self) -> Vec<&str> {
+        match &self.id {
+            Some(id) => id.splitn(2, '_').collect(),
+            None => Vec::new(),
+        }
+    }
+
+    pub fn in_group(&self) -> bool {
+        self.id_parts().len() == 2
+    }
+
     pub fn rust_module_name(&self) -> Option<String> {
         match &self.id {
             Some(id) => {

@@ -124,10 +124,6 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
                     pipeline,
                 }
             }
-            #[allow(dead_code)]
-            pub(crate) fn base_clone(&self) -> Self {
-                self.clone()
-            }
 
             #clients
         }
@@ -203,9 +199,6 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
                         use super::{API_VERSION, models};
                         pub struct Client(pub(crate) super::Client);
                         impl Client {
-                            pub(crate) fn base_clone(&self) -> super::Client {
-                                self.0.clone()
-                            }
                             #builder_instance_code
                         }
                         #module_code
@@ -622,8 +615,9 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
         });
     }
 
-    let builder_instance_code = create_builder_instance_code(&fname, &parameters)?;
-    let builder_struct_code = create_builder_struct_code(&parameters)?;
+    let in_group = operation.in_group();
+    let builder_instance_code = create_builder_instance_code(&fname, &parameters, in_group)?;
+    let builder_struct_code = create_builder_struct_code(&parameters, in_group)?;
     let builder_setters_code = create_builder_setters_code(&parameters)?;
 
     let module_code = quote! {
@@ -716,10 +710,14 @@ fn create_function_params_code(parameters: &[&WebParameter]) -> Result<TokenStre
     Ok(quote! { #(#params),* })
 }
 
-fn create_builder_instance_code(fname: &TokenStream, parameters: &[&WebParameter]) -> Result<TokenStream, Error> {
+fn create_builder_instance_code(fname: &TokenStream, parameters: &[&WebParameter], in_group: bool) -> Result<TokenStream, Error> {
     let fparams = create_function_params_code(parameters)?;
     let mut params: Vec<TokenStream> = Vec::new();
-    params.push(quote! { client: self.base_clone() });
+    if in_group {
+        params.push(quote! { client: self.0.clone() });
+    } else {
+        params.push(quote! { client: self.clone() });
+    }
     for param in parameters.iter().filter(|p| p.required()) {
         let name = get_param_name(param)?;
         if param.type_is_ref()? {
@@ -745,9 +743,13 @@ fn create_builder_instance_code(fname: &TokenStream, parameters: &[&WebParameter
     })
 }
 
-fn create_builder_struct_code(parameters: &[&WebParameter]) -> Result<TokenStream, Error> {
+fn create_builder_struct_code(parameters: &[&WebParameter], in_group: bool) -> Result<TokenStream, Error> {
     let mut params: Vec<TokenStream> = Vec::new();
-    params.push(quote! { pub(crate) client: crate::operations::Client });
+    if in_group {
+        params.push(quote! { pub(crate) client: super::super::Client });
+    } else {
+        params.push(quote! { pub(crate) client: super::Client });
+    }
     for param in parameters.iter().filter(|p| p.required()) {
         let name = get_param_name(param)?;
         let tp = get_param_type(param, false, true)?;
