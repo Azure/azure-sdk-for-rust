@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn management_locks(&self) -> management_locks::Client {
         management_locks::Client(self.clone())
     }
@@ -109,9 +105,6 @@ pub mod management_locks {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_at_resource_group_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -119,7 +112,7 @@ pub mod management_locks {
             subscription_id: impl Into<String>,
         ) -> get_at_resource_group_level::Builder {
             get_at_resource_group_level::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 lock_name: lock_name.into(),
                 subscription_id: subscription_id.into(),
@@ -133,7 +126,7 @@ pub mod management_locks {
             subscription_id: impl Into<String>,
         ) -> create_or_update_at_resource_group_level::Builder {
             create_or_update_at_resource_group_level::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 lock_name: lock_name.into(),
                 parameters: parameters.into(),
@@ -147,7 +140,7 @@ pub mod management_locks {
             subscription_id: impl Into<String>,
         ) -> delete_at_resource_group_level::Builder {
             delete_at_resource_group_level::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 lock_name: lock_name.into(),
                 subscription_id: subscription_id.into(),
@@ -165,7 +158,7 @@ pub mod management_locks {
             subscription_id: impl Into<String>,
         ) -> create_or_update_at_resource_level::Builder {
             create_or_update_at_resource_level::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 parent_resource_path: parent_resource_path.into(),
@@ -187,7 +180,7 @@ pub mod management_locks {
             subscription_id: impl Into<String>,
         ) -> delete_at_resource_level::Builder {
             delete_at_resource_level::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 parent_resource_path: parent_resource_path.into(),
@@ -199,7 +192,7 @@ pub mod management_locks {
         }
         pub fn get(&self, lock_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 lock_name: lock_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -211,7 +204,7 @@ pub mod management_locks {
             subscription_id: impl Into<String>,
         ) -> create_or_update_at_subscription_level::Builder {
             create_or_update_at_subscription_level::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 lock_name: lock_name.into(),
                 parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
@@ -223,7 +216,7 @@ pub mod management_locks {
             subscription_id: impl Into<String>,
         ) -> delete_at_subscription_level::Builder {
             delete_at_subscription_level::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 lock_name: lock_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -234,7 +227,7 @@ pub mod management_locks {
             subscription_id: impl Into<String>,
         ) -> list_at_resource_group_level::Builder {
             list_at_resource_group_level::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -250,7 +243,7 @@ pub mod management_locks {
             subscription_id: impl Into<String>,
         ) -> list_at_resource_level::Builder {
             list_at_resource_level::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 parent_resource_path: parent_resource_path.into(),
@@ -262,7 +255,7 @@ pub mod management_locks {
         }
         pub fn list_at_subscription_level(&self, subscription_id: impl Into<String>) -> list_at_subscription_level::Builder {
             list_at_subscription_level::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
             }
@@ -291,7 +284,7 @@ pub mod management_locks {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) lock_name: String,
             pub(crate) subscription_id: String,
@@ -368,7 +361,7 @@ pub mod management_locks {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) lock_name: String,
             pub(crate) parameters: models::ManagementLockObject,
@@ -453,7 +446,7 @@ pub mod management_locks {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) lock_name: String,
             pub(crate) subscription_id: String,
@@ -526,7 +519,7 @@ pub mod management_locks {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
             pub(crate) parent_resource_path: String,
@@ -619,7 +612,7 @@ pub mod management_locks {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
             pub(crate) parent_resource_path: String,
@@ -695,7 +688,7 @@ pub mod management_locks {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) lock_name: String,
             pub(crate) subscription_id: String,
         }
@@ -770,7 +763,7 @@ pub mod management_locks {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) lock_name: String,
             pub(crate) parameters: models::ManagementLockObject,
             pub(crate) subscription_id: String,
@@ -853,7 +846,7 @@ pub mod management_locks {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) lock_name: String,
             pub(crate) subscription_id: String,
         }
@@ -919,7 +912,7 @@ pub mod management_locks {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
@@ -997,7 +990,7 @@ pub mod management_locks {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
             pub(crate) parent_resource_path: String,
@@ -1083,7 +1076,7 @@ pub mod management_locks {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }

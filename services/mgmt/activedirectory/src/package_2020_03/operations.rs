@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
@@ -117,9 +113,6 @@ pub mod private_link_for_azure_ad {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -127,7 +120,7 @@ pub mod private_link_for_azure_ad {
             policy_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 policy_name: policy_name.into(),
@@ -141,7 +134,7 @@ pub mod private_link_for_azure_ad {
             private_link_policy: impl Into<models::PrivateLinkPolicy>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 policy_name: policy_name.into(),
@@ -155,7 +148,7 @@ pub mod private_link_for_azure_ad {
             policy_name: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 policy_name: policy_name.into(),
@@ -169,7 +162,7 @@ pub mod private_link_for_azure_ad {
             policy_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 policy_name: policy_name.into(),
@@ -177,13 +170,13 @@ pub mod private_link_for_azure_ad {
         }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
             }
@@ -215,7 +208,7 @@ pub mod private_link_for_azure_ad {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) policy_name: String,
@@ -297,7 +290,7 @@ pub mod private_link_for_azure_ad {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) policy_name: String,
@@ -382,7 +375,7 @@ pub mod private_link_for_azure_ad {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) policy_name: String,
@@ -474,7 +467,7 @@ pub mod private_link_for_azure_ad {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) policy_name: String,
@@ -547,7 +540,7 @@ pub mod private_link_for_azure_ad {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -622,7 +615,7 @@ pub mod private_link_for_azure_ad {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -678,9 +671,6 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_private_link_policy(
             &self,
             subscription_id: impl Into<String>,
@@ -688,7 +678,7 @@ pub mod private_link_resources {
             policy_name: impl Into<String>,
         ) -> list_by_private_link_policy::Builder {
             list_by_private_link_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 policy_name: policy_name.into(),
@@ -702,7 +692,7 @@ pub mod private_link_resources {
             group_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 policy_name: policy_name.into(),
@@ -733,7 +723,7 @@ pub mod private_link_resources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) policy_name: String,
@@ -807,7 +797,7 @@ pub mod private_link_resources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) policy_name: String,
@@ -863,9 +853,6 @@ pub mod private_endpoint_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_policy_name(
             &self,
             resource_group_name: impl Into<String>,
@@ -873,7 +860,7 @@ pub mod private_endpoint_connections {
             subscription_id: impl Into<String>,
         ) -> list_by_policy_name::Builder {
             list_by_policy_name::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 policy_name: policy_name.into(),
                 subscription_id: subscription_id.into(),
@@ -887,7 +874,7 @@ pub mod private_endpoint_connections {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 policy_name: policy_name.into(),
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
@@ -903,7 +890,7 @@ pub mod private_endpoint_connections {
             parameters: impl Into<models::PrivateEndpointConnection>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 policy_name: policy_name.into(),
@@ -919,7 +906,7 @@ pub mod private_endpoint_connections {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 policy_name: policy_name.into(),
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
@@ -953,7 +940,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) policy_name: String,
             pub(crate) subscription_id: String,
@@ -1026,7 +1013,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) policy_name: String,
             pub(crate) private_endpoint_connection_name: String,
@@ -1098,7 +1085,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) policy_name: String,
@@ -1178,7 +1165,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) policy_name: String,
             pub(crate) private_endpoint_connection_name: String,

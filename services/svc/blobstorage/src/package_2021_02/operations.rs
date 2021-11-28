@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn append_blob(&self) -> append_blob::Client {
         append_blob::Client(self.clone())
     }
@@ -238,9 +234,6 @@ pub mod service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_properties(
             &self,
             restype: impl Into<String>,
@@ -248,7 +241,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -264,7 +257,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> set_properties::Builder {
             set_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 storage_service_properties: storage_service_properties.into(),
@@ -280,7 +273,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> get_statistics::Builder {
             get_statistics::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -294,7 +287,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> list_containers_segment::Builder {
             list_containers_segment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 prefix: None,
@@ -313,7 +306,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> get_user_delegation_key::Builder {
             get_user_delegation_key::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 key_info: key_info.into(),
@@ -329,7 +322,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> get_account_info::Builder {
             get_account_info::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -344,7 +337,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> submit_batch::Builder {
             submit_batch::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 comp: comp.into(),
                 body: body.into(),
                 content_length,
@@ -356,7 +349,7 @@ pub mod service {
         }
         pub fn filter_blobs(&self, comp: impl Into<String>, x_ms_version: impl Into<String>) -> filter_blobs::Builder {
             filter_blobs::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -393,7 +386,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
@@ -484,7 +477,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) storage_service_properties: models::StorageServiceProperties,
@@ -572,7 +565,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
@@ -663,7 +656,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
@@ -782,7 +775,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) key_info: models::KeyInfo,
@@ -875,7 +868,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
@@ -945,7 +938,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) comp: String,
             pub(crate) body: serde_json::Value,
             pub(crate) content_length: i64,
@@ -1038,7 +1031,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -1129,9 +1122,6 @@ pub mod container {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_properties(
             &self,
             container_name: impl Into<String>,
@@ -1139,7 +1129,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1155,7 +1145,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1174,7 +1164,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1193,7 +1183,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> set_metadata::Builder {
             set_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -1213,7 +1203,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> get_access_policy::Builder {
             get_access_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -1231,7 +1221,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> set_access_policy::Builder {
             set_access_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -1253,7 +1243,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> restore::Builder {
             restore::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -1273,7 +1263,7 @@ pub mod container {
             x_ms_source_container_name: impl Into<String>,
         ) -> rename::Builder {
             rename::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -1295,7 +1285,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> submit_batch::Builder {
             submit_batch::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -1316,7 +1306,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> acquire_lease::Builder {
             acquire_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 comp: comp.into(),
                 restype: restype.into(),
@@ -1340,7 +1330,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> release_lease::Builder {
             release_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 comp: comp.into(),
                 restype: restype.into(),
@@ -1363,7 +1353,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> renew_lease::Builder {
             renew_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 comp: comp.into(),
                 restype: restype.into(),
@@ -1385,7 +1375,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> break_lease::Builder {
             break_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 comp: comp.into(),
                 restype: restype.into(),
@@ -1409,7 +1399,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> change_lease::Builder {
             change_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 comp: comp.into(),
                 restype: restype.into(),
@@ -1431,7 +1421,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> list_blob_flat_segment::Builder {
             list_blob_flat_segment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -1453,7 +1443,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> list_blob_hierarchy_segment::Builder {
             list_blob_hierarchy_segment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -1475,7 +1465,7 @@ pub mod container {
             x_ms_version: impl Into<String>,
         ) -> get_account_info::Builder {
             get_account_info::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -1509,7 +1499,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) x_ms_version: String,
@@ -1601,7 +1591,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) x_ms_version: String,
@@ -1720,7 +1710,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) x_ms_version: String,
@@ -1828,7 +1818,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -1943,7 +1933,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -2043,7 +2033,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -2172,7 +2162,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -2279,7 +2269,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -2376,7 +2366,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -2473,7 +2463,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) comp: String,
             pub(crate) restype: String,
@@ -2598,7 +2588,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) comp: String,
             pub(crate) restype: String,
@@ -2709,7 +2699,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) comp: String,
             pub(crate) restype: String,
@@ -2820,7 +2810,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) comp: String,
             pub(crate) restype: String,
@@ -2937,7 +2927,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) comp: String,
             pub(crate) restype: String,
@@ -3050,7 +3040,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -3177,7 +3167,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -3307,7 +3297,7 @@ pub mod container {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -3361,9 +3351,6 @@ pub mod blob {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn download(
             &self,
             container_name: impl Into<String>,
@@ -3371,7 +3358,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> download::Builder {
             download::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_version: x_ms_version.into(),
@@ -3400,7 +3387,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_version: x_ms_version.into(),
@@ -3425,7 +3412,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_version: x_ms_version.into(),
@@ -3452,7 +3439,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> undelete::Builder {
             undelete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3470,7 +3457,7 @@ pub mod blob {
             x_ms_expiry_option: impl Into<String>,
         ) -> set_expiry::Builder {
             set_expiry::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3489,7 +3476,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> set_http_headers::Builder {
             set_http_headers::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3518,7 +3505,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> set_immutability_policy::Builder {
             set_immutability_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3538,7 +3525,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> delete_immutability_policy::Builder {
             delete_immutability_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3556,7 +3543,7 @@ pub mod blob {
             x_ms_legal_hold: bool,
         ) -> set_legal_hold::Builder {
             set_legal_hold::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3574,7 +3561,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> set_metadata::Builder {
             set_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3603,7 +3590,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> acquire_lease::Builder {
             acquire_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3630,7 +3617,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> release_lease::Builder {
             release_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3656,7 +3643,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> renew_lease::Builder {
             renew_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3683,7 +3670,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> change_lease::Builder {
             change_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3709,7 +3696,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> break_lease::Builder {
             break_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3733,7 +3720,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> create_snapshot::Builder {
             create_snapshot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3761,7 +3748,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> start_copy_from_url::Builder {
             start_copy_from_url::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_copy_source: x_ms_copy_source.into(),
@@ -3798,7 +3785,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> copy_from_url::Builder {
             copy_from_url::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_requires_sync: x_ms_requires_sync.into(),
@@ -3837,7 +3824,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> abort_copy_from_url::Builder {
             abort_copy_from_url::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3858,7 +3845,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> set_tier::Builder {
             set_tier::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3882,7 +3869,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> get_account_info::Builder {
             get_account_info::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 restype: restype.into(),
@@ -3898,7 +3885,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> query::Builder {
             query::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3926,7 +3913,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> get_tags::Builder {
             get_tags::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3947,7 +3934,7 @@ pub mod blob {
             x_ms_version: impl Into<String>,
         ) -> set_tags::Builder {
             set_tags::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -3994,7 +3981,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_version: String,
@@ -4199,7 +4186,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_version: String,
@@ -4361,7 +4348,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_version: String,
@@ -4531,7 +4518,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -4616,7 +4603,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -4711,7 +4698,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -4897,7 +4884,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -5011,7 +4998,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -5101,7 +5088,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -5188,7 +5175,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -5361,7 +5348,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -5509,7 +5496,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -5643,7 +5630,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -5777,7 +5764,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -5913,7 +5900,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -6053,7 +6040,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -6226,7 +6213,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_copy_source: String,
@@ -6462,7 +6449,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_requires_sync: String,
@@ -6700,7 +6687,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -6808,7 +6795,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -6936,7 +6923,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) restype: String,
@@ -7018,7 +7005,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -7204,7 +7191,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -7326,7 +7313,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -7440,9 +7427,6 @@ pub mod page_blob {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn create(
             &self,
             container_name: impl Into<String>,
@@ -7453,7 +7437,7 @@ pub mod page_blob {
             x_ms_version: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_blob_type: x_ms_blob_type.into(),
@@ -7498,7 +7482,7 @@ pub mod page_blob {
             x_ms_version: impl Into<String>,
         ) -> upload_pages::Builder {
             upload_pages::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -7536,7 +7520,7 @@ pub mod page_blob {
             x_ms_version: impl Into<String>,
         ) -> clear_pages::Builder {
             clear_pages::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -7574,7 +7558,7 @@ pub mod page_blob {
             x_ms_version: impl Into<String>,
         ) -> upload_pages_from_url::Builder {
             upload_pages_from_url::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -7616,7 +7600,7 @@ pub mod page_blob {
             x_ms_version: impl Into<String>,
         ) -> get_page_ranges::Builder {
             get_page_ranges::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -7641,7 +7625,7 @@ pub mod page_blob {
             x_ms_version: impl Into<String>,
         ) -> get_page_ranges_diff::Builder {
             get_page_ranges_diff::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -7669,7 +7653,7 @@ pub mod page_blob {
             x_ms_version: impl Into<String>,
         ) -> resize::Builder {
             resize::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -7698,7 +7682,7 @@ pub mod page_blob {
             x_ms_version: impl Into<String>,
         ) -> update_sequence_number::Builder {
             update_sequence_number::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -7724,7 +7708,7 @@ pub mod page_blob {
             x_ms_version: impl Into<String>,
         ) -> copy_incremental::Builder {
             copy_incremental::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -7766,7 +7750,7 @@ pub mod page_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_blob_type: String,
@@ -8038,7 +8022,7 @@ pub mod page_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -8262,7 +8246,7 @@ pub mod page_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -8463,7 +8447,7 @@ pub mod page_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -8723,7 +8707,7 @@ pub mod page_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -8877,7 +8861,7 @@ pub mod page_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -9052,7 +9036,7 @@ pub mod page_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -9224,7 +9208,7 @@ pub mod page_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -9372,7 +9356,7 @@ pub mod page_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -9483,9 +9467,6 @@ pub mod append_blob {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn create(
             &self,
             container_name: impl Into<String>,
@@ -9495,7 +9476,7 @@ pub mod append_blob {
             x_ms_version: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_blob_type: x_ms_blob_type.into(),
@@ -9536,7 +9517,7 @@ pub mod append_blob {
             x_ms_version: impl Into<String>,
         ) -> append_block::Builder {
             append_block::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -9571,7 +9552,7 @@ pub mod append_blob {
             x_ms_version: impl Into<String>,
         ) -> append_block_from_url::Builder {
             append_block_from_url::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -9611,7 +9592,7 @@ pub mod append_blob {
             x_ms_version: impl Into<String>,
         ) -> seal::Builder {
             seal::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -9653,7 +9634,7 @@ pub mod append_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_blob_type: String,
@@ -9907,7 +9888,7 @@ pub mod append_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -10113,7 +10094,7 @@ pub mod append_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -10375,7 +10356,7 @@ pub mod append_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -10487,9 +10468,6 @@ pub mod block_blob {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn upload(
             &self,
             container_name: impl Into<String>,
@@ -10500,7 +10478,7 @@ pub mod block_blob {
             x_ms_version: impl Into<String>,
         ) -> upload::Builder {
             upload::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_blob_type: x_ms_blob_type.into(),
@@ -10544,7 +10522,7 @@ pub mod block_blob {
             x_ms_copy_source: impl Into<String>,
         ) -> put_blob_from_url::Builder {
             put_blob_from_url::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_blob_type: x_ms_blob_type.into(),
@@ -10594,7 +10572,7 @@ pub mod block_blob {
             x_ms_version: impl Into<String>,
         ) -> stage_block::Builder {
             stage_block::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -10624,7 +10602,7 @@ pub mod block_blob {
             x_ms_version: impl Into<String>,
         ) -> stage_block_from_url::Builder {
             stage_block_from_url::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -10658,7 +10636,7 @@ pub mod block_blob {
             x_ms_version: impl Into<String>,
         ) -> get_block_list::Builder {
             get_block_list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -10680,7 +10658,7 @@ pub mod block_blob {
             x_ms_version: impl Into<String>,
         ) -> commit_block_list::Builder {
             commit_block_list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 comp: comp.into(),
@@ -10741,7 +10719,7 @@ pub mod block_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_blob_type: String,
@@ -11013,7 +10991,7 @@ pub mod block_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_blob_type: String,
@@ -11330,7 +11308,7 @@ pub mod block_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -11478,7 +11456,7 @@ pub mod block_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -11679,7 +11657,7 @@ pub mod block_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,
@@ -11796,7 +11774,7 @@ pub mod block_blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) comp: String,

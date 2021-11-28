@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn public_offers(&self) -> public_offers::Client {
         public_offers::Client(self.clone())
     }
@@ -91,12 +87,9 @@ pub mod public_offers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 language: None,
                 market: None,
@@ -106,7 +99,7 @@ pub mod public_offers {
         }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 language: None,
                 hide_keys: Vec::new(),
             }
@@ -137,7 +130,7 @@ pub mod public_offers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) language: Option<String>,
             pub(crate) market: Option<String>,
@@ -243,7 +236,7 @@ pub mod public_offers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) language: Option<String>,
             pub(crate) hide_keys: Vec<String>,
         }

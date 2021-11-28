@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn endpoints(&self) -> endpoints::Client {
         endpoints::Client(self.clone())
     }
@@ -104,11 +100,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -137,7 +130,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -184,18 +177,15 @@ pub mod endpoints {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
             }
         }
         pub fn get(&self, resource_uri: impl Into<String>, endpoint_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 endpoint_name: endpoint_name.into(),
             }
@@ -207,7 +197,7 @@ pub mod endpoints {
             endpoint_resource: impl Into<models::EndpointResource>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 endpoint_name: endpoint_name.into(),
                 endpoint_resource: endpoint_resource.into(),
@@ -220,7 +210,7 @@ pub mod endpoints {
             endpoint_resource: impl Into<models::EndpointResource>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 endpoint_name: endpoint_name.into(),
                 endpoint_resource: endpoint_resource.into(),
@@ -228,14 +218,14 @@ pub mod endpoints {
         }
         pub fn delete(&self, resource_uri: impl Into<String>, endpoint_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 endpoint_name: endpoint_name.into(),
             }
         }
         pub fn list_credentials(&self, resource_uri: impl Into<String>, endpoint_name: impl Into<String>) -> list_credentials::Builder {
             list_credentials::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 endpoint_name: endpoint_name.into(),
                 expiresin: None,
@@ -268,7 +258,7 @@ pub mod endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
         }
         impl Builder {
@@ -341,7 +331,7 @@ pub mod endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) endpoint_name: String,
         }
@@ -416,7 +406,7 @@ pub mod endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) endpoint_name: String,
             pub(crate) endpoint_resource: models::EndpointResource,
@@ -493,7 +483,7 @@ pub mod endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) endpoint_name: String,
             pub(crate) endpoint_resource: models::EndpointResource,
@@ -575,7 +565,7 @@ pub mod endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) endpoint_name: String,
         }
@@ -646,7 +636,7 @@ pub mod endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) endpoint_name: String,
             pub(crate) expiresin: Option<i64>,

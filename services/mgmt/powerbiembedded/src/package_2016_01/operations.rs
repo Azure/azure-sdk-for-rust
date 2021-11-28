@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn workspace_collections(&self) -> workspace_collections::Client {
         workspace_collections::Client(self.clone())
     }
@@ -114,9 +110,6 @@ pub mod workspace_collections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_by_name(
             &self,
             subscription_id: impl Into<String>,
@@ -124,7 +117,7 @@ pub mod workspace_collections {
             workspace_collection_name: impl Into<String>,
         ) -> get_by_name::Builder {
             get_by_name::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_collection_name: workspace_collection_name.into(),
@@ -138,7 +131,7 @@ pub mod workspace_collections {
             body: impl Into<models::CreateWorkspaceCollectionRequest>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_collection_name: workspace_collection_name.into(),
@@ -153,7 +146,7 @@ pub mod workspace_collections {
             body: impl Into<models::UpdateWorkspaceCollectionRequest>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_collection_name: workspace_collection_name.into(),
@@ -167,7 +160,7 @@ pub mod workspace_collections {
             workspace_collection_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_collection_name: workspace_collection_name.into(),
@@ -180,7 +173,7 @@ pub mod workspace_collections {
             body: impl Into<models::CheckNameRequest>,
         ) -> check_name_availability::Builder {
             check_name_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 location: location.into(),
                 body: body.into(),
@@ -192,14 +185,14 @@ pub mod workspace_collections {
             resource_group_name: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
             }
         }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -210,7 +203,7 @@ pub mod workspace_collections {
             workspace_collection_name: impl Into<String>,
         ) -> get_access_keys::Builder {
             get_access_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_collection_name: workspace_collection_name.into(),
@@ -224,7 +217,7 @@ pub mod workspace_collections {
             body: impl Into<models::WorkspaceCollectionAccessKey>,
         ) -> regenerate_key::Builder {
             regenerate_key::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_collection_name: workspace_collection_name.into(),
@@ -238,7 +231,7 @@ pub mod workspace_collections {
             body: impl Into<models::MigrateWorkspaceCollectionRequest>,
         ) -> migrate::Builder {
             migrate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 body: body.into(),
@@ -271,7 +264,7 @@ pub mod workspace_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
@@ -348,7 +341,7 @@ pub mod workspace_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
@@ -427,7 +420,7 @@ pub mod workspace_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
@@ -506,7 +499,7 @@ pub mod workspace_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
@@ -578,7 +571,7 @@ pub mod workspace_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
             pub(crate) body: models::CheckNameRequest,
@@ -655,7 +648,7 @@ pub mod workspace_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -730,7 +723,7 @@ pub mod workspace_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -803,7 +796,7 @@ pub mod workspace_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
@@ -883,7 +876,7 @@ pub mod workspace_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
@@ -964,7 +957,7 @@ pub mod workspace_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) body: models::MigrateWorkspaceCollectionRequest,
@@ -1013,7 +1006,7 @@ pub mod workspace_collections {
 }
 impl Client {
     pub fn get_available_operations(&self) -> get_available_operations::Builder {
-        get_available_operations::Builder { client: self.base_clone() }
+        get_available_operations::Builder { client: self.clone() }
     }
 }
 pub mod get_available_operations {
@@ -1042,7 +1035,7 @@ pub mod get_available_operations {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
@@ -1088,9 +1081,6 @@ pub mod workspaces {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1098,7 +1088,7 @@ pub mod workspaces {
             workspace_collection_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_collection_name: workspace_collection_name.into(),
@@ -1131,7 +1121,7 @@ pub mod workspaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,

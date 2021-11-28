@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn canonical_support_plan_types(&self) -> canonical_support_plan_types::Client {
         canonical_support_plan_types::Client(self.clone())
     }
@@ -103,11 +99,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -136,7 +129,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListValue, Error>> {
@@ -183,9 +176,6 @@ pub mod support_plan_types {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -193,7 +183,7 @@ pub mod support_plan_types {
             plan_type_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_name: provider_name.into(),
                 plan_type_name: plan_type_name.into(),
@@ -206,7 +196,7 @@ pub mod support_plan_types {
             plan_type_name: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_name: provider_name.into(),
                 plan_type_name: plan_type_name.into(),
@@ -219,7 +209,7 @@ pub mod support_plan_types {
             plan_type_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_name: provider_name.into(),
                 plan_type_name: plan_type_name.into(),
@@ -254,7 +244,7 @@ pub mod support_plan_types {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_name: String,
             pub(crate) plan_type_name: String,
@@ -341,7 +331,7 @@ pub mod support_plan_types {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_name: String,
             pub(crate) plan_type_name: String,
@@ -430,7 +420,7 @@ pub mod support_plan_types {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_name: String,
             pub(crate) plan_type_name: String,
@@ -487,12 +477,9 @@ pub mod canonical_support_plan_types {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, subscription_id: impl Into<String>, provider_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_name: provider_name.into(),
             }
@@ -524,7 +511,7 @@ pub mod canonical_support_plan_types {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_name: String,
         }

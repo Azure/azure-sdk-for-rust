@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn android(&self) -> android::Client {
         android::Client(self.clone())
     }
@@ -154,14 +150,14 @@ pub enum Error {
 }
 impl Client {
     pub fn get_locations(&self) -> get_locations::Builder {
-        get_locations::Builder { client: self.base_clone() }
+        get_locations::Builder { client: self.clone() }
     }
     pub fn get_location_by_host_name(&self) -> get_location_by_host_name::Builder {
-        get_location_by_host_name::Builder { client: self.base_clone() }
+        get_location_by_host_name::Builder { client: self.clone() }
     }
     pub fn get_apps(&self, host_name: impl Into<String>) -> get_apps::Builder {
         get_apps::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             host_name: host_name.into(),
             filter: None,
             top: None,
@@ -170,7 +166,7 @@ impl Client {
     }
     pub fn get_mam_user_devices(&self, host_name: impl Into<String>, user_name: impl Into<String>) -> get_mam_user_devices::Builder {
         get_mam_user_devices::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             host_name: host_name.into(),
             user_name: user_name.into(),
             filter: None,
@@ -185,7 +181,7 @@ impl Client {
         device_name: impl Into<String>,
     ) -> get_mam_user_device_by_device_name::Builder {
         get_mam_user_device_by_device_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             host_name: host_name.into(),
             user_name: user_name.into(),
             device_name: device_name.into(),
@@ -199,7 +195,7 @@ impl Client {
         device_name: impl Into<String>,
     ) -> wipe_mam_user_device::Builder {
         wipe_mam_user_device::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             host_name: host_name.into(),
             user_name: user_name.into(),
             device_name: device_name.into(),
@@ -207,7 +203,7 @@ impl Client {
     }
     pub fn get_operation_results(&self, host_name: impl Into<String>) -> get_operation_results::Builder {
         get_operation_results::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             host_name: host_name.into(),
             filter: None,
             top: None,
@@ -216,13 +212,13 @@ impl Client {
     }
     pub fn get_mam_statuses(&self, host_name: impl Into<String>) -> get_mam_statuses::Builder {
         get_mam_statuses::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             host_name: host_name.into(),
         }
     }
     pub fn get_mam_flagged_users(&self, host_name: impl Into<String>) -> get_mam_flagged_users::Builder {
         get_mam_flagged_users::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             host_name: host_name.into(),
             filter: None,
             top: None,
@@ -235,7 +231,7 @@ impl Client {
         user_name: impl Into<String>,
     ) -> get_mam_flagged_user_by_name::Builder {
         get_mam_flagged_user_by_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             host_name: host_name.into(),
             user_name: user_name.into(),
             select: None,
@@ -247,7 +243,7 @@ impl Client {
         user_name: impl Into<String>,
     ) -> get_mam_user_flagged_enrolled_apps::Builder {
         get_mam_user_flagged_enrolled_apps::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             host_name: host_name.into(),
             user_name: user_name.into(),
             filter: None,
@@ -282,7 +278,7 @@ pub mod get_locations {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LocationCollection, Error>> {
@@ -350,7 +346,7 @@ pub mod get_location_by_host_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Location, Error>> {
@@ -418,7 +414,7 @@ pub mod get_apps {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) filter: Option<String>,
         pub(crate) top: Option<i32>,
@@ -515,7 +511,7 @@ pub mod get_mam_user_devices {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) user_name: String,
         pub(crate) filter: Option<String>,
@@ -614,7 +610,7 @@ pub mod get_mam_user_device_by_device_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) user_name: String,
         pub(crate) device_name: String,
@@ -699,7 +695,7 @@ pub mod wipe_mam_user_device {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) user_name: String,
         pub(crate) device_name: String,
@@ -777,7 +773,7 @@ pub mod get_operation_results {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) filter: Option<String>,
         pub(crate) top: Option<i32>,
@@ -874,7 +870,7 @@ pub mod get_mam_statuses {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) host_name: String,
     }
     impl Builder {
@@ -947,7 +943,7 @@ pub mod get_mam_flagged_users {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) filter: Option<String>,
         pub(crate) top: Option<i32>,
@@ -1044,7 +1040,7 @@ pub mod get_mam_flagged_user_by_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) user_name: String,
         pub(crate) select: Option<String>,
@@ -1127,7 +1123,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) host_name: String,
         pub(crate) user_name: String,
         pub(crate) filter: Option<String>,
@@ -1204,12 +1200,9 @@ pub mod ios {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_mam_policies(&self, host_name: impl Into<String>) -> get_mam_policies::Builder {
             get_mam_policies::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 filter: None,
                 top: None,
@@ -1222,7 +1215,7 @@ pub mod ios {
             policy_name: impl Into<String>,
         ) -> get_mam_policy_by_name::Builder {
             get_mam_policy_by_name::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 select: None,
@@ -1235,7 +1228,7 @@ pub mod ios {
             parameters: impl Into<models::IOsmamPolicy>,
         ) -> create_or_update_mam_policy::Builder {
             create_or_update_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 parameters: parameters.into(),
@@ -1248,7 +1241,7 @@ pub mod ios {
             parameters: impl Into<models::IOsmamPolicy>,
         ) -> patch_mam_policy::Builder {
             patch_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 parameters: parameters.into(),
@@ -1256,7 +1249,7 @@ pub mod ios {
         }
         pub fn delete_mam_policy(&self, host_name: impl Into<String>, policy_name: impl Into<String>) -> delete_mam_policy::Builder {
             delete_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
             }
@@ -1267,7 +1260,7 @@ pub mod ios {
             policy_name: impl Into<String>,
         ) -> get_app_for_mam_policy::Builder {
             get_app_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 filter: None,
@@ -1283,7 +1276,7 @@ pub mod ios {
             parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
         ) -> add_app_for_mam_policy::Builder {
             add_app_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 app_name: app_name.into(),
@@ -1297,7 +1290,7 @@ pub mod ios {
             app_name: impl Into<String>,
         ) -> delete_app_for_mam_policy::Builder {
             delete_app_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 app_name: app_name.into(),
@@ -1309,7 +1302,7 @@ pub mod ios {
             policy_name: impl Into<String>,
         ) -> get_groups_for_mam_policy::Builder {
             get_groups_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
             }
@@ -1322,7 +1315,7 @@ pub mod ios {
             parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
         ) -> add_group_for_mam_policy::Builder {
             add_group_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 group_id: group_id.into(),
@@ -1336,7 +1329,7 @@ pub mod ios {
             group_id: impl Into<String>,
         ) -> delete_group_for_mam_policy::Builder {
             delete_group_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 group_id: group_id.into(),
@@ -1369,7 +1362,7 @@ pub mod ios {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
@@ -1466,7 +1459,7 @@ pub mod ios {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) select: Option<String>,
@@ -1549,7 +1542,7 @@ pub mod ios {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) parameters: models::IOsmamPolicy,
@@ -1626,7 +1619,7 @@ pub mod ios {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) parameters: models::IOsmamPolicy,
@@ -1708,7 +1701,7 @@ pub mod ios {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
         }
@@ -1779,7 +1772,7 @@ pub mod ios {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) filter: Option<String>,
@@ -1883,7 +1876,7 @@ pub mod ios {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) app_name: String,
@@ -1963,7 +1956,7 @@ pub mod ios {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) app_name: String,
@@ -2036,7 +2029,7 @@ pub mod ios {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
         }
@@ -2116,7 +2109,7 @@ pub mod ios {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) group_id: String,
@@ -2196,7 +2189,7 @@ pub mod ios {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) group_id: String,
@@ -2248,12 +2241,9 @@ pub mod android {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_mam_policies(&self, host_name: impl Into<String>) -> get_mam_policies::Builder {
             get_mam_policies::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 filter: None,
                 top: None,
@@ -2266,7 +2256,7 @@ pub mod android {
             policy_name: impl Into<String>,
         ) -> get_mam_policy_by_name::Builder {
             get_mam_policy_by_name::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 select: None,
@@ -2279,7 +2269,7 @@ pub mod android {
             parameters: impl Into<models::AndroidMamPolicy>,
         ) -> create_or_update_mam_policy::Builder {
             create_or_update_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 parameters: parameters.into(),
@@ -2292,7 +2282,7 @@ pub mod android {
             parameters: impl Into<models::AndroidMamPolicy>,
         ) -> patch_mam_policy::Builder {
             patch_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 parameters: parameters.into(),
@@ -2300,7 +2290,7 @@ pub mod android {
         }
         pub fn delete_mam_policy(&self, host_name: impl Into<String>, policy_name: impl Into<String>) -> delete_mam_policy::Builder {
             delete_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
             }
@@ -2311,7 +2301,7 @@ pub mod android {
             policy_name: impl Into<String>,
         ) -> get_app_for_mam_policy::Builder {
             get_app_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 filter: None,
@@ -2327,7 +2317,7 @@ pub mod android {
             parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
         ) -> add_app_for_mam_policy::Builder {
             add_app_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 app_name: app_name.into(),
@@ -2341,7 +2331,7 @@ pub mod android {
             app_name: impl Into<String>,
         ) -> delete_app_for_mam_policy::Builder {
             delete_app_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 app_name: app_name.into(),
@@ -2353,7 +2343,7 @@ pub mod android {
             policy_name: impl Into<String>,
         ) -> get_groups_for_mam_policy::Builder {
             get_groups_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
             }
@@ -2366,7 +2356,7 @@ pub mod android {
             parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
         ) -> add_group_for_mam_policy::Builder {
             add_group_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 group_id: group_id.into(),
@@ -2380,7 +2370,7 @@ pub mod android {
             group_id: impl Into<String>,
         ) -> delete_group_for_mam_policy::Builder {
             delete_group_for_mam_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 host_name: host_name.into(),
                 policy_name: policy_name.into(),
                 group_id: group_id.into(),
@@ -2413,7 +2403,7 @@ pub mod android {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
@@ -2512,7 +2502,7 @@ pub mod android {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) select: Option<String>,
@@ -2595,7 +2585,7 @@ pub mod android {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) parameters: models::AndroidMamPolicy,
@@ -2672,7 +2662,7 @@ pub mod android {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) parameters: models::AndroidMamPolicy,
@@ -2754,7 +2744,7 @@ pub mod android {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
         }
@@ -2825,7 +2815,7 @@ pub mod android {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) filter: Option<String>,
@@ -2929,7 +2919,7 @@ pub mod android {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) app_name: String,
@@ -3009,7 +2999,7 @@ pub mod android {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) app_name: String,
@@ -3082,7 +3072,7 @@ pub mod android {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
         }
@@ -3162,7 +3152,7 @@ pub mod android {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) group_id: String,
@@ -3242,7 +3232,7 @@ pub mod android {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
             pub(crate) policy_name: String,
             pub(crate) group_id: String,

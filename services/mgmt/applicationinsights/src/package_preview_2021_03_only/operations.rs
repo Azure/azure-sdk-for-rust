@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn diagnostic_service_token(&self) -> diagnostic_service_token::Client {
         diagnostic_service_token::Client(self.clone())
     }
@@ -91,18 +87,15 @@ pub mod diagnostic_service_token {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_read_only(&self, resource_uri: impl Into<String>) -> get_read_only::Builder {
             get_read_only::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
             }
         }
         pub fn get_read_write(&self, resource_uri: impl Into<String>) -> get_read_write::Builder {
             get_read_write::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
             }
         }
@@ -133,7 +126,7 @@ pub mod diagnostic_service_token {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
         }
         impl Builder {
@@ -209,7 +202,7 @@ pub mod diagnostic_service_token {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
         }
         impl Builder {

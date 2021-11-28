@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn graph_query(&self) -> graph_query::Client {
         graph_query::Client(self.clone())
     }
@@ -107,13 +103,13 @@ pub enum Error {
 impl Client {
     pub fn resources(&self, query: impl Into<models::QueryRequest>) -> resources::Builder {
         resources::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             query: query.into(),
         }
     }
     pub fn resource_changes(&self, parameters: impl Into<models::ResourceChangesRequestParameters>) -> resource_changes::Builder {
         resource_changes::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             parameters: parameters.into(),
         }
     }
@@ -122,7 +118,7 @@ impl Client {
         parameters: impl Into<models::ResourceChangeDetailsRequestParameters>,
     ) -> resource_change_details::Builder {
         resource_change_details::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             parameters: parameters.into(),
         }
     }
@@ -153,7 +149,7 @@ pub mod resources {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) query: models::QueryRequest,
     }
     impl Builder {
@@ -223,7 +219,7 @@ pub mod resource_changes {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) parameters: models::ResourceChangesRequestParameters,
     }
     impl Builder {
@@ -293,7 +289,7 @@ pub mod resource_change_details {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) parameters: models::ResourceChangeDetailsRequestParameters,
     }
     impl Builder {
@@ -341,11 +337,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -371,7 +364,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -416,12 +409,9 @@ pub mod graph_query {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
             }
@@ -433,7 +423,7 @@ pub mod graph_query {
             resource_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 resource_name: resource_name.into(),
@@ -447,7 +437,7 @@ pub mod graph_query {
             properties: impl Into<models::GraphQueryResource>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 resource_name: resource_name.into(),
@@ -462,7 +452,7 @@ pub mod graph_query {
             body: impl Into<models::GraphQueryUpdateParameters>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 resource_name: resource_name.into(),
@@ -476,7 +466,7 @@ pub mod graph_query {
             resource_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 resource_name: resource_name.into(),
@@ -509,7 +499,7 @@ pub mod graph_query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -584,7 +574,7 @@ pub mod graph_query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
@@ -661,7 +651,7 @@ pub mod graph_query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
@@ -740,7 +730,7 @@ pub mod graph_query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
@@ -824,7 +814,7 @@ pub mod graph_query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,

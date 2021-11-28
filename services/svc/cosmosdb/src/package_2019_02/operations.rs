@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn service(&self) -> service::Client {
         service::Client(self.clone())
     }
@@ -93,9 +89,6 @@ pub mod service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_properties(
             &self,
             restype: impl Into<String>,
@@ -103,7 +96,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -119,7 +112,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> set_properties::Builder {
             set_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 table_service_properties: table_service_properties.into(),
@@ -135,7 +128,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> get_statistics::Builder {
             get_statistics::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -170,7 +163,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
@@ -261,7 +254,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) table_service_properties: models::TableServiceProperties,
@@ -349,7 +342,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,

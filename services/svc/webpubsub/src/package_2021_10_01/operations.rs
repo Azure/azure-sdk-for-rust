@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn health_api(&self) -> health_api::Client {
         health_api::Client(self.clone())
     }
@@ -132,11 +128,8 @@ pub mod health_api {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_service_status(&self) -> get_service_status::Builder {
-            get_service_status::Builder { client: self.base_clone() }
+            get_service_status::Builder { client: self.0.clone() }
         }
     }
     pub mod get_service_status {
@@ -162,7 +155,7 @@ pub mod health_api {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -196,12 +189,9 @@ pub mod web_pub_sub {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn generate_client_token(&self, hub: impl Into<String>) -> generate_client_token::Builder {
             generate_client_token::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 user_id: None,
                 role: Vec::new(),
@@ -210,7 +200,7 @@ pub mod web_pub_sub {
         }
         pub fn close_all_connections(&self, hub: impl Into<String>) -> close_all_connections::Builder {
             close_all_connections::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 excluded: Vec::new(),
                 reason: None,
@@ -218,7 +208,7 @@ pub mod web_pub_sub {
         }
         pub fn send_to_all(&self, hub: impl Into<String>, message: impl Into<String>) -> send_to_all::Builder {
             send_to_all::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 message: message.into(),
                 excluded: Vec::new(),
@@ -226,7 +216,7 @@ pub mod web_pub_sub {
         }
         pub fn close_connection(&self, hub: impl Into<String>, connection_id: impl Into<String>) -> close_connection::Builder {
             close_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 connection_id: connection_id.into(),
                 reason: None,
@@ -234,7 +224,7 @@ pub mod web_pub_sub {
         }
         pub fn connection_exists(&self, hub: impl Into<String>, connection_id: impl Into<String>) -> connection_exists::Builder {
             connection_exists::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 connection_id: connection_id.into(),
             }
@@ -246,7 +236,7 @@ pub mod web_pub_sub {
             message: impl Into<String>,
         ) -> send_to_connection::Builder {
             send_to_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 connection_id: connection_id.into(),
                 message: message.into(),
@@ -254,14 +244,14 @@ pub mod web_pub_sub {
         }
         pub fn group_exists(&self, hub: impl Into<String>, group: impl Into<String>) -> group_exists::Builder {
             group_exists::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
             }
         }
         pub fn close_group_connections(&self, hub: impl Into<String>, group: impl Into<String>) -> close_group_connections::Builder {
             close_group_connections::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
                 excluded: Vec::new(),
@@ -275,7 +265,7 @@ pub mod web_pub_sub {
             message: impl Into<String>,
         ) -> send_to_group::Builder {
             send_to_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
                 message: message.into(),
@@ -289,7 +279,7 @@ pub mod web_pub_sub {
             connection_id: impl Into<String>,
         ) -> add_connection_to_group::Builder {
             add_connection_to_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
                 connection_id: connection_id.into(),
@@ -302,7 +292,7 @@ pub mod web_pub_sub {
             connection_id: impl Into<String>,
         ) -> remove_connection_from_group::Builder {
             remove_connection_from_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
                 connection_id: connection_id.into(),
@@ -310,14 +300,14 @@ pub mod web_pub_sub {
         }
         pub fn user_exists(&self, hub: impl Into<String>, user_id: impl Into<String>) -> user_exists::Builder {
             user_exists::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 user_id: user_id.into(),
             }
         }
         pub fn close_user_connections(&self, hub: impl Into<String>, user_id: impl Into<String>) -> close_user_connections::Builder {
             close_user_connections::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 user_id: user_id.into(),
                 excluded: Vec::new(),
@@ -331,7 +321,7 @@ pub mod web_pub_sub {
             message: impl Into<String>,
         ) -> send_to_user::Builder {
             send_to_user::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 user_id: user_id.into(),
                 message: message.into(),
@@ -344,7 +334,7 @@ pub mod web_pub_sub {
             user_id: impl Into<String>,
         ) -> add_user_to_group::Builder {
             add_user_to_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
                 user_id: user_id.into(),
@@ -357,7 +347,7 @@ pub mod web_pub_sub {
             user_id: impl Into<String>,
         ) -> remove_user_from_group::Builder {
             remove_user_from_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 group: group.into(),
                 user_id: user_id.into(),
@@ -369,7 +359,7 @@ pub mod web_pub_sub {
             user_id: impl Into<String>,
         ) -> remove_user_from_all_groups::Builder {
             remove_user_from_all_groups::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 user_id: user_id.into(),
             }
@@ -381,7 +371,7 @@ pub mod web_pub_sub {
             connection_id: impl Into<String>,
         ) -> grant_permission::Builder {
             grant_permission::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 permission: permission.into(),
                 connection_id: connection_id.into(),
@@ -395,7 +385,7 @@ pub mod web_pub_sub {
             connection_id: impl Into<String>,
         ) -> revoke_permission::Builder {
             revoke_permission::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 permission: permission.into(),
                 connection_id: connection_id.into(),
@@ -409,7 +399,7 @@ pub mod web_pub_sub {
             connection_id: impl Into<String>,
         ) -> check_permission::Builder {
             check_permission::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 hub: hub.into(),
                 permission: permission.into(),
                 connection_id: connection_id.into(),
@@ -443,7 +433,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) user_id: Option<String>,
             pub(crate) role: Vec<String>,
@@ -538,7 +528,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) excluded: Vec<String>,
             pub(crate) reason: Option<String>,
@@ -620,7 +610,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) message: String,
             pub(crate) excluded: Vec<String>,
@@ -695,7 +685,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) connection_id: String,
             pub(crate) reason: Option<String>,
@@ -775,7 +765,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) connection_id: String,
         }
@@ -846,7 +836,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) connection_id: String,
             pub(crate) message: String,
@@ -920,7 +910,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
         }
@@ -986,7 +976,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
             pub(crate) excluded: Vec<String>,
@@ -1074,7 +1064,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
             pub(crate) message: String,
@@ -1150,7 +1140,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
             pub(crate) connection_id: String,
@@ -1222,7 +1212,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
             pub(crate) connection_id: String,
@@ -1296,7 +1286,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) user_id: String,
         }
@@ -1362,7 +1352,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) user_id: String,
             pub(crate) excluded: Vec<String>,
@@ -1450,7 +1440,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) user_id: String,
             pub(crate) message: String,
@@ -1517,7 +1507,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
             pub(crate) user_id: String,
@@ -1589,7 +1579,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) group: String,
             pub(crate) user_id: String,
@@ -1661,7 +1651,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) user_id: String,
         }
@@ -1726,7 +1716,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) permission: String,
             pub(crate) connection_id: String,
@@ -1806,7 +1796,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) permission: String,
             pub(crate) connection_id: String,
@@ -1888,7 +1878,7 @@ pub mod web_pub_sub {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) hub: String,
             pub(crate) permission: String,
             pub(crate) connection_id: String,

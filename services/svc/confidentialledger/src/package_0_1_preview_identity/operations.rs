@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn confidential_ledger_identity_service(&self) -> confidential_ledger_identity_service::Client {
         confidential_ledger_identity_service::Client(self.clone())
     }
@@ -89,12 +85,9 @@ pub mod confidential_ledger_identity_service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_ledger_identity(&self, ledger_id: impl Into<String>) -> get_ledger_identity::Builder {
             get_ledger_identity::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 ledger_id: ledger_id.into(),
             }
         }
@@ -125,7 +118,7 @@ pub mod confidential_ledger_identity_service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) ledger_id: String,
         }
         impl Builder {

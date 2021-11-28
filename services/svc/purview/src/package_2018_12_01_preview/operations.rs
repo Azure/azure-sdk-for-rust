@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn classification_rules(&self) -> classification_rules::Client {
         classification_rules::Client(self.clone())
     }
@@ -183,30 +179,27 @@ pub mod key_vault_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, key_vault_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 key_vault_name: key_vault_name.into(),
             }
         }
         pub fn create(&self, key_vault_name: impl Into<String>, body: impl Into<models::AzureKeyVault>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 key_vault_name: key_vault_name.into(),
                 body: body.into(),
             }
         }
         pub fn delete(&self, key_vault_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 key_vault_name: key_vault_name.into(),
             }
         }
         pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder { client: self.base_clone() }
+            list_all::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -235,7 +228,7 @@ pub mod key_vault_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) key_vault_name: String,
         }
         impl Builder {
@@ -304,7 +297,7 @@ pub mod key_vault_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) key_vault_name: String,
             pub(crate) body: models::AzureKeyVault,
         }
@@ -380,7 +373,7 @@ pub mod key_vault_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) key_vault_name: String,
         }
         impl Builder {
@@ -450,7 +443,7 @@ pub mod key_vault_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AzureKeyVaultList, Error>> {
@@ -497,37 +490,34 @@ pub mod classification_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, classification_rule_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
             }
         }
         pub fn create_or_update(&self, classification_rule_name: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
                 body: None,
             }
         }
         pub fn delete(&self, classification_rule_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
             }
         }
         pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder { client: self.base_clone() }
+            list_all::Builder { client: self.0.clone() }
         }
         pub fn list_versions_by_classification_rule_name(
             &self,
             classification_rule_name: impl Into<String>,
         ) -> list_versions_by_classification_rule_name::Builder {
             list_versions_by_classification_rule_name::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
             }
         }
@@ -538,7 +528,7 @@ pub mod classification_rules {
             action: impl Into<String>,
         ) -> tag_classification_version::Builder {
             tag_classification_version::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
                 classification_rule_version,
                 action: action.into(),
@@ -571,7 +561,7 @@ pub mod classification_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) classification_rule_name: String,
         }
         impl Builder {
@@ -645,7 +635,7 @@ pub mod classification_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) classification_rule_name: String,
             pub(crate) body: Option<models::ClassificationRule>,
         }
@@ -735,7 +725,7 @@ pub mod classification_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) classification_rule_name: String,
         }
         impl Builder {
@@ -805,7 +795,7 @@ pub mod classification_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ClassificationRuleList, Error>> {
@@ -873,7 +863,7 @@ pub mod classification_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) classification_rule_name: String,
         }
         impl Builder {
@@ -946,7 +936,7 @@ pub mod classification_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) classification_rule_name: String,
             pub(crate) classification_rule_version: i32,
             pub(crate) action: String,
@@ -1004,30 +994,27 @@ pub mod data_sources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, data_source_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
             }
         }
         pub fn create_or_update(&self, data_source_name: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 body: None,
             }
         }
         pub fn delete(&self, data_source_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
             }
         }
         pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder { client: self.base_clone() }
+            list_all::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -1056,7 +1043,7 @@ pub mod data_sources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
         }
         impl Builder {
@@ -1130,7 +1117,7 @@ pub mod data_sources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) body: Option<models::DataSource>,
         }
@@ -1220,7 +1207,7 @@ pub mod data_sources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
         }
         impl Builder {
@@ -1290,7 +1277,7 @@ pub mod data_sources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataSourceList, Error>> {
@@ -1337,19 +1324,16 @@ pub mod filters {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
             }
         }
         pub fn create_or_update(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
                 body: None,
@@ -1382,7 +1366,7 @@ pub mod filters {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }
@@ -1462,7 +1446,7 @@ pub mod filters {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
             pub(crate) body: Option<models::Filter>,
@@ -1532,12 +1516,9 @@ pub mod scans {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
             }
@@ -1549,7 +1530,7 @@ pub mod scans {
             body: impl Into<models::Scan>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
                 body: body.into(),
@@ -1557,14 +1538,14 @@ pub mod scans {
         }
         pub fn delete(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
             }
         }
         pub fn list_by_data_source(&self, data_source_name: impl Into<String>) -> list_by_data_source::Builder {
             list_by_data_source::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
             }
         }
@@ -1595,7 +1576,7 @@ pub mod scans {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }
@@ -1675,7 +1656,7 @@ pub mod scans {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
             pub(crate) body: models::Scan,
@@ -1763,7 +1744,7 @@ pub mod scans {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }
@@ -1839,7 +1820,7 @@ pub mod scans {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
         }
         impl Builder {
@@ -1887,9 +1868,6 @@ pub mod scan_result {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn run_scan(
             &self,
             data_source_name: impl Into<String>,
@@ -1897,7 +1875,7 @@ pub mod scan_result {
             run_id: impl Into<String>,
         ) -> run_scan::Builder {
             run_scan::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
                 run_id: run_id.into(),
@@ -1911,7 +1889,7 @@ pub mod scan_result {
             run_id: impl Into<String>,
         ) -> cancel_scan::Builder {
             cancel_scan::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
                 run_id: run_id.into(),
@@ -1919,7 +1897,7 @@ pub mod scan_result {
         }
         pub fn list_scan_history(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> list_scan_history::Builder {
             list_scan_history::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
             }
@@ -1951,7 +1929,7 @@ pub mod scan_result {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
             pub(crate) run_id: String,
@@ -2036,7 +2014,7 @@ pub mod scan_result {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
             pub(crate) run_id: String,
@@ -2114,7 +2092,7 @@ pub mod scan_result {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }
@@ -2168,30 +2146,27 @@ pub mod scan_rulesets {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, scan_ruleset_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scan_ruleset_name: scan_ruleset_name.into(),
             }
         }
         pub fn create_or_update(&self, scan_ruleset_name: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scan_ruleset_name: scan_ruleset_name.into(),
                 body: None,
             }
         }
         pub fn delete(&self, scan_ruleset_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scan_ruleset_name: scan_ruleset_name.into(),
             }
         }
         pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder { client: self.base_clone() }
+            list_all::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -2220,7 +2195,7 @@ pub mod scan_rulesets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scan_ruleset_name: String,
         }
         impl Builder {
@@ -2294,7 +2269,7 @@ pub mod scan_rulesets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scan_ruleset_name: String,
             pub(crate) body: Option<models::ScanRuleset>,
         }
@@ -2384,7 +2359,7 @@ pub mod scan_rulesets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scan_ruleset_name: String,
         }
         impl Builder {
@@ -2454,7 +2429,7 @@ pub mod scan_rulesets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ScanRulesetList, Error>> {
@@ -2501,34 +2476,31 @@ pub mod system_scan_rulesets {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder { client: self.base_clone() }
+            list_all::Builder { client: self.0.clone() }
         }
         pub fn get(&self, data_source_type: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_type: data_source_type.into(),
             }
         }
         pub fn get_by_version(&self, version: i32) -> get_by_version::Builder {
             get_by_version::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 version,
                 data_source_type: None,
             }
         }
         pub fn get_latest(&self) -> get_latest::Builder {
             get_latest::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_type: None,
             }
         }
         pub fn list_versions_by_data_source(&self) -> list_versions_by_data_source::Builder {
             list_versions_by_data_source::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_type: None,
             }
         }
@@ -2559,7 +2531,7 @@ pub mod system_scan_rulesets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SystemScanRulesetList, Error>> {
@@ -2627,7 +2599,7 @@ pub mod system_scan_rulesets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_type: String,
         }
         impl Builder {
@@ -2700,7 +2672,7 @@ pub mod system_scan_rulesets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) version: i32,
             pub(crate) data_source_type: Option<String>,
         }
@@ -2777,7 +2749,7 @@ pub mod system_scan_rulesets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_type: Option<String>,
         }
         impl Builder {
@@ -2853,7 +2825,7 @@ pub mod system_scan_rulesets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_type: Option<String>,
         }
         impl Builder {
@@ -2908,12 +2880,9 @@ pub mod triggers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_trigger(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get_trigger::Builder {
             get_trigger::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
             }
@@ -2925,7 +2894,7 @@ pub mod triggers {
             body: impl Into<models::Trigger>,
         ) -> create_trigger::Builder {
             create_trigger::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
                 body: body.into(),
@@ -2933,7 +2902,7 @@ pub mod triggers {
         }
         pub fn delete_trigger(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> delete_trigger::Builder {
             delete_trigger::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
             }
@@ -2965,7 +2934,7 @@ pub mod triggers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }
@@ -3045,7 +3014,7 @@ pub mod triggers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
             pub(crate) body: models::Trigger,
@@ -3133,7 +3102,7 @@ pub mod triggers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }

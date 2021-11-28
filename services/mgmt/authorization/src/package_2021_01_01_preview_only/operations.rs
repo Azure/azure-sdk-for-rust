@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn operations(&self) -> operations::Client {
         operations::Client(self.clone())
     }
@@ -131,11 +127,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -164,7 +157,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -211,18 +204,15 @@ pub mod role_assignment_approval {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter: None,
             }
         }
         pub fn get_by_id(&self, approval_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 approval_id: approval_id.into(),
             }
         }
@@ -253,7 +243,7 @@ pub mod role_assignment_approval {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
         }
         impl Builder {
@@ -334,7 +324,7 @@ pub mod role_assignment_approval {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) approval_id: String,
         }
         impl Builder {
@@ -386,12 +376,9 @@ pub mod role_assignment_approval_steps {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, approval_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 approval_id: approval_id.into(),
             }
         }
@@ -422,7 +409,7 @@ pub mod role_assignment_approval_steps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) approval_id: String,
         }
         impl Builder {
@@ -476,12 +463,9 @@ pub mod role_assignment_approval_step {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_by_id(&self, approval_id: impl Into<String>, stage_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 approval_id: approval_id.into(),
                 stage_id: stage_id.into(),
             }
@@ -493,7 +477,7 @@ pub mod role_assignment_approval_step {
             properties: impl Into<models::RoleAssignmentApprovalStepProperties>,
         ) -> put::Builder {
             put::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 approval_id: approval_id.into(),
                 stage_id: stage_id.into(),
                 properties: properties.into(),
@@ -506,7 +490,7 @@ pub mod role_assignment_approval_step {
             properties: impl Into<models::RoleAssignmentApprovalStepProperties>,
         ) -> patch::Builder {
             patch::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 approval_id: approval_id.into(),
                 stage_id: stage_id.into(),
                 properties: properties.into(),
@@ -539,7 +523,7 @@ pub mod role_assignment_approval_step {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) approval_id: String,
             pub(crate) stage_id: String,
         }
@@ -616,7 +600,7 @@ pub mod role_assignment_approval_step {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) approval_id: String,
             pub(crate) stage_id: String,
             pub(crate) properties: models::RoleAssignmentApprovalStepProperties,
@@ -695,7 +679,7 @@ pub mod role_assignment_approval_step {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) approval_id: String,
             pub(crate) stage_id: String,
             pub(crate) properties: models::RoleAssignmentApprovalStepProperties,
@@ -753,19 +737,16 @@ pub mod scope_role_assignment_approval {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
             }
         }
         pub fn get_by_id(&self, approval_id: impl Into<String>, scope: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 approval_id: approval_id.into(),
                 scope: scope.into(),
             }
@@ -797,7 +778,7 @@ pub mod scope_role_assignment_approval {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
         }
@@ -880,7 +861,7 @@ pub mod scope_role_assignment_approval {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) approval_id: String,
             pub(crate) scope: String,
         }
@@ -934,12 +915,9 @@ pub mod scope_role_assignment_approval_steps {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, approval_id: impl Into<String>, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 approval_id: approval_id.into(),
                 scope: scope.into(),
             }
@@ -971,7 +949,7 @@ pub mod scope_role_assignment_approval_steps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) approval_id: String,
             pub(crate) scope: String,
         }
@@ -1027,9 +1005,6 @@ pub mod scope_role_assignment_approval_step {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_by_id(
             &self,
             approval_id: impl Into<String>,
@@ -1037,7 +1012,7 @@ pub mod scope_role_assignment_approval_step {
             scope: impl Into<String>,
         ) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 approval_id: approval_id.into(),
                 stage_id: stage_id.into(),
                 scope: scope.into(),
@@ -1051,7 +1026,7 @@ pub mod scope_role_assignment_approval_step {
             scope: impl Into<String>,
         ) -> put::Builder {
             put::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 approval_id: approval_id.into(),
                 stage_id: stage_id.into(),
                 properties: properties.into(),
@@ -1066,7 +1041,7 @@ pub mod scope_role_assignment_approval_step {
             scope: impl Into<String>,
         ) -> patch::Builder {
             patch::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 approval_id: approval_id.into(),
                 stage_id: stage_id.into(),
                 properties: properties.into(),
@@ -1100,7 +1075,7 @@ pub mod scope_role_assignment_approval_step {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) approval_id: String,
             pub(crate) stage_id: String,
             pub(crate) scope: String,
@@ -1179,7 +1154,7 @@ pub mod scope_role_assignment_approval_step {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) approval_id: String,
             pub(crate) stage_id: String,
             pub(crate) properties: models::RoleAssignmentApprovalStepProperties,
@@ -1260,7 +1235,7 @@ pub mod scope_role_assignment_approval_step {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) approval_id: String,
             pub(crate) stage_id: String,
             pub(crate) properties: models::RoleAssignmentApprovalStepProperties,

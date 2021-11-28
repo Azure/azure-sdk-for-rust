@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn deployments(&self) -> deployments::Client {
         deployments::Client(self.clone())
     }
@@ -91,9 +87,6 @@ pub mod deployments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn cancel_deployment(
             &self,
             instance_id: impl Into<String>,
@@ -101,7 +94,7 @@ pub mod deployments {
             action: impl Into<String>,
         ) -> cancel_deployment::Builder {
             cancel_deployment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 instance_id: instance_id.into(),
                 deployment_id: deployment_id.into(),
                 action: action.into(),
@@ -114,7 +107,7 @@ pub mod deployments {
             action: impl Into<String>,
         ) -> retry_deployment::Builder {
             retry_deployment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 instance_id: instance_id.into(),
                 deployment_id: deployment_id.into(),
                 action: action.into(),
@@ -146,7 +139,7 @@ pub mod deployments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) deployment_id: String,
             pub(crate) action: String,
@@ -222,7 +215,7 @@ pub mod deployments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) instance_id: String,
             pub(crate) deployment_id: String,
             pub(crate) action: String,

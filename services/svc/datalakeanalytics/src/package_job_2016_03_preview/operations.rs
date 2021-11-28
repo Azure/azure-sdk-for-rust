@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn job(&self) -> job::Client {
         job::Client(self.clone())
     }
@@ -101,49 +97,46 @@ pub mod job {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_statistics(&self, job_identity: impl Into<String>) -> get_statistics::Builder {
             get_statistics::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
         pub fn get_debug_data_path(&self, job_identity: impl Into<String>) -> get_debug_data_path::Builder {
             get_debug_data_path::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
         pub fn build(&self, parameters: impl Into<models::JobInformation>) -> build::Builder {
             build::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
             }
         }
         pub fn cancel(&self, job_identity: impl Into<String>) -> cancel::Builder {
             cancel::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
         pub fn get(&self, job_identity: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
         pub fn create(&self, job_identity: impl Into<String>, parameters: impl Into<models::JobInformation>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
                 parameters: parameters.into(),
             }
         }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter: None,
                 top: None,
                 skip: None,
@@ -179,7 +172,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
         impl Builder {
@@ -243,7 +236,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
         impl Builder {
@@ -308,7 +301,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::JobInformation,
         }
         impl Builder {
@@ -373,7 +366,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
         impl Builder {
@@ -433,7 +426,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
         impl Builder {
@@ -497,7 +490,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
             pub(crate) parameters: models::JobInformation,
         }
@@ -563,7 +556,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
             pub(crate) skip: Option<i32>,

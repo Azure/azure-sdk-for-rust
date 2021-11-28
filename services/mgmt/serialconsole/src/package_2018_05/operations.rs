@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn serial_ports(&self) -> serial_ports::Client {
         serial_ports::Client(self.clone())
     }
@@ -105,25 +101,25 @@ pub enum Error {
 }
 impl Client {
     pub fn list_operations(&self) -> list_operations::Builder {
-        list_operations::Builder { client: self.base_clone() }
+        list_operations::Builder { client: self.clone() }
     }
     pub fn get_console_status(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> get_console_status::Builder {
         get_console_status::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             default: default.into(),
         }
     }
     pub fn disable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> disable_console::Builder {
         disable_console::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             default: default.into(),
         }
     }
     pub fn enable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> enable_console::Builder {
         enable_console::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             default: default.into(),
         }
@@ -152,7 +148,7 @@ pub mod list_operations {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SerialConsoleOperations, Error>> {
@@ -219,7 +215,7 @@ pub mod get_console_status {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) default: String,
     }
@@ -299,7 +295,7 @@ pub mod disable_console {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) default: String,
     }
@@ -380,7 +376,7 @@ pub mod enable_console {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) default: String,
     }
@@ -438,9 +434,6 @@ pub mod serial_ports {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -450,7 +443,7 @@ pub mod serial_ports {
             subscription_id: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 parent_resource_type: parent_resource_type.into(),
@@ -468,7 +461,7 @@ pub mod serial_ports {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 parent_resource_type: parent_resource_type.into(),
@@ -488,7 +481,7 @@ pub mod serial_ports {
             subscription_id: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 parent_resource_type: parent_resource_type.into(),
@@ -508,7 +501,7 @@ pub mod serial_ports {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 parent_resource_type: parent_resource_type.into(),
@@ -519,7 +512,7 @@ pub mod serial_ports {
         }
         pub fn list_by_subscriptions(&self, subscription_id: impl Into<String>) -> list_by_subscriptions::Builder {
             list_by_subscriptions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -533,7 +526,7 @@ pub mod serial_ports {
             subscription_id: impl Into<String>,
         ) -> connect::Builder {
             connect::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 parent_resource_type: parent_resource_type.into(),
@@ -569,7 +562,7 @@ pub mod serial_ports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
             pub(crate) parent_resource_type: String,
@@ -650,7 +643,7 @@ pub mod serial_ports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
             pub(crate) parent_resource_type: String,
@@ -733,7 +726,7 @@ pub mod serial_ports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
             pub(crate) parent_resource_type: String,
@@ -823,7 +816,7 @@ pub mod serial_ports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
             pub(crate) parent_resource_type: String,
@@ -902,7 +895,7 @@ pub mod serial_ports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -974,7 +967,7 @@ pub mod serial_ports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
             pub(crate) parent_resource_type: String,

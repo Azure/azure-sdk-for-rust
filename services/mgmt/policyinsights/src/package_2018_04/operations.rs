@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn operations(&self) -> operations::Client {
         operations::Client(self.clone())
     }
@@ -159,9 +155,6 @@ pub mod policy_events {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_query_results_for_management_group(
             &self,
             policy_events_resource: impl Into<String>,
@@ -169,7 +162,7 @@ pub mod policy_events {
             management_group_name: impl Into<String>,
         ) -> list_query_results_for_management_group::Builder {
             list_query_results_for_management_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 management_groups_namespace: management_groups_namespace.into(),
                 management_group_name: management_group_name.into(),
@@ -188,7 +181,7 @@ pub mod policy_events {
             subscription_id: impl Into<String>,
         ) -> list_query_results_for_subscription::Builder {
             list_query_results_for_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -207,7 +200,7 @@ pub mod policy_events {
             resource_group_name: impl Into<String>,
         ) -> list_query_results_for_resource_group::Builder {
             list_query_results_for_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -226,7 +219,7 @@ pub mod policy_events {
             resource_id: impl Into<String>,
         ) -> list_query_results_for_resource::Builder {
             list_query_results_for_resource::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 resource_id: resource_id.into(),
                 top: None,
@@ -246,7 +239,7 @@ pub mod policy_events {
             policy_set_definition_name: impl Into<String>,
         ) -> list_query_results_for_policy_set_definition::Builder {
             list_query_results_for_policy_set_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
                 authorization_namespace: authorization_namespace.into(),
@@ -268,7 +261,7 @@ pub mod policy_events {
             policy_definition_name: impl Into<String>,
         ) -> list_query_results_for_policy_definition::Builder {
             list_query_results_for_policy_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
                 authorization_namespace: authorization_namespace.into(),
@@ -290,7 +283,7 @@ pub mod policy_events {
             policy_assignment_name: impl Into<String>,
         ) -> list_query_results_for_subscription_level_policy_assignment::Builder {
             list_query_results_for_subscription_level_policy_assignment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
                 authorization_namespace: authorization_namespace.into(),
@@ -313,7 +306,7 @@ pub mod policy_events {
             policy_assignment_name: impl Into<String>,
         ) -> list_query_results_for_resource_group_level_policy_assignment::Builder {
             list_query_results_for_resource_group_level_policy_assignment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_events_resource: policy_events_resource.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -330,7 +323,7 @@ pub mod policy_events {
         }
         pub fn get_metadata(&self, scope: impl Into<String>) -> get_metadata::Builder {
             get_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
             }
         }
@@ -361,7 +354,7 @@ pub mod policy_events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_name: String,
@@ -495,7 +488,7 @@ pub mod policy_events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
@@ -627,7 +620,7 @@ pub mod policy_events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -761,7 +754,7 @@ pub mod policy_events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) resource_id: String,
             pub(crate) top: Option<i32>,
@@ -893,7 +886,7 @@ pub mod policy_events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) authorization_namespace: String,
@@ -1022,7 +1015,7 @@ pub mod policy_events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) authorization_namespace: String,
@@ -1151,7 +1144,7 @@ pub mod policy_events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) authorization_namespace: String,
@@ -1280,7 +1273,7 @@ pub mod policy_events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_events_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1410,7 +1403,7 @@ pub mod policy_events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
         impl Builder {
@@ -1462,9 +1455,6 @@ pub mod policy_states {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_query_results_for_management_group(
             &self,
             policy_states_resource: impl Into<String>,
@@ -1472,7 +1462,7 @@ pub mod policy_states {
             management_group_name: impl Into<String>,
         ) -> list_query_results_for_management_group::Builder {
             list_query_results_for_management_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 management_groups_namespace: management_groups_namespace.into(),
                 management_group_name: management_group_name.into(),
@@ -1492,7 +1482,7 @@ pub mod policy_states {
             management_group_name: impl Into<String>,
         ) -> summarize_for_management_group::Builder {
             summarize_for_management_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 management_groups_namespace: management_groups_namespace.into(),
                 management_group_name: management_group_name.into(),
@@ -1508,7 +1498,7 @@ pub mod policy_states {
             subscription_id: impl Into<String>,
         ) -> list_query_results_for_subscription::Builder {
             list_query_results_for_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -1526,7 +1516,7 @@ pub mod policy_states {
             subscription_id: impl Into<String>,
         ) -> summarize_for_subscription::Builder {
             summarize_for_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -1542,7 +1532,7 @@ pub mod policy_states {
             resource_group_name: impl Into<String>,
         ) -> list_query_results_for_resource_group::Builder {
             list_query_results_for_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1562,7 +1552,7 @@ pub mod policy_states {
             resource_group_name: impl Into<String>,
         ) -> summarize_for_resource_group::Builder {
             summarize_for_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1578,7 +1568,7 @@ pub mod policy_states {
             resource_id: impl Into<String>,
         ) -> list_query_results_for_resource::Builder {
             list_query_results_for_resource::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 resource_id: resource_id.into(),
                 top: None,
@@ -1596,7 +1586,7 @@ pub mod policy_states {
             resource_id: impl Into<String>,
         ) -> summarize_for_resource::Builder {
             summarize_for_resource::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 resource_id: resource_id.into(),
                 top: None,
@@ -1613,7 +1603,7 @@ pub mod policy_states {
             policy_set_definition_name: impl Into<String>,
         ) -> list_query_results_for_policy_set_definition::Builder {
             list_query_results_for_policy_set_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
                 authorization_namespace: authorization_namespace.into(),
@@ -1635,7 +1625,7 @@ pub mod policy_states {
             policy_set_definition_name: impl Into<String>,
         ) -> summarize_for_policy_set_definition::Builder {
             summarize_for_policy_set_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
                 authorization_namespace: authorization_namespace.into(),
@@ -1654,7 +1644,7 @@ pub mod policy_states {
             policy_definition_name: impl Into<String>,
         ) -> list_query_results_for_policy_definition::Builder {
             list_query_results_for_policy_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
                 authorization_namespace: authorization_namespace.into(),
@@ -1676,7 +1666,7 @@ pub mod policy_states {
             policy_definition_name: impl Into<String>,
         ) -> summarize_for_policy_definition::Builder {
             summarize_for_policy_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
                 authorization_namespace: authorization_namespace.into(),
@@ -1695,7 +1685,7 @@ pub mod policy_states {
             policy_assignment_name: impl Into<String>,
         ) -> list_query_results_for_subscription_level_policy_assignment::Builder {
             list_query_results_for_subscription_level_policy_assignment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
                 authorization_namespace: authorization_namespace.into(),
@@ -1717,7 +1707,7 @@ pub mod policy_states {
             policy_assignment_name: impl Into<String>,
         ) -> summarize_for_subscription_level_policy_assignment::Builder {
             summarize_for_subscription_level_policy_assignment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
                 authorization_namespace: authorization_namespace.into(),
@@ -1737,7 +1727,7 @@ pub mod policy_states {
             policy_assignment_name: impl Into<String>,
         ) -> list_query_results_for_resource_group_level_policy_assignment::Builder {
             list_query_results_for_resource_group_level_policy_assignment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_resource: policy_states_resource.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1761,7 +1751,7 @@ pub mod policy_states {
             policy_assignment_name: impl Into<String>,
         ) -> summarize_for_resource_group_level_policy_assignment::Builder {
             summarize_for_resource_group_level_policy_assignment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_states_summary_resource: policy_states_summary_resource.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1775,7 +1765,7 @@ pub mod policy_states {
         }
         pub fn get_metadata(&self, scope: impl Into<String>) -> get_metadata::Builder {
             get_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
             }
         }
@@ -1806,7 +1796,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_name: String,
@@ -1940,7 +1930,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) management_groups_namespace: String,
             pub(crate) management_group_name: String,
@@ -2050,7 +2040,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
@@ -2182,7 +2172,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
@@ -2290,7 +2280,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2424,7 +2414,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2534,7 +2524,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) resource_id: String,
             pub(crate) top: Option<i32>,
@@ -2666,7 +2656,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) resource_id: String,
             pub(crate) top: Option<i32>,
@@ -2774,7 +2764,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) authorization_namespace: String,
@@ -2903,7 +2893,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) authorization_namespace: String,
@@ -3008,7 +2998,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) authorization_namespace: String,
@@ -3137,7 +3127,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) authorization_namespace: String,
@@ -3242,7 +3232,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) authorization_namespace: String,
@@ -3371,7 +3361,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) authorization_namespace: String,
@@ -3476,7 +3466,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -3606,7 +3596,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_states_summary_resource: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -3712,7 +3702,7 @@ pub mod policy_states {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
         impl Builder {
@@ -3764,11 +3754,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -3797,7 +3784,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsListResults, Error>> {

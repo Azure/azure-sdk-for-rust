@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn schema(&self) -> schema::Client {
         schema::Client(self.clone())
     }
@@ -100,11 +96,8 @@ pub mod schema_groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -133,7 +126,7 @@ pub mod schema_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SchemaGroups, Error>> {
@@ -180,18 +173,15 @@ pub mod schema {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
             }
         }
         pub fn get_versions(&self, group_name: impl Into<String>, schema_name: impl Into<String>) -> get_versions::Builder {
             get_versions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_name: group_name.into(),
                 schema_name: schema_name.into(),
             }
@@ -203,7 +193,7 @@ pub mod schema {
             schema_content: impl Into<String>,
         ) -> query_id_by_content::Builder {
             query_id_by_content::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_name: group_name.into(),
                 schema_name: schema_name.into(),
                 schema_content: schema_content.into(),
@@ -216,7 +206,7 @@ pub mod schema {
             schema_content: impl Into<String>,
         ) -> register::Builder {
             register::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_name: group_name.into(),
                 schema_name: schema_name.into(),
                 schema_content: schema_content.into(),
@@ -249,7 +239,7 @@ pub mod schema {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
         impl Builder {
@@ -317,7 +307,7 @@ pub mod schema {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_name: String,
             pub(crate) schema_name: String,
         }
@@ -394,7 +384,7 @@ pub mod schema {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_name: String,
             pub(crate) schema_name: String,
             pub(crate) schema_content: String,
@@ -474,7 +464,7 @@ pub mod schema {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_name: String,
             pub(crate) schema_name: String,
             pub(crate) schema_content: String,

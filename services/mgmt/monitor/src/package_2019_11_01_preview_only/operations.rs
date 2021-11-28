@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn data_collection_rule_associations(&self) -> data_collection_rule_associations::Client {
         data_collection_rule_associations::Client(self.clone())
     }
@@ -112,12 +108,9 @@ pub mod data_collection_rule_associations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_resource(&self, resource_uri: impl Into<String>) -> list_by_resource::Builder {
             list_by_resource::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
             }
         }
@@ -128,7 +121,7 @@ pub mod data_collection_rule_associations {
             data_collection_rule_name: impl Into<String>,
         ) -> list_by_rule::Builder {
             list_by_rule::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 data_collection_rule_name: data_collection_rule_name.into(),
@@ -136,14 +129,14 @@ pub mod data_collection_rule_associations {
         }
         pub fn get(&self, resource_uri: impl Into<String>, association_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 association_name: association_name.into(),
             }
         }
         pub fn create(&self, resource_uri: impl Into<String>, association_name: impl Into<String>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 association_name: association_name.into(),
                 body: None,
@@ -151,7 +144,7 @@ pub mod data_collection_rule_associations {
         }
         pub fn delete(&self, resource_uri: impl Into<String>, association_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 association_name: association_name.into(),
             }
@@ -183,7 +176,7 @@ pub mod data_collection_rule_associations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
         }
         impl Builder {
@@ -261,7 +254,7 @@ pub mod data_collection_rule_associations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) data_collection_rule_name: String,
@@ -343,7 +336,7 @@ pub mod data_collection_rule_associations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) association_name: String,
         }
@@ -426,7 +419,7 @@ pub mod data_collection_rule_associations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) association_name: String,
             pub(crate) body: Option<models::DataCollectionRuleAssociationProxyOnlyResource>,
@@ -522,7 +515,7 @@ pub mod data_collection_rule_associations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) association_name: String,
         }
@@ -572,23 +565,20 @@ pub mod data_collection_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
             }
         }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -599,7 +589,7 @@ pub mod data_collection_rules {
             data_collection_rule_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 data_collection_rule_name: data_collection_rule_name.into(),
@@ -612,7 +602,7 @@ pub mod data_collection_rules {
             data_collection_rule_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 data_collection_rule_name: data_collection_rule_name.into(),
@@ -626,7 +616,7 @@ pub mod data_collection_rules {
             data_collection_rule_name: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 data_collection_rule_name: data_collection_rule_name.into(),
@@ -640,7 +630,7 @@ pub mod data_collection_rules {
             data_collection_rule_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 data_collection_rule_name: data_collection_rule_name.into(),
@@ -673,7 +663,7 @@ pub mod data_collection_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -750,7 +740,7 @@ pub mod data_collection_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -825,7 +815,7 @@ pub mod data_collection_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) data_collection_rule_name: String,
@@ -909,7 +899,7 @@ pub mod data_collection_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) data_collection_rule_name: String,
@@ -1002,7 +992,7 @@ pub mod data_collection_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) data_collection_rule_name: String,
@@ -1096,7 +1086,7 @@ pub mod data_collection_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) data_collection_rule_name: String,

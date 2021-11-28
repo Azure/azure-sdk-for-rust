@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn data_connections(&self) -> data_connections::Client {
         data_connections::Client(self.clone())
     }
@@ -152,11 +148,8 @@ pub mod kusto_operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -185,7 +178,7 @@ pub mod kusto_operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -232,9 +225,6 @@ pub mod kusto_pools {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_workspace(
             &self,
             resource_group_name: impl Into<String>,
@@ -242,7 +232,7 @@ pub mod kusto_pools {
             workspace_name: impl Into<String>,
         ) -> list_by_workspace::Builder {
             list_by_workspace::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 workspace_name: workspace_name.into(),
@@ -256,7 +246,7 @@ pub mod kusto_pools {
             resource_group_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
                 subscription_id: subscription_id.into(),
@@ -272,7 +262,7 @@ pub mod kusto_pools {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 resource_group_name: resource_group_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
@@ -291,7 +281,7 @@ pub mod kusto_pools {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 resource_group_name: resource_group_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
@@ -308,7 +298,7 @@ pub mod kusto_pools {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 resource_group_name: resource_group_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
@@ -322,7 +312,7 @@ pub mod kusto_pools {
             kusto_pool_name: impl Into<models::KustoPoolCheckNameRequest>,
         ) -> check_name_availability::Builder {
             check_name_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 location: location.into(),
                 kusto_pool_name: kusto_pool_name.into(),
@@ -355,7 +345,7 @@ pub mod kusto_pools {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) workspace_name: String,
@@ -432,7 +422,7 @@ pub mod kusto_pools {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) kusto_pool_name: String,
             pub(crate) subscription_id: String,
@@ -516,7 +506,7 @@ pub mod kusto_pools {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) kusto_pool_name: String,
@@ -624,7 +614,7 @@ pub mod kusto_pools {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) kusto_pool_name: String,
@@ -725,7 +715,7 @@ pub mod kusto_pools {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) kusto_pool_name: String,
@@ -801,7 +791,7 @@ pub mod kusto_pools {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
             pub(crate) kusto_pool_name: models::KustoPoolCheckNameRequest,
@@ -857,9 +847,6 @@ pub mod databases {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_kusto_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -868,7 +855,7 @@ pub mod databases {
             kusto_pool_name: impl Into<String>,
         ) -> list_by_kusto_pool::Builder {
             list_by_kusto_pool::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -884,7 +871,7 @@ pub mod databases {
             database_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -902,7 +889,7 @@ pub mod databases {
             parameters: impl Into<models::Database>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -921,7 +908,7 @@ pub mod databases {
             parameters: impl Into<models::Database>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -939,7 +926,7 @@ pub mod databases {
             database_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -974,7 +961,7 @@ pub mod databases {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -1053,7 +1040,7 @@ pub mod databases {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -1139,7 +1126,7 @@ pub mod databases {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -1233,7 +1220,7 @@ pub mod databases {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -1328,7 +1315,7 @@ pub mod databases {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -1385,9 +1372,6 @@ pub mod data_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_database(
             &self,
             subscription_id: impl Into<String>,
@@ -1397,7 +1381,7 @@ pub mod data_connections {
             database_name: impl Into<String>,
         ) -> list_by_database::Builder {
             list_by_database::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -1415,7 +1399,7 @@ pub mod data_connections {
             data_connection_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -1435,7 +1419,7 @@ pub mod data_connections {
             parameters: impl Into<models::DataConnection>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -1456,7 +1440,7 @@ pub mod data_connections {
             parameters: impl Into<models::DataConnection>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -1476,7 +1460,7 @@ pub mod data_connections {
             data_connection_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -1512,7 +1496,7 @@ pub mod data_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -1585,7 +1569,7 @@ pub mod data_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -1664,7 +1648,7 @@ pub mod data_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -1751,7 +1735,7 @@ pub mod data_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -1839,7 +1823,7 @@ pub mod data_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -1889,9 +1873,6 @@ pub mod kusto_pool_principal_assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             workspace_name: impl Into<String>,
@@ -1900,7 +1881,7 @@ pub mod kusto_pool_principal_assignments {
             resource_group_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1916,7 +1897,7 @@ pub mod kusto_pool_principal_assignments {
             resource_group_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
                 principal_assignment_name: principal_assignment_name.into(),
@@ -1934,7 +1915,7 @@ pub mod kusto_pool_principal_assignments {
             parameters: impl Into<models::ClusterPrincipalAssignment>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
                 principal_assignment_name: principal_assignment_name.into(),
@@ -1952,7 +1933,7 @@ pub mod kusto_pool_principal_assignments {
             resource_group_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
                 principal_assignment_name: principal_assignment_name.into(),
@@ -1987,7 +1968,7 @@ pub mod kusto_pool_principal_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) kusto_pool_name: String,
             pub(crate) subscription_id: String,
@@ -2061,7 +2042,7 @@ pub mod kusto_pool_principal_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) kusto_pool_name: String,
             pub(crate) principal_assignment_name: String,
@@ -2141,7 +2122,7 @@ pub mod kusto_pool_principal_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) kusto_pool_name: String,
             pub(crate) principal_assignment_name: String,
@@ -2228,7 +2209,7 @@ pub mod kusto_pool_principal_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) kusto_pool_name: String,
             pub(crate) principal_assignment_name: String,
@@ -2277,9 +2258,6 @@ pub mod database_principal_assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             workspace_name: impl Into<String>,
@@ -2289,7 +2267,7 @@ pub mod database_principal_assignments {
             resource_group_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
                 database_name: database_name.into(),
@@ -2307,7 +2285,7 @@ pub mod database_principal_assignments {
             resource_group_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
                 database_name: database_name.into(),
@@ -2327,7 +2305,7 @@ pub mod database_principal_assignments {
             parameters: impl Into<models::DatabasePrincipalAssignment>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
                 database_name: database_name.into(),
@@ -2347,7 +2325,7 @@ pub mod database_principal_assignments {
             resource_group_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_name: workspace_name.into(),
                 kusto_pool_name: kusto_pool_name.into(),
                 database_name: database_name.into(),
@@ -2383,7 +2361,7 @@ pub mod database_principal_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) kusto_pool_name: String,
             pub(crate) database_name: String,
@@ -2459,7 +2437,7 @@ pub mod database_principal_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) kusto_pool_name: String,
             pub(crate) database_name: String,
@@ -2540,7 +2518,7 @@ pub mod database_principal_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) kusto_pool_name: String,
             pub(crate) database_name: String,
@@ -2628,7 +2606,7 @@ pub mod database_principal_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_name: String,
             pub(crate) kusto_pool_name: String,
             pub(crate) database_name: String,

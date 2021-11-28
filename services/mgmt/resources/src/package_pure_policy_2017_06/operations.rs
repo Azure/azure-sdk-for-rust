@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn policy_assignments(&self) -> policy_assignments::Client {
         policy_assignments::Client(self.clone())
     }
@@ -128,12 +124,9 @@ pub mod policy_assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, scope: impl Into<String>, policy_assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 policy_assignment_name: policy_assignment_name.into(),
             }
@@ -145,7 +138,7 @@ pub mod policy_assignments {
             parameters: impl Into<models::PolicyAssignment>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 policy_assignment_name: policy_assignment_name.into(),
                 parameters: parameters.into(),
@@ -153,7 +146,7 @@ pub mod policy_assignments {
         }
         pub fn delete(&self, scope: impl Into<String>, policy_assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 policy_assignment_name: policy_assignment_name.into(),
             }
@@ -164,7 +157,7 @@ pub mod policy_assignments {
             subscription_id: impl Into<String>,
         ) -> list_for_resource_group::Builder {
             list_for_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -180,7 +173,7 @@ pub mod policy_assignments {
             subscription_id: impl Into<String>,
         ) -> list_for_resource::Builder {
             list_for_resource::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 parent_resource_path: parent_resource_path.into(),
@@ -192,14 +185,14 @@ pub mod policy_assignments {
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
             }
         }
         pub fn get_by_id(&self, policy_assignment_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_assignment_id: policy_assignment_id.into(),
             }
         }
@@ -209,14 +202,14 @@ pub mod policy_assignments {
             parameters: impl Into<models::PolicyAssignment>,
         ) -> create_by_id::Builder {
             create_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_assignment_id: policy_assignment_id.into(),
                 parameters: parameters.into(),
             }
         }
         pub fn delete_by_id(&self, policy_assignment_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_assignment_id: policy_assignment_id.into(),
             }
         }
@@ -247,7 +240,7 @@ pub mod policy_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) policy_assignment_name: String,
         }
@@ -322,7 +315,7 @@ pub mod policy_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) policy_assignment_name: String,
             pub(crate) parameters: models::PolicyAssignment,
@@ -404,7 +397,7 @@ pub mod policy_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) policy_assignment_name: String,
         }
@@ -480,7 +473,7 @@ pub mod policy_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
@@ -565,7 +558,7 @@ pub mod policy_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
             pub(crate) parent_resource_path: String,
@@ -658,7 +651,7 @@ pub mod policy_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
@@ -741,7 +734,7 @@ pub mod policy_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_assignment_id: String,
         }
         impl Builder {
@@ -810,7 +803,7 @@ pub mod policy_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_assignment_id: String,
             pub(crate) parameters: models::PolicyAssignment,
         }
@@ -881,7 +874,7 @@ pub mod policy_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_assignment_id: String,
         }
         impl Builder {
@@ -929,12 +922,9 @@ pub mod policy_set_definitions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, policy_set_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -946,7 +936,7 @@ pub mod policy_set_definitions {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
@@ -954,25 +944,25 @@ pub mod policy_set_definitions {
         }
         pub fn delete(&self, policy_set_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn get_built_in(&self, policy_set_definition_name: impl Into<String>) -> get_built_in::Builder {
             get_built_in::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
             }
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list_built_in(&self) -> list_built_in::Builder {
-            list_built_in::Builder { client: self.base_clone() }
+            list_built_in::Builder { client: self.0.clone() }
         }
         pub fn get_at_management_group(
             &self,
@@ -980,7 +970,7 @@ pub mod policy_set_definitions {
             management_group_id: impl Into<String>,
         ) -> get_at_management_group::Builder {
             get_at_management_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 management_group_id: management_group_id.into(),
             }
@@ -992,7 +982,7 @@ pub mod policy_set_definitions {
             management_group_id: impl Into<String>,
         ) -> create_or_update_at_management_group::Builder {
             create_or_update_at_management_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 parameters: parameters.into(),
                 management_group_id: management_group_id.into(),
@@ -1004,14 +994,14 @@ pub mod policy_set_definitions {
             management_group_id: impl Into<String>,
         ) -> delete_at_management_group::Builder {
             delete_at_management_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 management_group_id: management_group_id.into(),
             }
         }
         pub fn list_by_management_group(&self, management_group_id: impl Into<String>) -> list_by_management_group::Builder {
             list_by_management_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 management_group_id: management_group_id.into(),
             }
         }
@@ -1042,7 +1032,7 @@ pub mod policy_set_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) subscription_id: String,
         }
@@ -1122,7 +1112,7 @@ pub mod policy_set_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) parameters: models::PolicySetDefinition,
             pub(crate) subscription_id: String,
@@ -1210,7 +1200,7 @@ pub mod policy_set_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) subscription_id: String,
         }
@@ -1281,7 +1271,7 @@ pub mod policy_set_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
         }
         impl Builder {
@@ -1354,7 +1344,7 @@ pub mod policy_set_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -1429,7 +1419,7 @@ pub mod policy_set_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -1499,7 +1489,7 @@ pub mod policy_set_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) management_group_id: String,
         }
@@ -1579,7 +1569,7 @@ pub mod policy_set_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) parameters: models::PolicySetDefinition,
             pub(crate) management_group_id: String,
@@ -1667,7 +1657,7 @@ pub mod policy_set_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) management_group_id: String,
         }
@@ -1738,7 +1728,7 @@ pub mod policy_set_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) management_group_id: String,
         }
         impl Builder {

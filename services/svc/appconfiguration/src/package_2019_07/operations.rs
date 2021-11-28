@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -111,7 +107,7 @@ pub enum Error {
 impl Client {
     pub fn get_keys(&self) -> get_keys::Builder {
         get_keys::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: None,
             sync_token: None,
             after: None,
@@ -120,7 +116,7 @@ impl Client {
     }
     pub fn check_keys(&self) -> check_keys::Builder {
         check_keys::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: None,
             sync_token: None,
             after: None,
@@ -129,7 +125,7 @@ impl Client {
     }
     pub fn get_key_values(&self) -> get_key_values::Builder {
         get_key_values::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key: None,
             label: None,
             sync_token: None,
@@ -140,7 +136,7 @@ impl Client {
     }
     pub fn check_key_values(&self) -> check_key_values::Builder {
         check_key_values::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key: None,
             label: None,
             sync_token: None,
@@ -151,7 +147,7 @@ impl Client {
     }
     pub fn get_key_value(&self, key: impl Into<String>) -> get_key_value::Builder {
         get_key_value::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key: key.into(),
             label: None,
             sync_token: None,
@@ -163,7 +159,7 @@ impl Client {
     }
     pub fn put_key_value(&self, key: impl Into<String>) -> put_key_value::Builder {
         put_key_value::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key: key.into(),
             label: None,
             entity: None,
@@ -174,7 +170,7 @@ impl Client {
     }
     pub fn delete_key_value(&self, key: impl Into<String>) -> delete_key_value::Builder {
         delete_key_value::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key: key.into(),
             label: None,
             sync_token: None,
@@ -183,7 +179,7 @@ impl Client {
     }
     pub fn check_key_value(&self, key: impl Into<String>) -> check_key_value::Builder {
         check_key_value::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key: key.into(),
             label: None,
             sync_token: None,
@@ -195,7 +191,7 @@ impl Client {
     }
     pub fn get_labels(&self) -> get_labels::Builder {
         get_labels::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: None,
             sync_token: None,
             after: None,
@@ -205,7 +201,7 @@ impl Client {
     }
     pub fn check_labels(&self) -> check_labels::Builder {
         check_labels::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: None,
             sync_token: None,
             after: None,
@@ -215,7 +211,7 @@ impl Client {
     }
     pub fn put_lock(&self, key: impl Into<String>) -> put_lock::Builder {
         put_lock::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key: key.into(),
             label: None,
             sync_token: None,
@@ -225,7 +221,7 @@ impl Client {
     }
     pub fn delete_lock(&self, key: impl Into<String>) -> delete_lock::Builder {
         delete_lock::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key: key.into(),
             label: None,
             sync_token: None,
@@ -235,7 +231,7 @@ impl Client {
     }
     pub fn get_revisions(&self) -> get_revisions::Builder {
         get_revisions::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key: None,
             label: None,
             sync_token: None,
@@ -246,7 +242,7 @@ impl Client {
     }
     pub fn check_revisions(&self) -> check_revisions::Builder {
         check_revisions::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key: None,
             label: None,
             sync_token: None,
@@ -282,7 +278,7 @@ pub mod get_keys {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: Option<String>,
         pub(crate) sync_token: Option<String>,
         pub(crate) after: Option<String>,
@@ -379,7 +375,7 @@ pub mod check_keys {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: Option<String>,
         pub(crate) sync_token: Option<String>,
         pub(crate) after: Option<String>,
@@ -466,7 +462,7 @@ pub mod get_key_values {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key: Option<String>,
         pub(crate) label: Option<String>,
         pub(crate) sync_token: Option<String>,
@@ -576,7 +572,7 @@ pub mod check_key_values {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key: Option<String>,
         pub(crate) label: Option<String>,
         pub(crate) sync_token: Option<String>,
@@ -676,7 +672,7 @@ pub mod get_key_value {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
         pub(crate) sync_token: Option<String>,
@@ -790,7 +786,7 @@ pub mod put_key_value {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
         pub(crate) entity: Option<models::KeyValue>,
@@ -906,7 +902,7 @@ pub mod delete_key_value {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
         pub(crate) sync_token: Option<String>,
@@ -997,7 +993,7 @@ pub mod check_key_value {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
         pub(crate) sync_token: Option<String>,
@@ -1098,7 +1094,7 @@ pub mod get_labels {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: Option<String>,
         pub(crate) sync_token: Option<String>,
         pub(crate) after: Option<String>,
@@ -1200,7 +1196,7 @@ pub mod check_labels {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: Option<String>,
         pub(crate) sync_token: Option<String>,
         pub(crate) after: Option<String>,
@@ -1292,7 +1288,7 @@ pub mod put_lock {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
         pub(crate) sync_token: Option<String>,
@@ -1393,7 +1389,7 @@ pub mod delete_lock {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key: String,
         pub(crate) label: Option<String>,
         pub(crate) sync_token: Option<String>,
@@ -1494,7 +1490,7 @@ pub mod get_revisions {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key: Option<String>,
         pub(crate) label: Option<String>,
         pub(crate) sync_token: Option<String>,
@@ -1604,7 +1600,7 @@ pub mod check_revisions {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key: Option<String>,
         pub(crate) label: Option<String>,
         pub(crate) sync_token: Option<String>,

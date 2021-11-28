@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -122,17 +118,17 @@ pub enum Error {
 }
 impl Client {
     pub fn get_docker_registry_v2_support(&self) -> get_docker_registry_v2_support::Builder {
-        get_docker_registry_v2_support::Builder { client: self.base_clone() }
+        get_docker_registry_v2_support::Builder { client: self.clone() }
     }
     pub fn get_tag_list(&self, name: impl Into<String>) -> get_tag_list::Builder {
         get_tag_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
         }
     }
     pub fn get_manifest(&self, name: impl Into<String>, reference: impl Into<String>) -> get_manifest::Builder {
         get_manifest::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
             reference: reference.into(),
             accept: None,
@@ -145,7 +141,7 @@ impl Client {
         payload: impl Into<models::Manifest>,
     ) -> create_manifest::Builder {
         create_manifest::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
             reference: reference.into(),
             payload: payload.into(),
@@ -153,47 +149,47 @@ impl Client {
     }
     pub fn delete_manifest(&self, name: impl Into<String>, reference: impl Into<String>) -> delete_manifest::Builder {
         delete_manifest::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
             reference: reference.into(),
         }
     }
     pub fn get_repositories(&self) -> get_repositories::Builder {
         get_repositories::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             last: None,
             n: None,
         }
     }
     pub fn get_acr_repositories(&self) -> get_acr_repositories::Builder {
         get_acr_repositories::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             last: None,
             n: None,
         }
     }
     pub fn get_acr_repository_attributes(&self, name: impl Into<String>) -> get_acr_repository_attributes::Builder {
         get_acr_repository_attributes::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
         }
     }
     pub fn update_acr_repository_attributes(&self, name: impl Into<String>) -> update_acr_repository_attributes::Builder {
         update_acr_repository_attributes::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
             value: None,
         }
     }
     pub fn delete_acr_repository(&self, name: impl Into<String>) -> delete_acr_repository::Builder {
         delete_acr_repository::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
         }
     }
     pub fn get_acr_tags(&self, name: impl Into<String>) -> get_acr_tags::Builder {
         get_acr_tags::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
             last: None,
             n: None,
@@ -203,14 +199,14 @@ impl Client {
     }
     pub fn get_acr_tag_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_acr_tag_attributes::Builder {
         get_acr_tag_attributes::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
             reference: reference.into(),
         }
     }
     pub fn update_acr_tag_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> update_acr_tag_attributes::Builder {
         update_acr_tag_attributes::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
             reference: reference.into(),
             value: None,
@@ -218,14 +214,14 @@ impl Client {
     }
     pub fn delete_acr_tag(&self, name: impl Into<String>, reference: impl Into<String>) -> delete_acr_tag::Builder {
         delete_acr_tag::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
             reference: reference.into(),
         }
     }
     pub fn get_acr_manifests(&self, name: impl Into<String>) -> get_acr_manifests::Builder {
         get_acr_manifests::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
             last: None,
             n: None,
@@ -238,7 +234,7 @@ impl Client {
         reference: impl Into<String>,
     ) -> get_acr_manifest_attributes::Builder {
         get_acr_manifest_attributes::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
             reference: reference.into(),
         }
@@ -249,7 +245,7 @@ impl Client {
         reference: impl Into<String>,
     ) -> update_acr_manifest_attributes::Builder {
         update_acr_manifest_attributes::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name: name.into(),
             reference: reference.into(),
             value: None,
@@ -261,7 +257,7 @@ impl Client {
         service: impl Into<String>,
     ) -> get_acr_refresh_token_from_exchange::Builder {
         get_acr_refresh_token_from_exchange::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             grant_type: grant_type.into(),
             service: service.into(),
             tenant: None,
@@ -275,7 +271,7 @@ impl Client {
         scope: impl Into<String>,
     ) -> get_acr_access_token_from_login::Builder {
         get_acr_access_token_from_login::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service: service.into(),
             scope: scope.into(),
         }
@@ -288,7 +284,7 @@ impl Client {
         refresh_token: impl Into<String>,
     ) -> get_acr_access_token::Builder {
         get_acr_access_token::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             grant_type: grant_type.into(),
             service: service.into(),
             scope: scope.into(),
@@ -322,7 +318,7 @@ pub mod get_docker_registry_v2_support {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -384,7 +380,7 @@ pub mod get_tag_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
     }
     impl Builder {
@@ -452,7 +448,7 @@ pub mod get_manifest {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
         pub(crate) accept: Option<String>,
@@ -529,7 +525,7 @@ pub mod create_manifest {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
         pub(crate) payload: models::Manifest,
@@ -600,7 +596,7 @@ pub mod delete_manifest {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
     }
@@ -664,7 +660,7 @@ pub mod get_repositories {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) last: Option<String>,
         pub(crate) n: Option<i64>,
     }
@@ -747,7 +743,7 @@ pub mod get_acr_repositories {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) last: Option<String>,
         pub(crate) n: Option<i64>,
     }
@@ -830,7 +826,7 @@ pub mod get_acr_repository_attributes {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
     }
     impl Builder {
@@ -898,7 +894,7 @@ pub mod update_acr_repository_attributes {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
@@ -971,7 +967,7 @@ pub mod delete_acr_repository {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
     }
     impl Builder {
@@ -1039,7 +1035,7 @@ pub mod get_acr_tags {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) last: Option<String>,
         pub(crate) n: Option<i64>,
@@ -1139,7 +1135,7 @@ pub mod get_acr_tag_attributes {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
     }
@@ -1208,7 +1204,7 @@ pub mod update_acr_tag_attributes {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
         pub(crate) value: Option<models::ChangeableAttributes>,
@@ -1282,7 +1278,7 @@ pub mod delete_acr_tag {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
     }
@@ -1346,7 +1342,7 @@ pub mod get_acr_manifests {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) last: Option<String>,
         pub(crate) n: Option<i64>,
@@ -1438,7 +1434,7 @@ pub mod get_acr_manifest_attributes {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
     }
@@ -1507,7 +1503,7 @@ pub mod update_acr_manifest_attributes {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
         pub(crate) value: Option<models::ChangeableAttributes>,
@@ -1581,7 +1577,7 @@ pub mod get_acr_refresh_token_from_exchange {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) grant_type: String,
         pub(crate) service: String,
         pub(crate) tenant: Option<String>,
@@ -1671,7 +1667,7 @@ pub mod get_acr_access_token_from_login {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service: String,
         pub(crate) scope: String,
     }
@@ -1744,7 +1740,7 @@ pub mod get_acr_access_token {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) grant_type: String,
         pub(crate) service: String,
         pub(crate) scope: String,

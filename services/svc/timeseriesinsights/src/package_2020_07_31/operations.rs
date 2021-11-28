@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn model_settings(&self) -> model_settings::Client {
         model_settings::Client(self.clone())
     }
@@ -125,12 +121,9 @@ pub mod query {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_availability(&self) -> get_availability::Builder {
             get_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 store_type: None,
                 x_ms_client_request_id: None,
                 x_ms_client_session_id: None,
@@ -138,7 +131,7 @@ pub mod query {
         }
         pub fn get_event_schema(&self, parameters: impl Into<models::GetEventSchemaRequest>) -> get_event_schema::Builder {
             get_event_schema::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 store_type: None,
                 x_ms_client_request_id: None,
@@ -147,7 +140,7 @@ pub mod query {
         }
         pub fn execute(&self, parameters: impl Into<models::QueryRequest>) -> execute::Builder {
             execute::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 store_type: None,
                 x_ms_continuation: None,
@@ -182,7 +175,7 @@ pub mod query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) store_type: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
@@ -274,7 +267,7 @@ pub mod query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::GetEventSchemaRequest,
             pub(crate) store_type: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -368,7 +361,7 @@ pub mod query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::QueryRequest,
             pub(crate) store_type: Option<String>,
             pub(crate) x_ms_continuation: Option<String>,
@@ -449,19 +442,16 @@ pub mod model_settings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 x_ms_client_request_id: None,
                 x_ms_client_session_id: None,
             }
         }
         pub fn update(&self, parameters: impl Into<models::UpdateModelSettingsRequest>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_client_request_id: None,
                 x_ms_client_session_id: None,
@@ -494,7 +484,7 @@ pub mod model_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
@@ -578,7 +568,7 @@ pub mod model_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::UpdateModelSettingsRequest,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
@@ -643,12 +633,9 @@ pub mod time_series_instances {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 x_ms_continuation: None,
                 x_ms_client_request_id: None,
                 x_ms_client_session_id: None,
@@ -656,7 +643,7 @@ pub mod time_series_instances {
         }
         pub fn execute_batch(&self, parameters: impl Into<models::InstancesBatchRequest>) -> execute_batch::Builder {
             execute_batch::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_client_request_id: None,
                 x_ms_client_session_id: None,
@@ -664,7 +651,7 @@ pub mod time_series_instances {
         }
         pub fn suggest(&self, parameters: impl Into<models::InstancesSuggestRequest>) -> suggest::Builder {
             suggest::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_client_request_id: None,
                 x_ms_client_session_id: None,
@@ -672,7 +659,7 @@ pub mod time_series_instances {
         }
         pub fn search(&self, parameters: impl Into<models::SearchInstancesRequest>) -> search::Builder {
             search::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_continuation: None,
                 x_ms_client_request_id: None,
@@ -706,7 +693,7 @@ pub mod time_series_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) x_ms_continuation: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
@@ -798,7 +785,7 @@ pub mod time_series_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::InstancesBatchRequest,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
@@ -884,7 +871,7 @@ pub mod time_series_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::InstancesSuggestRequest,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
@@ -970,7 +957,7 @@ pub mod time_series_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::SearchInstancesRequest,
             pub(crate) x_ms_continuation: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -1045,12 +1032,9 @@ pub mod time_series_types {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 x_ms_continuation: None,
                 x_ms_client_request_id: None,
                 x_ms_client_session_id: None,
@@ -1058,7 +1042,7 @@ pub mod time_series_types {
         }
         pub fn execute_batch(&self, parameters: impl Into<models::TypesBatchRequest>) -> execute_batch::Builder {
             execute_batch::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_client_request_id: None,
                 x_ms_client_session_id: None,
@@ -1091,7 +1075,7 @@ pub mod time_series_types {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) x_ms_continuation: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
@@ -1183,7 +1167,7 @@ pub mod time_series_types {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::TypesBatchRequest,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
@@ -1248,12 +1232,9 @@ pub mod time_series_hierarchies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 x_ms_continuation: None,
                 x_ms_client_request_id: None,
                 x_ms_client_session_id: None,
@@ -1261,7 +1242,7 @@ pub mod time_series_hierarchies {
         }
         pub fn execute_batch(&self, parameters: impl Into<models::HierarchiesBatchRequest>) -> execute_batch::Builder {
             execute_batch::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_client_request_id: None,
                 x_ms_client_session_id: None,
@@ -1294,7 +1275,7 @@ pub mod time_series_hierarchies {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) x_ms_continuation: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
@@ -1386,7 +1367,7 @@ pub mod time_series_hierarchies {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::HierarchiesBatchRequest,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,

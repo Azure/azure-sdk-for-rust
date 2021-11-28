@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn web_apps(&self) -> web_apps::Client {
         web_apps::Client(self.clone())
     }
@@ -709,12 +705,9 @@ pub mod web_apps {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -724,7 +717,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 include_slots: None,
@@ -737,7 +730,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -751,7 +744,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_envelope: site_envelope.into(),
@@ -766,7 +759,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_envelope: site_envelope.into(),
@@ -780,7 +773,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -795,7 +788,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> analyze_custom_hostname::Builder {
             analyze_custom_hostname::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -810,7 +803,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> apply_slot_config_to_production::Builder {
             apply_slot_config_to_production::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot_swap_entity: slot_swap_entity.into(),
@@ -825,7 +818,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> backup::Builder {
             backup::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 request: request.into(),
@@ -839,7 +832,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_backups::Builder {
             list_backups::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -853,7 +846,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> discover_restore::Builder {
             discover_restore::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 request: request.into(),
@@ -868,7 +861,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_backup_status::Builder {
             get_backup_status::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 backup_id: backup_id.into(),
@@ -883,7 +876,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_backup::Builder {
             delete_backup::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 backup_id: backup_id.into(),
@@ -899,7 +892,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_backup_status_secrets::Builder {
             list_backup_status_secrets::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 backup_id: backup_id.into(),
@@ -916,7 +909,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> restore::Builder {
             restore::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 backup_id: backup_id.into(),
@@ -931,7 +924,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_configurations::Builder {
             list_configurations::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -945,7 +938,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_application_settings::Builder {
             update_application_settings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 app_settings: app_settings.into(),
@@ -959,7 +952,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_application_settings::Builder {
             list_application_settings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -973,7 +966,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_auth_settings::Builder {
             update_auth_settings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_auth_settings: site_auth_settings.into(),
@@ -987,7 +980,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_auth_settings::Builder {
             get_auth_settings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1001,7 +994,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_backup_configuration::Builder {
             update_backup_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 request: request.into(),
@@ -1015,7 +1008,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_backup_configuration::Builder {
             delete_backup_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1028,7 +1021,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_backup_configuration::Builder {
             get_backup_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1042,7 +1035,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_connection_strings::Builder {
             update_connection_strings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 connection_strings: connection_strings.into(),
@@ -1056,7 +1049,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_connection_strings::Builder {
             list_connection_strings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1069,7 +1062,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_diagnostic_logs_configuration::Builder {
             get_diagnostic_logs_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1083,7 +1076,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_diagnostic_logs_config::Builder {
             update_diagnostic_logs_config::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_logs_config: site_logs_config.into(),
@@ -1098,7 +1091,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_metadata::Builder {
             update_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 metadata: metadata.into(),
@@ -1112,7 +1105,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_metadata::Builder {
             list_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1125,7 +1118,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_publishing_credentials::Builder {
             list_publishing_credentials::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1139,7 +1132,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_site_push_settings::Builder {
             update_site_push_settings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 push_settings: push_settings.into(),
@@ -1153,7 +1146,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_site_push_settings::Builder {
             list_site_push_settings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1166,7 +1159,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_slot_configuration_names::Builder {
             list_slot_configuration_names::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1180,7 +1173,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_slot_configuration_names::Builder {
             update_slot_configuration_names::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot_config_names: slot_config_names.into(),
@@ -1194,7 +1187,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_configuration::Builder {
             get_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1208,7 +1201,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_configuration::Builder {
             create_or_update_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_config: site_config.into(),
@@ -1223,7 +1216,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_configuration::Builder {
             update_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_config: site_config.into(),
@@ -1237,7 +1230,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_configuration_snapshot_info::Builder {
             list_configuration_snapshot_info::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1251,7 +1244,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_configuration_snapshot::Builder {
             get_configuration_snapshot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 snapshot_id: snapshot_id.into(),
@@ -1266,7 +1259,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> recover_site_configuration_snapshot::Builder {
             recover_site_configuration_snapshot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 snapshot_id: snapshot_id.into(),
@@ -1280,7 +1273,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_web_site_container_logs::Builder {
             get_web_site_container_logs::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1293,7 +1286,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_web_site_container_logs_zip::Builder {
             get_web_site_container_logs_zip::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1306,7 +1299,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_continuous_web_jobs::Builder {
             list_continuous_web_jobs::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1320,7 +1313,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_continuous_web_job::Builder {
             get_continuous_web_job::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -1335,7 +1328,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_continuous_web_job::Builder {
             delete_continuous_web_job::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -1350,7 +1343,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> start_continuous_web_job::Builder {
             start_continuous_web_job::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -1365,7 +1358,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> stop_continuous_web_job::Builder {
             stop_continuous_web_job::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -1379,7 +1372,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_deployments::Builder {
             list_deployments::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1393,7 +1386,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_deployment::Builder {
             get_deployment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 id: id.into(),
@@ -1409,7 +1402,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_deployment::Builder {
             create_deployment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 id: id.into(),
@@ -1425,7 +1418,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_deployment::Builder {
             delete_deployment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 id: id.into(),
@@ -1440,7 +1433,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_deployment_log::Builder {
             list_deployment_log::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 id: id.into(),
@@ -1454,7 +1447,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_domain_ownership_identifiers::Builder {
             list_domain_ownership_identifiers::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1468,7 +1461,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_domain_ownership_identifier::Builder {
             get_domain_ownership_identifier::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 domain_ownership_identifier_name: domain_ownership_identifier_name.into(),
@@ -1484,7 +1477,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_domain_ownership_identifier::Builder {
             create_or_update_domain_ownership_identifier::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 domain_ownership_identifier_name: domain_ownership_identifier_name.into(),
@@ -1501,7 +1494,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_domain_ownership_identifier::Builder {
             update_domain_ownership_identifier::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 domain_ownership_identifier_name: domain_ownership_identifier_name.into(),
@@ -1517,7 +1510,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_domain_ownership_identifier::Builder {
             delete_domain_ownership_identifier::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 domain_ownership_identifier_name: domain_ownership_identifier_name.into(),
@@ -1531,7 +1524,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_ms_deploy_status::Builder {
             get_ms_deploy_status::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1545,7 +1538,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_ms_deploy_operation::Builder {
             create_ms_deploy_operation::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 ms_deploy: ms_deploy.into(),
@@ -1559,7 +1552,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_ms_deploy_log::Builder {
             get_ms_deploy_log::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1572,7 +1565,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_functions::Builder {
             list_functions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1585,7 +1578,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_functions_admin_token::Builder {
             get_functions_admin_token::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1599,7 +1592,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_function::Builder {
             get_function::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 function_name: function_name.into(),
@@ -1615,7 +1608,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_function::Builder {
             create_function::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 function_name: function_name.into(),
@@ -1631,7 +1624,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_function::Builder {
             delete_function::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 function_name: function_name.into(),
@@ -1646,7 +1639,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_function_secrets::Builder {
             list_function_secrets::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 function_name: function_name.into(),
@@ -1660,7 +1653,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_host_name_bindings::Builder {
             list_host_name_bindings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1674,7 +1667,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_host_name_binding::Builder {
             get_host_name_binding::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 host_name: host_name.into(),
@@ -1690,7 +1683,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_host_name_binding::Builder {
             create_or_update_host_name_binding::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 host_name: host_name.into(),
@@ -1706,7 +1699,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_host_name_binding::Builder {
             delete_host_name_binding::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 host_name: host_name.into(),
@@ -1722,7 +1715,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_hybrid_connection::Builder {
             get_hybrid_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 namespace_name: namespace_name.into(),
@@ -1740,7 +1733,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_hybrid_connection::Builder {
             create_or_update_hybrid_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 namespace_name: namespace_name.into(),
@@ -1759,7 +1752,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_hybrid_connection::Builder {
             update_hybrid_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 namespace_name: namespace_name.into(),
@@ -1777,7 +1770,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_hybrid_connection::Builder {
             delete_hybrid_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 namespace_name: namespace_name.into(),
@@ -1794,7 +1787,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_hybrid_connection_keys::Builder {
             list_hybrid_connection_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 namespace_name: namespace_name.into(),
@@ -1809,7 +1802,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_hybrid_connections::Builder {
             list_hybrid_connections::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1822,7 +1815,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_relay_service_connections::Builder {
             list_relay_service_connections::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1836,7 +1829,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_relay_service_connection::Builder {
             get_relay_service_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 entity_name: entity_name.into(),
@@ -1852,7 +1845,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_relay_service_connection::Builder {
             create_or_update_relay_service_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 entity_name: entity_name.into(),
@@ -1869,7 +1862,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_relay_service_connection::Builder {
             update_relay_service_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 entity_name: entity_name.into(),
@@ -1885,7 +1878,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_relay_service_connection::Builder {
             delete_relay_service_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 entity_name: entity_name.into(),
@@ -1899,7 +1892,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_instance_identifiers::Builder {
             list_instance_identifiers::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1913,7 +1906,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_ms_deploy_status::Builder {
             get_instance_ms_deploy_status::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 instance_id: instance_id.into(),
@@ -1929,7 +1922,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_instance_ms_deploy_operation::Builder {
             create_instance_ms_deploy_operation::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 instance_id: instance_id.into(),
@@ -1945,7 +1938,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_ms_deploy_log::Builder {
             get_instance_ms_deploy_log::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 instance_id: instance_id.into(),
@@ -1960,7 +1953,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_instance_processes::Builder {
             list_instance_processes::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 instance_id: instance_id.into(),
@@ -1976,7 +1969,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_process::Builder {
             get_instance_process::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -1993,7 +1986,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_instance_process::Builder {
             delete_instance_process::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2010,7 +2003,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_process_dump::Builder {
             get_instance_process_dump::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2027,7 +2020,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_instance_process_modules::Builder {
             list_instance_process_modules::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2045,7 +2038,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_process_module::Builder {
             get_instance_process_module::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2063,7 +2056,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_instance_process_threads::Builder {
             list_instance_process_threads::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2081,7 +2074,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_process_thread::Builder {
             get_instance_process_thread::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2097,7 +2090,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> is_cloneable::Builder {
             is_cloneable::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2110,7 +2103,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_sync_function_triggers::Builder {
             list_sync_function_triggers::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2123,7 +2116,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_metric_definitions::Builder {
             list_metric_definitions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2136,7 +2129,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_metrics::Builder {
             list_metrics::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2153,7 +2146,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> migrate_storage::Builder {
             migrate_storage::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_name: subscription_name.into(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -2169,7 +2162,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> migrate_my_sql::Builder {
             migrate_my_sql::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 migration_request_envelope: migration_request_envelope.into(),
@@ -2183,7 +2176,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_migrate_my_sql_status::Builder {
             get_migrate_my_sql_status::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2197,7 +2190,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_network_features::Builder {
             list_network_features::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 view: view.into(),
@@ -2211,7 +2204,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> start_web_site_network_trace::Builder {
             start_web_site_network_trace::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2227,7 +2220,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> stop_web_site_network_trace::Builder {
             stop_web_site_network_trace::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2240,7 +2233,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> generate_new_site_publishing_password::Builder {
             generate_new_site_publishing_password::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2253,7 +2246,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_perf_mon_counters::Builder {
             list_perf_mon_counters::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2267,7 +2260,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_site_php_error_log_flag::Builder {
             get_site_php_error_log_flag::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2280,7 +2273,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_premier_add_ons::Builder {
             list_premier_add_ons::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2294,7 +2287,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_premier_add_on::Builder {
             get_premier_add_on::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 premier_add_on_name: premier_add_on_name.into(),
@@ -2310,7 +2303,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> add_premier_add_on::Builder {
             add_premier_add_on::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 premier_add_on_name: premier_add_on_name.into(),
@@ -2326,7 +2319,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_premier_add_on::Builder {
             delete_premier_add_on::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 premier_add_on_name: premier_add_on_name.into(),
@@ -2340,7 +2333,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_processes::Builder {
             list_processes::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2354,7 +2347,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_process::Builder {
             get_process::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2369,7 +2362,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_process::Builder {
             delete_process::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2384,7 +2377,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_process_dump::Builder {
             get_process_dump::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2399,7 +2392,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_process_modules::Builder {
             list_process_modules::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2415,7 +2408,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_process_module::Builder {
             get_process_module::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2431,7 +2424,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_process_threads::Builder {
             list_process_threads::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2447,7 +2440,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_process_thread::Builder {
             get_process_thread::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -2462,7 +2455,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_public_certificates::Builder {
             list_public_certificates::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2476,7 +2469,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_public_certificate::Builder {
             get_public_certificate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 public_certificate_name: public_certificate_name.into(),
@@ -2492,7 +2485,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_public_certificate::Builder {
             create_or_update_public_certificate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 public_certificate_name: public_certificate_name.into(),
@@ -2508,7 +2501,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_public_certificate::Builder {
             delete_public_certificate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 public_certificate_name: public_certificate_name.into(),
@@ -2523,7 +2516,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_publishing_profile_xml_with_secrets::Builder {
             list_publishing_profile_xml_with_secrets::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 publishing_profile_options: publishing_profile_options.into(),
@@ -2538,7 +2531,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> recover::Builder {
             recover::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 recovery_entity: recovery_entity.into(),
@@ -2552,7 +2545,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> reset_production_slot_config::Builder {
             reset_production_slot_config::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2565,7 +2558,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> restart::Builder {
             restart::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2580,7 +2573,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_site_extensions::Builder {
             list_site_extensions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2594,7 +2587,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_site_extension::Builder {
             get_site_extension::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_extension_id: site_extension_id.into(),
@@ -2609,7 +2602,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> install_site_extension::Builder {
             install_site_extension::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_extension_id: site_extension_id.into(),
@@ -2624,7 +2617,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_site_extension::Builder {
             delete_site_extension::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_extension_id: site_extension_id.into(),
@@ -2638,7 +2631,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_slots::Builder {
             list_slots::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -2652,7 +2645,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_slot::Builder {
             get_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -2668,7 +2661,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_slot::Builder {
             create_or_update_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_envelope: site_envelope.into(),
@@ -2689,7 +2682,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_slot::Builder {
             update_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_envelope: site_envelope.into(),
@@ -2709,7 +2702,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_slot::Builder {
             delete_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -2727,7 +2720,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> analyze_custom_hostname_slot::Builder {
             analyze_custom_hostname_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -2744,7 +2737,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> apply_slot_configuration_slot::Builder {
             apply_slot_configuration_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot_swap_entity: slot_swap_entity.into(),
@@ -2761,7 +2754,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> backup_slot::Builder {
             backup_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 request: request.into(),
@@ -2777,7 +2770,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_backups_slot::Builder {
             list_backups_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -2793,7 +2786,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> discover_restore_slot::Builder {
             discover_restore_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 request: request.into(),
@@ -2810,7 +2803,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_backup_status_slot::Builder {
             get_backup_status_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 backup_id: backup_id.into(),
@@ -2827,7 +2820,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_backup_slot::Builder {
             delete_backup_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 backup_id: backup_id.into(),
@@ -2845,7 +2838,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_backup_status_secrets_slot::Builder {
             list_backup_status_secrets_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 backup_id: backup_id.into(),
@@ -2864,7 +2857,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> restore_slot::Builder {
             restore_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 backup_id: backup_id.into(),
@@ -2881,7 +2874,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_configurations_slot::Builder {
             list_configurations_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -2897,7 +2890,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_application_settings_slot::Builder {
             update_application_settings_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 app_settings: app_settings.into(),
@@ -2913,7 +2906,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_application_settings_slot::Builder {
             list_application_settings_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -2929,7 +2922,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_auth_settings_slot::Builder {
             update_auth_settings_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_auth_settings: site_auth_settings.into(),
@@ -2945,7 +2938,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_auth_settings_slot::Builder {
             get_auth_settings_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -2961,7 +2954,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_backup_configuration_slot::Builder {
             update_backup_configuration_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 request: request.into(),
@@ -2977,7 +2970,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_backup_configuration_slot::Builder {
             delete_backup_configuration_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -2992,7 +2985,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_backup_configuration_slot::Builder {
             get_backup_configuration_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3008,7 +3001,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_connection_strings_slot::Builder {
             update_connection_strings_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 connection_strings: connection_strings.into(),
@@ -3024,7 +3017,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_connection_strings_slot::Builder {
             list_connection_strings_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3039,7 +3032,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_diagnostic_logs_configuration_slot::Builder {
             get_diagnostic_logs_configuration_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3055,7 +3048,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_diagnostic_logs_config_slot::Builder {
             update_diagnostic_logs_config_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_logs_config: site_logs_config.into(),
@@ -3072,7 +3065,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_metadata_slot::Builder {
             update_metadata_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 metadata: metadata.into(),
@@ -3088,7 +3081,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_metadata_slot::Builder {
             list_metadata_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3103,7 +3096,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_publishing_credentials_slot::Builder {
             list_publishing_credentials_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3119,7 +3112,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_site_push_settings_slot::Builder {
             update_site_push_settings_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 push_settings: push_settings.into(),
@@ -3135,7 +3128,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_site_push_settings_slot::Builder {
             list_site_push_settings_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3150,7 +3143,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_configuration_slot::Builder {
             get_configuration_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3166,7 +3159,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_configuration_slot::Builder {
             create_or_update_configuration_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_config: site_config.into(),
@@ -3183,7 +3176,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_configuration_slot::Builder {
             update_configuration_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_config: site_config.into(),
@@ -3199,7 +3192,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_configuration_snapshot_info_slot::Builder {
             list_configuration_snapshot_info_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3215,7 +3208,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_configuration_snapshot_slot::Builder {
             get_configuration_snapshot_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 snapshot_id: snapshot_id.into(),
@@ -3232,7 +3225,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> recover_site_configuration_snapshot_slot::Builder {
             recover_site_configuration_snapshot_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 snapshot_id: snapshot_id.into(),
@@ -3248,7 +3241,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_web_site_container_logs_slot::Builder {
             get_web_site_container_logs_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3263,7 +3256,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_web_site_container_logs_zip_slot::Builder {
             get_web_site_container_logs_zip_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3278,7 +3271,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_continuous_web_jobs_slot::Builder {
             list_continuous_web_jobs_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3294,7 +3287,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_continuous_web_job_slot::Builder {
             get_continuous_web_job_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -3311,7 +3304,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_continuous_web_job_slot::Builder {
             delete_continuous_web_job_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -3328,7 +3321,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> start_continuous_web_job_slot::Builder {
             start_continuous_web_job_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -3345,7 +3338,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> stop_continuous_web_job_slot::Builder {
             stop_continuous_web_job_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -3361,7 +3354,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_deployments_slot::Builder {
             list_deployments_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3377,7 +3370,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_deployment_slot::Builder {
             get_deployment_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 id: id.into(),
@@ -3395,7 +3388,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_deployment_slot::Builder {
             create_deployment_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 id: id.into(),
@@ -3413,7 +3406,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_deployment_slot::Builder {
             delete_deployment_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 id: id.into(),
@@ -3430,7 +3423,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_deployment_log_slot::Builder {
             list_deployment_log_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 id: id.into(),
@@ -3446,7 +3439,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_domain_ownership_identifiers_slot::Builder {
             list_domain_ownership_identifiers_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3462,7 +3455,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_domain_ownership_identifier_slot::Builder {
             get_domain_ownership_identifier_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 domain_ownership_identifier_name: domain_ownership_identifier_name.into(),
@@ -3480,7 +3473,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_domain_ownership_identifier_slot::Builder {
             create_or_update_domain_ownership_identifier_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 domain_ownership_identifier_name: domain_ownership_identifier_name.into(),
@@ -3499,7 +3492,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_domain_ownership_identifier_slot::Builder {
             update_domain_ownership_identifier_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 domain_ownership_identifier_name: domain_ownership_identifier_name.into(),
@@ -3517,7 +3510,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_domain_ownership_identifier_slot::Builder {
             delete_domain_ownership_identifier_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 domain_ownership_identifier_name: domain_ownership_identifier_name.into(),
@@ -3533,7 +3526,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_ms_deploy_status_slot::Builder {
             get_ms_deploy_status_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3549,7 +3542,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_ms_deploy_operation_slot::Builder {
             create_ms_deploy_operation_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3565,7 +3558,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_ms_deploy_log_slot::Builder {
             get_ms_deploy_log_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3580,7 +3573,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_instance_functions_slot::Builder {
             list_instance_functions_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3595,7 +3588,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_functions_admin_token_slot::Builder {
             get_functions_admin_token_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3611,7 +3604,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_function_slot::Builder {
             get_instance_function_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 function_name: function_name.into(),
@@ -3629,7 +3622,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_instance_function_slot::Builder {
             create_instance_function_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 function_name: function_name.into(),
@@ -3647,7 +3640,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_instance_function_slot::Builder {
             delete_instance_function_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 function_name: function_name.into(),
@@ -3664,7 +3657,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_function_secrets_slot::Builder {
             list_function_secrets_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 function_name: function_name.into(),
@@ -3680,7 +3673,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_host_name_bindings_slot::Builder {
             list_host_name_bindings_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3696,7 +3689,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_host_name_binding_slot::Builder {
             get_host_name_binding_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3714,7 +3707,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_host_name_binding_slot::Builder {
             create_or_update_host_name_binding_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 host_name: host_name.into(),
@@ -3732,7 +3725,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_host_name_binding_slot::Builder {
             delete_host_name_binding_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3750,7 +3743,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_hybrid_connection_slot::Builder {
             get_hybrid_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 namespace_name: namespace_name.into(),
@@ -3770,7 +3763,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_hybrid_connection_slot::Builder {
             create_or_update_hybrid_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 namespace_name: namespace_name.into(),
@@ -3791,7 +3784,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_hybrid_connection_slot::Builder {
             update_hybrid_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 namespace_name: namespace_name.into(),
@@ -3811,7 +3804,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_hybrid_connection_slot::Builder {
             delete_hybrid_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 namespace_name: namespace_name.into(),
@@ -3830,7 +3823,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_hybrid_connection_keys_slot::Builder {
             list_hybrid_connection_keys_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 namespace_name: namespace_name.into(),
@@ -3847,7 +3840,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_hybrid_connections_slot::Builder {
             list_hybrid_connections_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3862,7 +3855,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_relay_service_connections_slot::Builder {
             list_relay_service_connections_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3878,7 +3871,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_relay_service_connection_slot::Builder {
             get_relay_service_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 entity_name: entity_name.into(),
@@ -3896,7 +3889,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_relay_service_connection_slot::Builder {
             create_or_update_relay_service_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 entity_name: entity_name.into(),
@@ -3915,7 +3908,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_relay_service_connection_slot::Builder {
             update_relay_service_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 entity_name: entity_name.into(),
@@ -3933,7 +3926,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_relay_service_connection_slot::Builder {
             delete_relay_service_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 entity_name: entity_name.into(),
@@ -3949,7 +3942,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_instance_identifiers_slot::Builder {
             list_instance_identifiers_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3965,7 +3958,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_ms_deploy_status_slot::Builder {
             get_instance_ms_deploy_status_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -3983,7 +3976,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_instance_ms_deploy_operation_slot::Builder {
             create_instance_ms_deploy_operation_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4001,7 +3994,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_ms_deploy_log_slot::Builder {
             get_instance_ms_deploy_log_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4018,7 +4011,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_instance_processes_slot::Builder {
             list_instance_processes_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4036,7 +4029,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_process_slot::Builder {
             get_instance_process_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4055,7 +4048,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_instance_process_slot::Builder {
             delete_instance_process_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4074,7 +4067,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_process_dump_slot::Builder {
             get_instance_process_dump_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4093,7 +4086,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_instance_process_modules_slot::Builder {
             list_instance_process_modules_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4113,7 +4106,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_process_module_slot::Builder {
             get_instance_process_module_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4133,7 +4126,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_instance_process_threads_slot::Builder {
             list_instance_process_threads_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4153,7 +4146,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_instance_process_thread_slot::Builder {
             get_instance_process_thread_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4171,7 +4164,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> is_cloneable_slot::Builder {
             is_cloneable_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4186,7 +4179,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_sync_function_triggers_slot::Builder {
             list_sync_function_triggers_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4201,7 +4194,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_metric_definitions_slot::Builder {
             list_metric_definitions_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4216,7 +4209,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_metrics_slot::Builder {
             list_metrics_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4233,7 +4226,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_migrate_my_sql_status_slot::Builder {
             get_migrate_my_sql_status_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4249,7 +4242,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_network_features_slot::Builder {
             list_network_features_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 view: view.into(),
@@ -4265,7 +4258,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> start_web_site_network_trace_slot::Builder {
             start_web_site_network_trace_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4283,7 +4276,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> stop_web_site_network_trace_slot::Builder {
             stop_web_site_network_trace_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4298,7 +4291,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> generate_new_site_publishing_password_slot::Builder {
             generate_new_site_publishing_password_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4313,7 +4306,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_perf_mon_counters_slot::Builder {
             list_perf_mon_counters_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4329,7 +4322,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_site_php_error_log_flag_slot::Builder {
             get_site_php_error_log_flag_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4344,7 +4337,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_premier_add_ons_slot::Builder {
             list_premier_add_ons_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4360,7 +4353,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_premier_add_on_slot::Builder {
             get_premier_add_on_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 premier_add_on_name: premier_add_on_name.into(),
@@ -4378,7 +4371,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> add_premier_add_on_slot::Builder {
             add_premier_add_on_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 premier_add_on_name: premier_add_on_name.into(),
@@ -4396,7 +4389,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_premier_add_on_slot::Builder {
             delete_premier_add_on_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 premier_add_on_name: premier_add_on_name.into(),
@@ -4412,7 +4405,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_processes_slot::Builder {
             list_processes_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4428,7 +4421,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_process_slot::Builder {
             get_process_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4445,7 +4438,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_process_slot::Builder {
             delete_process_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4462,7 +4455,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_process_dump_slot::Builder {
             get_process_dump_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4479,7 +4472,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_process_modules_slot::Builder {
             list_process_modules_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4497,7 +4490,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_process_module_slot::Builder {
             get_process_module_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4515,7 +4508,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_process_threads_slot::Builder {
             list_process_threads_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4533,7 +4526,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_process_thread_slot::Builder {
             get_process_thread_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 process_id: process_id.into(),
@@ -4550,7 +4543,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_public_certificates_slot::Builder {
             list_public_certificates_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4566,7 +4559,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_public_certificate_slot::Builder {
             get_public_certificate_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4584,7 +4577,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_public_certificate_slot::Builder {
             create_or_update_public_certificate_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 public_certificate_name: public_certificate_name.into(),
@@ -4602,7 +4595,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_public_certificate_slot::Builder {
             delete_public_certificate_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4619,7 +4612,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_publishing_profile_xml_with_secrets_slot::Builder {
             list_publishing_profile_xml_with_secrets_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 publishing_profile_options: publishing_profile_options.into(),
@@ -4636,7 +4629,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> recover_slot::Builder {
             recover_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 recovery_entity: recovery_entity.into(),
@@ -4652,7 +4645,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> reset_slot_configuration_slot::Builder {
             reset_slot_configuration_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4667,7 +4660,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> restart_slot::Builder {
             restart_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4684,7 +4677,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_site_extensions_slot::Builder {
             list_site_extensions_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4700,7 +4693,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_site_extension_slot::Builder {
             get_site_extension_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_extension_id: site_extension_id.into(),
@@ -4717,7 +4710,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> install_site_extension_slot::Builder {
             install_site_extension_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_extension_id: site_extension_id.into(),
@@ -4734,7 +4727,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_site_extension_slot::Builder {
             delete_site_extension_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_extension_id: site_extension_id.into(),
@@ -4751,7 +4744,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_slot_differences_slot::Builder {
             list_slot_differences_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot_swap_entity: slot_swap_entity.into(),
@@ -4768,7 +4761,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> swap_slot_slot::Builder {
             swap_slot_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot_swap_entity: slot_swap_entity.into(),
@@ -4784,7 +4777,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_snapshots_slot::Builder {
             list_snapshots_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4799,7 +4792,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_source_control_slot::Builder {
             get_source_control_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4815,7 +4808,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_source_control_slot::Builder {
             create_or_update_source_control_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_source_control: site_source_control.into(),
@@ -4832,7 +4825,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_source_control_slot::Builder {
             update_source_control_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_source_control: site_source_control.into(),
@@ -4848,7 +4841,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_source_control_slot::Builder {
             delete_source_control_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4863,7 +4856,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> start_slot::Builder {
             start_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4878,7 +4871,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> stop_slot::Builder {
             stop_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4893,7 +4886,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> sync_repository_slot::Builder {
             sync_repository_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4908,7 +4901,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> sync_function_triggers_slot::Builder {
             sync_function_triggers_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4923,7 +4916,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_triggered_web_jobs_slot::Builder {
             list_triggered_web_jobs_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -4939,7 +4932,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_triggered_web_job_slot::Builder {
             get_triggered_web_job_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -4956,7 +4949,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_triggered_web_job_slot::Builder {
             delete_triggered_web_job_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -4973,7 +4966,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_triggered_web_job_history_slot::Builder {
             list_triggered_web_job_history_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -4991,7 +4984,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_triggered_web_job_history_slot::Builder {
             get_triggered_web_job_history_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -5009,7 +5002,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> run_triggered_web_job_slot::Builder {
             run_triggered_web_job_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -5025,7 +5018,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_usages_slot::Builder {
             list_usages_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -5041,7 +5034,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_vnet_connections_slot::Builder {
             list_vnet_connections_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -5057,7 +5050,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_vnet_connection_slot::Builder {
             get_vnet_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5075,7 +5068,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_vnet_connection_slot::Builder {
             create_or_update_vnet_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5094,7 +5087,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_vnet_connection_slot::Builder {
             update_vnet_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5112,7 +5105,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_vnet_connection_slot::Builder {
             delete_vnet_connection_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5130,7 +5123,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_vnet_connection_gateway_slot::Builder {
             get_vnet_connection_gateway_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5150,7 +5143,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_vnet_connection_gateway_slot::Builder {
             create_or_update_vnet_connection_gateway_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5171,7 +5164,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_vnet_connection_gateway_slot::Builder {
             update_vnet_connection_gateway_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5189,7 +5182,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_web_jobs_slot::Builder {
             list_web_jobs_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot: slot.into(),
@@ -5205,7 +5198,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_web_job_slot::Builder {
             get_web_job_slot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -5221,7 +5214,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_slot_differences_from_production::Builder {
             list_slot_differences_from_production::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot_swap_entity: slot_swap_entity.into(),
@@ -5236,7 +5229,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> swap_slot_with_production::Builder {
             swap_slot_with_production::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 slot_swap_entity: slot_swap_entity.into(),
@@ -5250,7 +5243,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_snapshots::Builder {
             list_snapshots::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -5263,7 +5256,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_source_control::Builder {
             get_source_control::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -5277,7 +5270,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_source_control::Builder {
             create_or_update_source_control::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_source_control: site_source_control.into(),
@@ -5292,7 +5285,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_source_control::Builder {
             update_source_control::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 site_source_control: site_source_control.into(),
@@ -5306,7 +5299,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_source_control::Builder {
             delete_source_control::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -5319,7 +5312,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> start::Builder {
             start::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -5332,7 +5325,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> stop::Builder {
             stop::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -5345,7 +5338,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> sync_repository::Builder {
             sync_repository::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -5358,7 +5351,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> sync_function_triggers::Builder {
             sync_function_triggers::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -5371,7 +5364,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_triggered_web_jobs::Builder {
             list_triggered_web_jobs::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -5385,7 +5378,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_triggered_web_job::Builder {
             get_triggered_web_job::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -5400,7 +5393,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_triggered_web_job::Builder {
             delete_triggered_web_job::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -5415,7 +5408,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_triggered_web_job_history::Builder {
             list_triggered_web_job_history::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -5431,7 +5424,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_triggered_web_job_history::Builder {
             get_triggered_web_job_history::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -5447,7 +5440,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> run_triggered_web_job::Builder {
             run_triggered_web_job::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -5461,7 +5454,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_usages::Builder {
             list_usages::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -5475,7 +5468,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_vnet_connections::Builder {
             list_vnet_connections::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -5489,7 +5482,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_vnet_connection::Builder {
             get_vnet_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5505,7 +5498,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_vnet_connection::Builder {
             create_or_update_vnet_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5522,7 +5515,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_vnet_connection::Builder {
             update_vnet_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5538,7 +5531,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> delete_vnet_connection::Builder {
             delete_vnet_connection::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5554,7 +5547,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_vnet_connection_gateway::Builder {
             get_vnet_connection_gateway::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5572,7 +5565,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> create_or_update_vnet_connection_gateway::Builder {
             create_or_update_vnet_connection_gateway::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5591,7 +5584,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> update_vnet_connection_gateway::Builder {
             update_vnet_connection_gateway::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 vnet_name: vnet_name.into(),
@@ -5607,7 +5600,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> list_web_jobs::Builder {
             list_web_jobs::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -5621,7 +5614,7 @@ pub mod web_apps {
             subscription_id: impl Into<String>,
         ) -> get_web_job::Builder {
             get_web_job::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 web_job_name: web_job_name.into(),
@@ -5652,7 +5645,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -5720,7 +5713,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) include_slots: Option<bool>,
@@ -5800,7 +5793,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -5878,7 +5871,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_envelope: models::Site,
@@ -5963,7 +5956,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_envelope: models::SitePatchResource,
@@ -6050,7 +6043,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -6136,7 +6129,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -6218,7 +6211,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot_swap_entity: models::CsmSlotEntity,
@@ -6287,7 +6280,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) request: models::BackupRequest,
@@ -6361,7 +6354,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -6433,7 +6426,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) request: models::RestoreRequest,
@@ -6507,7 +6500,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) backup_id: String,
@@ -6583,7 +6576,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) backup_id: String,
@@ -6653,7 +6646,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) backup_id: String,
@@ -6729,7 +6722,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) backup_id: String,
@@ -6805,7 +6798,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -6879,7 +6872,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) app_settings: models::StringDictionary,
@@ -6953,7 +6946,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -7026,7 +7019,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_auth_settings: models::SiteAuthSettings,
@@ -7100,7 +7093,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -7173,7 +7166,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) request: models::BackupRequest,
@@ -7247,7 +7240,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -7314,7 +7307,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -7387,7 +7380,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) connection_strings: models::ConnectionStringDictionary,
@@ -7463,7 +7456,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -7538,7 +7531,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -7610,7 +7603,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_logs_config: models::SiteLogsConfig,
@@ -7684,7 +7677,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) metadata: models::StringDictionary,
@@ -7758,7 +7751,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -7831,7 +7824,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -7904,7 +7897,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) push_settings: models::PushSettings,
@@ -7978,7 +7971,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -8051,7 +8044,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -8123,7 +8116,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot_config_names: models::SlotConfigNamesResource,
@@ -8197,7 +8190,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -8269,7 +8262,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_config: models::SiteConfigResource,
@@ -8343,7 +8336,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_config: models::SiteConfigResource,
@@ -8417,7 +8410,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -8492,7 +8485,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) snapshot_id: String,
@@ -8566,7 +8559,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) snapshot_id: String,
@@ -8641,7 +8634,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -8719,7 +8712,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -8792,7 +8785,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -8868,7 +8861,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -8948,7 +8941,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -9020,7 +9013,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -9093,7 +9086,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -9164,7 +9157,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -9236,7 +9229,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
@@ -9310,7 +9303,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
@@ -9391,7 +9384,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
@@ -9461,7 +9454,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
@@ -9535,7 +9528,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -9607,7 +9600,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_ownership_identifier_name: String,
@@ -9681,7 +9674,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_ownership_identifier_name: String,
@@ -9757,7 +9750,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_ownership_identifier_name: String,
@@ -9838,7 +9831,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_ownership_identifier_name: String,
@@ -9908,7 +9901,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -9982,7 +9975,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) ms_deploy: models::MsDeploy,
@@ -10059,7 +10052,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -10134,7 +10127,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -10209,7 +10202,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -10283,7 +10276,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
@@ -10358,7 +10351,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
@@ -10436,7 +10429,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
@@ -10506,7 +10499,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
@@ -10581,7 +10574,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -10653,7 +10646,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) host_name: String,
@@ -10727,7 +10720,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) host_name: String,
@@ -10808,7 +10801,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) host_name: String,
@@ -10878,7 +10871,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) namespace_name: String,
@@ -10954,7 +10947,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) namespace_name: String,
@@ -11032,7 +11025,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) namespace_name: String,
@@ -11112,7 +11105,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) namespace_name: String,
@@ -11184,7 +11177,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) namespace_name: String,
@@ -11253,7 +11246,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -11325,7 +11318,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -11399,7 +11392,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) entity_name: String,
@@ -11475,7 +11468,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) entity_name: String,
@@ -11553,7 +11546,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) entity_name: String,
@@ -11633,7 +11626,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) entity_name: String,
@@ -11703,7 +11696,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -11775,7 +11768,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) instance_id: String,
@@ -11851,7 +11844,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) instance_id: String,
@@ -11930,7 +11923,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) instance_id: String,
@@ -12007,7 +12000,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) instance_id: String,
@@ -12084,7 +12077,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -12163,7 +12156,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -12237,7 +12230,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -12315,7 +12308,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -12396,7 +12389,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -12477,7 +12470,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -12558,7 +12551,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -12637,7 +12630,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -12710,7 +12703,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -12783,7 +12776,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -12857,7 +12850,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -12945,7 +12938,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -13022,7 +13015,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) migration_request_envelope: models::MigrateMySqlRequest,
@@ -13096,7 +13089,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -13170,7 +13163,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) view: String,
@@ -13245,7 +13238,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -13343,7 +13336,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -13421,7 +13414,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -13490,7 +13483,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -13570,7 +13563,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -13642,7 +13635,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -13714,7 +13707,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) premier_add_on_name: String,
@@ -13788,7 +13781,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) premier_add_on_name: String,
@@ -13864,7 +13857,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) premier_add_on_name: String,
@@ -13935,7 +13928,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -14010,7 +14003,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -14087,7 +14080,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -14159,7 +14152,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -14235,7 +14228,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -14314,7 +14307,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -14393,7 +14386,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -14472,7 +14465,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -14549,7 +14542,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -14623,7 +14616,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) public_certificate_name: String,
@@ -14697,7 +14690,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) public_certificate_name: String,
@@ -14778,7 +14771,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) public_certificate_name: String,
@@ -14848,7 +14841,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) publishing_profile_options: models::CsmPublishingProfileOptions,
@@ -14926,7 +14919,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) recovery_entity: models::SnapshotRecoveryRequest,
@@ -14996,7 +14989,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -15064,7 +15057,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -15150,7 +15143,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -15227,7 +15220,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_extension_id: String,
@@ -15309,7 +15302,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_extension_id: String,
@@ -15392,7 +15385,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_extension_id: String,
@@ -15462,7 +15455,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -15536,7 +15529,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -15616,7 +15609,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_envelope: models::Site,
@@ -15738,7 +15731,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_envelope: models::SitePatchResource,
@@ -15862,7 +15855,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -15959,7 +15952,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -16043,7 +16036,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot_swap_entity: models::CsmSlotEntity,
@@ -16114,7 +16107,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) request: models::BackupRequest,
@@ -16190,7 +16183,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -16264,7 +16257,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) request: models::RestoreRequest,
@@ -16340,7 +16333,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) backup_id: String,
@@ -16418,7 +16411,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) backup_id: String,
@@ -16490,7 +16483,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) backup_id: String,
@@ -16568,7 +16561,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) backup_id: String,
@@ -16646,7 +16639,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -16722,7 +16715,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) app_settings: models::StringDictionary,
@@ -16798,7 +16791,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -16873,7 +16866,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_auth_settings: models::SiteAuthSettings,
@@ -16949,7 +16942,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -17024,7 +17017,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) request: models::BackupRequest,
@@ -17100,7 +17093,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -17169,7 +17162,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -17244,7 +17237,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) connection_strings: models::ConnectionStringDictionary,
@@ -17322,7 +17315,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -17399,7 +17392,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -17473,7 +17466,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_logs_config: models::SiteLogsConfig,
@@ -17549,7 +17542,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) metadata: models::StringDictionary,
@@ -17625,7 +17618,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -17700,7 +17693,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -17775,7 +17768,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) push_settings: models::PushSettings,
@@ -17851,7 +17844,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -17926,7 +17919,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -18000,7 +17993,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_config: models::SiteConfigResource,
@@ -18076,7 +18069,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_config: models::SiteConfigResource,
@@ -18152,7 +18145,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -18229,7 +18222,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) snapshot_id: String,
@@ -18305,7 +18298,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) snapshot_id: String,
@@ -18382,7 +18375,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -18462,7 +18455,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -18537,7 +18530,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -18615,7 +18608,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -18697,7 +18690,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -18771,7 +18764,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -18846,7 +18839,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -18919,7 +18912,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -18993,7 +18986,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
@@ -19069,7 +19062,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
@@ -19152,7 +19145,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
@@ -19224,7 +19217,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
@@ -19300,7 +19293,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -19374,7 +19367,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_ownership_identifier_name: String,
@@ -19450,7 +19443,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_ownership_identifier_name: String,
@@ -19528,7 +19521,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_ownership_identifier_name: String,
@@ -19611,7 +19604,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_ownership_identifier_name: String,
@@ -19683,7 +19676,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -19759,7 +19752,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -19838,7 +19831,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -19915,7 +19908,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -19992,7 +19985,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -20068,7 +20061,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
@@ -20145,7 +20138,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
@@ -20225,7 +20218,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
@@ -20297,7 +20290,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
@@ -20374,7 +20367,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -20448,7 +20441,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -20524,7 +20517,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) host_name: String,
@@ -20607,7 +20600,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -20679,7 +20672,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) namespace_name: String,
@@ -20748,7 +20741,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) namespace_name: String,
@@ -20819,7 +20812,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) namespace_name: String,
@@ -20892,7 +20885,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) namespace_name: String,
@@ -20957,7 +20950,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) namespace_name: String,
@@ -21027,7 +21020,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -21101,7 +21094,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -21177,7 +21170,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) entity_name: String,
@@ -21255,7 +21248,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) entity_name: String,
@@ -21335,7 +21328,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) entity_name: String,
@@ -21417,7 +21410,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) entity_name: String,
@@ -21489,7 +21482,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -21563,7 +21556,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -21641,7 +21634,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -21722,7 +21715,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -21793,7 +21786,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -21872,7 +21865,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -21953,7 +21946,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -22029,7 +22022,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -22109,7 +22102,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -22192,7 +22185,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -22265,7 +22258,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -22348,7 +22341,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -22419,7 +22412,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -22494,7 +22487,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -22569,7 +22562,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -22645,7 +22638,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -22735,7 +22728,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -22811,7 +22804,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) view: String,
@@ -22888,7 +22881,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -22988,7 +22981,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -23068,7 +23061,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -23139,7 +23132,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -23221,7 +23214,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -23295,7 +23288,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -23369,7 +23362,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) premier_add_on_name: String,
@@ -23445,7 +23438,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) premier_add_on_name: String,
@@ -23523,7 +23516,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) premier_add_on_name: String,
@@ -23596,7 +23589,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -23673,7 +23666,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -23752,7 +23745,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -23826,7 +23819,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -23904,7 +23897,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -23985,7 +23978,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -24066,7 +24059,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -24147,7 +24140,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
@@ -24226,7 +24219,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -24302,7 +24295,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -24378,7 +24371,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) public_certificate_name: String,
@@ -24461,7 +24454,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -24533,7 +24526,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) publishing_profile_options: models::CsmPublishingProfileOptions,
@@ -24613,7 +24606,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) recovery_entity: models::SnapshotRecoveryRequest,
@@ -24685,7 +24678,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -24755,7 +24748,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -24843,7 +24836,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -24922,7 +24915,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_extension_id: String,
@@ -25006,7 +24999,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_extension_id: String,
@@ -25091,7 +25084,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_extension_id: String,
@@ -25163,7 +25156,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot_swap_entity: models::CsmSlotEntity,
@@ -25244,7 +25237,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot_swap_entity: models::CsmSlotEntity,
@@ -25316,7 +25309,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -25396,7 +25389,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -25488,7 +25481,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_source_control: models::SiteSourceControl,
@@ -25581,7 +25574,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_source_control: models::SiteSourceControl,
@@ -25670,7 +25663,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -25741,7 +25734,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -25811,7 +25804,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -25881,7 +25874,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -25951,7 +25944,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -26021,7 +26014,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -26097,7 +26090,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -26179,7 +26172,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -26253,7 +26246,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -26334,7 +26327,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -26415,7 +26408,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -26488,7 +26481,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -26570,7 +26563,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -26644,7 +26637,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -26720,7 +26713,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -26798,7 +26791,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -26878,7 +26871,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -26952,7 +26945,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -27022,7 +27015,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -27093,7 +27086,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -27164,7 +27157,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
@@ -27238,7 +27231,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -27314,7 +27307,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot_swap_entity: models::CsmSlotEntity,
@@ -27393,7 +27386,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot_swap_entity: models::CsmSlotEntity,
@@ -27463,7 +27456,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -27541,7 +27534,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -27631,7 +27624,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_source_control: models::SiteSourceControl,
@@ -27722,7 +27715,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_source_control: models::SiteSourceControl,
@@ -27809,7 +27802,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -27878,7 +27871,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -27946,7 +27939,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -28014,7 +28007,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -28082,7 +28075,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -28150,7 +28143,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -28224,7 +28217,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -28304,7 +28297,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -28376,7 +28369,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -28455,7 +28448,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -28534,7 +28527,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
@@ -28605,7 +28598,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -28685,7 +28678,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -28757,7 +28750,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -28831,7 +28824,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -28907,7 +28900,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -28985,7 +28978,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -29057,7 +29050,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -29134,7 +29127,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -29212,7 +29205,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
@@ -29290,7 +29283,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -29362,7 +29355,7 @@ pub mod web_apps {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,

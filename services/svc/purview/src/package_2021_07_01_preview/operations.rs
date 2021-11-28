@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn metadata_policy(&self) -> metadata_policy::Client {
         metadata_policy::Client(self.clone())
     }
@@ -98,11 +94,8 @@ pub mod metadata_roles {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -131,7 +124,7 @@ pub mod metadata_roles {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::MetadataRoleList, Error>> {
@@ -178,24 +171,21 @@ pub mod metadata_policy {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 collection_name: None,
             }
         }
         pub fn get(&self, policy_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_id: policy_id.into(),
             }
         }
         pub fn update(&self, policy_id: impl Into<String>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_id: policy_id.into(),
                 body: None,
             }
@@ -227,7 +217,7 @@ pub mod metadata_policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) collection_name: Option<String>,
         }
         impl Builder {
@@ -303,7 +293,7 @@ pub mod metadata_policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_id: String,
         }
         impl Builder {
@@ -372,7 +362,7 @@ pub mod metadata_policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_id: String,
             pub(crate) body: Option<models::MetadataPolicy>,
         }

@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn cdn_peering_prefixes(&self) -> cdn_peering_prefixes::Client {
         cdn_peering_prefixes::Client(self.clone())
     }
@@ -200,12 +196,9 @@ pub mod cdn_peering_prefixes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, peering_location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 peering_location: peering_location.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -237,7 +230,7 @@ pub mod cdn_peering_prefixes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) peering_location: String,
             pub(crate) subscription_id: String,
         }
@@ -297,7 +290,7 @@ impl Client {
         subscription_id: impl Into<String>,
     ) -> check_service_provider_availability::Builder {
         check_service_provider_availability::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             check_service_provider_availability_input: check_service_provider_availability_input.into(),
             subscription_id: subscription_id.into(),
         }
@@ -329,7 +322,7 @@ pub mod check_service_provider_availability {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) check_service_provider_availability_input: models::CheckServiceProviderAvailabilityInput,
         pub(crate) subscription_id: String,
     }
@@ -382,9 +375,6 @@ pub mod legacy_peerings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             peering_location: impl Into<String>,
@@ -392,7 +382,7 @@ pub mod legacy_peerings {
             subscription_id: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 peering_location: peering_location.into(),
                 kind: kind.into(),
                 subscription_id: subscription_id.into(),
@@ -426,7 +416,7 @@ pub mod legacy_peerings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) peering_location: String,
             pub(crate) kind: String,
             pub(crate) subscription_id: String,
@@ -492,11 +482,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -525,7 +512,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -572,12 +559,9 @@ pub mod peer_asns {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, peer_asn_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 peer_asn_name: peer_asn_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -589,7 +573,7 @@ pub mod peer_asns {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 peer_asn_name: peer_asn_name.into(),
                 peer_asn: peer_asn.into(),
                 subscription_id: subscription_id.into(),
@@ -597,14 +581,14 @@ pub mod peer_asns {
         }
         pub fn delete(&self, peer_asn_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 peer_asn_name: peer_asn_name.into(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -635,7 +619,7 @@ pub mod peer_asns {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) peer_asn_name: String,
             pub(crate) subscription_id: String,
         }
@@ -715,7 +699,7 @@ pub mod peer_asns {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) peer_asn_name: String,
             pub(crate) peer_asn: models::PeerAsn,
             pub(crate) subscription_id: String,
@@ -803,7 +787,7 @@ pub mod peer_asns {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) peer_asn_name: String,
             pub(crate) subscription_id: String,
         }
@@ -874,7 +858,7 @@ pub mod peer_asns {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -926,12 +910,9 @@ pub mod peering_locations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, kind: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 kind: kind.into(),
                 subscription_id: subscription_id.into(),
                 direct_peering_type: None,
@@ -964,7 +945,7 @@ pub mod peering_locations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) kind: String,
             pub(crate) subscription_id: String,
             pub(crate) direct_peering_type: Option<String>,
@@ -1027,9 +1008,6 @@ pub mod registered_asns {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1038,7 +1016,7 @@ pub mod registered_asns {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 registered_asn_name: registered_asn_name.into(),
@@ -1054,7 +1032,7 @@ pub mod registered_asns {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 registered_asn_name: registered_asn_name.into(),
@@ -1070,7 +1048,7 @@ pub mod registered_asns {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 registered_asn_name: registered_asn_name.into(),
@@ -1084,7 +1062,7 @@ pub mod registered_asns {
             subscription_id: impl Into<String>,
         ) -> list_by_peering::Builder {
             list_by_peering::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1117,7 +1095,7 @@ pub mod registered_asns {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) registered_asn_name: String,
@@ -1201,7 +1179,7 @@ pub mod registered_asns {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) registered_asn_name: String,
@@ -1293,7 +1271,7 @@ pub mod registered_asns {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) registered_asn_name: String,
@@ -1368,7 +1346,7 @@ pub mod registered_asns {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) subscription_id: String,
@@ -1426,9 +1404,6 @@ pub mod registered_prefixes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1437,7 +1412,7 @@ pub mod registered_prefixes {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 registered_prefix_name: registered_prefix_name.into(),
@@ -1453,7 +1428,7 @@ pub mod registered_prefixes {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 registered_prefix_name: registered_prefix_name.into(),
@@ -1469,7 +1444,7 @@ pub mod registered_prefixes {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 registered_prefix_name: registered_prefix_name.into(),
@@ -1483,7 +1458,7 @@ pub mod registered_prefixes {
             subscription_id: impl Into<String>,
         ) -> list_by_peering::Builder {
             list_by_peering::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1516,7 +1491,7 @@ pub mod registered_prefixes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) registered_prefix_name: String,
@@ -1600,7 +1575,7 @@ pub mod registered_prefixes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) registered_prefix_name: String,
@@ -1692,7 +1667,7 @@ pub mod registered_prefixes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) registered_prefix_name: String,
@@ -1767,7 +1742,7 @@ pub mod registered_prefixes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) subscription_id: String,
@@ -1825,9 +1800,6 @@ pub mod peerings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1835,7 +1807,7 @@ pub mod peerings {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1849,7 +1821,7 @@ pub mod peerings {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 peering: peering.into(),
@@ -1864,7 +1836,7 @@ pub mod peerings {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 tags: tags.into(),
@@ -1878,7 +1850,7 @@ pub mod peerings {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1890,14 +1862,14 @@ pub mod peerings {
             subscription_id: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -1928,7 +1900,7 @@ pub mod peerings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) subscription_id: String,
@@ -2010,7 +1982,7 @@ pub mod peerings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) peering: models::Peering,
@@ -2095,7 +2067,7 @@ pub mod peerings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) tags: models::ResourceTags,
@@ -2179,7 +2151,7 @@ pub mod peerings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) subscription_id: String,
@@ -2252,7 +2224,7 @@ pub mod peerings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
@@ -2327,7 +2299,7 @@ pub mod peerings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -2379,9 +2351,6 @@ pub mod received_routes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_peering(
             &self,
             resource_group_name: impl Into<String>,
@@ -2389,7 +2358,7 @@ pub mod received_routes {
             subscription_id: impl Into<String>,
         ) -> list_by_peering::Builder {
             list_by_peering::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_name: peering_name.into(),
                 subscription_id: subscription_id.into(),
@@ -2427,7 +2396,7 @@ pub mod received_routes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_name: String,
             pub(crate) subscription_id: String,
@@ -2526,12 +2495,9 @@ pub mod peering_service_countries {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -2562,7 +2528,7 @@ pub mod peering_service_countries {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -2616,12 +2582,9 @@ pub mod peering_service_locations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 country: None,
             }
@@ -2653,7 +2616,7 @@ pub mod peering_service_locations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) country: Option<String>,
         }
@@ -2715,9 +2678,6 @@ pub mod prefixes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2726,7 +2686,7 @@ pub mod prefixes {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
                 prefix_name: prefix_name.into(),
@@ -2743,7 +2703,7 @@ pub mod prefixes {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
                 prefix_name: prefix_name.into(),
@@ -2759,7 +2719,7 @@ pub mod prefixes {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
                 prefix_name: prefix_name.into(),
@@ -2773,7 +2733,7 @@ pub mod prefixes {
             subscription_id: impl Into<String>,
         ) -> list_by_peering_service::Builder {
             list_by_peering_service::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
                 subscription_id: subscription_id.into(),
@@ -2807,7 +2767,7 @@ pub mod prefixes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) prefix_name: String,
@@ -2899,7 +2859,7 @@ pub mod prefixes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) prefix_name: String,
@@ -2991,7 +2951,7 @@ pub mod prefixes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) prefix_name: String,
@@ -3066,7 +3026,7 @@ pub mod prefixes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) subscription_id: String,
@@ -3132,12 +3092,9 @@ pub mod peering_service_providers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -3168,7 +3125,7 @@ pub mod peering_service_providers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -3222,9 +3179,6 @@ pub mod peering_services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3232,7 +3186,7 @@ pub mod peering_services {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
                 subscription_id: subscription_id.into(),
@@ -3246,7 +3200,7 @@ pub mod peering_services {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
                 peering_service: peering_service.into(),
@@ -3261,7 +3215,7 @@ pub mod peering_services {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
                 tags: tags.into(),
@@ -3275,7 +3229,7 @@ pub mod peering_services {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 peering_service_name: peering_service_name.into(),
                 subscription_id: subscription_id.into(),
@@ -3287,14 +3241,14 @@ pub mod peering_services {
             subscription_id: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -3325,7 +3279,7 @@ pub mod peering_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) subscription_id: String,
@@ -3407,7 +3361,7 @@ pub mod peering_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) peering_service: models::PeeringService,
@@ -3492,7 +3446,7 @@ pub mod peering_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) tags: models::ResourceTags,
@@ -3576,7 +3530,7 @@ pub mod peering_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) peering_service_name: String,
             pub(crate) subscription_id: String,
@@ -3649,7 +3603,7 @@ pub mod peering_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
@@ -3724,7 +3678,7 @@ pub mod peering_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {

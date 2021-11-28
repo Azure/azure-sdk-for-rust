@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn operation(&self) -> operation::Client {
         operation::Client(self.clone())
     }
@@ -112,12 +108,9 @@ pub mod quota {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, resource_name: impl Into<String>, scope: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_name: resource_name.into(),
                 scope: scope.into(),
             }
@@ -129,7 +122,7 @@ pub mod quota {
             create_quota_request: impl Into<models::CurrentQuotaLimitBase>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_name: resource_name.into(),
                 scope: scope.into(),
                 create_quota_request: create_quota_request.into(),
@@ -142,7 +135,7 @@ pub mod quota {
             create_quota_request: impl Into<models::CurrentQuotaLimitBase>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_name: resource_name.into(),
                 scope: scope.into(),
                 create_quota_request: create_quota_request.into(),
@@ -150,7 +143,7 @@ pub mod quota {
         }
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
             }
         }
@@ -181,7 +174,7 @@ pub mod quota {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_name: String,
             pub(crate) scope: String,
         }
@@ -261,7 +254,7 @@ pub mod quota {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_name: String,
             pub(crate) scope: String,
             pub(crate) create_quota_request: models::CurrentQuotaLimitBase,
@@ -349,7 +342,7 @@ pub mod quota {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_name: String,
             pub(crate) scope: String,
             pub(crate) create_quota_request: models::CurrentQuotaLimitBase,
@@ -432,7 +425,7 @@ pub mod quota {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
         impl Builder {
@@ -480,19 +473,16 @@ pub mod quota_request_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, id: impl Into<String>, scope: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 scope: scope.into(),
             }
         }
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
                 top: None,
@@ -526,7 +516,7 @@ pub mod quota_request_status {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) scope: String,
         }
@@ -601,7 +591,7 @@ pub mod quota_request_status {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
@@ -677,11 +667,8 @@ pub mod quota_resource_providers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -710,7 +697,7 @@ pub mod quota_resource_providers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ResourceProvidersList, Error>> {
@@ -757,11 +744,8 @@ pub mod operation {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -790,7 +774,7 @@ pub mod operation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {

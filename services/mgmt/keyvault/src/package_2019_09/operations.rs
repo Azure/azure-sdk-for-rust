@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn keys(&self) -> keys::Client {
         keys::Client(self.clone())
     }
@@ -143,9 +139,6 @@ pub mod vaults {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -153,7 +146,7 @@ pub mod vaults {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
                 subscription_id: subscription_id.into(),
@@ -167,7 +160,7 @@ pub mod vaults {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
                 parameters: parameters.into(),
@@ -182,7 +175,7 @@ pub mod vaults {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
                 parameters: parameters.into(),
@@ -196,7 +189,7 @@ pub mod vaults {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
                 subscription_id: subscription_id.into(),
@@ -211,7 +204,7 @@ pub mod vaults {
             subscription_id: impl Into<String>,
         ) -> update_access_policy::Builder {
             update_access_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
                 operation_kind: operation_kind.into(),
@@ -225,7 +218,7 @@ pub mod vaults {
             subscription_id: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -233,14 +226,14 @@ pub mod vaults {
         }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 top: None,
             }
         }
         pub fn list_deleted(&self, subscription_id: impl Into<String>) -> list_deleted::Builder {
             list_deleted::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -251,7 +244,7 @@ pub mod vaults {
             subscription_id: impl Into<String>,
         ) -> get_deleted::Builder {
             get_deleted::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 vault_name: vault_name.into(),
                 location: location.into(),
                 subscription_id: subscription_id.into(),
@@ -264,7 +257,7 @@ pub mod vaults {
             subscription_id: impl Into<String>,
         ) -> purge_deleted::Builder {
             purge_deleted::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 vault_name: vault_name.into(),
                 location: location.into(),
                 subscription_id: subscription_id.into(),
@@ -272,7 +265,7 @@ pub mod vaults {
         }
         pub fn list(&self, filter: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter: filter.into(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -284,7 +277,7 @@ pub mod vaults {
             subscription_id: impl Into<String>,
         ) -> check_name_availability::Builder {
             check_name_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 vault_name: vault_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -316,7 +309,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
             pub(crate) subscription_id: String,
@@ -402,7 +395,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
             pub(crate) parameters: models::VaultCreateOrUpdateParameters,
@@ -508,7 +501,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
             pub(crate) parameters: models::VaultPatchParameters,
@@ -612,7 +605,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
             pub(crate) subscription_id: String,
@@ -702,7 +695,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
             pub(crate) operation_kind: String,
@@ -807,7 +800,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
@@ -890,7 +883,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
         }
@@ -971,7 +964,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -1044,7 +1037,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) location: String,
             pub(crate) subscription_id: String,
@@ -1130,7 +1123,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) location: String,
             pub(crate) subscription_id: String,
@@ -1216,7 +1209,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i32>,
@@ -1296,7 +1289,7 @@ pub mod vaults {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) vault_name: models::VaultCheckNameAvailabilityParameters,
             pub(crate) subscription_id: String,
         }
@@ -1352,9 +1345,6 @@ pub mod private_endpoint_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1363,7 +1353,7 @@ pub mod private_endpoint_connections {
             private_endpoint_connection_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
@@ -1379,7 +1369,7 @@ pub mod private_endpoint_connections {
             properties: impl Into<models::PrivateEndpointConnection>,
         ) -> put::Builder {
             put::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
@@ -1395,7 +1385,7 @@ pub mod private_endpoint_connections {
             private_endpoint_connection_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
@@ -1434,7 +1424,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
@@ -1514,7 +1504,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
@@ -1601,7 +1591,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
@@ -1661,9 +1651,6 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_vault(
             &self,
             subscription_id: impl Into<String>,
@@ -1671,7 +1658,7 @@ pub mod private_link_resources {
             vault_name: impl Into<String>,
         ) -> list_by_vault::Builder {
             list_by_vault::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
@@ -1704,7 +1691,7 @@ pub mod private_link_resources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
@@ -1762,11 +1749,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -1795,7 +1779,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -1842,9 +1826,6 @@ pub mod keys {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1853,7 +1834,7 @@ pub mod keys {
             key_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
@@ -1869,7 +1850,7 @@ pub mod keys {
             parameters: impl Into<models::KeyCreateParameters>,
         ) -> create_if_not_exist::Builder {
             create_if_not_exist::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
@@ -1884,7 +1865,7 @@ pub mod keys {
             vault_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
@@ -1899,7 +1880,7 @@ pub mod keys {
             key_version: impl Into<String>,
         ) -> get_version::Builder {
             get_version::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
@@ -1915,7 +1896,7 @@ pub mod keys {
             key_name: impl Into<String>,
         ) -> list_versions::Builder {
             list_versions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 vault_name: vault_name.into(),
@@ -1949,7 +1930,7 @@ pub mod keys {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
@@ -2028,7 +2009,7 @@ pub mod keys {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
@@ -2109,7 +2090,7 @@ pub mod keys {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
@@ -2186,7 +2167,7 @@ pub mod keys {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
@@ -2267,7 +2248,7 @@ pub mod keys {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,

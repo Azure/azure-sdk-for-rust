@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn web_services(&self) -> web_services::Client {
         web_services::Client(self.clone())
     }
@@ -101,9 +97,6 @@ pub mod web_services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -111,7 +104,7 @@ pub mod web_services {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 web_service_name: web_service_name.into(),
                 subscription_id: subscription_id.into(),
@@ -125,7 +118,7 @@ pub mod web_services {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 web_service_name: web_service_name.into(),
                 create_or_update_payload: create_or_update_payload.into(),
@@ -140,7 +133,7 @@ pub mod web_services {
             subscription_id: impl Into<String>,
         ) -> patch::Builder {
             patch::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 web_service_name: web_service_name.into(),
                 patch_payload: patch_payload.into(),
@@ -154,7 +147,7 @@ pub mod web_services {
             subscription_id: impl Into<String>,
         ) -> remove::Builder {
             remove::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 web_service_name: web_service_name.into(),
                 subscription_id: subscription_id.into(),
@@ -167,7 +160,7 @@ pub mod web_services {
             subscription_id: impl Into<String>,
         ) -> list_keys::Builder {
             list_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 web_service_name: web_service_name.into(),
                 subscription_id: subscription_id.into(),
@@ -179,7 +172,7 @@ pub mod web_services {
             subscription_id: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 skiptoken: None,
@@ -187,7 +180,7 @@ pub mod web_services {
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 skiptoken: None,
             }
@@ -216,7 +209,7 @@ pub mod web_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) web_service_name: String,
             pub(crate) subscription_id: String,
@@ -293,7 +286,7 @@ pub mod web_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) web_service_name: String,
             pub(crate) create_or_update_payload: models::WebService,
@@ -373,7 +366,7 @@ pub mod web_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) web_service_name: String,
             pub(crate) patch_payload: models::WebService,
@@ -452,7 +445,7 @@ pub mod web_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) web_service_name: String,
             pub(crate) subscription_id: String,
@@ -520,7 +513,7 @@ pub mod web_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) web_service_name: String,
             pub(crate) subscription_id: String,
@@ -592,7 +585,7 @@ pub mod web_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) skiptoken: Option<String>,
@@ -670,7 +663,7 @@ pub mod web_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) skiptoken: Option<String>,
         }

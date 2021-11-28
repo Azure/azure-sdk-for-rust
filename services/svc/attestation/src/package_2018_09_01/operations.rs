@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn metadata_configuration(&self) -> metadata_configuration::Client {
         metadata_configuration::Client(self.clone())
     }
@@ -114,32 +110,29 @@ pub mod policy {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn prepare_to_set(&self, tee: impl Into<String>, policy_jws: impl Into<String>) -> prepare_to_set::Builder {
             prepare_to_set::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 tee: tee.into(),
                 policy_jws: policy_jws.into(),
             }
         }
         pub fn get(&self, tee: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 tee: tee.into(),
             }
         }
         pub fn reset(&self, tee: impl Into<String>, policy_jws: impl Into<String>) -> reset::Builder {
             reset::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 tee: tee.into(),
                 policy_jws: policy_jws.into(),
             }
         }
         pub fn set(&self, tee: impl Into<String>, new_attestation_policy: impl Into<String>) -> set::Builder {
             set::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 tee: tee.into(),
                 new_attestation_policy: new_attestation_policy.into(),
             }
@@ -175,7 +168,7 @@ pub mod policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) tee: String,
             pub(crate) policy_jws: String,
         }
@@ -264,7 +257,7 @@ pub mod policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) tee: String,
         }
         impl Builder {
@@ -351,7 +344,7 @@ pub mod policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) tee: String,
             pub(crate) policy_jws: String,
         }
@@ -440,7 +433,7 @@ pub mod policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) tee: String,
             pub(crate) new_attestation_policy: String,
         }
@@ -499,21 +492,18 @@ pub mod policy_certificates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.base_clone() }
+            get::Builder { client: self.0.clone() }
         }
         pub fn remove(&self, policy_certificate_to_remove: impl Into<String>) -> remove::Builder {
             remove::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_certificate_to_remove: policy_certificate_to_remove.into(),
             }
         }
         pub fn add(&self, policy_certificate_to_add: impl Into<String>) -> add::Builder {
             add::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_certificate_to_add: policy_certificate_to_add.into(),
             }
         }
@@ -548,7 +538,7 @@ pub mod policy_certificates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<String, Error>> {
@@ -632,7 +622,7 @@ pub mod policy_certificates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_certificate_to_remove: String,
         }
         impl Builder {
@@ -718,7 +708,7 @@ pub mod policy_certificates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_certificate_to_add: String,
         }
         impl Builder {
@@ -779,11 +769,8 @@ pub mod signing_certificates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.base_clone() }
+            get::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -814,7 +801,7 @@ pub mod signing_certificates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
@@ -866,11 +853,8 @@ pub mod metadata_configuration {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.base_clone() }
+            get::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -901,7 +885,7 @@ pub mod metadata_configuration {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {

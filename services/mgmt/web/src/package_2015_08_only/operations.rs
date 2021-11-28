@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn app_service_certificate_orders(&self) -> app_service_certificate_orders::Client {
         app_service_certificate_orders::Client(self.clone())
     }
@@ -134,12 +130,9 @@ pub mod app_service_certificate_orders {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -149,7 +142,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> validate_purchase_information::Builder {
             validate_purchase_information::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 app_service_certificate_order: app_service_certificate_order.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -160,7 +153,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -172,7 +165,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 subscription_id: subscription_id.into(),
@@ -186,7 +179,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 certificate_distinguished_name: certificate_distinguished_name.into(),
@@ -201,7 +194,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 certificate_distinguished_name: certificate_distinguished_name.into(),
@@ -215,7 +208,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 subscription_id: subscription_id.into(),
@@ -228,7 +221,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> list_certificates::Builder {
             list_certificates::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 subscription_id: subscription_id.into(),
@@ -242,7 +235,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> get_certificate::Builder {
             get_certificate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 name: name.into(),
@@ -258,7 +251,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> create_or_update_certificate::Builder {
             create_or_update_certificate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 name: name.into(),
@@ -275,7 +268,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> update_certificate::Builder {
             update_certificate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 name: name.into(),
@@ -291,7 +284,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> delete_certificate::Builder {
             delete_certificate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 name: name.into(),
@@ -306,7 +299,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> reissue::Builder {
             reissue::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 reissue_certificate_order_request: reissue_certificate_order_request.into(),
@@ -321,7 +314,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> renew::Builder {
             renew::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 renew_certificate_order_request: renew_certificate_order_request.into(),
@@ -335,7 +328,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> resend_email::Builder {
             resend_email::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 subscription_id: subscription_id.into(),
@@ -349,7 +342,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> resend_request_emails::Builder {
             resend_request_emails::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 name_identifier: name_identifier.into(),
@@ -364,7 +357,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> retrieve_site_seal::Builder {
             retrieve_site_seal::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 site_seal_request: site_seal_request.into(),
@@ -378,7 +371,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> verify_domain_ownership::Builder {
             verify_domain_ownership::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
                 subscription_id: subscription_id.into(),
@@ -391,7 +384,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> retrieve_certificate_actions::Builder {
             retrieve_certificate_actions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -404,7 +397,7 @@ pub mod app_service_certificate_orders {
             subscription_id: impl Into<String>,
         ) -> retrieve_certificate_email_history::Builder {
             retrieve_certificate_email_history::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -434,7 +427,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -504,7 +497,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) app_service_certificate_order: models::AppServiceCertificateOrder,
             pub(crate) subscription_id: String,
         }
@@ -569,7 +562,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
@@ -641,7 +634,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) subscription_id: String,
@@ -720,7 +713,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) certificate_distinguished_name: models::AppServiceCertificateOrder,
@@ -805,7 +798,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) certificate_distinguished_name: models::AppServiceCertificateOrderPatchResource,
@@ -890,7 +883,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) subscription_id: String,
@@ -958,7 +951,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) subscription_id: String,
@@ -1026,7 +1019,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) name: String,
@@ -1100,7 +1093,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) name: String,
@@ -1180,7 +1173,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) name: String,
@@ -1260,7 +1253,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) name: String,
@@ -1323,7 +1316,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) reissue_certificate_order_request: models::ReissueCertificateOrderRequest,
@@ -1392,7 +1385,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) renew_certificate_order_request: models::RenewCertificateOrderRequest,
@@ -1461,7 +1454,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) subscription_id: String,
@@ -1523,7 +1516,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) name_identifier: models::NameIdentifier,
@@ -1586,7 +1579,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) site_seal_request: models::SiteSealRequest,
@@ -1654,7 +1647,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) subscription_id: String,
@@ -1716,7 +1709,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -1785,7 +1778,7 @@ pub mod app_service_certificate_orders {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -1834,11 +1827,8 @@ pub mod certificate_registration_provider {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_operations(&self) -> list_operations::Builder {
-            list_operations::Builder { client: self.base_clone() }
+            list_operations::Builder { client: self.0.clone() }
         }
     }
     pub mod list_operations {
@@ -1864,7 +1854,7 @@ pub mod certificate_registration_provider {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CsmOperationCollection, Error>> {

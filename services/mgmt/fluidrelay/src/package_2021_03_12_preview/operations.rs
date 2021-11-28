@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn fluid_relay_operations(&self) -> fluid_relay_operations::Client {
         fluid_relay_operations::Client(self.clone())
     }
@@ -108,11 +104,8 @@ pub mod fluid_relay_operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -141,7 +134,7 @@ pub mod fluid_relay_operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -188,12 +181,9 @@ pub mod fluid_relay_servers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, subscription_id: impl Into<String>, resource_group: impl Into<String>, name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
                 name: name.into(),
@@ -207,7 +197,7 @@ pub mod fluid_relay_servers {
             resource: impl Into<models::FluidRelayServer>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
                 name: name.into(),
@@ -222,7 +212,7 @@ pub mod fluid_relay_servers {
             resource: impl Into<models::FluidRelayServerUpdate>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
                 name: name.into(),
@@ -236,7 +226,7 @@ pub mod fluid_relay_servers {
             name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
                 name: name.into(),
@@ -250,7 +240,7 @@ pub mod fluid_relay_servers {
             parameters: impl Into<models::RegenerateKeyRequest>,
         ) -> regenerate_key::Builder {
             regenerate_key::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
                 name: name.into(),
@@ -264,7 +254,7 @@ pub mod fluid_relay_servers {
             name: impl Into<String>,
         ) -> get_keys::Builder {
             get_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
                 name: name.into(),
@@ -272,7 +262,7 @@ pub mod fluid_relay_servers {
         }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -282,7 +272,7 @@ pub mod fluid_relay_servers {
             resource_group: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
             }
@@ -314,7 +304,7 @@ pub mod fluid_relay_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) name: String,
@@ -391,7 +381,7 @@ pub mod fluid_relay_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) name: String,
@@ -470,7 +460,7 @@ pub mod fluid_relay_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) name: String,
@@ -554,7 +544,7 @@ pub mod fluid_relay_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) name: String,
@@ -627,7 +617,7 @@ pub mod fluid_relay_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) name: String,
@@ -706,7 +696,7 @@ pub mod fluid_relay_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) name: String,
@@ -784,7 +774,7 @@ pub mod fluid_relay_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -857,7 +847,7 @@ pub mod fluid_relay_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
         }

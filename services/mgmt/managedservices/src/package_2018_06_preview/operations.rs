@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn operations(&self) -> operations::Client {
         operations::Client(self.clone())
     }
@@ -111,12 +107,9 @@ pub mod registration_definitions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, scope: impl Into<String>, registration_definition_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 registration_definition_id: registration_definition_id.into(),
             }
@@ -128,7 +121,7 @@ pub mod registration_definitions {
             request_body: impl Into<models::RegistrationDefinition>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 registration_definition_id: registration_definition_id.into(),
                 scope: scope.into(),
                 request_body: request_body.into(),
@@ -136,14 +129,14 @@ pub mod registration_definitions {
         }
         pub fn delete(&self, registration_definition_id: impl Into<String>, scope: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 registration_definition_id: registration_definition_id.into(),
                 scope: scope.into(),
             }
         }
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
             }
         }
@@ -174,7 +167,7 @@ pub mod registration_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) registration_definition_id: String,
         }
@@ -254,7 +247,7 @@ pub mod registration_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) registration_definition_id: String,
             pub(crate) scope: String,
             pub(crate) request_body: models::RegistrationDefinition,
@@ -342,7 +335,7 @@ pub mod registration_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) registration_definition_id: String,
             pub(crate) scope: String,
         }
@@ -413,7 +406,7 @@ pub mod registration_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
         impl Builder {
@@ -467,12 +460,9 @@ pub mod registration_assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, scope: impl Into<String>, registration_assignment_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 registration_assignment_id: registration_assignment_id.into(),
                 expand_registration_definition: None,
@@ -485,7 +475,7 @@ pub mod registration_assignments {
             request_body: impl Into<models::RegistrationAssignment>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 registration_assignment_id: registration_assignment_id.into(),
                 request_body: request_body.into(),
@@ -493,14 +483,14 @@ pub mod registration_assignments {
         }
         pub fn delete(&self, scope: impl Into<String>, registration_assignment_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 registration_assignment_id: registration_assignment_id.into(),
             }
         }
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 expand_registration_definition: None,
             }
@@ -532,7 +522,7 @@ pub mod registration_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) registration_assignment_id: String,
             pub(crate) expand_registration_definition: Option<bool>,
@@ -621,7 +611,7 @@ pub mod registration_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) registration_assignment_id: String,
             pub(crate) request_body: models::RegistrationAssignment,
@@ -709,7 +699,7 @@ pub mod registration_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) registration_assignment_id: String,
         }
@@ -780,7 +770,7 @@ pub mod registration_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) expand_registration_definition: Option<bool>,
         }
@@ -843,11 +833,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -876,7 +863,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {

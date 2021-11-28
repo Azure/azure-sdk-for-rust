@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn blob_upload_endpoint(&self) -> blob_upload_endpoint::Client {
         blob_upload_endpoint::Client(self.clone())
     }
@@ -96,12 +92,9 @@ pub mod ingestion_job {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, account_id: impl Into<String>, job_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 account_id: account_id.into(),
                 job_id: job_id.into(),
                 x_mrc_cv: None,
@@ -109,7 +102,7 @@ pub mod ingestion_job {
         }
         pub fn create(&self, account_id: impl Into<String>, job_id: impl Into<String>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 account_id: account_id.into(),
                 job_id: job_id.into(),
                 x_mrc_cv: None,
@@ -143,7 +136,7 @@ pub mod ingestion_job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) job_id: String,
             pub(crate) x_mrc_cv: Option<String>,
@@ -221,7 +214,7 @@ pub mod ingestion_job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) job_id: String,
             pub(crate) x_mrc_cv: Option<String>,
@@ -288,12 +281,9 @@ pub mod blob_upload_endpoint {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, account_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 account_id: account_id.into(),
                 x_mrc_cv: None,
             }
@@ -325,7 +315,7 @@ pub mod blob_upload_endpoint {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) x_mrc_cv: Option<String>,
         }

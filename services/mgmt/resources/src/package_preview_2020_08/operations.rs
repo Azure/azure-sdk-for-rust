@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn application_definitions(&self) -> application_definitions::Client {
         application_definitions::Client(self.clone())
     }
@@ -93,9 +89,6 @@ pub mod application_definitions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_by_id(
             &self,
             resource_group_name: impl Into<String>,
@@ -103,7 +96,7 @@ pub mod application_definitions {
             subscription_id: impl Into<String>,
         ) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 application_definition_name: application_definition_name.into(),
                 subscription_id: subscription_id.into(),
@@ -117,7 +110,7 @@ pub mod application_definitions {
             parameters: impl Into<models::ApplicationDefinition>,
         ) -> create_or_update_by_id::Builder {
             create_or_update_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 application_definition_name: application_definition_name.into(),
                 subscription_id: subscription_id.into(),
@@ -131,7 +124,7 @@ pub mod application_definitions {
             subscription_id: impl Into<String>,
         ) -> delete_by_id::Builder {
             delete_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 application_definition_name: application_definition_name.into(),
                 subscription_id: subscription_id.into(),
@@ -164,7 +157,7 @@ pub mod application_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) application_definition_name: String,
             pub(crate) subscription_id: String,
@@ -240,7 +233,7 @@ pub mod application_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) application_definition_name: String,
             pub(crate) subscription_id: String,
@@ -325,7 +318,7 @@ pub mod application_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) application_definition_name: String,
             pub(crate) subscription_id: String,

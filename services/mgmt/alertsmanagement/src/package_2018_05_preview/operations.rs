@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn alerts(&self) -> alerts::Client {
         alerts::Client(self.clone())
     }
@@ -113,11 +109,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -143,7 +136,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsList, Error>> {
@@ -188,12 +181,9 @@ pub mod alerts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_all(&self, subscription_id: impl Into<String>) -> get_all::Builder {
             get_all::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 target_resource: None,
                 target_resource_group: None,
@@ -212,7 +202,7 @@ pub mod alerts {
         }
         pub fn get_by_id(&self, subscription_id: impl Into<String>, alert_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 alert_id: alert_id.into(),
             }
@@ -224,7 +214,7 @@ pub mod alerts {
             new_state: impl Into<String>,
         ) -> change_state::Builder {
             change_state::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 alert_id: alert_id.into(),
                 new_state: new_state.into(),
@@ -232,14 +222,14 @@ pub mod alerts {
         }
         pub fn get_history(&self, subscription_id: impl Into<String>, alert_id: impl Into<String>) -> get_history::Builder {
             get_history::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 alert_id: alert_id.into(),
             }
         }
         pub fn get_summary(&self, subscription_id: impl Into<String>) -> get_summary::Builder {
             get_summary::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 target_resource_group: None,
                 time_range: None,
@@ -272,7 +262,7 @@ pub mod alerts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) target_resource: Option<String>,
             pub(crate) target_resource_group: Option<String>,
@@ -449,7 +439,7 @@ pub mod alerts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) alert_id: String,
         }
@@ -524,7 +514,7 @@ pub mod alerts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) alert_id: String,
             pub(crate) new_state: String,
@@ -603,7 +593,7 @@ pub mod alerts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) alert_id: String,
         }
@@ -678,7 +668,7 @@ pub mod alerts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) target_resource_group: Option<String>,
             pub(crate) time_range: Option<String>,
@@ -746,12 +736,9 @@ pub mod smart_groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_all(&self, subscription_id: impl Into<String>) -> get_all::Builder {
             get_all::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 target_resource: None,
                 target_resource_group: None,
@@ -768,7 +755,7 @@ pub mod smart_groups {
         }
         pub fn get_by_id(&self, subscription_id: impl Into<String>, smart_group_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 smart_group_id: smart_group_id.into(),
             }
@@ -780,7 +767,7 @@ pub mod smart_groups {
             new_state: impl Into<String>,
         ) -> change_state::Builder {
             change_state::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 smart_group_id: smart_group_id.into(),
                 new_state: new_state.into(),
@@ -788,7 +775,7 @@ pub mod smart_groups {
         }
         pub fn get_history(&self, subscription_id: impl Into<String>, smart_group_id: impl Into<String>) -> get_history::Builder {
             get_history::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 smart_group_id: smart_group_id.into(),
             }
@@ -820,7 +807,7 @@ pub mod smart_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) target_resource: Option<String>,
             pub(crate) target_resource_group: Option<String>,
@@ -981,7 +968,7 @@ pub mod smart_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) smart_group_id: String,
         }
@@ -1056,7 +1043,7 @@ pub mod smart_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) smart_group_id: String,
             pub(crate) new_state: String,
@@ -1135,7 +1122,7 @@ pub mod smart_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) smart_group_id: String,
         }

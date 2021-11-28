@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn file_system(&self) -> file_system::Client {
         file_system::Client(self.clone())
     }
@@ -131,12 +127,9 @@ pub mod service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_file_systems(&self, resource: impl Into<String>, x_ms_version: impl Into<String>) -> list_file_systems::Builder {
             list_file_systems::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource: resource.into(),
                 x_ms_version: x_ms_version.into(),
                 prefix: None,
@@ -173,7 +166,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource: String,
             pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
@@ -264,9 +257,6 @@ pub mod file_system {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn create(
             &self,
             filesystem: impl Into<String>,
@@ -274,7 +264,7 @@ pub mod file_system {
             x_ms_version: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
                 x_ms_version: x_ms_version.into(),
@@ -290,7 +280,7 @@ pub mod file_system {
             x_ms_version: impl Into<String>,
         ) -> set_properties::Builder {
             set_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
                 x_ms_version: x_ms_version.into(),
@@ -308,7 +298,7 @@ pub mod file_system {
             x_ms_version: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
                 x_ms_version: x_ms_version.into(),
@@ -325,7 +315,7 @@ pub mod file_system {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
                 x_ms_version: x_ms_version.into(),
@@ -341,7 +331,7 @@ pub mod file_system {
             recursive: bool,
         ) -> list_paths::Builder {
             list_paths::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
                 x_ms_version: x_ms_version.into(),
@@ -362,7 +352,7 @@ pub mod file_system {
             x_ms_version: impl Into<String>,
         ) -> list_blob_hierarchy_segment::Builder {
             list_blob_hierarchy_segment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -404,7 +394,7 @@ pub mod file_system {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
             pub(crate) x_ms_version: String,
@@ -496,7 +486,7 @@ pub mod file_system {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
             pub(crate) x_ms_version: String,
@@ -604,7 +594,7 @@ pub mod file_system {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
             pub(crate) x_ms_version: String,
@@ -704,7 +694,7 @@ pub mod file_system {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
             pub(crate) x_ms_version: String,
@@ -788,7 +778,7 @@ pub mod file_system {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
             pub(crate) x_ms_version: String,
@@ -912,7 +902,7 @@ pub mod file_system {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -1034,12 +1024,9 @@ pub mod path {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn read(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> read::Builder {
             read::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1062,7 +1049,7 @@ pub mod path {
             x_ms_lease_action: impl Into<String>,
         ) -> lease::Builder {
             lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1081,7 +1068,7 @@ pub mod path {
         }
         pub fn create(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1121,7 +1108,7 @@ pub mod path {
             body: impl Into<serde_json::Value>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1157,7 +1144,7 @@ pub mod path {
         }
         pub fn delete(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1179,7 +1166,7 @@ pub mod path {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1202,7 +1189,7 @@ pub mod path {
             x_ms_version: impl Into<String>,
         ) -> set_access_control::Builder {
             set_access_control::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 action: action.into(),
@@ -1229,7 +1216,7 @@ pub mod path {
             x_ms_version: impl Into<String>,
         ) -> set_access_control_recursive::Builder {
             set_access_control_recursive::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 action: action.into(),
@@ -1251,7 +1238,7 @@ pub mod path {
             x_ms_version: impl Into<String>,
         ) -> flush_data::Builder {
             flush_data::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 action: action.into(),
@@ -1284,7 +1271,7 @@ pub mod path {
             x_ms_version: impl Into<String>,
         ) -> append_data::Builder {
             append_data::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 action: action.into(),
@@ -1308,7 +1295,7 @@ pub mod path {
             x_ms_expiry_option: impl Into<String>,
         ) -> set_expiry::Builder {
             set_expiry::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 comp: comp.into(),
@@ -1327,7 +1314,7 @@ pub mod path {
             x_ms_version: impl Into<String>,
         ) -> undelete::Builder {
             undelete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
                 comp: comp.into(),
@@ -1369,7 +1356,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) x_ms_version: String,
@@ -1524,7 +1511,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) x_ms_version: String,
@@ -1675,7 +1662,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) x_ms_version: String,
@@ -1938,7 +1925,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) x_ms_version: String,
@@ -2219,7 +2206,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) x_ms_version: String,
@@ -2357,7 +2344,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) x_ms_version: String,
@@ -2495,7 +2482,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) action: String,
@@ -2657,7 +2644,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) action: String,
@@ -2789,7 +2776,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) action: String,
@@ -2995,7 +2982,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) action: String,
@@ -3122,7 +3109,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) comp: String,
@@ -3217,7 +3204,7 @@ pub mod path {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
             pub(crate) comp: String,

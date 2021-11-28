@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn rate_card(&self) -> rate_card::Client {
         rate_card::Client(self.clone())
     }
@@ -94,9 +90,6 @@ pub mod usage_aggregates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             reported_start_time: impl Into<String>,
@@ -104,7 +97,7 @@ pub mod usage_aggregates {
             subscription_id: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 reported_start_time: reported_start_time.into(),
                 reported_end_time: reported_end_time.into(),
                 subscription_id: subscription_id.into(),
@@ -140,7 +133,7 @@ pub mod usage_aggregates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) reported_start_time: String,
             pub(crate) reported_end_time: String,
             pub(crate) subscription_id: String,
@@ -224,12 +217,9 @@ pub mod rate_card {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, filter: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter: filter.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -261,7 +251,7 @@ pub mod rate_card {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter: String,
             pub(crate) subscription_id: String,
         }

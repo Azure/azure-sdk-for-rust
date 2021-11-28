@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn digital_twin_models(&self) -> digital_twin_models::Client {
         digital_twin_models::Client(self.clone())
     }
@@ -144,12 +140,9 @@ pub mod digital_twin_models {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 traceparent: None,
                 tracestate: None,
                 dependencies_for: Vec::new(),
@@ -159,7 +152,7 @@ pub mod digital_twin_models {
         }
         pub fn add(&self) -> add::Builder {
             add::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 traceparent: None,
                 tracestate: None,
                 models: None,
@@ -167,7 +160,7 @@ pub mod digital_twin_models {
         }
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
                 tracestate: None,
@@ -176,7 +169,7 @@ pub mod digital_twin_models {
         }
         pub fn update(&self, id: impl Into<String>, update_model: impl Into<Vec<serde_json::Value>>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 update_model: update_model.into(),
                 traceparent: None,
@@ -185,7 +178,7 @@ pub mod digital_twin_models {
         }
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
                 tracestate: None,
@@ -218,7 +211,7 @@ pub mod digital_twin_models {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
             pub(crate) dependencies_for: Vec<String>,
@@ -330,7 +323,7 @@ pub mod digital_twin_models {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
             pub(crate) models: Option<Vec<serde_json::Value>>,
@@ -427,7 +420,7 @@ pub mod digital_twin_models {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
@@ -521,7 +514,7 @@ pub mod digital_twin_models {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) update_model: Vec<serde_json::Value>,
             pub(crate) traceparent: Option<String>,
@@ -603,7 +596,7 @@ pub mod digital_twin_models {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
@@ -662,12 +655,9 @@ pub mod query {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn query_twins(&self, query_specification: impl Into<models::QuerySpecification>) -> query_twins::Builder {
             query_twins::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 query_specification: query_specification.into(),
                 traceparent: None,
                 tracestate: None,
@@ -701,7 +691,7 @@ pub mod query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) query_specification: models::QuerySpecification,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
@@ -774,12 +764,9 @@ pub mod digital_twins {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
                 tracestate: None,
@@ -787,7 +774,7 @@ pub mod digital_twins {
         }
         pub fn add(&self, id: impl Into<String>, twin: impl Into<serde_json::Value>) -> add::Builder {
             add::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 twin: twin.into(),
                 traceparent: None,
@@ -797,7 +784,7 @@ pub mod digital_twins {
         }
         pub fn update(&self, id: impl Into<String>, patch_document: impl Into<Vec<serde_json::Value>>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 patch_document: patch_document.into(),
                 traceparent: None,
@@ -807,7 +794,7 @@ pub mod digital_twins {
         }
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
                 tracestate: None,
@@ -816,7 +803,7 @@ pub mod digital_twins {
         }
         pub fn get_relationship_by_id(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> get_relationship_by_id::Builder {
             get_relationship_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
                 traceparent: None,
@@ -830,7 +817,7 @@ pub mod digital_twins {
             relationship: impl Into<serde_json::Value>,
         ) -> add_relationship::Builder {
             add_relationship::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
                 relationship: relationship.into(),
@@ -846,7 +833,7 @@ pub mod digital_twins {
             patch_document: impl Into<Vec<serde_json::Value>>,
         ) -> update_relationship::Builder {
             update_relationship::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
                 patch_document: patch_document.into(),
@@ -857,7 +844,7 @@ pub mod digital_twins {
         }
         pub fn delete_relationship(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> delete_relationship::Builder {
             delete_relationship::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
                 traceparent: None,
@@ -867,7 +854,7 @@ pub mod digital_twins {
         }
         pub fn list_relationships(&self, id: impl Into<String>) -> list_relationships::Builder {
             list_relationships::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
                 tracestate: None,
@@ -876,7 +863,7 @@ pub mod digital_twins {
         }
         pub fn list_incoming_relationships(&self, id: impl Into<String>) -> list_incoming_relationships::Builder {
             list_incoming_relationships::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
                 tracestate: None,
@@ -889,7 +876,7 @@ pub mod digital_twins {
             message_id: impl Into<String>,
         ) -> send_telemetry::Builder {
             send_telemetry::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 telemetry: telemetry.into(),
                 message_id: message_id.into(),
@@ -906,7 +893,7 @@ pub mod digital_twins {
             message_id: impl Into<String>,
         ) -> send_component_telemetry::Builder {
             send_component_telemetry::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 component_path: component_path.into(),
                 telemetry: telemetry.into(),
@@ -918,7 +905,7 @@ pub mod digital_twins {
         }
         pub fn get_component(&self, id: impl Into<String>, component_path: impl Into<String>) -> get_component::Builder {
             get_component::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 component_path: component_path.into(),
                 traceparent: None,
@@ -932,7 +919,7 @@ pub mod digital_twins {
             patch_document: impl Into<Vec<serde_json::Value>>,
         ) -> update_component::Builder {
             update_component::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 component_path: component_path.into(),
                 patch_document: patch_document.into(),
@@ -968,7 +955,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
@@ -1058,7 +1045,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) twin: serde_json::Value,
             pub(crate) traceparent: Option<String>,
@@ -1159,7 +1146,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) patch_document: Vec<serde_json::Value>,
             pub(crate) traceparent: Option<String>,
@@ -1250,7 +1237,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
@@ -1338,7 +1325,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
             pub(crate) traceparent: Option<String>,
@@ -1429,7 +1416,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
             pub(crate) relationship: serde_json::Value,
@@ -1530,7 +1517,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
             pub(crate) patch_document: Vec<serde_json::Value>,
@@ -1626,7 +1613,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
             pub(crate) traceparent: Option<String>,
@@ -1720,7 +1707,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
@@ -1813,7 +1800,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
@@ -1900,7 +1887,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) telemetry: serde_json::Value,
             pub(crate) message_id: String,
@@ -1992,7 +1979,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) component_path: String,
             pub(crate) telemetry: serde_json::Value,
@@ -2090,7 +2077,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) component_path: String,
             pub(crate) traceparent: Option<String>,
@@ -2186,7 +2173,7 @@ pub mod digital_twins {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) component_path: String,
             pub(crate) patch_document: Vec<serde_json::Value>,
@@ -2262,12 +2249,9 @@ pub mod event_routes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 traceparent: None,
                 tracestate: None,
                 max_items_per_page: None,
@@ -2275,7 +2259,7 @@ pub mod event_routes {
         }
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
                 tracestate: None,
@@ -2283,7 +2267,7 @@ pub mod event_routes {
         }
         pub fn add(&self, id: impl Into<String>) -> add::Builder {
             add::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
                 tracestate: None,
@@ -2292,7 +2276,7 @@ pub mod event_routes {
         }
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 traceparent: None,
                 tracestate: None,
@@ -2325,7 +2309,7 @@ pub mod event_routes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
             pub(crate) max_items_per_page: Option<i64>,
@@ -2417,7 +2401,7 @@ pub mod event_routes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
@@ -2502,7 +2486,7 @@ pub mod event_routes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
@@ -2592,7 +2576,7 @@ pub mod event_routes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,

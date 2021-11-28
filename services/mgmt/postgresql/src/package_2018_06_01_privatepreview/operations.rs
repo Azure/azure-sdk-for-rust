@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn private_endpoint_connections(&self) -> private_endpoint_connections::Client {
         private_endpoint_connections::Client(self.clone())
     }
@@ -104,9 +100,6 @@ pub mod private_endpoint_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -115,7 +108,7 @@ pub mod private_endpoint_connections {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 server_name: server_name.into(),
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
@@ -131,7 +124,7 @@ pub mod private_endpoint_connections {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 server_name: server_name.into(),
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
@@ -148,7 +141,7 @@ pub mod private_endpoint_connections {
             parameters: impl Into<models::TagsObject>,
         ) -> update_tags::Builder {
             update_tags::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 server_name: server_name.into(),
@@ -164,7 +157,7 @@ pub mod private_endpoint_connections {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 server_name: server_name.into(),
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
@@ -178,7 +171,7 @@ pub mod private_endpoint_connections {
             subscription_id: impl Into<String>,
         ) -> list_by_server::Builder {
             list_by_server::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 server_name: server_name.into(),
                 subscription_id: subscription_id.into(),
@@ -211,7 +204,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) server_name: String,
             pub(crate) private_endpoint_connection_name: String,
@@ -288,7 +281,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) server_name: String,
             pub(crate) private_endpoint_connection_name: String,
@@ -363,7 +356,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) server_name: String,
@@ -443,7 +436,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) server_name: String,
             pub(crate) private_endpoint_connection_name: String,
@@ -512,7 +505,7 @@ pub mod private_endpoint_connections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) server_name: String,
             pub(crate) subscription_id: String,
@@ -570,9 +563,6 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -580,7 +570,7 @@ pub mod private_link_resources {
             subscription_id: impl Into<String>,
         ) -> list_by_server::Builder {
             list_by_server::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 server_name: server_name.into(),
                 subscription_id: subscription_id.into(),
@@ -594,7 +584,7 @@ pub mod private_link_resources {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 server_name: server_name.into(),
                 group_name: group_name.into(),
@@ -628,7 +618,7 @@ pub mod private_link_resources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) server_name: String,
             pub(crate) subscription_id: String,
@@ -707,7 +697,7 @@ pub mod private_link_resources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) server_name: String,
             pub(crate) group_name: String,

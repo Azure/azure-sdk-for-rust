@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn cognitive_services_accounts(&self) -> cognitive_services_accounts::Client {
         cognitive_services_accounts::Client(self.clone())
     }
@@ -105,9 +101,6 @@ pub mod cognitive_services_accounts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -115,7 +108,7 @@ pub mod cognitive_services_accounts {
             subscription_id: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 subscription_id: subscription_id.into(),
@@ -129,7 +122,7 @@ pub mod cognitive_services_accounts {
             subscription_id: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 parameters: parameters.into(),
@@ -144,7 +137,7 @@ pub mod cognitive_services_accounts {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 body: body.into(),
@@ -158,7 +151,7 @@ pub mod cognitive_services_accounts {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 subscription_id: subscription_id.into(),
@@ -170,14 +163,14 @@ pub mod cognitive_services_accounts {
             subscription_id: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -188,7 +181,7 @@ pub mod cognitive_services_accounts {
             subscription_id: impl Into<String>,
         ) -> list_keys::Builder {
             list_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 subscription_id: subscription_id.into(),
@@ -202,7 +195,7 @@ pub mod cognitive_services_accounts {
             subscription_id: impl Into<String>,
         ) -> regenerate_key::Builder {
             regenerate_key::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 body: body.into(),
@@ -216,7 +209,7 @@ pub mod cognitive_services_accounts {
             subscription_id: impl Into<String>,
         ) -> list_skus::Builder {
             list_skus::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 subscription_id: subscription_id.into(),
@@ -249,7 +242,7 @@ pub mod cognitive_services_accounts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,
@@ -331,7 +324,7 @@ pub mod cognitive_services_accounts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) parameters: models::CognitiveServicesAccountCreateParameters,
@@ -416,7 +409,7 @@ pub mod cognitive_services_accounts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) body: models::CognitiveServicesAccountUpdateParameters,
@@ -500,7 +493,7 @@ pub mod cognitive_services_accounts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,
@@ -573,7 +566,7 @@ pub mod cognitive_services_accounts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
@@ -650,7 +643,7 @@ pub mod cognitive_services_accounts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -725,7 +718,7 @@ pub mod cognitive_services_accounts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,
@@ -805,7 +798,7 @@ pub mod cognitive_services_accounts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) body: models::RegenerateKeyParameters,
@@ -886,7 +879,7 @@ pub mod cognitive_services_accounts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,

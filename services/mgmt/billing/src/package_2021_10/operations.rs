@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn operations(&self) -> operations::Client {
         operations::Client(self.clone())
     }
@@ -117,21 +113,18 @@ pub mod payment_method_owned_by_user {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, payment_method_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 payment_method_name: payment_method_name.into(),
             }
         }
         pub fn delete(&self, payment_method_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 payment_method_name: payment_method_name.into(),
             }
         }
@@ -162,7 +155,7 @@ pub mod payment_method_owned_by_user {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PaymentMethodsListResult, Error>> {
@@ -230,7 +223,7 @@ pub mod payment_method_owned_by_user {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) payment_method_name: String,
         }
         impl Builder {
@@ -308,7 +301,7 @@ pub mod payment_method_owned_by_user {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) payment_method_name: String,
         }
         impl Builder {
@@ -356,12 +349,9 @@ pub mod payment_methods {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_billing_account(&self, billing_account_name: impl Into<String>) -> list_by_billing_account::Builder {
             list_by_billing_account::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
             }
         }
@@ -371,7 +361,7 @@ pub mod payment_methods {
             billing_profile_name: impl Into<String>,
         ) -> list_by_billing_profile::Builder {
             list_by_billing_profile::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
             }
@@ -383,7 +373,7 @@ pub mod payment_methods {
             payment_method_name: impl Into<String>,
         ) -> get_by_billing_profile::Builder {
             get_by_billing_profile::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
                 payment_method_name: payment_method_name.into(),
@@ -416,7 +406,7 @@ pub mod payment_methods {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
         }
         impl Builder {
@@ -489,7 +479,7 @@ pub mod payment_methods {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
         }
@@ -566,7 +556,7 @@ pub mod payment_methods {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) payment_method_name: String,
@@ -622,12 +612,9 @@ pub mod payment_method_at_billing_account {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, billing_account_name: impl Into<String>, payment_method_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 payment_method_name: payment_method_name.into(),
             }
@@ -659,7 +646,7 @@ pub mod payment_method_at_billing_account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) payment_method_name: String,
         }
@@ -713,9 +700,6 @@ pub mod payment_method_at_billing_profile {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn remove(
             &self,
             billing_account_name: impl Into<String>,
@@ -723,7 +707,7 @@ pub mod payment_method_at_billing_profile {
             payment_method_name: impl Into<String>,
         ) -> remove::Builder {
             remove::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
                 payment_method_name: payment_method_name.into(),
@@ -766,7 +750,7 @@ pub mod payment_method_at_billing_profile {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) payment_method_name: String,
@@ -825,11 +809,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -858,7 +839,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {

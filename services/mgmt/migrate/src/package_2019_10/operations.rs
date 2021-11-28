@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn assessed_machines(&self) -> assessed_machines::Client {
         assessed_machines::Client(self.clone())
     }
@@ -212,18 +208,15 @@ pub mod projects {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
             }
@@ -235,7 +228,7 @@ pub mod projects {
             project_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -248,7 +241,7 @@ pub mod projects {
             project_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -262,7 +255,7 @@ pub mod projects {
             project_name: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -276,7 +269,7 @@ pub mod projects {
             project_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -290,7 +283,7 @@ pub mod projects {
             assessment_options_name: impl Into<String>,
         ) -> assessment_options::Builder {
             assessment_options::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -304,7 +297,7 @@ pub mod projects {
             project_name: impl Into<String>,
         ) -> assessment_options_list::Builder {
             assessment_options_list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -337,7 +330,7 @@ pub mod projects {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -410,7 +403,7 @@ pub mod projects {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -485,7 +478,7 @@ pub mod projects {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -567,7 +560,7 @@ pub mod projects {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -660,7 +653,7 @@ pub mod projects {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -752,7 +745,7 @@ pub mod projects {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -825,7 +818,7 @@ pub mod projects {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -904,7 +897,7 @@ pub mod projects {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -962,9 +955,6 @@ pub mod machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -972,7 +962,7 @@ pub mod machines {
             project_name: impl Into<String>,
         ) -> list_by_project::Builder {
             list_by_project::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -986,7 +976,7 @@ pub mod machines {
             machine_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1020,7 +1010,7 @@ pub mod machines {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -1097,7 +1087,7 @@ pub mod machines {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -1155,9 +1145,6 @@ pub mod groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1165,7 +1152,7 @@ pub mod groups {
             project_name: impl Into<String>,
         ) -> list_by_project::Builder {
             list_by_project::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1179,7 +1166,7 @@ pub mod groups {
             group_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1194,7 +1181,7 @@ pub mod groups {
             group_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1210,7 +1197,7 @@ pub mod groups {
             group_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1225,7 +1212,7 @@ pub mod groups {
             group_name: impl Into<String>,
         ) -> update_machines::Builder {
             update_machines::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1260,7 +1247,7 @@ pub mod groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -1337,7 +1324,7 @@ pub mod groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -1421,7 +1408,7 @@ pub mod groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -1521,7 +1508,7 @@ pub mod groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -1596,7 +1583,7 @@ pub mod groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -1664,9 +1651,6 @@ pub mod assessments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1675,7 +1659,7 @@ pub mod assessments {
             group_name: impl Into<String>,
         ) -> list_by_group::Builder {
             list_by_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1689,7 +1673,7 @@ pub mod assessments {
             project_name: impl Into<String>,
         ) -> list_by_project::Builder {
             list_by_project::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1704,7 +1688,7 @@ pub mod assessments {
             assessment_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1721,7 +1705,7 @@ pub mod assessments {
             assessment_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1739,7 +1723,7 @@ pub mod assessments {
             assessment_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1756,7 +1740,7 @@ pub mod assessments {
             assessment_name: impl Into<String>,
         ) -> get_report_download_url::Builder {
             get_report_download_url::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -1791,7 +1775,7 @@ pub mod assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -1870,7 +1854,7 @@ pub mod assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -1947,7 +1931,7 @@ pub mod assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -2033,7 +2017,7 @@ pub mod assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -2135,7 +2119,7 @@ pub mod assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -2212,7 +2196,7 @@ pub mod assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -2265,9 +2249,6 @@ pub mod assessed_machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_assessment(
             &self,
             subscription_id: impl Into<String>,
@@ -2277,7 +2258,7 @@ pub mod assessed_machines {
             assessment_name: impl Into<String>,
         ) -> list_by_assessment::Builder {
             list_by_assessment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -2295,7 +2276,7 @@ pub mod assessed_machines {
             assessed_machine_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -2331,7 +2312,7 @@ pub mod assessed_machines {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -2404,7 +2385,7 @@ pub mod assessed_machines {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -2457,9 +2438,6 @@ pub mod hyper_v_collectors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -2467,7 +2445,7 @@ pub mod hyper_v_collectors {
             project_name: impl Into<String>,
         ) -> list_by_project::Builder {
             list_by_project::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -2481,7 +2459,7 @@ pub mod hyper_v_collectors {
             hyper_v_collector_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -2496,7 +2474,7 @@ pub mod hyper_v_collectors {
             hyper_v_collector_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -2512,7 +2490,7 @@ pub mod hyper_v_collectors {
             hyper_v_collector_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -2546,7 +2524,7 @@ pub mod hyper_v_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -2623,7 +2601,7 @@ pub mod hyper_v_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -2707,7 +2685,7 @@ pub mod hyper_v_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -2807,7 +2785,7 @@ pub mod hyper_v_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -2861,9 +2839,6 @@ pub mod server_collectors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -2871,7 +2846,7 @@ pub mod server_collectors {
             project_name: impl Into<String>,
         ) -> list_by_project::Builder {
             list_by_project::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -2885,7 +2860,7 @@ pub mod server_collectors {
             server_collector_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -2900,7 +2875,7 @@ pub mod server_collectors {
             server_collector_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -2916,7 +2891,7 @@ pub mod server_collectors {
             server_collector_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -2950,7 +2925,7 @@ pub mod server_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -3027,7 +3002,7 @@ pub mod server_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -3111,7 +3086,7 @@ pub mod server_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -3211,7 +3186,7 @@ pub mod server_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -3265,9 +3240,6 @@ pub mod v_mware_collectors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -3275,7 +3247,7 @@ pub mod v_mware_collectors {
             project_name: impl Into<String>,
         ) -> list_by_project::Builder {
             list_by_project::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -3289,7 +3261,7 @@ pub mod v_mware_collectors {
             vm_ware_collector_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -3304,7 +3276,7 @@ pub mod v_mware_collectors {
             vm_ware_collector_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -3320,7 +3292,7 @@ pub mod v_mware_collectors {
             vm_ware_collector_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -3354,7 +3326,7 @@ pub mod v_mware_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -3431,7 +3403,7 @@ pub mod v_mware_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -3515,7 +3487,7 @@ pub mod v_mware_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -3615,7 +3587,7 @@ pub mod v_mware_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -3669,9 +3641,6 @@ pub mod import_collectors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -3679,7 +3648,7 @@ pub mod import_collectors {
             project_name: impl Into<String>,
         ) -> list_by_project::Builder {
             list_by_project::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -3693,7 +3662,7 @@ pub mod import_collectors {
             import_collector_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -3708,7 +3677,7 @@ pub mod import_collectors {
             import_collector_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -3724,7 +3693,7 @@ pub mod import_collectors {
             import_collector_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -3758,7 +3727,7 @@ pub mod import_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -3835,7 +3804,7 @@ pub mod import_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -3919,7 +3888,7 @@ pub mod import_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -4019,7 +3988,7 @@ pub mod import_collectors {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -4073,9 +4042,6 @@ pub mod private_endpoint_connection {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -4083,7 +4049,7 @@ pub mod private_endpoint_connection {
             project_name: impl Into<String>,
         ) -> list_by_project::Builder {
             list_by_project::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -4097,7 +4063,7 @@ pub mod private_endpoint_connection {
             private_endpoint_connection_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -4112,7 +4078,7 @@ pub mod private_endpoint_connection {
             private_endpoint_connection_name: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -4128,7 +4094,7 @@ pub mod private_endpoint_connection {
             private_endpoint_connection_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -4162,7 +4128,7 @@ pub mod private_endpoint_connection {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -4235,7 +4201,7 @@ pub mod private_endpoint_connection {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -4312,7 +4278,7 @@ pub mod private_endpoint_connection {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -4408,7 +4374,7 @@ pub mod private_endpoint_connection {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -4455,9 +4421,6 @@ pub mod private_link_resource {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4466,7 +4429,7 @@ pub mod private_link_resource {
             private_link_resource_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -4480,7 +4443,7 @@ pub mod private_link_resource {
             project_name: impl Into<String>,
         ) -> list_by_project::Builder {
             list_by_project::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 project_name: project_name.into(),
@@ -4513,7 +4476,7 @@ pub mod private_link_resource {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -4592,7 +4555,7 @@ pub mod private_link_resource {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
@@ -4650,11 +4613,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -4680,7 +4640,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationResultList, Error>> {

@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn hsm_security_domain(&self) -> hsm_security_domain::Client {
         hsm_security_domain::Client(self.clone())
     }
@@ -284,38 +280,38 @@ pub enum Error {
 impl Client {
     pub fn get_certificates(&self) -> get_certificates::Builder {
         get_certificates::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             maxresults: None,
             include_pending: None,
         }
     }
     pub fn delete_certificate(&self, certificate_name: impl Into<String>) -> delete_certificate::Builder {
         delete_certificate::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
     pub fn get_certificate_contacts(&self) -> get_certificate_contacts::Builder {
-        get_certificate_contacts::Builder { client: self.base_clone() }
+        get_certificate_contacts::Builder { client: self.clone() }
     }
     pub fn set_certificate_contacts(&self, contacts: impl Into<models::Contacts>) -> set_certificate_contacts::Builder {
         set_certificate_contacts::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             contacts: contacts.into(),
         }
     }
     pub fn delete_certificate_contacts(&self) -> delete_certificate_contacts::Builder {
-        delete_certificate_contacts::Builder { client: self.base_clone() }
+        delete_certificate_contacts::Builder { client: self.clone() }
     }
     pub fn get_certificate_issuers(&self) -> get_certificate_issuers::Builder {
         get_certificate_issuers::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             maxresults: None,
         }
     }
     pub fn get_certificate_issuer(&self, issuer_name: impl Into<String>) -> get_certificate_issuer::Builder {
         get_certificate_issuer::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             issuer_name: issuer_name.into(),
         }
     }
@@ -325,7 +321,7 @@ impl Client {
         parameter: impl Into<models::CertificateIssuerSetParameters>,
     ) -> set_certificate_issuer::Builder {
         set_certificate_issuer::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             issuer_name: issuer_name.into(),
             parameter: parameter.into(),
         }
@@ -336,14 +332,14 @@ impl Client {
         parameter: impl Into<models::CertificateIssuerUpdateParameters>,
     ) -> update_certificate_issuer::Builder {
         update_certificate_issuer::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             issuer_name: issuer_name.into(),
             parameter: parameter.into(),
         }
     }
     pub fn delete_certificate_issuer(&self, issuer_name: impl Into<String>) -> delete_certificate_issuer::Builder {
         delete_certificate_issuer::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             issuer_name: issuer_name.into(),
         }
     }
@@ -353,7 +349,7 @@ impl Client {
         parameters: impl Into<models::CertificateCreateParameters>,
     ) -> create_certificate::Builder {
         create_certificate::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
             parameters: parameters.into(),
         }
@@ -364,21 +360,21 @@ impl Client {
         parameters: impl Into<models::CertificateImportParameters>,
     ) -> import_certificate::Builder {
         import_certificate::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
             parameters: parameters.into(),
         }
     }
     pub fn get_certificate_versions(&self, certificate_name: impl Into<String>) -> get_certificate_versions::Builder {
         get_certificate_versions::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
             maxresults: None,
         }
     }
     pub fn get_certificate_policy(&self, certificate_name: impl Into<String>) -> get_certificate_policy::Builder {
         get_certificate_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
@@ -388,14 +384,14 @@ impl Client {
         certificate_policy: impl Into<models::CertificatePolicy>,
     ) -> update_certificate_policy::Builder {
         update_certificate_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
             certificate_policy: certificate_policy.into(),
         }
     }
     pub fn get_certificate(&self, certificate_name: impl Into<String>, certificate_version: impl Into<String>) -> get_certificate::Builder {
         get_certificate::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
             certificate_version: certificate_version.into(),
         }
@@ -407,7 +403,7 @@ impl Client {
         parameters: impl Into<models::CertificateUpdateParameters>,
     ) -> update_certificate::Builder {
         update_certificate::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
             certificate_version: certificate_version.into(),
             parameters: parameters.into(),
@@ -415,7 +411,7 @@ impl Client {
     }
     pub fn get_certificate_operation(&self, certificate_name: impl Into<String>) -> get_certificate_operation::Builder {
         get_certificate_operation::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
@@ -425,14 +421,14 @@ impl Client {
         certificate_operation: impl Into<models::CertificateOperationUpdateParameter>,
     ) -> update_certificate_operation::Builder {
         update_certificate_operation::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
             certificate_operation: certificate_operation.into(),
         }
     }
     pub fn delete_certificate_operation(&self, certificate_name: impl Into<String>) -> delete_certificate_operation::Builder {
         delete_certificate_operation::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
@@ -442,71 +438,71 @@ impl Client {
         parameters: impl Into<models::CertificateMergeParameters>,
     ) -> merge_certificate::Builder {
         merge_certificate::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
             parameters: parameters.into(),
         }
     }
     pub fn backup_certificate(&self, certificate_name: impl Into<String>) -> backup_certificate::Builder {
         backup_certificate::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
     pub fn restore_certificate(&self, parameters: impl Into<models::CertificateRestoreParameters>) -> restore_certificate::Builder {
         restore_certificate::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             parameters: parameters.into(),
         }
     }
     pub fn get_deleted_certificates(&self) -> get_deleted_certificates::Builder {
         get_deleted_certificates::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             maxresults: None,
             include_pending: None,
         }
     }
     pub fn get_deleted_certificate(&self, certificate_name: impl Into<String>) -> get_deleted_certificate::Builder {
         get_deleted_certificate::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
     pub fn purge_deleted_certificate(&self, certificate_name: impl Into<String>) -> purge_deleted_certificate::Builder {
         purge_deleted_certificate::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
     pub fn recover_deleted_certificate(&self, certificate_name: impl Into<String>) -> recover_deleted_certificate::Builder {
         recover_deleted_certificate::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
     pub fn create_key(&self, key_name: impl Into<String>, parameters: impl Into<models::KeyCreateParameters>) -> create_key::Builder {
         create_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             parameters: parameters.into(),
         }
     }
     pub fn import_key(&self, key_name: impl Into<String>, parameters: impl Into<models::KeyImportParameters>) -> import_key::Builder {
         import_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             parameters: parameters.into(),
         }
     }
     pub fn delete_key(&self, key_name: impl Into<String>) -> delete_key::Builder {
         delete_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
         }
     }
     pub fn get_key(&self, key_name: impl Into<String>, key_version: impl Into<String>) -> get_key::Builder {
         get_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
         }
@@ -518,7 +514,7 @@ impl Client {
         parameters: impl Into<models::KeyUpdateParameters>,
     ) -> update_key::Builder {
         update_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
             parameters: parameters.into(),
@@ -526,26 +522,26 @@ impl Client {
     }
     pub fn get_key_versions(&self, key_name: impl Into<String>) -> get_key_versions::Builder {
         get_key_versions::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             maxresults: None,
         }
     }
     pub fn get_keys(&self) -> get_keys::Builder {
         get_keys::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             maxresults: None,
         }
     }
     pub fn backup_key(&self, key_name: impl Into<String>) -> backup_key::Builder {
         backup_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
         }
     }
     pub fn restore_key(&self, parameters: impl Into<models::KeyRestoreParameters>) -> restore_key::Builder {
         restore_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             parameters: parameters.into(),
         }
     }
@@ -556,7 +552,7 @@ impl Client {
         parameters: impl Into<models::KeyOperationsParameters>,
     ) -> encrypt::Builder {
         encrypt::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
             parameters: parameters.into(),
@@ -569,7 +565,7 @@ impl Client {
         parameters: impl Into<models::KeyOperationsParameters>,
     ) -> decrypt::Builder {
         decrypt::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
             parameters: parameters.into(),
@@ -582,7 +578,7 @@ impl Client {
         parameters: impl Into<models::KeySignParameters>,
     ) -> sign::Builder {
         sign::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
             parameters: parameters.into(),
@@ -595,7 +591,7 @@ impl Client {
         parameters: impl Into<models::KeyVerifyParameters>,
     ) -> verify::Builder {
         verify::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
             parameters: parameters.into(),
@@ -608,7 +604,7 @@ impl Client {
         parameters: impl Into<models::KeyOperationsParameters>,
     ) -> wrap_key::Builder {
         wrap_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
             parameters: parameters.into(),
@@ -621,7 +617,7 @@ impl Client {
         parameters: impl Into<models::KeyOperationsParameters>,
     ) -> unwrap_key::Builder {
         unwrap_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
             parameters: parameters.into(),
@@ -629,44 +625,44 @@ impl Client {
     }
     pub fn get_deleted_keys(&self) -> get_deleted_keys::Builder {
         get_deleted_keys::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             maxresults: None,
         }
     }
     pub fn get_deleted_key(&self, key_name: impl Into<String>) -> get_deleted_key::Builder {
         get_deleted_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
         }
     }
     pub fn purge_deleted_key(&self, key_name: impl Into<String>) -> purge_deleted_key::Builder {
         purge_deleted_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
         }
     }
     pub fn recover_deleted_key(&self, key_name: impl Into<String>) -> recover_deleted_key::Builder {
         recover_deleted_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
         }
     }
     pub fn set_secret(&self, secret_name: impl Into<String>, parameters: impl Into<models::SecretSetParameters>) -> set_secret::Builder {
         set_secret::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             secret_name: secret_name.into(),
             parameters: parameters.into(),
         }
     }
     pub fn delete_secret(&self, secret_name: impl Into<String>) -> delete_secret::Builder {
         delete_secret::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             secret_name: secret_name.into(),
         }
     }
     pub fn get_secret(&self, secret_name: impl Into<String>, secret_version: impl Into<String>) -> get_secret::Builder {
         get_secret::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             secret_name: secret_name.into(),
             secret_version: secret_version.into(),
         }
@@ -678,7 +674,7 @@ impl Client {
         parameters: impl Into<models::SecretUpdateParameters>,
     ) -> update_secret::Builder {
         update_secret::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             secret_name: secret_name.into(),
             secret_version: secret_version.into(),
             parameters: parameters.into(),
@@ -686,98 +682,98 @@ impl Client {
     }
     pub fn get_secrets(&self) -> get_secrets::Builder {
         get_secrets::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             maxresults: None,
         }
     }
     pub fn get_secret_versions(&self, secret_name: impl Into<String>) -> get_secret_versions::Builder {
         get_secret_versions::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             secret_name: secret_name.into(),
             maxresults: None,
         }
     }
     pub fn get_deleted_secrets(&self) -> get_deleted_secrets::Builder {
         get_deleted_secrets::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             maxresults: None,
         }
     }
     pub fn get_deleted_secret(&self, secret_name: impl Into<String>) -> get_deleted_secret::Builder {
         get_deleted_secret::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             secret_name: secret_name.into(),
         }
     }
     pub fn purge_deleted_secret(&self, secret_name: impl Into<String>) -> purge_deleted_secret::Builder {
         purge_deleted_secret::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             secret_name: secret_name.into(),
         }
     }
     pub fn recover_deleted_secret(&self, secret_name: impl Into<String>) -> recover_deleted_secret::Builder {
         recover_deleted_secret::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             secret_name: secret_name.into(),
         }
     }
     pub fn backup_secret(&self, secret_name: impl Into<String>) -> backup_secret::Builder {
         backup_secret::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             secret_name: secret_name.into(),
         }
     }
     pub fn restore_secret(&self, parameters: impl Into<models::SecretRestoreParameters>) -> restore_secret::Builder {
         restore_secret::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             parameters: parameters.into(),
         }
     }
     pub fn get_storage_accounts(&self) -> get_storage_accounts::Builder {
         get_storage_accounts::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             maxresults: None,
         }
     }
     pub fn get_deleted_storage_accounts(&self) -> get_deleted_storage_accounts::Builder {
         get_deleted_storage_accounts::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             maxresults: None,
         }
     }
     pub fn get_deleted_storage_account(&self, storage_account_name: impl Into<String>) -> get_deleted_storage_account::Builder {
         get_deleted_storage_account::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
     }
     pub fn purge_deleted_storage_account(&self, storage_account_name: impl Into<String>) -> purge_deleted_storage_account::Builder {
         purge_deleted_storage_account::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
     }
     pub fn recover_deleted_storage_account(&self, storage_account_name: impl Into<String>) -> recover_deleted_storage_account::Builder {
         recover_deleted_storage_account::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
     }
     pub fn backup_storage_account(&self, storage_account_name: impl Into<String>) -> backup_storage_account::Builder {
         backup_storage_account::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
     }
     pub fn restore_storage_account(&self, parameters: impl Into<models::StorageRestoreParameters>) -> restore_storage_account::Builder {
         restore_storage_account::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             parameters: parameters.into(),
         }
     }
     pub fn get_storage_account(&self, storage_account_name: impl Into<String>) -> get_storage_account::Builder {
         get_storage_account::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
     }
@@ -787,7 +783,7 @@ impl Client {
         parameters: impl Into<models::StorageAccountCreateParameters>,
     ) -> set_storage_account::Builder {
         set_storage_account::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
             parameters: parameters.into(),
         }
@@ -798,14 +794,14 @@ impl Client {
         parameters: impl Into<models::StorageAccountUpdateParameters>,
     ) -> update_storage_account::Builder {
         update_storage_account::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
             parameters: parameters.into(),
         }
     }
     pub fn delete_storage_account(&self, storage_account_name: impl Into<String>) -> delete_storage_account::Builder {
         delete_storage_account::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
     }
@@ -815,21 +811,21 @@ impl Client {
         parameters: impl Into<models::StorageAccountRegenerteKeyParameters>,
     ) -> regenerate_storage_account_key::Builder {
         regenerate_storage_account_key::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
             parameters: parameters.into(),
         }
     }
     pub fn get_sas_definitions(&self, storage_account_name: impl Into<String>) -> get_sas_definitions::Builder {
         get_sas_definitions::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
             maxresults: None,
         }
     }
     pub fn get_deleted_sas_definitions(&self, storage_account_name: impl Into<String>) -> get_deleted_sas_definitions::Builder {
         get_deleted_sas_definitions::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
             maxresults: None,
         }
@@ -840,7 +836,7 @@ impl Client {
         sas_definition_name: impl Into<String>,
     ) -> get_deleted_sas_definition::Builder {
         get_deleted_sas_definition::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
         }
@@ -851,7 +847,7 @@ impl Client {
         sas_definition_name: impl Into<String>,
     ) -> recover_deleted_sas_definition::Builder {
         recover_deleted_sas_definition::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
         }
@@ -862,7 +858,7 @@ impl Client {
         sas_definition_name: impl Into<String>,
     ) -> get_sas_definition::Builder {
         get_sas_definition::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
         }
@@ -874,7 +870,7 @@ impl Client {
         parameters: impl Into<models::SasDefinitionCreateParameters>,
     ) -> set_sas_definition::Builder {
         set_sas_definition::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
             parameters: parameters.into(),
@@ -887,7 +883,7 @@ impl Client {
         parameters: impl Into<models::SasDefinitionUpdateParameters>,
     ) -> update_sas_definition::Builder {
         update_sas_definition::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
             parameters: parameters.into(),
@@ -899,38 +895,38 @@ impl Client {
         sas_definition_name: impl Into<String>,
     ) -> delete_sas_definition::Builder {
         delete_sas_definition::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             storage_account_name: storage_account_name.into(),
             sas_definition_name: sas_definition_name.into(),
         }
     }
     pub fn full_backup(&self) -> full_backup::Builder {
         full_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             azure_storage_blob_container_uri: None,
         }
     }
     pub fn full_backup_status(&self, job_id: impl Into<String>) -> full_backup_status::Builder {
         full_backup_status::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             job_id: job_id.into(),
         }
     }
     pub fn full_restore_operation(&self) -> full_restore_operation::Builder {
         full_restore_operation::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             restore_blob_details: None,
         }
     }
     pub fn restore_status(&self, job_id: impl Into<String>) -> restore_status::Builder {
         restore_status::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             job_id: job_id.into(),
         }
     }
     pub fn selective_key_restore_operation(&self, key_name: impl Into<String>) -> selective_key_restore_operation::Builder {
         selective_key_restore_operation::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             key_name: key_name.into(),
             restore_blob_details: None,
         }
@@ -962,7 +958,7 @@ pub mod get_certificates {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
         pub(crate) include_pending: Option<bool>,
     }
@@ -1046,7 +1042,7 @@ pub mod delete_certificate {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
     impl Builder {
@@ -1115,7 +1111,7 @@ pub mod get_certificate_contacts {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Contacts, Error>> {
@@ -1183,7 +1179,7 @@ pub mod set_certificate_contacts {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) contacts: models::Contacts,
     }
     impl Builder {
@@ -1253,7 +1249,7 @@ pub mod delete_certificate_contacts {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Contacts, Error>> {
@@ -1321,7 +1317,7 @@ pub mod get_certificate_issuers {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
@@ -1397,7 +1393,7 @@ pub mod get_certificate_issuer {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) issuer_name: String,
     }
     impl Builder {
@@ -1466,7 +1462,7 @@ pub mod set_certificate_issuer {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) issuer_name: String,
         pub(crate) parameter: models::CertificateIssuerSetParameters,
     }
@@ -1537,7 +1533,7 @@ pub mod update_certificate_issuer {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) issuer_name: String,
         pub(crate) parameter: models::CertificateIssuerUpdateParameters,
     }
@@ -1608,7 +1604,7 @@ pub mod delete_certificate_issuer {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) issuer_name: String,
     }
     impl Builder {
@@ -1677,7 +1673,7 @@ pub mod create_certificate {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) parameters: models::CertificateCreateParameters,
     }
@@ -1748,7 +1744,7 @@ pub mod import_certificate {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) parameters: models::CertificateImportParameters,
     }
@@ -1819,7 +1815,7 @@ pub mod get_certificate_versions {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) maxresults: Option<i32>,
     }
@@ -1896,7 +1892,7 @@ pub mod get_certificate_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
     impl Builder {
@@ -1965,7 +1961,7 @@ pub mod update_certificate_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) certificate_policy: models::CertificatePolicy,
     }
@@ -2036,7 +2032,7 @@ pub mod get_certificate {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) certificate_version: String,
     }
@@ -2111,7 +2107,7 @@ pub mod update_certificate {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) certificate_version: String,
         pub(crate) parameters: models::CertificateUpdateParameters,
@@ -2188,7 +2184,7 @@ pub mod get_certificate_operation {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
     impl Builder {
@@ -2257,7 +2253,7 @@ pub mod update_certificate_operation {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) certificate_operation: models::CertificateOperationUpdateParameter,
     }
@@ -2328,7 +2324,7 @@ pub mod delete_certificate_operation {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
     impl Builder {
@@ -2397,7 +2393,7 @@ pub mod merge_certificate {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
         pub(crate) parameters: models::CertificateMergeParameters,
     }
@@ -2468,7 +2464,7 @@ pub mod backup_certificate {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
     impl Builder {
@@ -2538,7 +2534,7 @@ pub mod restore_certificate {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) parameters: models::CertificateRestoreParameters,
     }
     impl Builder {
@@ -2608,7 +2604,7 @@ pub mod get_deleted_certificates {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
         pub(crate) include_pending: Option<bool>,
     }
@@ -2692,7 +2688,7 @@ pub mod get_deleted_certificate {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
     impl Builder {
@@ -2761,7 +2757,7 @@ pub mod purge_deleted_certificate {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
     impl Builder {
@@ -2825,7 +2821,7 @@ pub mod recover_deleted_certificate {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) certificate_name: String,
     }
     impl Builder {
@@ -2895,7 +2891,7 @@ pub mod create_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) parameters: models::KeyCreateParameters,
     }
@@ -2966,7 +2962,7 @@ pub mod import_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) parameters: models::KeyImportParameters,
     }
@@ -3037,7 +3033,7 @@ pub mod delete_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
     impl Builder {
@@ -3106,7 +3102,7 @@ pub mod get_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
     }
@@ -3176,7 +3172,7 @@ pub mod update_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyUpdateParameters,
@@ -3248,7 +3244,7 @@ pub mod get_key_versions {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) maxresults: Option<i32>,
     }
@@ -3325,7 +3321,7 @@ pub mod get_keys {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
@@ -3401,7 +3397,7 @@ pub mod backup_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
     impl Builder {
@@ -3471,7 +3467,7 @@ pub mod restore_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) parameters: models::KeyRestoreParameters,
     }
     impl Builder {
@@ -3541,7 +3537,7 @@ pub mod encrypt {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyOperationsParameters,
@@ -3613,7 +3609,7 @@ pub mod decrypt {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyOperationsParameters,
@@ -3685,7 +3681,7 @@ pub mod sign {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeySignParameters,
@@ -3757,7 +3753,7 @@ pub mod verify {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyVerifyParameters,
@@ -3829,7 +3825,7 @@ pub mod wrap_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyOperationsParameters,
@@ -3901,7 +3897,7 @@ pub mod unwrap_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) key_version: String,
         pub(crate) parameters: models::KeyOperationsParameters,
@@ -3973,7 +3969,7 @@ pub mod get_deleted_keys {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
@@ -4049,7 +4045,7 @@ pub mod get_deleted_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
     impl Builder {
@@ -4118,7 +4114,7 @@ pub mod purge_deleted_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
     impl Builder {
@@ -4182,7 +4178,7 @@ pub mod recover_deleted_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
     }
     impl Builder {
@@ -4252,7 +4248,7 @@ pub mod set_secret {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) secret_name: String,
         pub(crate) parameters: models::SecretSetParameters,
     }
@@ -4323,7 +4319,7 @@ pub mod delete_secret {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) secret_name: String,
     }
     impl Builder {
@@ -4392,7 +4388,7 @@ pub mod get_secret {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) secret_name: String,
         pub(crate) secret_version: String,
     }
@@ -4462,7 +4458,7 @@ pub mod update_secret {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) secret_name: String,
         pub(crate) secret_version: String,
         pub(crate) parameters: models::SecretUpdateParameters,
@@ -4534,7 +4530,7 @@ pub mod get_secrets {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
@@ -4610,7 +4606,7 @@ pub mod get_secret_versions {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) secret_name: String,
         pub(crate) maxresults: Option<i32>,
     }
@@ -4687,7 +4683,7 @@ pub mod get_deleted_secrets {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
@@ -4763,7 +4759,7 @@ pub mod get_deleted_secret {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) secret_name: String,
     }
     impl Builder {
@@ -4832,7 +4828,7 @@ pub mod purge_deleted_secret {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) secret_name: String,
     }
     impl Builder {
@@ -4896,7 +4892,7 @@ pub mod recover_deleted_secret {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) secret_name: String,
     }
     impl Builder {
@@ -4966,7 +4962,7 @@ pub mod backup_secret {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) secret_name: String,
     }
     impl Builder {
@@ -5036,7 +5032,7 @@ pub mod restore_secret {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) parameters: models::SecretRestoreParameters,
     }
     impl Builder {
@@ -5106,7 +5102,7 @@ pub mod get_storage_accounts {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
@@ -5182,7 +5178,7 @@ pub mod get_deleted_storage_accounts {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
@@ -5258,7 +5254,7 @@ pub mod get_deleted_storage_account {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
     impl Builder {
@@ -5327,7 +5323,7 @@ pub mod purge_deleted_storage_account {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
     impl Builder {
@@ -5391,7 +5387,7 @@ pub mod recover_deleted_storage_account {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
     impl Builder {
@@ -5461,7 +5457,7 @@ pub mod backup_storage_account {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
     impl Builder {
@@ -5531,7 +5527,7 @@ pub mod restore_storage_account {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) parameters: models::StorageRestoreParameters,
     }
     impl Builder {
@@ -5601,7 +5597,7 @@ pub mod get_storage_account {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
     impl Builder {
@@ -5670,7 +5666,7 @@ pub mod set_storage_account {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) parameters: models::StorageAccountCreateParameters,
     }
@@ -5741,7 +5737,7 @@ pub mod update_storage_account {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) parameters: models::StorageAccountUpdateParameters,
     }
@@ -5812,7 +5808,7 @@ pub mod delete_storage_account {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
     }
     impl Builder {
@@ -5881,7 +5877,7 @@ pub mod regenerate_storage_account_key {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) parameters: models::StorageAccountRegenerteKeyParameters,
     }
@@ -5952,7 +5948,7 @@ pub mod get_sas_definitions {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) maxresults: Option<i32>,
     }
@@ -6029,7 +6025,7 @@ pub mod get_deleted_sas_definitions {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) maxresults: Option<i32>,
     }
@@ -6108,7 +6104,7 @@ pub mod get_deleted_sas_definition {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
     }
@@ -6183,7 +6179,7 @@ pub mod recover_deleted_sas_definition {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
     }
@@ -6259,7 +6255,7 @@ pub mod get_sas_definition {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
     }
@@ -6334,7 +6330,7 @@ pub mod set_sas_definition {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
         pub(crate) parameters: models::SasDefinitionCreateParameters,
@@ -6411,7 +6407,7 @@ pub mod update_sas_definition {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
         pub(crate) parameters: models::SasDefinitionUpdateParameters,
@@ -6488,7 +6484,7 @@ pub mod delete_sas_definition {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) storage_account_name: String,
         pub(crate) sas_definition_name: String,
     }
@@ -6563,7 +6559,7 @@ pub mod full_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) azure_storage_blob_container_uri: Option<models::SasTokenParameter>,
     }
     impl Builder {
@@ -6641,7 +6637,7 @@ pub mod full_backup_status {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) job_id: String,
     }
     impl Builder {
@@ -6710,7 +6706,7 @@ pub mod full_restore_operation {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) restore_blob_details: Option<models::RestoreOperationParameters>,
     }
     impl Builder {
@@ -6788,7 +6784,7 @@ pub mod restore_status {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) job_id: String,
     }
     impl Builder {
@@ -6857,7 +6853,7 @@ pub mod selective_key_restore_operation {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) key_name: String,
         pub(crate) restore_blob_details: Option<models::SelectiveKeyRestoreOperationParameters>,
     }
@@ -6914,12 +6910,9 @@ pub mod role_definitions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, scope: impl Into<String>, role_definition_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 role_definition_name: role_definition_name.into(),
             }
@@ -6931,7 +6924,7 @@ pub mod role_definitions {
             parameters: impl Into<models::RoleDefinitionCreateParameters>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 role_definition_name: role_definition_name.into(),
                 parameters: parameters.into(),
@@ -6939,14 +6932,14 @@ pub mod role_definitions {
         }
         pub fn delete(&self, scope: impl Into<String>, role_definition_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 role_definition_name: role_definition_name.into(),
             }
         }
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
             }
@@ -6978,7 +6971,7 @@ pub mod role_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_definition_name: String,
         }
@@ -7053,7 +7046,7 @@ pub mod role_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_definition_name: String,
             pub(crate) parameters: models::RoleDefinitionCreateParameters,
@@ -7130,7 +7123,7 @@ pub mod role_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_definition_name: String,
         }
@@ -7205,7 +7198,7 @@ pub mod role_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
         }
@@ -7265,12 +7258,9 @@ pub mod role_assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
             }
@@ -7282,7 +7272,7 @@ pub mod role_assignments {
             parameters: impl Into<models::RoleAssignmentCreateParameters>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
                 parameters: parameters.into(),
@@ -7290,14 +7280,14 @@ pub mod role_assignments {
         }
         pub fn delete(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
             }
         }
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
             }
@@ -7329,7 +7319,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
         }
@@ -7404,7 +7394,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
             pub(crate) parameters: models::RoleAssignmentCreateParameters,
@@ -7481,7 +7471,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
         }
@@ -7556,7 +7546,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
         }
@@ -7616,29 +7606,26 @@ pub mod hsm_security_domain {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn download_pending(&self) -> download_pending::Builder {
-            download_pending::Builder { client: self.base_clone() }
+            download_pending::Builder { client: self.0.clone() }
         }
         pub fn download(&self, certificate_info_object: impl Into<models::CertificateInfoObject>) -> download::Builder {
             download::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 certificate_info_object: certificate_info_object.into(),
             }
         }
         pub fn transfer_key(&self) -> transfer_key::Builder {
-            transfer_key::Builder { client: self.base_clone() }
+            transfer_key::Builder { client: self.0.clone() }
         }
         pub fn upload(&self, security_domain: impl Into<models::SecurityDomainObject>) -> upload::Builder {
             upload::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 security_domain: security_domain.into(),
             }
         }
         pub fn upload_pending(&self) -> upload_pending::Builder {
-            upload_pending::Builder { client: self.base_clone() }
+            upload_pending::Builder { client: self.0.clone() }
         }
     }
     pub mod download_pending {
@@ -7667,7 +7654,7 @@ pub mod hsm_security_domain {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -7736,7 +7723,7 @@ pub mod hsm_security_domain {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) certificate_info_object: models::CertificateInfoObject,
         }
         impl Builder {
@@ -7806,7 +7793,7 @@ pub mod hsm_security_domain {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TransferKey, Error>> {
@@ -7879,7 +7866,7 @@ pub mod hsm_security_domain {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) security_domain: models::SecurityDomainObject,
         }
         impl Builder {
@@ -7949,7 +7936,7 @@ pub mod hsm_security_domain {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(

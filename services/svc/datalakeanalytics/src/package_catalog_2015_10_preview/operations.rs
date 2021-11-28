@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn catalog(&self) -> catalog::Client {
         catalog::Client(self.clone())
     }
@@ -147,12 +143,9 @@ pub mod catalog {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_secret(&self, database_name: impl Into<String>, secret_name: impl Into<String>) -> get_secret::Builder {
             get_secret::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 secret_name: secret_name.into(),
             }
@@ -164,7 +157,7 @@ pub mod catalog {
             parameters: impl Into<models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters>,
         ) -> create_secret::Builder {
             create_secret::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 secret_name: secret_name.into(),
                 parameters: parameters.into(),
@@ -177,7 +170,7 @@ pub mod catalog {
             parameters: impl Into<models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters>,
         ) -> update_secret::Builder {
             update_secret::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 secret_name: secret_name.into(),
                 parameters: parameters.into(),
@@ -185,14 +178,14 @@ pub mod catalog {
         }
         pub fn delete_secret(&self, database_name: impl Into<String>, secret_name: impl Into<String>) -> delete_secret::Builder {
             delete_secret::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 secret_name: secret_name.into(),
             }
         }
         pub fn delete_all_secrets(&self, database_name: impl Into<String>) -> delete_all_secrets::Builder {
             delete_all_secrets::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
             }
         }
@@ -202,14 +195,14 @@ pub mod catalog {
             external_data_source_name: impl Into<String>,
         ) -> get_external_data_source::Builder {
             get_external_data_source::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 external_data_source_name: external_data_source_name.into(),
             }
         }
         pub fn list_external_data_sources(&self, database_name: impl Into<String>) -> list_external_data_sources::Builder {
             list_external_data_sources::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
                 top: None,
@@ -222,14 +215,14 @@ pub mod catalog {
         }
         pub fn get_credential(&self, database_name: impl Into<String>, credential_name: impl Into<String>) -> get_credential::Builder {
             get_credential::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 credential_name: credential_name.into(),
             }
         }
         pub fn list_credentials(&self, database_name: impl Into<String>) -> list_credentials::Builder {
             list_credentials::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
                 top: None,
@@ -247,7 +240,7 @@ pub mod catalog {
             procedure_name: impl Into<String>,
         ) -> get_procedure::Builder {
             get_procedure::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 procedure_name: procedure_name.into(),
@@ -255,7 +248,7 @@ pub mod catalog {
         }
         pub fn list_procedures(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_procedures::Builder {
             list_procedures::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 filter: None,
@@ -274,7 +267,7 @@ pub mod catalog {
             table_name: impl Into<String>,
         ) -> get_table::Builder {
             get_table::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 table_name: table_name.into(),
@@ -282,7 +275,7 @@ pub mod catalog {
         }
         pub fn list_tables(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_tables::Builder {
             list_tables::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 filter: None,
@@ -301,7 +294,7 @@ pub mod catalog {
             table_type_name: impl Into<String>,
         ) -> get_table_type::Builder {
             get_table_type::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 table_type_name: table_type_name.into(),
@@ -309,7 +302,7 @@ pub mod catalog {
         }
         pub fn list_table_types(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_table_types::Builder {
             list_table_types::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 filter: None,
@@ -328,7 +321,7 @@ pub mod catalog {
             view_name: impl Into<String>,
         ) -> get_view::Builder {
             get_view::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 view_name: view_name.into(),
@@ -336,7 +329,7 @@ pub mod catalog {
         }
         pub fn list_views(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_views::Builder {
             list_views::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 filter: None,
@@ -356,7 +349,7 @@ pub mod catalog {
             statistics_name: impl Into<String>,
         ) -> get_table_statistic::Builder {
             get_table_statistic::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 table_name: table_name.into(),
@@ -370,7 +363,7 @@ pub mod catalog {
             table_name: impl Into<String>,
         ) -> list_table_statistics::Builder {
             list_table_statistics::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 table_name: table_name.into(),
@@ -391,7 +384,7 @@ pub mod catalog {
             partition_name: impl Into<String>,
         ) -> get_table_partition::Builder {
             get_table_partition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 table_name: table_name.into(),
@@ -405,7 +398,7 @@ pub mod catalog {
             table_name: impl Into<String>,
         ) -> list_table_partitions::Builder {
             list_table_partitions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 table_name: table_name.into(),
@@ -420,7 +413,7 @@ pub mod catalog {
         }
         pub fn list_types(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_types::Builder {
             list_types::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 filter: None,
@@ -439,7 +432,7 @@ pub mod catalog {
             table_valued_function_name: impl Into<String>,
         ) -> get_table_valued_function::Builder {
             get_table_valued_function::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 table_valued_function_name: table_valued_function_name.into(),
@@ -451,7 +444,7 @@ pub mod catalog {
             schema_name: impl Into<String>,
         ) -> list_table_valued_functions::Builder {
             list_table_valued_functions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
                 filter: None,
@@ -465,14 +458,14 @@ pub mod catalog {
         }
         pub fn get_assembly(&self, database_name: impl Into<String>, assembly_name: impl Into<String>) -> get_assembly::Builder {
             get_assembly::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 assembly_name: assembly_name.into(),
             }
         }
         pub fn list_assemblies(&self, database_name: impl Into<String>) -> list_assemblies::Builder {
             list_assemblies::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
                 top: None,
@@ -485,14 +478,14 @@ pub mod catalog {
         }
         pub fn get_schema(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> get_schema::Builder {
             get_schema::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
             }
         }
         pub fn list_schemas(&self, database_name: impl Into<String>) -> list_schemas::Builder {
             list_schemas::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
                 top: None,
@@ -505,13 +498,13 @@ pub mod catalog {
         }
         pub fn get_database(&self, database_name: impl Into<String>) -> get_database::Builder {
             get_database::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
             }
         }
         pub fn list_databases(&self) -> list_databases::Builder {
             list_databases::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter: None,
                 top: None,
                 skip: None,
@@ -545,7 +538,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) secret_name: String,
         }
@@ -615,7 +608,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) secret_name: String,
             pub(crate) parameters: models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters,
@@ -687,7 +680,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) secret_name: String,
             pub(crate) parameters: models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters,
@@ -759,7 +752,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) secret_name: String,
         }
@@ -824,7 +817,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
         }
         impl Builder {
@@ -883,7 +876,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) external_data_source_name: String,
         }
@@ -953,7 +946,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
@@ -1079,7 +1072,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) credential_name: String,
         }
@@ -1149,7 +1142,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
@@ -1273,7 +1266,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) procedure_name: String,
@@ -1345,7 +1338,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) filter: Option<String>,
@@ -1471,7 +1464,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_name: String,
@@ -1543,7 +1536,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) filter: Option<String>,
@@ -1669,7 +1662,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_type_name: String,
@@ -1741,7 +1734,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) filter: Option<String>,
@@ -1867,7 +1860,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) view_name: String,
@@ -1939,7 +1932,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) filter: Option<String>,
@@ -2065,7 +2058,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_name: String,
@@ -2139,7 +2132,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_name: String,
@@ -2267,7 +2260,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_name: String,
@@ -2341,7 +2334,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_name: String,
@@ -2469,7 +2462,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) filter: Option<String>,
@@ -2595,7 +2588,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_valued_function_name: String,
@@ -2667,7 +2660,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) filter: Option<String>,
@@ -2795,7 +2788,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) assembly_name: String,
         }
@@ -2865,7 +2858,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
@@ -2989,7 +2982,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
         }
@@ -3059,7 +3052,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
@@ -3179,7 +3172,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
         }
         impl Builder {
@@ -3243,7 +3236,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
             pub(crate) skip: Option<i32>,

@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -96,17 +92,17 @@ pub enum Error {
 }
 impl Client {
     pub fn get_role_definitions(&self) -> get_role_definitions::Builder {
-        get_role_definitions::Builder { client: self.base_clone() }
+        get_role_definitions::Builder { client: self.clone() }
     }
     pub fn get_role_definition_by_id(&self, role_id: impl Into<String>) -> get_role_definition_by_id::Builder {
         get_role_definition_by_id::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             role_id: role_id.into(),
         }
     }
     pub fn get_role_assignments(&self) -> get_role_assignments::Builder {
         get_role_assignments::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             role_id: None,
             principal_id: None,
             x_ms_continuation: None,
@@ -117,24 +113,24 @@ impl Client {
         create_role_assignment_options: impl Into<models::RoleAssignmentOptions>,
     ) -> create_role_assignment::Builder {
         create_role_assignment::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             create_role_assignment_options: create_role_assignment_options.into(),
         }
     }
     pub fn get_role_assignment_by_id(&self, role_assignment_id: impl Into<String>) -> get_role_assignment_by_id::Builder {
         get_role_assignment_by_id::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             role_assignment_id: role_assignment_id.into(),
         }
     }
     pub fn delete_role_assignment_by_id(&self, role_assignment_id: impl Into<String>) -> delete_role_assignment_by_id::Builder {
         delete_role_assignment_by_id::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             role_assignment_id: role_assignment_id.into(),
         }
     }
     pub fn get_caller_role_assignments(&self) -> get_caller_role_assignments::Builder {
-        get_caller_role_assignments::Builder { client: self.base_clone() }
+        get_caller_role_assignments::Builder { client: self.clone() }
     }
 }
 pub mod get_role_definitions {
@@ -163,7 +159,7 @@ pub mod get_role_definitions {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RolesListResponse, Error>> {
@@ -231,7 +227,7 @@ pub mod get_role_definition_by_id {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) role_id: String,
     }
     impl Builder {
@@ -300,7 +296,7 @@ pub mod get_role_assignments {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) role_id: Option<String>,
         pub(crate) principal_id: Option<String>,
         pub(crate) x_ms_continuation: Option<String>,
@@ -392,7 +388,7 @@ pub mod create_role_assignment {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) create_role_assignment_options: models::RoleAssignmentOptions,
     }
     impl Builder {
@@ -462,7 +458,7 @@ pub mod get_role_assignment_by_id {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) role_assignment_id: String,
     }
     impl Builder {
@@ -536,7 +532,7 @@ pub mod delete_role_assignment_by_id {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) role_assignment_id: String,
     }
     impl Builder {
@@ -601,7 +597,7 @@ pub mod get_caller_role_assignments {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Vec<String>, Error>> {

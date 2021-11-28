@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn operation(&self) -> operation::Client {
         operation::Client(self.clone())
     }
@@ -105,30 +101,27 @@ pub mod partner {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, partner_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 partner_id: partner_id.into(),
             }
         }
         pub fn create(&self, partner_id: impl Into<String>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 partner_id: partner_id.into(),
             }
         }
         pub fn update(&self, partner_id: impl Into<String>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 partner_id: partner_id.into(),
             }
         }
         pub fn delete(&self, partner_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 partner_id: partner_id.into(),
             }
         }
@@ -159,7 +152,7 @@ pub mod partner {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) partner_id: String,
         }
         impl Builder {
@@ -232,7 +225,7 @@ pub mod partner {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) partner_id: String,
         }
         impl Builder {
@@ -305,7 +298,7 @@ pub mod partner {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) partner_id: String,
         }
         impl Builder {
@@ -378,7 +371,7 @@ pub mod partner {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) partner_id: String,
         }
         impl Builder {
@@ -425,11 +418,8 @@ pub mod operation {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -458,7 +448,7 @@ pub mod operation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
@@ -505,11 +495,8 @@ pub mod partners {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.base_clone() }
+            get::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -538,7 +525,7 @@ pub mod partners {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PartnerResponse, Error>> {

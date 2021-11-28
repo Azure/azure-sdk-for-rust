@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn container_services(&self) -> container_services::Client {
         container_services::Client(self.clone())
     }
@@ -89,12 +85,9 @@ pub mod container_services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_orchestrators(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_orchestrators::Builder {
             list_orchestrators::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 location: location.into(),
                 resource_type: None,
@@ -124,7 +117,7 @@ pub mod container_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
             pub(crate) resource_type: Option<String>,

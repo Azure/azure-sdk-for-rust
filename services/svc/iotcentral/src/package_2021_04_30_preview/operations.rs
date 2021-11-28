@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn api_tokens(&self) -> api_tokens::Client {
         api_tokens::Client(self.clone())
     }
@@ -250,28 +246,25 @@ pub mod api_tokens {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, token_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 token_id: token_id.into(),
             }
         }
         pub fn create(&self, token_id: impl Into<String>, body: impl Into<models::ApiToken>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 token_id: token_id.into(),
                 body: body.into(),
             }
         }
         pub fn remove(&self, token_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 token_id: token_id.into(),
             }
         }
@@ -299,7 +292,7 @@ pub mod api_tokens {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApiTokenCollection, Error>> {
@@ -362,7 +355,7 @@ pub mod api_tokens {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) token_id: String,
         }
         impl Builder {
@@ -426,7 +419,7 @@ pub mod api_tokens {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) token_id: String,
             pub(crate) body: models::ApiToken,
         }
@@ -492,7 +485,7 @@ pub mod api_tokens {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) token_id: String,
         }
         impl Builder {
@@ -533,35 +526,32 @@ pub mod continuous_data_exports {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, export_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 export_id: export_id.into(),
             }
         }
         pub fn create(&self, export_id: impl Into<String>, body: impl Into<models::ContinuousDataExport>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 export_id: export_id.into(),
                 body: body.into(),
             }
         }
         pub fn update(&self, export_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 export_id: export_id.into(),
                 body: body.into(),
             }
         }
         pub fn remove(&self, export_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 export_id: export_id.into(),
             }
         }
@@ -589,7 +579,7 @@ pub mod continuous_data_exports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -654,7 +644,7 @@ pub mod continuous_data_exports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) export_id: String,
         }
         impl Builder {
@@ -718,7 +708,7 @@ pub mod continuous_data_exports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) export_id: String,
             pub(crate) body: models::ContinuousDataExport,
         }
@@ -784,7 +774,7 @@ pub mod continuous_data_exports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) export_id: String,
             pub(crate) body: serde_json::Value,
         }
@@ -850,7 +840,7 @@ pub mod continuous_data_exports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) export_id: String,
         }
         impl Builder {
@@ -891,11 +881,8 @@ pub mod device_groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -921,7 +908,7 @@ pub mod device_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceGroupCollection, Error>> {
@@ -966,47 +953,44 @@ pub mod device_templates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, device_template_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_template_id: device_template_id.into(),
             }
         }
         pub fn create(&self, device_template_id: impl Into<String>, body: impl Into<models::DeviceTemplate>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_template_id: device_template_id.into(),
                 body: body.into(),
             }
         }
         pub fn update(&self, device_template_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_template_id: device_template_id.into(),
                 body: body.into(),
             }
         }
         pub fn remove(&self, device_template_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_template_id: device_template_id.into(),
             }
         }
         pub fn list_devices(&self, device_template_id: impl Into<String>) -> list_devices::Builder {
             list_devices::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_template_id: device_template_id.into(),
             }
         }
         pub fn get_merged(&self, device_template_id: impl Into<String>) -> get_merged::Builder {
             get_merged::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_template_id: device_template_id.into(),
             }
         }
@@ -1034,7 +1018,7 @@ pub mod device_templates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceTemplateCollection, Error>> {
@@ -1097,7 +1081,7 @@ pub mod device_templates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
         }
         impl Builder {
@@ -1161,7 +1145,7 @@ pub mod device_templates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
             pub(crate) body: models::DeviceTemplate,
         }
@@ -1227,7 +1211,7 @@ pub mod device_templates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
             pub(crate) body: serde_json::Value,
         }
@@ -1293,7 +1277,7 @@ pub mod device_templates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
         }
         impl Builder {
@@ -1352,7 +1336,7 @@ pub mod device_templates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
         }
         impl Builder {
@@ -1416,7 +1400,7 @@ pub mod device_templates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_template_id: String,
         }
         impl Builder {
@@ -1462,41 +1446,38 @@ pub mod devices {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, device_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
         pub fn create(&self, device_id: impl Into<String>, body: impl Into<models::Device>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
             }
         }
         pub fn update(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
             }
         }
         pub fn remove(&self, device_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
         pub fn get_attestation(&self, device_id: impl Into<String>) -> get_attestation::Builder {
             get_attestation::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
@@ -1506,27 +1487,27 @@ pub mod devices {
             body: impl Into<models::Attestation>,
         ) -> create_attestation::Builder {
             create_attestation::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
             }
         }
         pub fn update_attestation(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update_attestation::Builder {
             update_attestation::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
             }
         }
         pub fn remove_attestation(&self, device_id: impl Into<String>) -> remove_attestation::Builder {
             remove_attestation::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
         pub fn get_cloud_properties(&self, device_id: impl Into<String>) -> get_cloud_properties::Builder {
             get_cloud_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
@@ -1536,7 +1517,7 @@ pub mod devices {
             body: impl Into<models::DeviceCloudProperties>,
         ) -> replace_cloud_properties::Builder {
             replace_cloud_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
             }
@@ -1547,14 +1528,14 @@ pub mod devices {
             body: impl Into<serde_json::Value>,
         ) -> update_cloud_properties::Builder {
             update_cloud_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
             }
         }
         pub fn get_command_history(&self, device_id: impl Into<String>, command_name: impl Into<String>) -> get_command_history::Builder {
             get_command_history::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 command_name: command_name.into(),
             }
@@ -1566,7 +1547,7 @@ pub mod devices {
             body: impl Into<models::DeviceCommand>,
         ) -> run_command::Builder {
             run_command::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 command_name: command_name.into(),
                 body: body.into(),
@@ -1574,7 +1555,7 @@ pub mod devices {
         }
         pub fn list_components(&self, device_id: impl Into<String>) -> list_components::Builder {
             list_components::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
@@ -1585,7 +1566,7 @@ pub mod devices {
             command_name: impl Into<String>,
         ) -> get_component_command_history::Builder {
             get_component_command_history::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
                 command_name: command_name.into(),
@@ -1599,7 +1580,7 @@ pub mod devices {
             body: impl Into<models::DeviceCommand>,
         ) -> run_component_command::Builder {
             run_component_command::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
                 command_name: command_name.into(),
@@ -1612,7 +1593,7 @@ pub mod devices {
             component_name: impl Into<String>,
         ) -> get_component_properties::Builder {
             get_component_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
             }
@@ -1624,7 +1605,7 @@ pub mod devices {
             body: impl Into<models::DeviceProperties>,
         ) -> replace_component_properties::Builder {
             replace_component_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
                 body: body.into(),
@@ -1637,7 +1618,7 @@ pub mod devices {
             body: impl Into<serde_json::Value>,
         ) -> update_component_properties::Builder {
             update_component_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
                 body: body.into(),
@@ -1650,7 +1631,7 @@ pub mod devices {
             telemetry_name: impl Into<String>,
         ) -> get_component_telemetry_value::Builder {
             get_component_telemetry_value::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
                 telemetry_name: telemetry_name.into(),
@@ -1658,13 +1639,13 @@ pub mod devices {
         }
         pub fn get_credentials(&self, device_id: impl Into<String>) -> get_credentials::Builder {
             get_credentials::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
         pub fn list_modules(&self, device_id: impl Into<String>) -> list_modules::Builder {
             list_modules::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
@@ -1675,7 +1656,7 @@ pub mod devices {
             command_name: impl Into<String>,
         ) -> get_module_command_history::Builder {
             get_module_command_history::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
                 command_name: command_name.into(),
@@ -1689,7 +1670,7 @@ pub mod devices {
             body: impl Into<models::DeviceCommand>,
         ) -> run_module_command::Builder {
             run_module_command::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
                 command_name: command_name.into(),
@@ -1702,7 +1683,7 @@ pub mod devices {
             module_name: impl Into<String>,
         ) -> list_module_components::Builder {
             list_module_components::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
             }
@@ -1715,7 +1696,7 @@ pub mod devices {
             command_name: impl Into<String>,
         ) -> get_module_component_command_history::Builder {
             get_module_component_command_history::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
                 component_name: component_name.into(),
@@ -1731,7 +1712,7 @@ pub mod devices {
             body: impl Into<models::DeviceCommand>,
         ) -> run_module_component_command::Builder {
             run_module_component_command::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
                 component_name: component_name.into(),
@@ -1746,7 +1727,7 @@ pub mod devices {
             component_name: impl Into<String>,
         ) -> get_module_component_properties::Builder {
             get_module_component_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
                 component_name: component_name.into(),
@@ -1760,7 +1741,7 @@ pub mod devices {
             body: impl Into<models::DeviceProperties>,
         ) -> replace_module_component_properties::Builder {
             replace_module_component_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
                 component_name: component_name.into(),
@@ -1775,7 +1756,7 @@ pub mod devices {
             body: impl Into<serde_json::Value>,
         ) -> update_module_component_properties::Builder {
             update_module_component_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
                 component_name: component_name.into(),
@@ -1790,7 +1771,7 @@ pub mod devices {
             telemetry_name: impl Into<String>,
         ) -> get_module_component_telemetry_value::Builder {
             get_module_component_telemetry_value::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
                 component_name: component_name.into(),
@@ -1803,7 +1784,7 @@ pub mod devices {
             module_name: impl Into<String>,
         ) -> get_module_properties::Builder {
             get_module_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
             }
@@ -1815,7 +1796,7 @@ pub mod devices {
             body: impl Into<models::DeviceProperties>,
         ) -> replace_module_properties::Builder {
             replace_module_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
                 body: body.into(),
@@ -1828,7 +1809,7 @@ pub mod devices {
             body: impl Into<serde_json::Value>,
         ) -> update_module_properties::Builder {
             update_module_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
                 body: body.into(),
@@ -1841,7 +1822,7 @@ pub mod devices {
             telemetry_name: impl Into<String>,
         ) -> get_module_telemetry_value::Builder {
             get_module_telemetry_value::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 module_name: module_name.into(),
                 telemetry_name: telemetry_name.into(),
@@ -1849,7 +1830,7 @@ pub mod devices {
         }
         pub fn get_properties(&self, device_id: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
@@ -1859,21 +1840,21 @@ pub mod devices {
             body: impl Into<models::DeviceProperties>,
         ) -> replace_properties::Builder {
             replace_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
             }
         }
         pub fn update_properties(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update_properties::Builder {
             update_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
             }
         }
         pub fn get_telemetry_value(&self, device_id: impl Into<String>, telemetry_name: impl Into<String>) -> get_telemetry_value::Builder {
             get_telemetry_value::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 device_id: device_id.into(),
                 telemetry_name: telemetry_name.into(),
             }
@@ -1902,7 +1883,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceCollection, Error>> {
@@ -1965,7 +1946,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
         impl Builder {
@@ -2029,7 +2010,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: models::Device,
         }
@@ -2095,7 +2076,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: serde_json::Value,
         }
@@ -2161,7 +2142,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
         impl Builder {
@@ -2220,7 +2201,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
         impl Builder {
@@ -2284,7 +2265,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: models::Attestation,
         }
@@ -2350,7 +2331,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: serde_json::Value,
         }
@@ -2416,7 +2397,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
         impl Builder {
@@ -2475,7 +2456,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
         impl Builder {
@@ -2539,7 +2520,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: models::DeviceCloudProperties,
         }
@@ -2605,7 +2586,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: serde_json::Value,
         }
@@ -2671,7 +2652,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) command_name: String,
         }
@@ -2741,7 +2722,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) command_name: String,
             pub(crate) body: models::DeviceCommand,
@@ -2813,7 +2794,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
         impl Builder {
@@ -2877,7 +2858,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) command_name: String,
@@ -2949,7 +2930,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) command_name: String,
@@ -3023,7 +3004,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
         }
@@ -3093,7 +3074,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) body: models::DeviceProperties,
@@ -3165,7 +3146,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) body: serde_json::Value,
@@ -3237,7 +3218,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) telemetry_name: String,
@@ -3309,7 +3290,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
         impl Builder {
@@ -3373,7 +3354,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
         impl Builder {
@@ -3437,7 +3418,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) command_name: String,
@@ -3509,7 +3490,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) command_name: String,
@@ -3583,7 +3564,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
         }
@@ -3653,7 +3634,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) component_name: String,
@@ -3727,7 +3708,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) component_name: String,
@@ -3803,7 +3784,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) component_name: String,
@@ -3875,7 +3856,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) component_name: String,
@@ -3949,7 +3930,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) component_name: String,
@@ -4023,7 +4004,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) component_name: String,
@@ -4097,7 +4078,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
         }
@@ -4167,7 +4148,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) body: models::DeviceProperties,
@@ -4239,7 +4220,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) body: serde_json::Value,
@@ -4311,7 +4292,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) module_name: String,
             pub(crate) telemetry_name: String,
@@ -4383,7 +4364,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
         }
         impl Builder {
@@ -4447,7 +4428,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: models::DeviceProperties,
         }
@@ -4513,7 +4494,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: serde_json::Value,
         }
@@ -4579,7 +4560,7 @@ pub mod devices {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) telemetry_name: String,
         }
@@ -4631,47 +4612,44 @@ pub mod jobs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, job_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_id: job_id.into(),
             }
         }
         pub fn create(&self, job_id: impl Into<String>, body: impl Into<models::Job>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_id: job_id.into(),
                 body: body.into(),
             }
         }
         pub fn get_devices(&self, job_id: impl Into<String>) -> get_devices::Builder {
             get_devices::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_id: job_id.into(),
             }
         }
         pub fn rerun(&self, job_id: impl Into<String>, rerun_id: impl Into<String>) -> rerun::Builder {
             rerun::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_id: job_id.into(),
                 rerun_id: rerun_id.into(),
             }
         }
         pub fn resume(&self, job_id: impl Into<String>) -> resume::Builder {
             resume::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_id: job_id.into(),
             }
         }
         pub fn stop(&self, job_id: impl Into<String>) -> stop::Builder {
             stop::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_id: job_id.into(),
             }
         }
@@ -4699,7 +4677,7 @@ pub mod jobs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobCollection, Error>> {
@@ -4762,7 +4740,7 @@ pub mod jobs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
         }
         impl Builder {
@@ -4826,7 +4804,7 @@ pub mod jobs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) body: models::Job,
         }
@@ -4892,7 +4870,7 @@ pub mod jobs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
         }
         impl Builder {
@@ -4956,7 +4934,7 @@ pub mod jobs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
             pub(crate) rerun_id: String,
         }
@@ -5021,7 +4999,7 @@ pub mod jobs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
         }
         impl Builder {
@@ -5081,7 +5059,7 @@ pub mod jobs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_id: String,
         }
         impl Builder {
@@ -5123,15 +5101,12 @@ pub mod roles {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, role_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 role_id: role_id.into(),
             }
         }
@@ -5159,7 +5134,7 @@ pub mod roles {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RoleCollection, Error>> {
@@ -5222,7 +5197,7 @@ pub mod roles {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) role_id: String,
         }
         impl Builder {
@@ -5268,35 +5243,32 @@ pub mod users {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, user_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 user_id: user_id.into(),
             }
         }
         pub fn create(&self, user_id: impl Into<String>, body: impl Into<models::User>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 user_id: user_id.into(),
                 body: body.into(),
             }
         }
         pub fn update(&self, user_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 user_id: user_id.into(),
                 body: body.into(),
             }
         }
         pub fn remove(&self, user_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 user_id: user_id.into(),
             }
         }
@@ -5324,7 +5296,7 @@ pub mod users {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::UserCollection, Error>> {
@@ -5387,7 +5359,7 @@ pub mod users {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) user_id: String,
         }
         impl Builder {
@@ -5451,7 +5423,7 @@ pub mod users {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) user_id: String,
             pub(crate) body: models::User,
         }
@@ -5517,7 +5489,7 @@ pub mod users {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) user_id: String,
             pub(crate) body: serde_json::Value,
         }
@@ -5583,7 +5555,7 @@ pub mod users {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) user_id: String,
         }
         impl Builder {

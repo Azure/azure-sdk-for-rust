@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -85,7 +81,7 @@ pub enum Error {
 impl Client {
     pub fn get_token(&self, account_id: impl Into<String>) -> get_token::Builder {
         get_token::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             account_id: account_id.into(),
             x_mrc_cv: None,
         }
@@ -120,7 +116,7 @@ pub mod get_token {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) account_id: String,
         pub(crate) x_mrc_cv: Option<String>,
     }

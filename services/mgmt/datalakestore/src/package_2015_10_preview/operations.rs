@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn account(&self) -> account::Client {
         account::Client(self.clone())
     }
@@ -109,9 +105,6 @@ pub mod account {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_firewall_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -120,7 +113,7 @@ pub mod account {
             subscription_id: impl Into<String>,
         ) -> get_firewall_rule::Builder {
             get_firewall_rule::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 firewall_rule_name: firewall_rule_name.into(),
@@ -135,7 +128,7 @@ pub mod account {
             subscription_id: impl Into<String>,
         ) -> delete_firewall_rule::Builder {
             delete_firewall_rule::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 firewall_rule_name: firewall_rule_name.into(),
@@ -149,7 +142,7 @@ pub mod account {
             subscription_id: impl Into<String>,
         ) -> list_firewall_rules::Builder {
             list_firewall_rules::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 subscription_id: subscription_id.into(),
@@ -164,7 +157,7 @@ pub mod account {
             subscription_id: impl Into<String>,
         ) -> create_or_update_firewall_rule::Builder {
             create_or_update_firewall_rule::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 name: name.into(),
@@ -180,7 +173,7 @@ pub mod account {
             subscription_id: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 parameters: parameters.into(),
@@ -195,7 +188,7 @@ pub mod account {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 parameters: parameters.into(),
@@ -209,7 +202,7 @@ pub mod account {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 subscription_id: subscription_id.into(),
@@ -222,7 +215,7 @@ pub mod account {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 subscription_id: subscription_id.into(),
@@ -235,7 +228,7 @@ pub mod account {
             subscription_id: impl Into<String>,
         ) -> enable_key_vault::Builder {
             enable_key_vault::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
                 subscription_id: subscription_id.into(),
@@ -247,7 +240,7 @@ pub mod account {
             subscription_id: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -263,7 +256,7 @@ pub mod account {
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
                 top: None,
@@ -300,7 +293,7 @@ pub mod account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) firewall_rule_name: String,
@@ -379,7 +372,7 @@ pub mod account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) firewall_rule_name: String,
@@ -449,7 +442,7 @@ pub mod account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,
@@ -523,7 +516,7 @@ pub mod account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) name: String,
@@ -604,7 +597,7 @@ pub mod account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) parameters: models::DataLakeStoreAccount,
@@ -689,7 +682,7 @@ pub mod account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) parameters: models::DataLakeStoreAccount,
@@ -769,7 +762,7 @@ pub mod account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,
@@ -849,7 +842,7 @@ pub mod account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,
@@ -919,7 +912,7 @@ pub mod account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,
@@ -987,7 +980,7 @@ pub mod account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
@@ -1131,7 +1124,7 @@ pub mod account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,

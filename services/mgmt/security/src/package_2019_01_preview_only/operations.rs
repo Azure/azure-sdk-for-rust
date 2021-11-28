@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn alerts_suppression_rules(&self) -> alerts_suppression_rules::Client {
         alerts_suppression_rules::Client(self.clone())
     }
@@ -145,19 +141,16 @@ pub mod regulatory_compliance_standards {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
             }
         }
         pub fn get(&self, subscription_id: impl Into<String>, regulatory_compliance_standard_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 regulatory_compliance_standard_name: regulatory_compliance_standard_name.into(),
             }
@@ -189,7 +182,7 @@ pub mod regulatory_compliance_standards {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
@@ -272,7 +265,7 @@ pub mod regulatory_compliance_standards {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) regulatory_compliance_standard_name: String,
         }
@@ -328,12 +321,9 @@ pub mod regulatory_compliance_controls {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>, regulatory_compliance_standard_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 regulatory_compliance_standard_name: regulatory_compliance_standard_name.into(),
                 filter: None,
@@ -346,7 +336,7 @@ pub mod regulatory_compliance_controls {
             regulatory_compliance_control_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 regulatory_compliance_standard_name: regulatory_compliance_standard_name.into(),
                 regulatory_compliance_control_name: regulatory_compliance_control_name.into(),
@@ -379,7 +369,7 @@ pub mod regulatory_compliance_controls {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) regulatory_compliance_standard_name: String,
             pub(crate) filter: Option<String>,
@@ -464,7 +454,7 @@ pub mod regulatory_compliance_controls {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) regulatory_compliance_standard_name: String,
             pub(crate) regulatory_compliance_control_name: String,
@@ -522,9 +512,6 @@ pub mod regulatory_compliance_assessments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -532,7 +519,7 @@ pub mod regulatory_compliance_assessments {
             regulatory_compliance_control_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 regulatory_compliance_standard_name: regulatory_compliance_standard_name.into(),
                 regulatory_compliance_control_name: regulatory_compliance_control_name.into(),
@@ -547,7 +534,7 @@ pub mod regulatory_compliance_assessments {
             regulatory_compliance_assessment_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 regulatory_compliance_standard_name: regulatory_compliance_standard_name.into(),
                 regulatory_compliance_control_name: regulatory_compliance_control_name.into(),
@@ -581,7 +568,7 @@ pub mod regulatory_compliance_assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) regulatory_compliance_standard_name: String,
             pub(crate) regulatory_compliance_control_name: String,
@@ -662,7 +649,7 @@ pub mod regulatory_compliance_assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) regulatory_compliance_standard_name: String,
             pub(crate) regulatory_compliance_control_name: String,
@@ -715,19 +702,16 @@ pub mod alerts_suppression_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 alert_type: None,
             }
         }
         pub fn get(&self, subscription_id: impl Into<String>, alerts_suppression_rule_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 alerts_suppression_rule_name: alerts_suppression_rule_name.into(),
             }
@@ -739,7 +723,7 @@ pub mod alerts_suppression_rules {
             alerts_suppression_rule: impl Into<models::AlertsSuppressionRule>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 alerts_suppression_rule_name: alerts_suppression_rule_name.into(),
                 alerts_suppression_rule: alerts_suppression_rule.into(),
@@ -747,7 +731,7 @@ pub mod alerts_suppression_rules {
         }
         pub fn delete(&self, subscription_id: impl Into<String>, alerts_suppression_rule_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 alerts_suppression_rule_name: alerts_suppression_rule_name.into(),
             }
@@ -779,7 +763,7 @@ pub mod alerts_suppression_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) alert_type: Option<String>,
         }
@@ -862,7 +846,7 @@ pub mod alerts_suppression_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) alerts_suppression_rule_name: String,
         }
@@ -937,7 +921,7 @@ pub mod alerts_suppression_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) alerts_suppression_rule_name: String,
             pub(crate) alerts_suppression_rule: models::AlertsSuppressionRule,
@@ -1014,7 +998,7 @@ pub mod alerts_suppression_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) alerts_suppression_rule_name: String,
         }
@@ -1063,15 +1047,12 @@ pub mod assessments_metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, assessment_metadata_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 assessment_metadata_name: assessment_metadata_name.into(),
             }
         }
@@ -1102,7 +1083,7 @@ pub mod assessments_metadata {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -1172,7 +1153,7 @@ pub mod assessments_metadata {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) assessment_metadata_name: String,
         }
         impl Builder {
@@ -1226,18 +1207,15 @@ pub mod assessments_metadata_subscription {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn get(&self, assessment_metadata_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 assessment_metadata_name: assessment_metadata_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -1249,7 +1227,7 @@ pub mod assessments_metadata_subscription {
             assessment_metadata: impl Into<models::SecurityAssessmentMetadata>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 assessment_metadata_name: assessment_metadata_name.into(),
                 subscription_id: subscription_id.into(),
                 assessment_metadata: assessment_metadata.into(),
@@ -1257,7 +1235,7 @@ pub mod assessments_metadata_subscription {
         }
         pub fn delete(&self, assessment_metadata_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 assessment_metadata_name: assessment_metadata_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -1289,7 +1267,7 @@ pub mod assessments_metadata_subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -1364,7 +1342,7 @@ pub mod assessments_metadata_subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) assessment_metadata_name: String,
             pub(crate) subscription_id: String,
         }
@@ -1441,7 +1419,7 @@ pub mod assessments_metadata_subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) assessment_metadata_name: String,
             pub(crate) subscription_id: String,
             pub(crate) assessment_metadata: models::SecurityAssessmentMetadata,
@@ -1520,7 +1498,7 @@ pub mod assessments_metadata_subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) assessment_metadata_name: String,
             pub(crate) subscription_id: String,
         }
@@ -1569,18 +1547,15 @@ pub mod assessments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
             }
         }
         pub fn get(&self, resource_id: impl Into<String>, assessment_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_id: resource_id.into(),
                 assessment_name: assessment_name.into(),
                 expand: None,
@@ -1593,7 +1568,7 @@ pub mod assessments {
             assessment: impl Into<models::SecurityAssessment>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_id: resource_id.into(),
                 assessment_name: assessment_name.into(),
                 assessment: assessment.into(),
@@ -1601,7 +1576,7 @@ pub mod assessments {
         }
         pub fn delete(&self, resource_id: impl Into<String>, assessment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_id: resource_id.into(),
                 assessment_name: assessment_name.into(),
             }
@@ -1633,7 +1608,7 @@ pub mod assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
         impl Builder {
@@ -1706,7 +1681,7 @@ pub mod assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) assessment_name: String,
             pub(crate) expand: Option<String>,
@@ -1794,7 +1769,7 @@ pub mod assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) assessment_name: String,
             pub(crate) assessment: models::SecurityAssessment,
@@ -1882,7 +1857,7 @@ pub mod assessments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) assessment_name: String,
         }

@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn get(&self) -> get::Client {
         get::Client(self.clone())
     }
@@ -110,11 +106,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -143,7 +136,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -190,12 +183,9 @@ pub mod get {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn tenant_opted_in(&self, tenant_id: impl Into<String>) -> tenant_opted_in::Builder {
             tenant_opted_in::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 tenant_id: tenant_id.into(),
             }
         }
@@ -226,7 +216,7 @@ pub mod get {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) tenant_id: String,
         }
         impl Builder {
@@ -278,14 +268,11 @@ pub mod post {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn enable_lockbox(&self) -> enable_lockbox::Builder {
-            enable_lockbox::Builder { client: self.base_clone() }
+            enable_lockbox::Builder { client: self.0.clone() }
         }
         pub fn disable_lockbox(&self) -> disable_lockbox::Builder {
-            disable_lockbox::Builder { client: self.base_clone() }
+            disable_lockbox::Builder { client: self.0.clone() }
         }
     }
     pub mod enable_lockbox {
@@ -314,7 +301,7 @@ pub mod post {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -378,7 +365,7 @@ pub mod post {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
@@ -421,12 +408,9 @@ pub mod requests {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, request_id: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 request_id: request_id.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -438,7 +422,7 @@ pub mod requests {
             request_id: impl Into<String>,
         ) -> update_status::Builder {
             update_status::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 approval: approval.into(),
                 subscription_id: subscription_id.into(),
                 request_id: request_id.into(),
@@ -446,7 +430,7 @@ pub mod requests {
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
             }
@@ -478,7 +462,7 @@ pub mod requests {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) request_id: String,
             pub(crate) subscription_id: String,
         }
@@ -553,7 +537,7 @@ pub mod requests {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) approval: models::Approval,
             pub(crate) subscription_id: String,
             pub(crate) request_id: String,
@@ -630,7 +614,7 @@ pub mod requests {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }

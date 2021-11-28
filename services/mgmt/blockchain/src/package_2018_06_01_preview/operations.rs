@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn blockchain_member_operation_results(&self) -> blockchain_member_operation_results::Client {
         blockchain_member_operation_results::Client(self.clone())
     }
@@ -144,9 +140,6 @@ pub mod blockchain_members {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -154,7 +147,7 @@ pub mod blockchain_members {
             resource_group_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -167,7 +160,7 @@ pub mod blockchain_members {
             resource_group_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -181,7 +174,7 @@ pub mod blockchain_members {
             resource_group_name: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -195,7 +188,7 @@ pub mod blockchain_members {
             resource_group_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -203,14 +196,14 @@ pub mod blockchain_members {
         }
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
             }
         }
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -221,7 +214,7 @@ pub mod blockchain_members {
             resource_group_name: impl Into<String>,
         ) -> list_consortium_members::Builder {
             list_consortium_members::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -234,7 +227,7 @@ pub mod blockchain_members {
             resource_group_name: impl Into<String>,
         ) -> list_api_keys::Builder {
             list_api_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -247,7 +240,7 @@ pub mod blockchain_members {
             resource_group_name: impl Into<String>,
         ) -> list_regenerate_api_keys::Builder {
             list_regenerate_api_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -278,7 +271,7 @@ pub mod blockchain_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -355,7 +348,7 @@ pub mod blockchain_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -443,7 +436,7 @@ pub mod blockchain_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -530,7 +523,7 @@ pub mod blockchain_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -598,7 +591,7 @@ pub mod blockchain_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -670,7 +663,7 @@ pub mod blockchain_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -740,7 +733,7 @@ pub mod blockchain_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -814,7 +807,7 @@ pub mod blockchain_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -887,7 +880,7 @@ pub mod blockchain_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -951,9 +944,6 @@ pub mod blockchain_member_operation_results {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             location_name: impl Into<String>,
@@ -961,7 +951,7 @@ pub mod blockchain_member_operation_results {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 location_name: location_name.into(),
                 operation_id: operation_id.into(),
                 subscription_id: subscription_id.into(),
@@ -996,7 +986,7 @@ pub mod blockchain_member_operation_results {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) location_name: String,
             pub(crate) operation_id: String,
             pub(crate) subscription_id: String,
@@ -1051,16 +1041,13 @@ pub mod locations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn check_name_availability(
             &self,
             location_name: impl Into<String>,
             subscription_id: impl Into<String>,
         ) -> check_name_availability::Builder {
             check_name_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 location_name: location_name.into(),
                 subscription_id: subscription_id.into(),
                 name_availability_request: None,
@@ -1068,7 +1055,7 @@ pub mod locations {
         }
         pub fn list_consortiums(&self, location_name: impl Into<String>, subscription_id: impl Into<String>) -> list_consortiums::Builder {
             list_consortiums::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 location_name: location_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -1097,7 +1084,7 @@ pub mod locations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) location_name: String,
             pub(crate) subscription_id: String,
             pub(crate) name_availability_request: Option<models::NameAvailabilityRequest>,
@@ -1177,7 +1164,7 @@ pub mod locations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) location_name: String,
             pub(crate) subscription_id: String,
         }
@@ -1230,11 +1217,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -1260,7 +1244,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -1307,12 +1291,9 @@ pub mod skus {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -1340,7 +1321,7 @@ pub mod skus {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -1390,9 +1371,6 @@ pub mod transaction_nodes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             blockchain_member_name: impl Into<String>,
@@ -1401,7 +1379,7 @@ pub mod transaction_nodes {
             resource_group_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1416,7 +1394,7 @@ pub mod transaction_nodes {
             resource_group_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1432,7 +1410,7 @@ pub mod transaction_nodes {
             resource_group_name: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1448,7 +1426,7 @@ pub mod transaction_nodes {
             resource_group_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1462,7 +1440,7 @@ pub mod transaction_nodes {
             resource_group_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1476,7 +1454,7 @@ pub mod transaction_nodes {
             resource_group_name: impl Into<String>,
         ) -> list_api_keys::Builder {
             list_api_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1491,7 +1469,7 @@ pub mod transaction_nodes {
             resource_group_name: impl Into<String>,
         ) -> list_regenerate_api_keys::Builder {
             list_regenerate_api_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1523,7 +1501,7 @@ pub mod transaction_nodes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
             pub(crate) subscription_id: String,
@@ -1602,7 +1580,7 @@ pub mod transaction_nodes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
             pub(crate) subscription_id: String,
@@ -1692,7 +1670,7 @@ pub mod transaction_nodes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
             pub(crate) subscription_id: String,
@@ -1781,7 +1759,7 @@ pub mod transaction_nodes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
             pub(crate) subscription_id: String,
@@ -1851,7 +1829,7 @@ pub mod transaction_nodes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1923,7 +1901,7 @@ pub mod transaction_nodes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
             pub(crate) subscription_id: String,
@@ -1991,7 +1969,7 @@ pub mod transaction_nodes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
             pub(crate) subscription_id: String,

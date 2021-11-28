@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn attested(&self) -> attested::Client {
         attested::Client(self.clone())
     }
@@ -101,12 +97,9 @@ pub mod instances {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_metadata(&self, metadata: impl Into<String>) -> get_metadata::Builder {
             get_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 metadata: metadata.into(),
             }
         }
@@ -137,7 +130,7 @@ pub mod instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) metadata: String,
         }
         impl Builder {
@@ -186,12 +179,9 @@ pub mod attested {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_document(&self, metadata: impl Into<String>) -> get_document::Builder {
             get_document::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 metadata: metadata.into(),
                 nonce: None,
             }
@@ -223,7 +213,7 @@ pub mod attested {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) metadata: String,
             pub(crate) nonce: Option<String>,
         }
@@ -280,12 +270,9 @@ pub mod identity {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_token(&self, metadata: impl Into<String>, resource: impl Into<String>) -> get_token::Builder {
             get_token::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 metadata: metadata.into(),
                 resource: resource.into(),
                 client_id: None,
@@ -297,7 +284,7 @@ pub mod identity {
         }
         pub fn get_info(&self, metadata: impl Into<String>) -> get_info::Builder {
             get_info::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 metadata: metadata.into(),
             }
         }
@@ -328,7 +315,7 @@ pub mod identity {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) metadata: String,
             pub(crate) resource: String,
             pub(crate) client_id: Option<String>,
@@ -441,7 +428,7 @@ pub mod identity {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) metadata: String,
         }
         impl Builder {

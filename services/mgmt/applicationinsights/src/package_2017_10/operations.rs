@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn component_current_pricing_plan(&self) -> component_current_pricing_plan::Client {
         component_current_pricing_plan::Client(self.clone())
     }
@@ -108,12 +104,9 @@ pub mod ea_subscription_migrate_to_new_pricing_model {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn post(&self, subscription_id: impl Into<String>) -> post::Builder {
             post::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -144,7 +137,7 @@ pub mod ea_subscription_migrate_to_new_pricing_model {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -192,12 +185,9 @@ pub mod ea_subscription_rollback_to_legacy_pricing_model {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn post(&self, subscription_id: impl Into<String>) -> post::Builder {
             post::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -228,7 +218,7 @@ pub mod ea_subscription_rollback_to_legacy_pricing_model {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -276,12 +266,9 @@ pub mod ea_subscription_list_migration_date {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn post(&self, subscription_id: impl Into<String>) -> post::Builder {
             post::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -309,7 +296,7 @@ pub mod ea_subscription_list_migration_date {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -362,9 +349,6 @@ pub mod component_current_pricing_plan {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -372,7 +356,7 @@ pub mod component_current_pricing_plan {
             resource_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_name: resource_name.into(),
@@ -386,7 +370,7 @@ pub mod component_current_pricing_plan {
             pricing_plan_properties: impl Into<models::ApplicationInsightsComponentPricingPlan>,
         ) -> create_and_update::Builder {
             create_and_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_name: resource_name.into(),
@@ -401,7 +385,7 @@ pub mod component_current_pricing_plan {
             pricing_plan_properties: impl Into<models::ApplicationInsightsComponentPricingPlan>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_name: resource_name.into(),
@@ -432,7 +416,7 @@ pub mod component_current_pricing_plan {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_name: String,
@@ -507,7 +491,7 @@ pub mod component_current_pricing_plan {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_name: String,
@@ -584,7 +568,7 @@ pub mod component_current_pricing_plan {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_name: String,

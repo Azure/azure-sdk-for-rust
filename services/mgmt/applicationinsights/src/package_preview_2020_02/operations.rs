@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn operations(&self) -> operations::Client {
         operations::Client(self.clone())
     }
@@ -91,11 +87,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -121,7 +114,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsListResult, Error>> {
@@ -167,7 +160,7 @@ impl Client {
         download_as: impl Into<String>,
     ) -> get_test_result_file::Builder {
         get_test_result_file::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             resource_group_name: resource_group_name.into(),
             subscription_id: subscription_id.into(),
             web_test_name: web_test_name.into(),
@@ -205,7 +198,7 @@ pub mod get_test_result_file {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) resource_group_name: String,
         pub(crate) subscription_id: String,
         pub(crate) web_test_name: String,

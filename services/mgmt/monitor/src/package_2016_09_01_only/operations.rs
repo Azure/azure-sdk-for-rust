@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn metrics(&self) -> metrics::Client {
         metrics::Client(self.clone())
     }
@@ -98,12 +94,9 @@ pub mod metrics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 filter: None,
             }
@@ -135,7 +128,7 @@ pub mod metrics {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) filter: Option<String>,
         }
@@ -195,12 +188,9 @@ pub mod service_diagnostic_settings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, resource_uri: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
             }
         }
@@ -210,7 +200,7 @@ pub mod service_diagnostic_settings {
             parameters: impl Into<models::ServiceDiagnosticSettingsResource>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 parameters: parameters.into(),
             }
@@ -221,7 +211,7 @@ pub mod service_diagnostic_settings {
             service_diagnostic_settings_resource: impl Into<models::ServiceDiagnosticSettingsResourcePatch>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 service_diagnostic_settings_resource: service_diagnostic_settings_resource.into(),
             }
@@ -253,7 +243,7 @@ pub mod service_diagnostic_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
         }
         impl Builder {
@@ -325,7 +315,7 @@ pub mod service_diagnostic_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) parameters: models::ServiceDiagnosticSettingsResource,
         }
@@ -400,7 +390,7 @@ pub mod service_diagnostic_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) service_diagnostic_settings_resource: models::ServiceDiagnosticSettingsResourcePatch,
         }

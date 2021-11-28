@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn role_assignment_metrics(&self) -> role_assignment_metrics::Client {
         role_assignment_metrics::Client(self.clone())
     }
@@ -89,12 +85,9 @@ pub mod role_assignment_metrics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_metrics_for_subscription(&self, subscription_id: impl Into<String>) -> get_metrics_for_subscription::Builder {
             get_metrics_for_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -125,7 +118,7 @@ pub mod role_assignment_metrics {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {

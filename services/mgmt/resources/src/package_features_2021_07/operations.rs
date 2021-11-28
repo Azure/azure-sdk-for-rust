@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn features(&self) -> features::Client {
         features::Client(self.clone())
     }
@@ -110,7 +106,7 @@ pub enum Error {
 }
 impl Client {
     pub fn list_operations(&self) -> list_operations::Builder {
-        list_operations::Builder { client: self.base_clone() }
+        list_operations::Builder { client: self.clone() }
     }
 }
 pub mod list_operations {
@@ -139,7 +135,7 @@ pub mod list_operations {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -185,18 +181,15 @@ pub mod features {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list(&self, resource_provider_namespace: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -208,7 +201,7 @@ pub mod features {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 feature_name: feature_name.into(),
                 subscription_id: subscription_id.into(),
@@ -221,7 +214,7 @@ pub mod features {
             subscription_id: impl Into<String>,
         ) -> register::Builder {
             register::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 feature_name: feature_name.into(),
                 subscription_id: subscription_id.into(),
@@ -234,7 +227,7 @@ pub mod features {
             subscription_id: impl Into<String>,
         ) -> unregister::Builder {
             unregister::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 feature_name: feature_name.into(),
                 subscription_id: subscription_id.into(),
@@ -267,7 +260,7 @@ pub mod features {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -342,7 +335,7 @@ pub mod features {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_provider_namespace: String,
             pub(crate) subscription_id: String,
         }
@@ -419,7 +412,7 @@ pub mod features {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_provider_namespace: String,
             pub(crate) feature_name: String,
             pub(crate) subscription_id: String,
@@ -496,7 +489,7 @@ pub mod features {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_provider_namespace: String,
             pub(crate) feature_name: String,
             pub(crate) subscription_id: String,
@@ -574,7 +567,7 @@ pub mod features {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_provider_namespace: String,
             pub(crate) feature_name: String,
             pub(crate) subscription_id: String,
@@ -631,9 +624,6 @@ pub mod subscription_feature_registrations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -641,7 +631,7 @@ pub mod subscription_feature_registrations {
             feature_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_namespace: provider_namespace.into(),
                 feature_name: feature_name.into(),
@@ -654,7 +644,7 @@ pub mod subscription_feature_registrations {
             feature_name: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_namespace: provider_namespace.into(),
                 feature_name: feature_name.into(),
@@ -668,7 +658,7 @@ pub mod subscription_feature_registrations {
             feature_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_namespace: provider_namespace.into(),
                 feature_name: feature_name.into(),
@@ -680,14 +670,14 @@ pub mod subscription_feature_registrations {
             provider_namespace: impl Into<String>,
         ) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_namespace: provider_namespace.into(),
             }
         }
         pub fn list_all_by_subscription(&self, subscription_id: impl Into<String>) -> list_all_by_subscription::Builder {
             list_all_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -718,7 +708,7 @@ pub mod subscription_feature_registrations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_namespace: String,
             pub(crate) feature_name: String,
@@ -797,7 +787,7 @@ pub mod subscription_feature_registrations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_namespace: String,
             pub(crate) feature_name: String,
@@ -894,7 +884,7 @@ pub mod subscription_feature_registrations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_namespace: String,
             pub(crate) feature_name: String,
@@ -967,7 +957,7 @@ pub mod subscription_feature_registrations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_namespace: String,
         }
@@ -1044,7 +1034,7 @@ pub mod subscription_feature_registrations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {

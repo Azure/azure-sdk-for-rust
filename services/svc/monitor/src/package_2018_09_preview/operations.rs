@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn metrics(&self) -> metrics::Client {
         metrics::Client(self.clone())
     }
@@ -89,9 +85,6 @@ pub mod metrics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn create(
             &self,
             content_type: impl Into<String>,
@@ -105,7 +98,7 @@ pub mod metrics {
             body: impl Into<models::AzureMetricsDocument>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 content_type: content_type.into(),
                 content_length,
                 authorization: authorization.into(),
@@ -144,7 +137,7 @@ pub mod metrics {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) content_type: String,
             pub(crate) content_length: i32,
             pub(crate) authorization: String,

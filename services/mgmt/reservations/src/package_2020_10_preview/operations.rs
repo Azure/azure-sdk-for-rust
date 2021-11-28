@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn auto_quota_increase(&self) -> auto_quota_increase::Client {
         auto_quota_increase::Client(self.clone())
     }
@@ -156,9 +152,6 @@ pub mod quota {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -167,7 +160,7 @@ pub mod quota {
             resource_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
                 location: location.into(),
@@ -183,7 +176,7 @@ pub mod quota {
             create_quota_request: impl Into<models::CurrentQuotaLimitBase>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
                 location: location.into(),
@@ -200,7 +193,7 @@ pub mod quota {
             create_quota_request: impl Into<models::CurrentQuotaLimitBase>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
                 location: location.into(),
@@ -215,7 +208,7 @@ pub mod quota {
             location: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
                 location: location.into(),
@@ -248,7 +241,7 @@ pub mod quota {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
             pub(crate) location: String,
@@ -332,7 +325,7 @@ pub mod quota {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
             pub(crate) location: String,
@@ -424,7 +417,7 @@ pub mod quota {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
             pub(crate) location: String,
@@ -511,7 +504,7 @@ pub mod quota {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
             pub(crate) location: String,
@@ -567,9 +560,6 @@ pub mod quota_request_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -578,7 +568,7 @@ pub mod quota_request_status {
             id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
                 location: location.into(),
@@ -592,7 +582,7 @@ pub mod quota_request_status {
             location: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 provider_id: provider_id.into(),
                 location: location.into(),
@@ -628,7 +618,7 @@ pub mod quota_request_status {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
             pub(crate) location: String,
@@ -707,7 +697,7 @@ pub mod quota_request_status {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) provider_id: String,
             pub(crate) location: String,
@@ -787,12 +777,9 @@ pub mod auto_quota_increase {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_properties(&self, subscription_id: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -802,7 +789,7 @@ pub mod auto_quota_increase {
             auto_quota_increase_request: impl Into<models::AutoQuotaIncreaseDetail>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 auto_quota_increase_request: auto_quota_increase_request.into(),
             }
@@ -834,7 +821,7 @@ pub mod auto_quota_increase {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -907,7 +894,7 @@ pub mod auto_quota_increase {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) auto_quota_increase_request: models::AutoQuotaIncreaseDetail,
         }
@@ -961,9 +948,6 @@ pub mod reservation {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn available_scopes(
             &self,
             reservation_order_id: impl Into<String>,
@@ -971,7 +955,7 @@ pub mod reservation {
             body: impl Into<models::AvailableScopeRequest>,
         ) -> available_scopes::Builder {
             available_scopes::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 reservation_id: reservation_id.into(),
                 body: body.into(),
@@ -979,27 +963,27 @@ pub mod reservation {
         }
         pub fn split(&self, reservation_order_id: impl Into<String>, body: impl Into<models::SplitRequest>) -> split::Builder {
             split::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 body: body.into(),
             }
         }
         pub fn merge(&self, reservation_order_id: impl Into<String>, body: impl Into<models::MergeRequest>) -> merge::Builder {
             merge::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 body: body.into(),
             }
         }
         pub fn list(&self, reservation_order_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
             }
         }
         pub fn get(&self, reservation_id: impl Into<String>, reservation_order_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 reservation_id: reservation_id.into(),
                 reservation_order_id: reservation_order_id.into(),
                 expand: None,
@@ -1012,7 +996,7 @@ pub mod reservation {
             parameters: impl Into<models::Patch>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 reservation_id: reservation_id.into(),
                 parameters: parameters.into(),
@@ -1024,7 +1008,7 @@ pub mod reservation {
             reservation_order_id: impl Into<String>,
         ) -> list_revisions::Builder {
             list_revisions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 reservation_id: reservation_id.into(),
                 reservation_order_id: reservation_order_id.into(),
             }
@@ -1056,7 +1040,7 @@ pub mod reservation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) reservation_id: String,
             pub(crate) body: models::AvailableScopeRequest,
@@ -1138,7 +1122,7 @@ pub mod reservation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) body: models::SplitRequest,
         }
@@ -1219,7 +1203,7 @@ pub mod reservation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) body: models::MergeRequest,
         }
@@ -1295,7 +1279,7 @@ pub mod reservation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
         }
         impl Builder {
@@ -1368,7 +1352,7 @@ pub mod reservation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) reservation_id: String,
             pub(crate) reservation_order_id: String,
             pub(crate) expand: Option<String>,
@@ -1456,7 +1440,7 @@ pub mod reservation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) reservation_id: String,
             pub(crate) parameters: models::Patch,
@@ -1534,7 +1518,7 @@ pub mod reservation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) reservation_id: String,
             pub(crate) reservation_order_id: String,
         }
@@ -1587,7 +1571,7 @@ pub mod reservation {
 impl Client {
     pub fn get_catalog(&self, subscription_id: impl Into<String>, reserved_resource_type: impl Into<String>) -> get_catalog::Builder {
         get_catalog::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             reserved_resource_type: reserved_resource_type.into(),
             location: None,
@@ -1595,7 +1579,7 @@ impl Client {
     }
     pub fn get_applied_reservation_list(&self, subscription_id: impl Into<String>) -> get_applied_reservation_list::Builder {
         get_applied_reservation_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
         }
     }
@@ -1626,7 +1610,7 @@ pub mod get_catalog {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) reserved_resource_type: String,
         pub(crate) location: Option<String>,
@@ -1710,7 +1694,7 @@ pub mod get_applied_reservation_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
     }
     impl Builder {
@@ -1761,28 +1745,25 @@ pub mod reservation_order {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn calculate(&self, body: impl Into<models::PurchaseRequest>) -> calculate::Builder {
             calculate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 body: body.into(),
             }
         }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, reservation_order_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 expand: None,
             }
         }
         pub fn purchase(&self, reservation_order_id: impl Into<String>, body: impl Into<models::PurchaseRequest>) -> purchase::Builder {
             purchase::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
                 body: body.into(),
             }
@@ -1814,7 +1795,7 @@ pub mod reservation_order {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) body: models::PurchaseRequest,
         }
         impl Builder {
@@ -1884,7 +1865,7 @@ pub mod reservation_order {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ReservationOrderList, Error>> {
@@ -1952,7 +1933,7 @@ pub mod reservation_order {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) expand: Option<String>,
         }
@@ -2038,7 +2019,7 @@ pub mod reservation_order {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) reservation_order_id: String,
             pub(crate) body: models::PurchaseRequest,
         }
@@ -2098,11 +2079,8 @@ pub mod operation {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -2131,7 +2109,7 @@ pub mod operation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {
@@ -2178,12 +2156,9 @@ pub mod calculate_exchange {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn post(&self, body: impl Into<models::CalculateExchangeRequest>) -> post::Builder {
             post::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 body: body.into(),
             }
         }
@@ -2219,7 +2194,7 @@ pub mod calculate_exchange {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) body: models::CalculateExchangeRequest,
         }
         impl Builder {
@@ -2269,12 +2244,9 @@ pub mod exchange {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn post(&self, body: impl Into<models::ExchangeRequest>) -> post::Builder {
             post::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 body: body.into(),
             }
         }
@@ -2310,7 +2282,7 @@ pub mod exchange {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) body: models::ExchangeRequest,
         }
         impl Builder {

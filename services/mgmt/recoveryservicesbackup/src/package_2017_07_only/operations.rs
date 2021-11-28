@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn backup_protection_intent(&self) -> backup_protection_intent::Client {
         backup_protection_intent::Client(self.clone())
     }
@@ -115,9 +111,6 @@ pub mod protection_intent {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn validate(
             &self,
             azure_region: impl Into<String>,
@@ -125,7 +118,7 @@ pub mod protection_intent {
             parameters: impl Into<models::PreValidateEnableBackupRequest>,
         ) -> validate::Builder {
             validate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 azure_region: azure_region.into(),
                 subscription_id: subscription_id.into(),
                 parameters: parameters.into(),
@@ -140,7 +133,7 @@ pub mod protection_intent {
             intent_object_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -158,7 +151,7 @@ pub mod protection_intent {
             parameters: impl Into<models::ProtectionIntentResource>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -176,7 +169,7 @@ pub mod protection_intent {
             intent_object_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -208,7 +201,7 @@ pub mod protection_intent {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) azure_region: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::PreValidateEnableBackupRequest,
@@ -282,7 +275,7 @@ pub mod protection_intent {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
@@ -350,7 +343,7 @@ pub mod protection_intent {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
@@ -420,7 +413,7 @@ pub mod protection_intent {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
@@ -465,9 +458,6 @@ pub mod backup_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             azure_region: impl Into<String>,
@@ -475,7 +465,7 @@ pub mod backup_status {
             parameters: impl Into<models::BackupStatusRequest>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 azure_region: azure_region.into(),
                 subscription_id: subscription_id.into(),
                 parameters: parameters.into(),
@@ -505,7 +495,7 @@ pub mod backup_status {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) azure_region: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::BackupStatusRequest,
@@ -559,9 +549,6 @@ pub mod feature_support {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn validate(
             &self,
             azure_region: impl Into<String>,
@@ -569,7 +556,7 @@ pub mod feature_support {
             parameters: impl Into<models::FeatureSupportRequest>,
         ) -> validate::Builder {
             validate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 azure_region: azure_region.into(),
                 subscription_id: subscription_id.into(),
                 parameters: parameters.into(),
@@ -599,7 +586,7 @@ pub mod feature_support {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) azure_region: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::FeatureSupportRequest,
@@ -656,9 +643,6 @@ pub mod backup_protection_intent {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -666,7 +650,7 @@ pub mod backup_protection_intent {
             subscription_id: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -698,7 +682,7 @@ pub mod backup_protection_intent {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
@@ -770,9 +754,6 @@ pub mod backup_usage_summaries {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             vault_name: impl Into<String>,
@@ -780,7 +761,7 @@ pub mod backup_usage_summaries {
             subscription_id: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -812,7 +793,7 @@ pub mod backup_usage_summaries {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,

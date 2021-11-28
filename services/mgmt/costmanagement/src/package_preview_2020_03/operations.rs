@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn alerts(&self) -> alerts::Client {
         alerts::Client(self.clone())
     }
@@ -153,40 +149,37 @@ pub mod views {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn list_by_scope(&self, scope: impl Into<String>) -> list_by_scope::Builder {
             list_by_scope::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
             }
         }
         pub fn get(&self, view_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 view_name: view_name.into(),
             }
         }
         pub fn create_or_update(&self, view_name: impl Into<String>, parameters: impl Into<models::View>) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 view_name: view_name.into(),
                 parameters: parameters.into(),
             }
         }
         pub fn delete(&self, view_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 view_name: view_name.into(),
             }
         }
         pub fn get_by_scope(&self, scope: impl Into<String>, view_name: impl Into<String>) -> get_by_scope::Builder {
             get_by_scope::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 view_name: view_name.into(),
             }
@@ -198,7 +191,7 @@ pub mod views {
             parameters: impl Into<models::View>,
         ) -> create_or_update_by_scope::Builder {
             create_or_update_by_scope::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 view_name: view_name.into(),
                 parameters: parameters.into(),
@@ -206,7 +199,7 @@ pub mod views {
         }
         pub fn delete_by_scope(&self, scope: impl Into<String>, view_name: impl Into<String>) -> delete_by_scope::Builder {
             delete_by_scope::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 view_name: view_name.into(),
             }
@@ -238,7 +231,7 @@ pub mod views {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ViewListResult, Error>> {
@@ -306,7 +299,7 @@ pub mod views {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
         impl Builder {
@@ -379,7 +372,7 @@ pub mod views {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) view_name: String,
         }
         impl Builder {
@@ -457,7 +450,7 @@ pub mod views {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) view_name: String,
             pub(crate) parameters: models::View,
         }
@@ -543,7 +536,7 @@ pub mod views {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) view_name: String,
         }
         impl Builder {
@@ -612,7 +605,7 @@ pub mod views {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) view_name: String,
         }
@@ -692,7 +685,7 @@ pub mod views {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) view_name: String,
             pub(crate) parameters: models::View,
@@ -780,7 +773,7 @@ pub mod views {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) view_name: String,
         }
@@ -830,18 +823,15 @@ pub mod alerts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
             }
         }
         pub fn get(&self, scope: impl Into<String>, alert_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 alert_id: alert_id.into(),
             }
@@ -853,7 +843,7 @@ pub mod alerts {
             parameters: impl Into<models::DismissAlertPayload>,
         ) -> dismiss::Builder {
             dismiss::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 alert_id: alert_id.into(),
                 parameters: parameters.into(),
@@ -865,7 +855,7 @@ pub mod alerts {
             external_cloud_provider_id: impl Into<String>,
         ) -> list_external::Builder {
             list_external::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 external_cloud_provider_type: external_cloud_provider_type.into(),
                 external_cloud_provider_id: external_cloud_provider_id.into(),
             }
@@ -897,7 +887,7 @@ pub mod alerts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
         impl Builder {
@@ -970,7 +960,7 @@ pub mod alerts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) alert_id: String,
         }
@@ -1045,7 +1035,7 @@ pub mod alerts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) alert_id: String,
             pub(crate) parameters: models::DismissAlertPayload,
@@ -1122,7 +1112,7 @@ pub mod alerts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) external_cloud_provider_type: String,
             pub(crate) external_cloud_provider_id: String,
         }
@@ -1176,12 +1166,9 @@ pub mod forecast {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn usage(&self, scope: impl Into<String>, parameters: impl Into<models::ForecastDefinition>) -> usage::Builder {
             usage::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 parameters: parameters.into(),
                 filter: None,
@@ -1194,7 +1181,7 @@ pub mod forecast {
             parameters: impl Into<models::ForecastDefinition>,
         ) -> external_cloud_provider_usage::Builder {
             external_cloud_provider_usage::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 external_cloud_provider_type: external_cloud_provider_type.into(),
                 external_cloud_provider_id: external_cloud_provider_id.into(),
                 parameters: parameters.into(),
@@ -1228,7 +1215,7 @@ pub mod forecast {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) parameters: models::ForecastDefinition,
             pub(crate) filter: Option<String>,
@@ -1311,7 +1298,7 @@ pub mod forecast {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) external_cloud_provider_type: String,
             pub(crate) external_cloud_provider_id: String,
             pub(crate) parameters: models::ForecastDefinition,
@@ -1375,12 +1362,9 @@ pub mod dimensions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
                 expand: None,
@@ -1394,7 +1378,7 @@ pub mod dimensions {
             external_cloud_provider_id: impl Into<String>,
         ) -> by_external_cloud_provider_type::Builder {
             by_external_cloud_provider_type::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 external_cloud_provider_type: external_cloud_provider_type.into(),
                 external_cloud_provider_id: external_cloud_provider_id.into(),
                 filter: None,
@@ -1430,7 +1414,7 @@ pub mod dimensions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
             pub(crate) expand: Option<String>,
@@ -1535,7 +1519,7 @@ pub mod dimensions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) external_cloud_provider_type: String,
             pub(crate) external_cloud_provider_id: String,
             pub(crate) filter: Option<String>,
@@ -1621,12 +1605,9 @@ pub mod query {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn usage(&self, scope: impl Into<String>, parameters: impl Into<models::QueryDefinition>) -> usage::Builder {
             usage::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 parameters: parameters.into(),
             }
@@ -1638,7 +1619,7 @@ pub mod query {
             parameters: impl Into<models::QueryDefinition>,
         ) -> usage_by_external_cloud_provider_type::Builder {
             usage_by_external_cloud_provider_type::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 external_cloud_provider_type: external_cloud_provider_type.into(),
                 external_cloud_provider_id: external_cloud_provider_id.into(),
                 parameters: parameters.into(),
@@ -1671,7 +1652,7 @@ pub mod query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) parameters: models::QueryDefinition,
         }
@@ -1746,7 +1727,7 @@ pub mod query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) external_cloud_provider_type: String,
             pub(crate) external_cloud_provider_id: String,
             pub(crate) parameters: models::QueryDefinition,
@@ -1802,11 +1783,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -1835,7 +1813,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -1882,12 +1860,9 @@ pub mod cost_allocation_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, billing_account_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
             }
         }
@@ -1897,14 +1872,14 @@ pub mod cost_allocation_rules {
             cost_allocation_rule_check_name_availability_request: impl Into<models::CostAllocationRuleCheckNameAvailabilityRequest>,
         ) -> check_name_availability::Builder {
             check_name_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 cost_allocation_rule_check_name_availability_request: cost_allocation_rule_check_name_availability_request.into(),
             }
         }
         pub fn get(&self, billing_account_id: impl Into<String>, rule_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 rule_name: rule_name.into(),
             }
@@ -1916,7 +1891,7 @@ pub mod cost_allocation_rules {
             cost_allocation_rule: impl Into<models::CostAllocationRuleDefinition>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 rule_name: rule_name.into(),
                 cost_allocation_rule: cost_allocation_rule.into(),
@@ -1924,7 +1899,7 @@ pub mod cost_allocation_rules {
         }
         pub fn delete(&self, billing_account_id: impl Into<String>, rule_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 rule_name: rule_name.into(),
             }
@@ -1956,7 +1931,7 @@ pub mod cost_allocation_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
         }
         impl Builder {
@@ -2029,7 +2004,7 @@ pub mod cost_allocation_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) cost_allocation_rule_check_name_availability_request: models::CostAllocationRuleCheckNameAvailabilityRequest,
         }
@@ -2104,7 +2079,7 @@ pub mod cost_allocation_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) rule_name: String,
         }
@@ -2181,7 +2156,7 @@ pub mod cost_allocation_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) rule_name: String,
             pub(crate) cost_allocation_rule: models::CostAllocationRuleDefinition,
@@ -2265,7 +2240,7 @@ pub mod cost_allocation_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) rule_name: String,
         }

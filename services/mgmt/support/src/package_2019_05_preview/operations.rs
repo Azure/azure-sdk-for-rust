@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn communications(&self) -> communications::Client {
         communications::Client(self.clone())
     }
@@ -127,11 +123,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -160,7 +153,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationsListResult, Error>> {
@@ -207,15 +200,12 @@ pub mod services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
@@ -246,7 +236,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ServicesListResult, Error>> {
@@ -314,7 +304,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -366,18 +356,15 @@ pub mod problem_classifications {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
         pub fn get(&self, service_name: impl Into<String>, problem_classification_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 problem_classification_name: problem_classification_name.into(),
             }
@@ -409,7 +396,7 @@ pub mod problem_classifications {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -484,7 +471,7 @@ pub mod problem_classifications {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) problem_classification_name: String,
         }
@@ -538,23 +525,20 @@ pub mod support_tickets {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn check_name_availability(
             &self,
             check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
             subscription_id: impl Into<String>,
         ) -> check_name_availability::Builder {
             check_name_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 check_name_availability_input: check_name_availability_input.into(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 top: None,
                 filter: None,
@@ -562,7 +546,7 @@ pub mod support_tickets {
         }
         pub fn get(&self, support_ticket_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -574,7 +558,7 @@ pub mod support_tickets {
             subscription_id: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 create_support_ticket_parameters: create_support_ticket_parameters.into(),
                 subscription_id: subscription_id.into(),
@@ -587,7 +571,7 @@ pub mod support_tickets {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 update_support_ticket: update_support_ticket.into(),
                 subscription_id: subscription_id.into(),
@@ -620,7 +604,7 @@ pub mod support_tickets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) check_name_availability_input: models::CheckNameAvailabilityInput,
             pub(crate) subscription_id: String,
         }
@@ -697,7 +681,7 @@ pub mod support_tickets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i64>,
             pub(crate) filter: Option<String>,
@@ -786,7 +770,7 @@ pub mod support_tickets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) subscription_id: String,
         }
@@ -866,7 +850,7 @@ pub mod support_tickets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) create_support_ticket_parameters: models::SupportTicketDetails,
             pub(crate) subscription_id: String,
@@ -944,7 +928,7 @@ pub mod support_tickets {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) update_support_ticket: models::UpdateSupportTicket,
             pub(crate) subscription_id: String,
@@ -1000,9 +984,6 @@ pub mod communications {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn check_name_availability(
             &self,
             support_ticket_name: impl Into<String>,
@@ -1010,7 +991,7 @@ pub mod communications {
             subscription_id: impl Into<String>,
         ) -> check_name_availability::Builder {
             check_name_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 check_name_availability_input: check_name_availability_input.into(),
                 subscription_id: subscription_id.into(),
@@ -1018,7 +999,7 @@ pub mod communications {
         }
         pub fn list(&self, support_ticket_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 subscription_id: subscription_id.into(),
                 top: None,
@@ -1032,7 +1013,7 @@ pub mod communications {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 communication_name: communication_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1046,7 +1027,7 @@ pub mod communications {
             subscription_id: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 support_ticket_name: support_ticket_name.into(),
                 communication_name: communication_name.into(),
                 create_communication_parameters: create_communication_parameters.into(),
@@ -1080,7 +1061,7 @@ pub mod communications {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) check_name_availability_input: models::CheckNameAvailabilityInput,
             pub(crate) subscription_id: String,
@@ -1159,7 +1140,7 @@ pub mod communications {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) subscription_id: String,
             pub(crate) top: Option<i64>,
@@ -1250,7 +1231,7 @@ pub mod communications {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) communication_name: String,
             pub(crate) subscription_id: String,
@@ -1332,7 +1313,7 @@ pub mod communications {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) support_ticket_name: String,
             pub(crate) communication_name: String,
             pub(crate) create_communication_parameters: models::CommunicationDetails,

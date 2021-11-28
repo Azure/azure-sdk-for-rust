@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn metadata(&self) -> metadata::Client {
         metadata::Client(self.clone())
     }
@@ -98,12 +94,9 @@ pub mod query {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, workspace_id: impl Into<String>, query: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_id: workspace_id.into(),
                 query: query.into(),
                 timespan: None,
@@ -111,7 +104,7 @@ pub mod query {
         }
         pub fn execute(&self, workspace_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::Builder {
             execute::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_id: workspace_id.into(),
                 body: body.into(),
             }
@@ -143,7 +136,7 @@ pub mod query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_id: String,
             pub(crate) query: String,
             pub(crate) timespan: Option<String>,
@@ -222,7 +215,7 @@ pub mod query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_id: String,
             pub(crate) body: models::QueryBody,
         }
@@ -271,18 +264,15 @@ pub mod metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, workspace_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_id: workspace_id.into(),
             }
         }
         pub fn post(&self, workspace_id: impl Into<String>) -> post::Builder {
             post::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_id: workspace_id.into(),
             }
         }
@@ -313,7 +303,7 @@ pub mod metadata {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_id: String,
         }
         impl Builder {
@@ -381,7 +371,7 @@ pub mod metadata {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_id: String,
         }
         impl Builder {

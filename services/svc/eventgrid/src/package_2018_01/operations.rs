@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -87,13 +83,13 @@ pub enum Error {
 impl Client {
     pub fn publish_cloud_event_events(&self, events: impl Into<Vec<models::CloudEventEvent>>) -> publish_cloud_event_events::Builder {
         publish_cloud_event_events::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             events: events.into(),
         }
     }
     pub fn publish_custom_event_events(&self, events: impl Into<Vec<models::CustomEventEvent>>) -> publish_custom_event_events::Builder {
         publish_custom_event_events::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             events: events.into(),
         }
     }
@@ -121,7 +117,7 @@ pub mod publish_cloud_event_events {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) events: Vec<models::CloudEventEvent>,
     }
     impl Builder {
@@ -175,7 +171,7 @@ pub mod publish_custom_event_events {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) events: Vec<models::CustomEventEvent>,
     }
     impl Builder {

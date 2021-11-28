@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn hybrid_use_benefit(&self) -> hybrid_use_benefit::Client {
         hybrid_use_benefit::Client(self.clone())
     }
@@ -112,12 +108,9 @@ pub mod software_plan {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn register(&self, subscription_id: impl Into<String>) -> register::Builder {
             register::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -148,7 +141,7 @@ pub mod software_plan {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -196,19 +189,16 @@ pub mod hybrid_use_benefit {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
             }
         }
         pub fn get(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 plan_id: plan_id.into(),
             }
@@ -220,7 +210,7 @@ pub mod hybrid_use_benefit {
             body: impl Into<models::HybridUseBenefitModel>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 plan_id: plan_id.into(),
                 body: body.into(),
@@ -233,7 +223,7 @@ pub mod hybrid_use_benefit {
             body: impl Into<models::HybridUseBenefitModel>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 plan_id: plan_id.into(),
                 body: body.into(),
@@ -241,7 +231,7 @@ pub mod hybrid_use_benefit {
         }
         pub fn delete(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 plan_id: plan_id.into(),
             }
@@ -273,7 +263,7 @@ pub mod hybrid_use_benefit {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
         }
@@ -356,7 +346,7 @@ pub mod hybrid_use_benefit {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) plan_id: String,
         }
@@ -431,7 +421,7 @@ pub mod hybrid_use_benefit {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) plan_id: String,
             pub(crate) body: models::HybridUseBenefitModel,
@@ -508,7 +498,7 @@ pub mod hybrid_use_benefit {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) plan_id: String,
             pub(crate) body: models::HybridUseBenefitModel,
@@ -590,7 +580,7 @@ pub mod hybrid_use_benefit {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) plan_id: String,
         }
@@ -640,12 +630,9 @@ pub mod hybrid_use_benefit_revision {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 plan_id: plan_id.into(),
             }
@@ -677,7 +664,7 @@ pub mod hybrid_use_benefit_revision {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) plan_id: String,
         }
@@ -733,12 +720,9 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
             }
         }
@@ -769,7 +753,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
         impl Builder {

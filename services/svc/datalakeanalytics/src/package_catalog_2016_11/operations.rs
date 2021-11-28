@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn catalog(&self) -> catalog::Client {
         catalog::Client(self.clone())
     }
@@ -95,12 +91,9 @@ pub mod catalog {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn grant_acl(&self, parameters: impl Into<models::AclCreateOrUpdateParameters>, op: impl Into<String>) -> grant_acl::Builder {
             grant_acl::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 op: op.into(),
             }
@@ -112,7 +105,7 @@ pub mod catalog {
             op: impl Into<String>,
         ) -> grant_acl_to_database::Builder {
             grant_acl_to_database::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 parameters: parameters.into(),
                 op: op.into(),
@@ -120,7 +113,7 @@ pub mod catalog {
         }
         pub fn revoke_acl(&self, parameters: impl Into<models::AclDeleteParameters>, op: impl Into<String>) -> revoke_acl::Builder {
             revoke_acl::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 op: op.into(),
             }
@@ -132,7 +125,7 @@ pub mod catalog {
             op: impl Into<String>,
         ) -> revoke_acl_from_database::Builder {
             revoke_acl_from_database::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 database_name: database_name.into(),
                 parameters: parameters.into(),
                 op: op.into(),
@@ -162,7 +155,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::AclCreateOrUpdateParameters,
             pub(crate) op: String,
         }
@@ -225,7 +218,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) parameters: models::AclCreateOrUpdateParameters,
             pub(crate) op: String,
@@ -293,7 +286,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::AclDeleteParameters,
             pub(crate) op: String,
         }
@@ -356,7 +349,7 @@ pub mod catalog {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) parameters: models::AclDeleteParameters,
             pub(crate) op: String,

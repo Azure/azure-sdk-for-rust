@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn private_link_association(&self) -> private_link_association::Client {
         private_link_association::Client(self.clone())
     }
@@ -104,9 +100,6 @@ pub mod private_link_association {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn put(
             &self,
             group_id: impl Into<String>,
@@ -114,7 +107,7 @@ pub mod private_link_association {
             parameters: impl Into<models::PrivateLinkAssociationProperties>,
         ) -> put::Builder {
             put::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 pla_id: pla_id.into(),
                 parameters: parameters.into(),
@@ -122,14 +115,14 @@ pub mod private_link_association {
         }
         pub fn delete(&self, group_id: impl Into<String>, pla_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 pla_id: pla_id.into(),
             }
         }
         pub fn get(&self, group_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
             }
         }
@@ -160,7 +153,7 @@ pub mod private_link_association {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) pla_id: String,
             pub(crate) parameters: models::PrivateLinkAssociationProperties,
@@ -237,7 +230,7 @@ pub mod private_link_association {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) pla_id: String,
         }
@@ -303,7 +296,7 @@ pub mod private_link_association {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
         }
         impl Builder {
@@ -357,9 +350,6 @@ pub mod resource_management_private_link {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -367,7 +357,7 @@ pub mod resource_management_private_link {
             rmpl_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 rmpl_name: rmpl_name.into(),
@@ -381,7 +371,7 @@ pub mod resource_management_private_link {
             parameters: impl Into<models::ResourceManagementPrivateLinkLocation>,
         ) -> put::Builder {
             put::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 rmpl_name: rmpl_name.into(),
@@ -395,7 +385,7 @@ pub mod resource_management_private_link {
             rmpl_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 rmpl_name: rmpl_name.into(),
@@ -403,7 +393,7 @@ pub mod resource_management_private_link {
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -434,7 +424,7 @@ pub mod resource_management_private_link {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) rmpl_name: String,
@@ -513,7 +503,7 @@ pub mod resource_management_private_link {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) rmpl_name: String,
@@ -599,7 +589,7 @@ pub mod resource_management_private_link {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) rmpl_name: String,
@@ -672,7 +662,7 @@ pub mod resource_management_private_link {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {

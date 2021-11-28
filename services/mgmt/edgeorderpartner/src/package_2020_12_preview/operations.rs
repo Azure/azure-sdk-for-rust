@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -90,7 +86,7 @@ pub enum Error {
 }
 impl Client {
     pub fn list_operations_partner(&self) -> list_operations_partner::Builder {
-        list_operations_partner::Builder { client: self.base_clone() }
+        list_operations_partner::Builder { client: self.clone() }
     }
     pub fn manage_inventory_metadata(
         &self,
@@ -101,7 +97,7 @@ impl Client {
         manage_inventory_metadata_request: impl Into<models::ManageInventoryMetadataRequest>,
     ) -> manage_inventory_metadata::Builder {
         manage_inventory_metadata::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             family_identifier: family_identifier.into(),
             subscription_id: subscription_id.into(),
             location: location.into(),
@@ -118,7 +114,7 @@ impl Client {
         manage_link_request: impl Into<models::ManageLinkRequest>,
     ) -> manage_link::Builder {
         manage_link::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             family_identifier: family_identifier.into(),
             subscription_id: subscription_id.into(),
             location: location.into(),
@@ -132,7 +128,7 @@ impl Client {
         search_inventories_request: impl Into<models::SearchInventoriesRequest>,
     ) -> search_inventories::Builder {
         search_inventories::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             search_inventories_request: search_inventories_request.into(),
         }
@@ -164,7 +160,7 @@ pub mod list_operations_partner {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -238,7 +234,7 @@ pub mod manage_inventory_metadata {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) family_identifier: String,
         pub(crate) subscription_id: String,
         pub(crate) location: String,
@@ -314,7 +310,7 @@ pub mod manage_link {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) family_identifier: String,
         pub(crate) subscription_id: String,
         pub(crate) location: String,
@@ -391,7 +387,7 @@ pub mod search_inventories {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) search_inventories_request: models::SearchInventoriesRequest,
     }

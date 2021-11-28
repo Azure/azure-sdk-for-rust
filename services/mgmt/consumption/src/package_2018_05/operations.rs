@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn forecasts(&self) -> forecasts::Client {
         forecasts::Client(self.clone())
     }
@@ -120,12 +116,9 @@ pub mod price_sheet {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 expand: None,
                 skiptoken: None,
@@ -138,7 +131,7 @@ pub mod price_sheet {
             billing_period_name: impl Into<String>,
         ) -> get_by_billing_period::Builder {
             get_by_billing_period::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 billing_period_name: billing_period_name.into(),
                 expand: None,
@@ -173,7 +166,7 @@ pub mod price_sheet {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) expand: Option<String>,
             pub(crate) skiptoken: Option<String>,
@@ -270,7 +263,7 @@ pub mod price_sheet {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) billing_period_name: String,
             pub(crate) expand: Option<String>,
@@ -343,12 +336,9 @@ pub mod usage_details {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 expand: None,
                 filter: None,
@@ -363,7 +353,7 @@ pub mod usage_details {
             billing_period_name: impl Into<String>,
         ) -> list_by_billing_period::Builder {
             list_by_billing_period::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 billing_period_name: billing_period_name.into(),
                 expand: None,
@@ -375,7 +365,7 @@ pub mod usage_details {
         }
         pub fn list_by_billing_account(&self, billing_account_id: impl Into<String>) -> list_by_billing_account::Builder {
             list_by_billing_account::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 expand: None,
                 filter: None,
@@ -390,7 +380,7 @@ pub mod usage_details {
             billing_period_name: impl Into<String>,
         ) -> list_for_billing_period_by_billing_account::Builder {
             list_for_billing_period_by_billing_account::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 billing_period_name: billing_period_name.into(),
                 expand: None,
@@ -402,7 +392,7 @@ pub mod usage_details {
         }
         pub fn list_by_department(&self, department_id: impl Into<String>) -> list_by_department::Builder {
             list_by_department::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 department_id: department_id.into(),
                 expand: None,
                 filter: None,
@@ -417,7 +407,7 @@ pub mod usage_details {
             billing_period_name: impl Into<String>,
         ) -> list_for_billing_period_by_department::Builder {
             list_for_billing_period_by_department::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 department_id: department_id.into(),
                 billing_period_name: billing_period_name.into(),
                 expand: None,
@@ -429,7 +419,7 @@ pub mod usage_details {
         }
         pub fn list_by_enrollment_account(&self, enrollment_account_id: impl Into<String>) -> list_by_enrollment_account::Builder {
             list_by_enrollment_account::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 enrollment_account_id: enrollment_account_id.into(),
                 expand: None,
                 filter: None,
@@ -444,7 +434,7 @@ pub mod usage_details {
             billing_period_name: impl Into<String>,
         ) -> list_for_billing_period_by_enrollment_account::Builder {
             list_for_billing_period_by_enrollment_account::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 enrollment_account_id: enrollment_account_id.into(),
                 billing_period_name: billing_period_name.into(),
                 expand: None,
@@ -481,7 +471,7 @@ pub mod usage_details {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) expand: Option<String>,
             pub(crate) filter: Option<String>,
@@ -594,7 +584,7 @@ pub mod usage_details {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) billing_period_name: String,
             pub(crate) expand: Option<String>,
@@ -709,7 +699,7 @@ pub mod usage_details {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) expand: Option<String>,
             pub(crate) filter: Option<String>,
@@ -822,7 +812,7 @@ pub mod usage_details {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) billing_period_name: String,
             pub(crate) expand: Option<String>,
@@ -932,7 +922,7 @@ pub mod usage_details {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) department_id: String,
             pub(crate) expand: Option<String>,
             pub(crate) filter: Option<String>,
@@ -1045,7 +1035,7 @@ pub mod usage_details {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) department_id: String,
             pub(crate) billing_period_name: String,
             pub(crate) expand: Option<String>,
@@ -1155,7 +1145,7 @@ pub mod usage_details {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) enrollment_account_id: String,
             pub(crate) expand: Option<String>,
             pub(crate) filter: Option<String>,
@@ -1268,7 +1258,7 @@ pub mod usage_details {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) enrollment_account_id: String,
             pub(crate) billing_period_name: String,
             pub(crate) expand: Option<String>,
@@ -1357,12 +1347,9 @@ pub mod forecasts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
             }
@@ -1394,7 +1381,7 @@ pub mod forecasts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
@@ -1454,11 +1441,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -1487,7 +1471,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {

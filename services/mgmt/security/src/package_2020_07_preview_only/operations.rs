@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn sql_vulnerability_assessment_baseline_rules(&self) -> sql_vulnerability_assessment_baseline_rules::Client {
         sql_vulnerability_assessment_baseline_rules::Client(self.clone())
     }
@@ -111,12 +107,9 @@ pub mod sql_vulnerability_assessment_scans {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, scan_id: impl Into<String>, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scan_id: scan_id.into(),
                 workspace_id: workspace_id.into(),
                 resource_id: resource_id.into(),
@@ -124,7 +117,7 @@ pub mod sql_vulnerability_assessment_scans {
         }
         pub fn list(&self, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_id: workspace_id.into(),
                 resource_id: resource_id.into(),
             }
@@ -156,7 +149,7 @@ pub mod sql_vulnerability_assessment_scans {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scan_id: String,
             pub(crate) workspace_id: String,
             pub(crate) resource_id: String,
@@ -234,7 +227,7 @@ pub mod sql_vulnerability_assessment_scans {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_id: String,
             pub(crate) resource_id: String,
         }
@@ -289,9 +282,6 @@ pub mod sql_vulnerability_assessment_scan_results {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             scan_id: impl Into<String>,
@@ -300,7 +290,7 @@ pub mod sql_vulnerability_assessment_scan_results {
             resource_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scan_id: scan_id.into(),
                 scan_result_id: scan_result_id.into(),
                 workspace_id: workspace_id.into(),
@@ -309,7 +299,7 @@ pub mod sql_vulnerability_assessment_scan_results {
         }
         pub fn list(&self, scan_id: impl Into<String>, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scan_id: scan_id.into(),
                 workspace_id: workspace_id.into(),
                 resource_id: resource_id.into(),
@@ -342,7 +332,7 @@ pub mod sql_vulnerability_assessment_scan_results {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scan_id: String,
             pub(crate) scan_result_id: String,
             pub(crate) workspace_id: String,
@@ -422,7 +412,7 @@ pub mod sql_vulnerability_assessment_scan_results {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scan_id: String,
             pub(crate) workspace_id: String,
             pub(crate) resource_id: String,
@@ -479,12 +469,9 @@ pub mod sql_vulnerability_assessment_baseline_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, rule_id: impl Into<String>, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 rule_id: rule_id.into(),
                 workspace_id: workspace_id.into(),
                 resource_id: resource_id.into(),
@@ -497,7 +484,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
             resource_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 rule_id: rule_id.into(),
                 workspace_id: workspace_id.into(),
                 resource_id: resource_id.into(),
@@ -511,7 +498,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
             resource_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 rule_id: rule_id.into(),
                 workspace_id: workspace_id.into(),
                 resource_id: resource_id.into(),
@@ -519,14 +506,14 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
         pub fn list(&self, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_id: workspace_id.into(),
                 resource_id: resource_id.into(),
             }
         }
         pub fn add(&self, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> add::Builder {
             add::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 workspace_id: workspace_id.into(),
                 resource_id: resource_id.into(),
                 body: None,
@@ -559,7 +546,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) rule_id: String,
             pub(crate) workspace_id: String,
             pub(crate) resource_id: String,
@@ -637,7 +624,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) rule_id: String,
             pub(crate) workspace_id: String,
             pub(crate) resource_id: String,
@@ -730,7 +717,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) rule_id: String,
             pub(crate) workspace_id: String,
             pub(crate) resource_id: String,
@@ -804,7 +791,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_id: String,
             pub(crate) resource_id: String,
         }
@@ -880,7 +867,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) workspace_id: String,
             pub(crate) resource_id: String,
             pub(crate) body: Option<models::RulesResultsInput>,

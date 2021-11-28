@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn move_collections(&self) -> move_collections::Client {
         move_collections::Client(self.clone())
     }
@@ -134,9 +130,6 @@ pub mod move_collections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -144,7 +137,7 @@ pub mod move_collections {
             move_collection_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -157,7 +150,7 @@ pub mod move_collections {
             move_collection_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -171,7 +164,7 @@ pub mod move_collections {
             move_collection_name: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -185,7 +178,7 @@ pub mod move_collections {
             move_collection_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -198,7 +191,7 @@ pub mod move_collections {
             move_collection_name: impl Into<String>,
         ) -> prepare::Builder {
             prepare::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -212,7 +205,7 @@ pub mod move_collections {
             move_collection_name: impl Into<String>,
         ) -> initiate_move::Builder {
             initiate_move::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -226,7 +219,7 @@ pub mod move_collections {
             move_collection_name: impl Into<String>,
         ) -> commit::Builder {
             commit::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -240,7 +233,7 @@ pub mod move_collections {
             move_collection_name: impl Into<String>,
         ) -> discard::Builder {
             discard::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -254,7 +247,7 @@ pub mod move_collections {
             move_collection_name: impl Into<String>,
         ) -> resolve_dependencies::Builder {
             resolve_dependencies::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -267,7 +260,7 @@ pub mod move_collections {
             move_collection_name: impl Into<String>,
         ) -> bulk_remove::Builder {
             bulk_remove::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -279,7 +272,7 @@ pub mod move_collections {
             subscription_id: impl Into<String>,
         ) -> list_move_collections_by_subscription::Builder {
             list_move_collections_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -289,7 +282,7 @@ pub mod move_collections {
             resource_group_name: impl Into<String>,
         ) -> list_move_collections_by_resource_group::Builder {
             list_move_collections_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
             }
@@ -302,7 +295,7 @@ pub mod move_collections {
             source_id: impl Into<String>,
         ) -> list_required_for::Builder {
             list_required_for::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -336,7 +329,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -418,7 +411,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -511,7 +504,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -604,7 +597,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -688,7 +681,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -781,7 +774,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -874,7 +867,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -967,7 +960,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -1060,7 +1053,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -1144,7 +1137,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -1232,7 +1225,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -1305,7 +1298,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -1380,7 +1373,7 @@ pub mod move_collections {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -1441,9 +1434,6 @@ pub mod move_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1451,7 +1441,7 @@ pub mod move_resources {
             move_collection_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -1466,7 +1456,7 @@ pub mod move_resources {
             move_resource_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -1481,7 +1471,7 @@ pub mod move_resources {
             move_resource_name: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -1497,7 +1487,7 @@ pub mod move_resources {
             move_resource_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -1531,7 +1521,7 @@ pub mod move_resources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -1616,7 +1606,7 @@ pub mod move_resources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -1700,7 +1690,7 @@ pub mod move_resources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -1796,7 +1786,7 @@ pub mod move_resources {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -1856,9 +1846,6 @@ pub mod unresolved_dependencies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1866,7 +1853,7 @@ pub mod unresolved_dependencies {
             move_collection_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 move_collection_name: move_collection_name.into(),
@@ -1902,7 +1889,7 @@ pub mod unresolved_dependencies {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
@@ -1984,11 +1971,8 @@ pub mod operations_discovery {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.base_clone() }
+            get::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -2017,7 +2001,7 @@ pub mod operations_discovery {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(

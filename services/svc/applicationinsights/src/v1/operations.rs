@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn events(&self) -> events::Client {
         events::Client(self.clone())
     }
@@ -116,12 +112,9 @@ pub mod metrics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, app_id: impl Into<String>, metric_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 app_id: app_id.into(),
                 metric_id: metric_id.into(),
                 timespan: None,
@@ -135,14 +128,14 @@ pub mod metrics {
         }
         pub fn get_multiple(&self, app_id: impl Into<String>, body: impl Into<models::MetricsPostBody>) -> get_multiple::Builder {
             get_multiple::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 app_id: app_id.into(),
                 body: body.into(),
             }
         }
         pub fn get_metadata(&self, app_id: impl Into<String>) -> get_metadata::Builder {
             get_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 app_id: app_id.into(),
             }
         }
@@ -173,7 +166,7 @@ pub mod metrics {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) metric_id: String,
             pub(crate) timespan: Option<String>,
@@ -292,7 +285,7 @@ pub mod metrics {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) body: models::MetricsPostBody,
         }
@@ -362,7 +355,7 @@ pub mod metrics {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
         }
         impl Builder {
@@ -409,12 +402,9 @@ pub mod events {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_by_type(&self, app_id: impl Into<String>, event_type: impl Into<String>) -> get_by_type::Builder {
             get_by_type::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 app_id: app_id.into(),
                 event_type: event_type.into(),
                 timespan: None,
@@ -431,7 +421,7 @@ pub mod events {
         }
         pub fn get(&self, app_id: impl Into<String>, event_type: impl Into<String>, event_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 app_id: app_id.into(),
                 event_type: event_type.into(),
                 event_id: event_id.into(),
@@ -440,7 +430,7 @@ pub mod events {
         }
         pub fn get_odata_metadata(&self, app_id: impl Into<String>) -> get_odata_metadata::Builder {
             get_odata_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 app_id: app_id.into(),
             }
         }
@@ -471,7 +461,7 @@ pub mod events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) event_type: String,
             pub(crate) timespan: Option<String>,
@@ -620,7 +610,7 @@ pub mod events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) event_type: String,
             pub(crate) event_id: String,
@@ -704,7 +694,7 @@ pub mod events {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
         }
         impl Builder {
@@ -751,12 +741,9 @@ pub mod query {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, app_id: impl Into<String>, query: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 app_id: app_id.into(),
                 query: query.into(),
                 timespan: None,
@@ -764,7 +751,7 @@ pub mod query {
         }
         pub fn execute(&self, app_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::Builder {
             execute::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 app_id: app_id.into(),
                 body: body.into(),
             }
@@ -796,7 +783,7 @@ pub mod query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) query: String,
             pub(crate) timespan: Option<String>,
@@ -875,7 +862,7 @@ pub mod query {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
             pub(crate) body: models::QueryBody,
         }
@@ -924,18 +911,15 @@ pub mod metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, app_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 app_id: app_id.into(),
             }
         }
         pub fn post(&self, app_id: impl Into<String>) -> post::Builder {
             post::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 app_id: app_id.into(),
             }
         }
@@ -966,7 +950,7 @@ pub mod metadata {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
         }
         impl Builder {
@@ -1034,7 +1018,7 @@ pub mod metadata {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) app_id: String,
         }
         impl Builder {

@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn sql_databases(&self) -> sql_databases::Client {
         sql_databases::Client(self.clone())
     }
@@ -123,11 +119,8 @@ pub mod sql_v3_operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get_location_header_result(
             &self,
@@ -137,7 +130,7 @@ pub mod sql_v3_operations {
             operation_id: impl Into<String>,
         ) -> get_location_header_result::Builder {
             get_location_header_result::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -152,7 +145,7 @@ pub mod sql_v3_operations {
             operation_id: impl Into<String>,
         ) -> get_azure_async_header_result::Builder {
             get_azure_async_header_result::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -186,7 +179,7 @@ pub mod sql_v3_operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Vec<models::AvailableRpOperation>, Error>> {
@@ -258,7 +251,7 @@ pub mod sql_v3_operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -333,7 +326,7 @@ pub mod sql_v3_operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -391,9 +384,6 @@ pub mod sql_pools_v3 {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -402,7 +392,7 @@ pub mod sql_pools_v3 {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
                 sql_pool_name: sql_pool_name.into(),
@@ -418,7 +408,7 @@ pub mod sql_pools_v3 {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
                 sql_pool_name: sql_pool_name.into(),
@@ -435,7 +425,7 @@ pub mod sql_pools_v3 {
             parameters: impl Into<models::SqlPoolUpdate>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -451,7 +441,7 @@ pub mod sql_pools_v3 {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
                 sql_pool_name: sql_pool_name.into(),
@@ -466,7 +456,7 @@ pub mod sql_pools_v3 {
             subscription_id: impl Into<String>,
         ) -> deactivate::Builder {
             deactivate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
                 sql_pool_name: sql_pool_name.into(),
@@ -481,7 +471,7 @@ pub mod sql_pools_v3 {
             subscription_id: impl Into<String>,
         ) -> activate::Builder {
             activate::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
                 sql_pool_name: sql_pool_name.into(),
@@ -495,7 +485,7 @@ pub mod sql_pools_v3 {
             workspace_name: impl Into<String>,
         ) -> list_by_workspace::Builder {
             list_by_workspace::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
@@ -528,7 +518,7 @@ pub mod sql_pools_v3 {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) sql_pool_name: String,
@@ -613,7 +603,7 @@ pub mod sql_pools_v3 {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) sql_pool_name: String,
@@ -706,7 +696,7 @@ pub mod sql_pools_v3 {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -794,7 +784,7 @@ pub mod sql_pools_v3 {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) sql_pool_name: String,
@@ -875,7 +865,7 @@ pub mod sql_pools_v3 {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) sql_pool_name: String,
@@ -956,7 +946,7 @@ pub mod sql_pools_v3 {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) sql_pool_name: String,
@@ -1032,7 +1022,7 @@ pub mod sql_pools_v3 {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
@@ -1088,9 +1078,6 @@ pub mod sql_databases {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1099,7 +1086,7 @@ pub mod sql_databases {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
                 sql_database_name: sql_database_name.into(),
@@ -1115,7 +1102,7 @@ pub mod sql_databases {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
                 sql_database_name: sql_database_name.into(),
@@ -1132,7 +1119,7 @@ pub mod sql_databases {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
                 sql_database_name: sql_database_name.into(),
@@ -1148,7 +1135,7 @@ pub mod sql_databases {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
                 sql_database_name: sql_database_name.into(),
@@ -1162,7 +1149,7 @@ pub mod sql_databases {
             subscription_id: impl Into<String>,
         ) -> list_by_workspace::Builder {
             list_by_workspace::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1195,7 +1182,7 @@ pub mod sql_databases {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) sql_database_name: String,
@@ -1280,7 +1267,7 @@ pub mod sql_databases {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) sql_database_name: String,
@@ -1373,7 +1360,7 @@ pub mod sql_databases {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) sql_database_name: String,
@@ -1461,7 +1448,7 @@ pub mod sql_databases {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) sql_database_name: String,
@@ -1537,7 +1524,7 @@ pub mod sql_databases {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) subscription_id: String,

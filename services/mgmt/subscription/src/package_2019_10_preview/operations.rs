@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn operations(&self) -> operations::Client {
         operations::Client(self.clone())
     }
@@ -131,23 +127,20 @@ pub mod subscriptions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_locations(&self, subscription_id: impl Into<String>) -> list_locations::Builder {
             list_locations::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list_locations {
@@ -173,7 +166,7 @@ pub mod subscriptions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -237,7 +230,7 @@ pub mod subscriptions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -301,7 +294,7 @@ pub mod subscriptions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SubscriptionListResult, Error>> {
@@ -346,11 +339,8 @@ pub mod tenants {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -376,7 +366,7 @@ pub mod tenants {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TenantListResult, Error>> {
@@ -421,36 +411,33 @@ pub mod subscription {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn create_subscription_in_enrollment_account(
             &self,
             enrollment_account_name: impl Into<String>,
             body: impl Into<models::SubscriptionCreationParameters>,
         ) -> create_subscription_in_enrollment_account::Builder {
             create_subscription_in_enrollment_account::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 enrollment_account_name: enrollment_account_name.into(),
                 body: body.into(),
             }
         }
         pub fn cancel(&self, subscription_id: impl Into<String>) -> cancel::Builder {
             cancel::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn rename(&self, subscription_id: impl Into<String>, body: impl Into<models::SubscriptionName>) -> rename::Builder {
             rename::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 body: body.into(),
             }
         }
         pub fn enable(&self, subscription_id: impl Into<String>) -> enable::Builder {
             enable::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -462,7 +449,7 @@ pub mod subscription {
             body: impl Into<models::ModernSubscriptionCreationParameters>,
         ) -> create_subscription::Builder {
             create_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
                 invoice_section_name: invoice_section_name.into(),
@@ -476,7 +463,7 @@ pub mod subscription {
             body: impl Into<models::ModernCspSubscriptionCreationParameters>,
         ) -> create_csp_subscription::Builder {
             create_csp_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 customer_name: customer_name.into(),
                 body: body.into(),
@@ -484,25 +471,25 @@ pub mod subscription {
         }
         pub fn get_alias(&self, alias_name: impl Into<String>) -> get_alias::Builder {
             get_alias::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 alias_name: alias_name.into(),
             }
         }
         pub fn create_alias(&self, alias_name: impl Into<String>, body: impl Into<models::PutAliasRequest>) -> create_alias::Builder {
             create_alias::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 alias_name: alias_name.into(),
                 body: body.into(),
             }
         }
         pub fn delete_alias(&self, alias_name: impl Into<String>) -> delete_alias::Builder {
             delete_alias::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 alias_name: alias_name.into(),
             }
         }
         pub fn list_alias(&self) -> list_alias::Builder {
-            list_alias::Builder { client: self.base_clone() }
+            list_alias::Builder { client: self.0.clone() }
         }
     }
     pub mod create_subscription_in_enrollment_account {
@@ -536,7 +523,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) enrollment_account_name: String,
             pub(crate) body: models::SubscriptionCreationParameters,
         }
@@ -612,7 +599,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -686,7 +673,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) body: models::SubscriptionName,
         }
@@ -761,7 +748,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -840,7 +827,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
@@ -919,7 +906,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) customer_name: String,
             pub(crate) body: models::ModernCspSubscriptionCreationParameters,
@@ -992,7 +979,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) alias_name: String,
         }
         impl Builder {
@@ -1070,7 +1057,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) alias_name: String,
             pub(crate) body: models::PutAliasRequest,
         }
@@ -1156,7 +1143,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) alias_name: String,
         }
         impl Builder {
@@ -1225,7 +1212,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PutAliasListResult, Error>> {
@@ -1272,12 +1259,9 @@ pub mod subscription_operation {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, operation_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 operation_id: operation_id.into(),
             }
         }
@@ -1310,7 +1294,7 @@ pub mod subscription_operation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) operation_id: String,
         }
         impl Builder {
@@ -1361,11 +1345,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -1394,7 +1375,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {

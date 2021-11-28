@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn extensions(&self) -> extensions::Client {
         extensions::Client(self.clone())
     }
@@ -129,9 +125,6 @@ pub mod extensions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             extension_id: impl Into<String>,
@@ -140,7 +133,7 @@ pub mod extensions {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 extension_id: extension_id.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -155,7 +148,7 @@ pub mod extensions {
             subscription_id: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 extension_id: extension_id.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -170,7 +163,7 @@ pub mod extensions {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 extension_id: extension_id.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -185,7 +178,7 @@ pub mod extensions {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 extension_id: extension_id.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -199,7 +192,7 @@ pub mod extensions {
             farm_beats_resource_name: impl Into<String>,
         ) -> list_by_farm_beats::Builder {
             list_by_farm_beats::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
@@ -236,7 +229,7 @@ pub mod extensions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) extension_id: String,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
@@ -315,7 +308,7 @@ pub mod extensions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) extension_id: String,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
@@ -394,7 +387,7 @@ pub mod extensions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) extension_id: String,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
@@ -478,7 +471,7 @@ pub mod extensions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) extension_id: String,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
@@ -553,7 +546,7 @@ pub mod extensions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) farm_beats_resource_name: String,
@@ -643,12 +636,9 @@ pub mod farm_beats_extensions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 farm_beats_extension_ids: Vec::new(),
                 farm_beats_extension_names: Vec::new(),
                 extension_categories: Vec::new(),
@@ -658,7 +648,7 @@ pub mod farm_beats_extensions {
         }
         pub fn get(&self, farm_beats_extension_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 farm_beats_extension_id: farm_beats_extension_id.into(),
             }
         }
@@ -689,7 +679,7 @@ pub mod farm_beats_extensions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) farm_beats_extension_ids: Vec<String>,
             pub(crate) farm_beats_extension_names: Vec<String>,
             pub(crate) extension_categories: Vec<String>,
@@ -806,7 +796,7 @@ pub mod farm_beats_extensions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) farm_beats_extension_id: String,
         }
         impl Builder {
@@ -858,9 +848,6 @@ pub mod farm_beats_models {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -868,7 +855,7 @@ pub mod farm_beats_models {
             farm_beats_resource_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
@@ -882,7 +869,7 @@ pub mod farm_beats_models {
             body: impl Into<models::FarmBeats>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -897,7 +884,7 @@ pub mod farm_beats_models {
             body: impl Into<models::FarmBeatsUpdateRequestModel>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -911,7 +898,7 @@ pub mod farm_beats_models {
             farm_beats_resource_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
@@ -919,7 +906,7 @@ pub mod farm_beats_models {
         }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 max_page_size: None,
                 skip_token: None,
@@ -931,7 +918,7 @@ pub mod farm_beats_models {
             subscription_id: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 max_page_size: None,
@@ -965,7 +952,7 @@ pub mod farm_beats_models {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) farm_beats_resource_name: String,
@@ -1047,7 +1034,7 @@ pub mod farm_beats_models {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
@@ -1132,7 +1119,7 @@ pub mod farm_beats_models {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
@@ -1216,7 +1203,7 @@ pub mod farm_beats_models {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) farm_beats_resource_name: String,
@@ -1289,7 +1276,7 @@ pub mod farm_beats_models {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
@@ -1378,7 +1365,7 @@ pub mod farm_beats_models {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) max_page_size: Option<i32>,
@@ -1448,16 +1435,13 @@ pub mod locations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
             body: impl Into<models::CheckNameAvailabilityRequest>,
         ) -> check_name_availability::Builder {
             check_name_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 body: body.into(),
             }
@@ -1489,7 +1473,7 @@ pub mod locations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) body: models::CheckNameAvailabilityRequest,
         }
@@ -1545,11 +1529,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -1578,7 +1559,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {

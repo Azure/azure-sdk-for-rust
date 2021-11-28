@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn cloud_endpoints(&self) -> cloud_endpoints::Client {
         cloud_endpoints::Client(self.clone())
     }
@@ -169,11 +165,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -202,7 +195,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationEntityListResult, Error>> {
@@ -249,9 +242,6 @@ pub mod storage_sync_services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -259,7 +249,7 @@ pub mod storage_sync_services {
             storage_sync_service_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -273,7 +263,7 @@ pub mod storage_sync_services {
             parameters: impl Into<models::StorageSyncService>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -287,7 +277,7 @@ pub mod storage_sync_services {
             storage_sync_service_name: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -301,7 +291,7 @@ pub mod storage_sync_services {
             storage_sync_service_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -313,14 +303,14 @@ pub mod storage_sync_services {
             resource_group_name: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
             }
         }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -351,7 +341,7 @@ pub mod storage_sync_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -428,7 +418,7 @@ pub mod storage_sync_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -507,7 +497,7 @@ pub mod storage_sync_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -599,7 +589,7 @@ pub mod storage_sync_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -672,7 +662,7 @@ pub mod storage_sync_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -747,7 +737,7 @@ pub mod storage_sync_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -799,9 +789,6 @@ pub mod sync_groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_storage_sync_service(
             &self,
             subscription_id: impl Into<String>,
@@ -809,7 +796,7 @@ pub mod sync_groups {
             storage_sync_service_name: impl Into<String>,
         ) -> list_by_storage_sync_service::Builder {
             list_by_storage_sync_service::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -823,7 +810,7 @@ pub mod sync_groups {
             sync_group_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -839,7 +826,7 @@ pub mod sync_groups {
             parameters: impl Into<models::SyncGroup>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -855,7 +842,7 @@ pub mod sync_groups {
             sync_group_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -889,7 +876,7 @@ pub mod sync_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -966,7 +953,7 @@ pub mod sync_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -1045,7 +1032,7 @@ pub mod sync_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -1131,7 +1118,7 @@ pub mod sync_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -1185,9 +1172,6 @@ pub mod cloud_endpoints {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1197,7 +1181,7 @@ pub mod cloud_endpoints {
             cloud_endpoint_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -1215,7 +1199,7 @@ pub mod cloud_endpoints {
             parameters: impl Into<models::CloudEndpoint>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -1233,7 +1217,7 @@ pub mod cloud_endpoints {
             cloud_endpoint_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -1249,7 +1233,7 @@ pub mod cloud_endpoints {
             sync_group_name: impl Into<String>,
         ) -> list_by_sync_group::Builder {
             list_by_sync_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -1266,7 +1250,7 @@ pub mod cloud_endpoints {
             parameters: impl Into<models::BackupRequest>,
         ) -> pre_backup::Builder {
             pre_backup::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -1285,7 +1269,7 @@ pub mod cloud_endpoints {
             parameters: impl Into<models::BackupRequest>,
         ) -> post_backup::Builder {
             post_backup::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -1304,7 +1288,7 @@ pub mod cloud_endpoints {
             parameters: impl Into<models::PreRestoreRequest>,
         ) -> pre_restore::Builder {
             pre_restore::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -1322,7 +1306,7 @@ pub mod cloud_endpoints {
             cloud_endpoint_name: impl Into<String>,
         ) -> restore_heatbeat::Builder {
             restore_heatbeat::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -1340,7 +1324,7 @@ pub mod cloud_endpoints {
             parameters: impl Into<models::PostRestoreRequest>,
         ) -> post_restore::Builder {
             post_restore::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -1376,7 +1360,7 @@ pub mod cloud_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -1454,7 +1438,7 @@ pub mod cloud_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -1536,7 +1520,7 @@ pub mod cloud_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -1606,7 +1590,7 @@ pub mod cloud_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -1683,7 +1667,7 @@ pub mod cloud_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -1759,7 +1743,7 @@ pub mod cloud_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -1840,7 +1824,7 @@ pub mod cloud_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -1911,7 +1895,7 @@ pub mod cloud_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -1985,7 +1969,7 @@ pub mod cloud_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -2035,9 +2019,6 @@ pub mod server_endpoints {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2047,7 +2028,7 @@ pub mod server_endpoints {
             server_endpoint_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -2065,7 +2046,7 @@ pub mod server_endpoints {
             parameters: impl Into<models::ServerEndpoint>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -2083,7 +2064,7 @@ pub mod server_endpoints {
             server_endpoint_name: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -2101,7 +2082,7 @@ pub mod server_endpoints {
             server_endpoint_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -2117,7 +2098,7 @@ pub mod server_endpoints {
             sync_group_name: impl Into<String>,
         ) -> list_by_sync_group::Builder {
             list_by_sync_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -2133,7 +2114,7 @@ pub mod server_endpoints {
             server_endpoint_name: impl Into<String>,
         ) -> recall::Builder {
             recall::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -2168,7 +2149,7 @@ pub mod server_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -2246,7 +2227,7 @@ pub mod server_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -2327,7 +2308,7 @@ pub mod server_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -2416,7 +2397,7 @@ pub mod server_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -2485,7 +2466,7 @@ pub mod server_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -2562,7 +2543,7 @@ pub mod server_endpoints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -2611,9 +2592,6 @@ pub mod registered_servers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_by_storage_sync_service(
             &self,
             subscription_id: impl Into<String>,
@@ -2621,7 +2599,7 @@ pub mod registered_servers {
             storage_sync_service_name: impl Into<String>,
         ) -> list_by_storage_sync_service::Builder {
             list_by_storage_sync_service::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -2635,7 +2613,7 @@ pub mod registered_servers {
             server_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -2651,7 +2629,7 @@ pub mod registered_servers {
             parameters: impl Into<models::RegisteredServer>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -2667,7 +2645,7 @@ pub mod registered_servers {
             server_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -2701,7 +2679,7 @@ pub mod registered_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -2778,7 +2756,7 @@ pub mod registered_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -2862,7 +2840,7 @@ pub mod registered_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -2950,7 +2928,7 @@ pub mod registered_servers {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -3005,9 +2983,6 @@ pub mod workflows {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3016,7 +2991,7 @@ pub mod workflows {
             workflow_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -3031,7 +3006,7 @@ pub mod workflows {
             workflow_id: impl Into<String>,
         ) -> abort::Builder {
             abort::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 storage_sync_service_name: storage_sync_service_name.into(),
@@ -3065,7 +3040,7 @@ pub mod workflows {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,
@@ -3144,7 +3119,7 @@ pub mod workflows {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) storage_sync_service_name: String,

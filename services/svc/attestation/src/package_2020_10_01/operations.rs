@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn attestation(&self) -> attestation::Client {
         attestation::Client(self.clone())
     }
@@ -121,25 +117,22 @@ pub mod policy {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, attestation_type: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 attestation_type: attestation_type.into(),
             }
         }
         pub fn set(&self, attestation_type: impl Into<String>, new_attestation_policy: impl Into<models::JsonWebToken>) -> set::Builder {
             set::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 attestation_type: attestation_type.into(),
                 new_attestation_policy: new_attestation_policy.into(),
             }
         }
         pub fn reset(&self, attestation_type: impl Into<String>, policy_jws: impl Into<models::JsonWebToken>) -> reset::Builder {
             reset::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 attestation_type: attestation_type.into(),
                 policy_jws: policy_jws.into(),
             }
@@ -171,7 +164,7 @@ pub mod policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) attestation_type: String,
         }
         impl Builder {
@@ -240,7 +233,7 @@ pub mod policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) attestation_type: String,
             pub(crate) new_attestation_policy: models::JsonWebToken,
         }
@@ -311,7 +304,7 @@ pub mod policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) attestation_type: String,
             pub(crate) policy_jws: models::JsonWebToken,
         }
@@ -361,21 +354,18 @@ pub mod policy_certificates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.base_clone() }
+            get::Builder { client: self.0.clone() }
         }
         pub fn add(&self, policy_certificate_to_add: impl Into<models::JsonWebToken>) -> add::Builder {
             add::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_certificate_to_add: policy_certificate_to_add.into(),
             }
         }
         pub fn remove(&self, policy_certificate_to_remove: impl Into<models::JsonWebToken>) -> remove::Builder {
             remove::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 policy_certificate_to_remove: policy_certificate_to_remove.into(),
             }
         }
@@ -406,7 +396,7 @@ pub mod policy_certificates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -476,7 +466,7 @@ pub mod policy_certificates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_certificate_to_add: models::JsonWebToken,
         }
         impl Builder {
@@ -548,7 +538,7 @@ pub mod policy_certificates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) policy_certificate_to_remove: models::JsonWebToken,
         }
         impl Builder {
@@ -599,24 +589,21 @@ pub mod attestation {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn attest_open_enclave(&self, request: impl Into<models::AttestOpenEnclaveRequest>) -> attest_open_enclave::Builder {
             attest_open_enclave::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 request: request.into(),
             }
         }
         pub fn attest_sgx_enclave(&self, request: impl Into<models::AttestSgxEnclaveRequest>) -> attest_sgx_enclave::Builder {
             attest_sgx_enclave::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 request: request.into(),
             }
         }
         pub fn attest_tpm(&self, request: impl Into<models::TpmAttestationRequest>) -> attest_tpm::Builder {
             attest_tpm::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 request: request.into(),
             }
         }
@@ -647,7 +634,7 @@ pub mod attestation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) request: models::AttestOpenEnclaveRequest,
         }
         impl Builder {
@@ -717,7 +704,7 @@ pub mod attestation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) request: models::AttestSgxEnclaveRequest,
         }
         impl Builder {
@@ -787,7 +774,7 @@ pub mod attestation {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) request: models::TpmAttestationRequest,
         }
         impl Builder {
@@ -836,11 +823,8 @@ pub mod signing_certificates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.base_clone() }
+            get::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -869,7 +853,7 @@ pub mod signing_certificates {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JsonWebKeySet, Error>> {
@@ -915,11 +899,8 @@ pub mod metadata_configuration {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.base_clone() }
+            get::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -948,7 +929,7 @@ pub mod metadata_configuration {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {

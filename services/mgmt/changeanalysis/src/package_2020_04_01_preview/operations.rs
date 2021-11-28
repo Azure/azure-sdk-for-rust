@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn configuration_profile(&self) -> configuration_profile::Client {
         configuration_profile::Client(self.clone())
     }
@@ -100,19 +96,16 @@ pub mod configuration_profile {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 profile_name: profile_name.into(),
             }
         }
         pub fn create(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 profile_name: profile_name.into(),
                 body: None,
@@ -120,7 +113,7 @@ pub mod configuration_profile {
         }
         pub fn update(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 profile_name: profile_name.into(),
                 body: None,
@@ -128,7 +121,7 @@ pub mod configuration_profile {
         }
         pub fn delete(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 profile_name: profile_name.into(),
             }
@@ -160,7 +153,7 @@ pub mod configuration_profile {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) profile_name: String,
         }
@@ -237,7 +230,7 @@ pub mod configuration_profile {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) profile_name: String,
             pub(crate) body: Option<models::ConfigurationProfileResource>,
@@ -324,7 +317,7 @@ pub mod configuration_profile {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) profile_name: String,
             pub(crate) body: Option<models::ConfigurationProfileResource>,
@@ -416,7 +409,7 @@ pub mod configuration_profile {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) profile_name: String,
         }
@@ -466,12 +459,9 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 skip_token: None,
             }
         }
@@ -502,7 +492,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {

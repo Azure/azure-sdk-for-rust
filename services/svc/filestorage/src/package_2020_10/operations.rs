@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn directory(&self) -> directory::Client {
         directory::Client(self.clone())
     }
@@ -186,9 +182,6 @@ pub mod service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_properties(
             &self,
             restype: impl Into<String>,
@@ -196,7 +189,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -211,7 +204,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> set_properties::Builder {
             set_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 storage_service_properties: storage_service_properties.into(),
@@ -221,7 +214,7 @@ pub mod service {
         }
         pub fn list_shares_segment(&self, comp: impl Into<String>, x_ms_version: impl Into<String>) -> list_shares_segment::Builder {
             list_shares_segment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 prefix: None,
@@ -258,7 +251,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
@@ -341,7 +334,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) storage_service_properties: models::StorageServiceProperties,
@@ -421,7 +414,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
@@ -509,9 +502,6 @@ pub mod share {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_properties(
             &self,
             share_name: impl Into<String>,
@@ -519,7 +509,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
@@ -535,7 +525,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
@@ -554,7 +544,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 x_ms_version: x_ms_version.into(),
@@ -573,7 +563,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> acquire_lease::Builder {
             acquire_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -596,7 +586,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> release_lease::Builder {
             release_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -618,7 +608,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> change_lease::Builder {
             change_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -641,7 +631,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> renew_lease::Builder {
             renew_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -662,7 +652,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> break_lease::Builder {
             break_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 comp: comp.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
@@ -683,7 +673,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> create_snapshot::Builder {
             create_snapshot::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -701,7 +691,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> get_permission::Builder {
             get_permission::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -719,7 +709,7 @@ pub mod share {
             share_permission: impl Into<models::SharePermission>,
         ) -> create_permission::Builder {
             create_permission::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -736,7 +726,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> set_properties::Builder {
             set_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -756,7 +746,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> set_metadata::Builder {
             set_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -774,7 +764,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> get_access_policy::Builder {
             get_access_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -791,7 +781,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> set_access_policy::Builder {
             set_access_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -809,7 +799,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> get_statistics::Builder {
             get_statistics::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -826,7 +816,7 @@ pub mod share {
             x_ms_version: impl Into<String>,
         ) -> restore::Builder {
             restore::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -864,7 +854,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) x_ms_version: String,
@@ -956,7 +946,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) x_ms_version: String,
@@ -1072,7 +1062,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) x_ms_version: String,
@@ -1172,7 +1162,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
@@ -1285,7 +1275,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
@@ -1384,7 +1374,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
@@ -1491,7 +1481,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
@@ -1590,7 +1580,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) comp: String,
             pub(crate) x_ms_lease_action: String,
@@ -1703,7 +1693,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -1790,7 +1780,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -1876,7 +1866,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -1957,7 +1947,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -2068,7 +2058,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -2163,7 +2153,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -2255,7 +2245,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -2352,7 +2342,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -2444,7 +2434,7 @@ pub mod share {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -2526,9 +2516,6 @@ pub mod directory {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_properties(
             &self,
             share_name: impl Into<String>,
@@ -2537,7 +2524,7 @@ pub mod directory {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 restype: restype.into(),
@@ -2557,7 +2544,7 @@ pub mod directory {
             x_ms_file_last_write_time: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 restype: restype.into(),
@@ -2579,7 +2566,7 @@ pub mod directory {
             x_ms_version: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 restype: restype.into(),
@@ -2599,7 +2586,7 @@ pub mod directory {
             x_ms_file_last_write_time: impl Into<String>,
         ) -> set_properties::Builder {
             set_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 restype: restype.into(),
@@ -2622,7 +2609,7 @@ pub mod directory {
             x_ms_version: impl Into<String>,
         ) -> set_metadata::Builder {
             set_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 restype: restype.into(),
@@ -2641,7 +2628,7 @@ pub mod directory {
             x_ms_version: impl Into<String>,
         ) -> list_files_and_directories_segment::Builder {
             list_files_and_directories_segment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 restype: restype.into(),
@@ -2664,7 +2651,7 @@ pub mod directory {
             x_ms_version: impl Into<String>,
         ) -> list_handles::Builder {
             list_handles::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 comp: comp.into(),
@@ -2685,7 +2672,7 @@ pub mod directory {
             x_ms_version: impl Into<String>,
         ) -> force_close_handles::Builder {
             force_close_handles::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 comp: comp.into(),
@@ -2724,7 +2711,7 @@ pub mod directory {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) restype: String,
@@ -2814,7 +2801,7 @@ pub mod directory {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) restype: String,
@@ -2926,7 +2913,7 @@ pub mod directory {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) restype: String,
@@ -3008,7 +2995,7 @@ pub mod directory {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) restype: String,
@@ -3115,7 +3102,7 @@ pub mod directory {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) restype: String,
@@ -3208,7 +3195,7 @@ pub mod directory {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) restype: String,
@@ -3346,7 +3333,7 @@ pub mod directory {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) comp: String,
@@ -3465,7 +3452,7 @@ pub mod directory {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) comp: String,
@@ -3552,9 +3539,6 @@ pub mod file {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn download(
             &self,
             share_name: impl Into<String>,
@@ -3563,7 +3547,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> download::Builder {
             download::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3587,7 +3571,7 @@ pub mod file {
             x_ms_file_last_write_time: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3618,7 +3602,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3635,7 +3619,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3657,7 +3641,7 @@ pub mod file {
             x_ms_file_last_write_time: impl Into<String>,
         ) -> set_http_headers::Builder {
             set_http_headers::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3688,7 +3672,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> set_metadata::Builder {
             set_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3709,7 +3693,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> acquire_lease::Builder {
             acquire_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3733,7 +3717,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> release_lease::Builder {
             release_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3756,7 +3740,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> change_lease::Builder {
             change_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3779,7 +3763,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> break_lease::Builder {
             break_lease::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3803,7 +3787,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> upload_range::Builder {
             upload_range::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3831,7 +3815,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> upload_range_from_url::Builder {
             upload_range_from_url::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3859,7 +3843,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> get_range_list::Builder {
             get_range_list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3881,7 +3865,7 @@ pub mod file {
             x_ms_copy_source: impl Into<String>,
         ) -> start_copy::Builder {
             start_copy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3911,7 +3895,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> abort_copy::Builder {
             abort_copy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3932,7 +3916,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> list_handles::Builder {
             list_handles::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3954,7 +3938,7 @@ pub mod file {
             x_ms_version: impl Into<String>,
         ) -> force_close_handles::Builder {
             force_close_handles::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 share_name: share_name.into(),
                 directory: directory.into(),
                 file_name: file_name.into(),
@@ -3998,7 +3982,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -4114,7 +4098,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -4285,7 +4269,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -4374,7 +4358,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -4471,7 +4455,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -4641,7 +4625,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -4741,7 +4725,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -4851,7 +4835,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -4947,7 +4931,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -5051,7 +5035,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -5153,7 +5137,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -5269,7 +5253,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -5409,7 +5393,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -5530,7 +5514,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -5693,7 +5677,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -5790,7 +5774,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,
@@ -5903,7 +5887,7 @@ pub mod file {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) share_name: String,
             pub(crate) directory: String,
             pub(crate) file_name: String,

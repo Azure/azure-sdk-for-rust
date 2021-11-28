@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn diagnostic_operations(&self) -> diagnostic_operations::Client {
         diagnostic_operations::Client(self.clone())
     }
@@ -101,9 +97,6 @@ pub mod diagnostic_operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn read(
             &self,
             subscription_id: impl Into<String>,
@@ -111,7 +104,7 @@ pub mod diagnostic_operations {
             operation_id: impl Into<String>,
         ) -> read::Builder {
             read::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 location: location.into(),
                 operation_id: operation_id.into(),
@@ -149,7 +142,7 @@ pub mod diagnostic_operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
             pub(crate) operation_id: String,
@@ -200,9 +193,6 @@ pub mod disk_inspection {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -210,7 +200,7 @@ pub mod disk_inspection {
             run_disk_inspection_input: impl Into<models::RunDiskInspectionInput>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 location: location.into(),
                 run_disk_inspection_input: run_disk_inspection_input.into(),
@@ -218,7 +208,7 @@ pub mod disk_inspection {
         }
         pub fn get(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 location: location.into(),
             }
@@ -250,7 +240,7 @@ pub mod disk_inspection {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
             pub(crate) run_disk_inspection_input: models::RunDiskInspectionInput,
@@ -327,7 +317,7 @@ pub mod disk_inspection {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
         }
@@ -380,12 +370,9 @@ pub mod diagnostics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 location: location.into(),
             }
@@ -417,7 +404,7 @@ pub mod diagnostics {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
         }

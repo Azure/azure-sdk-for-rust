@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn domain_registration_provider(&self) -> domain_registration_provider::Client {
         domain_registration_provider::Client(self.clone())
     }
@@ -131,29 +127,26 @@ pub mod domains {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn check_availability(
             &self,
             identifier: impl Into<models::NameIdentifier>,
             subscription_id: impl Into<String>,
         ) -> check_availability::Builder {
             check_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 identifier: identifier.into(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn get_control_center_sso_request(&self, subscription_id: impl Into<String>) -> get_control_center_sso_request::Builder {
             get_control_center_sso_request::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -163,7 +156,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> list_recommendations::Builder {
             list_recommendations::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -174,7 +167,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -186,7 +179,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
                 subscription_id: subscription_id.into(),
@@ -200,7 +193,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
                 domain: domain.into(),
@@ -215,7 +208,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
                 domain: domain.into(),
@@ -229,7 +222,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
                 subscription_id: subscription_id.into(),
@@ -243,7 +236,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> list_ownership_identifiers::Builder {
             list_ownership_identifiers::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
                 subscription_id: subscription_id.into(),
@@ -257,7 +250,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> get_ownership_identifier::Builder {
             get_ownership_identifier::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
                 name: name.into(),
@@ -273,7 +266,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> create_or_update_ownership_identifier::Builder {
             create_or_update_ownership_identifier::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
                 name: name.into(),
@@ -290,7 +283,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> update_ownership_identifier::Builder {
             update_ownership_identifier::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
                 name: name.into(),
@@ -306,7 +299,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> delete_ownership_identifier::Builder {
             delete_ownership_identifier::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
                 name: name.into(),
@@ -320,7 +313,7 @@ pub mod domains {
             subscription_id: impl Into<String>,
         ) -> renew::Builder {
             renew::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
                 subscription_id: subscription_id.into(),
@@ -350,7 +343,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) identifier: models::NameIdentifier,
             pub(crate) subscription_id: String,
         }
@@ -422,7 +415,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -490,7 +483,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -561,7 +554,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::DomainRecommendationSearchParameters,
             pub(crate) subscription_id: String,
         }
@@ -631,7 +624,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
@@ -701,7 +694,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) subscription_id: String,
@@ -778,7 +771,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) domain: models::Domain,
@@ -863,7 +856,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) domain: models::DomainPatchResource,
@@ -948,7 +941,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) subscription_id: String,
@@ -1025,7 +1018,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) subscription_id: String,
@@ -1093,7 +1086,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) name: String,
@@ -1160,7 +1153,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) name: String,
@@ -1229,7 +1222,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) name: String,
@@ -1303,7 +1296,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) name: String,
@@ -1375,7 +1368,7 @@ pub mod domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) subscription_id: String,
@@ -1429,18 +1422,15 @@ pub mod top_level_domains {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn get(&self, name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -1452,7 +1442,7 @@ pub mod top_level_domains {
             subscription_id: impl Into<String>,
         ) -> list_agreements::Builder {
             list_agreements::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 name: name.into(),
                 agreement_option: agreement_option.into(),
                 subscription_id: subscription_id.into(),
@@ -1482,7 +1472,7 @@ pub mod top_level_domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -1550,7 +1540,7 @@ pub mod top_level_domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
@@ -1620,7 +1610,7 @@ pub mod top_level_domains {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) agreement_option: models::TopLevelDomainAgreementOption,
             pub(crate) subscription_id: String,
@@ -1676,11 +1666,8 @@ pub mod domain_registration_provider {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_operations(&self) -> list_operations::Builder {
-            list_operations::Builder { client: self.base_clone() }
+            list_operations::Builder { client: self.0.clone() }
         }
     }
     pub mod list_operations {
@@ -1706,7 +1693,7 @@ pub mod domain_registration_provider {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CsmOperationCollection, Error>> {

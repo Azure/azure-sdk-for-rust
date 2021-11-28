@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn azure_bare_metal_instances(&self) -> azure_bare_metal_instances::Client {
         azure_bare_metal_instances::Client(self.clone())
     }
@@ -108,9 +104,6 @@ pub mod azure_bare_metal_instances {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -118,7 +111,7 @@ pub mod azure_bare_metal_instances {
             azure_bare_metal_instance_name: impl Into<String>,
         ) -> start::Builder {
             start::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 azure_bare_metal_instance_name: azure_bare_metal_instance_name.into(),
@@ -131,7 +124,7 @@ pub mod azure_bare_metal_instances {
             azure_bare_metal_instance_name: impl Into<String>,
         ) -> restart::Builder {
             restart::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 azure_bare_metal_instance_name: azure_bare_metal_instance_name.into(),
@@ -144,7 +137,7 @@ pub mod azure_bare_metal_instances {
             azure_bare_metal_instance_name: impl Into<String>,
         ) -> shutdown::Builder {
             shutdown::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 azure_bare_metal_instance_name: azure_bare_metal_instance_name.into(),
@@ -152,13 +145,13 @@ pub mod azure_bare_metal_instances {
         }
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
             }
@@ -170,7 +163,7 @@ pub mod azure_bare_metal_instances {
             azure_bare_metal_instance_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 azure_bare_metal_instance_name: azure_bare_metal_instance_name.into(),
@@ -184,7 +177,7 @@ pub mod azure_bare_metal_instances {
             tags_parameter: impl Into<models::Tags>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 azure_bare_metal_instance_name: azure_bare_metal_instance_name.into(),
@@ -198,7 +191,7 @@ pub mod azure_bare_metal_instances {
             azure_bare_metal_instance_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 azure_bare_metal_instance_name: azure_bare_metal_instance_name.into(),
@@ -236,7 +229,7 @@ pub mod azure_bare_metal_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) azure_bare_metal_instance_name: String,
@@ -315,7 +308,7 @@ pub mod azure_bare_metal_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) azure_bare_metal_instance_name: String,
@@ -394,7 +387,7 @@ pub mod azure_bare_metal_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) azure_bare_metal_instance_name: String,
@@ -468,7 +461,7 @@ pub mod azure_bare_metal_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -543,7 +536,7 @@ pub mod azure_bare_metal_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -620,7 +613,7 @@ pub mod azure_bare_metal_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) azure_bare_metal_instance_name: String,
@@ -697,7 +690,7 @@ pub mod azure_bare_metal_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) azure_bare_metal_instance_name: String,
@@ -782,7 +775,7 @@ pub mod azure_bare_metal_instances {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) azure_bare_metal_instance_name: String,
@@ -835,11 +828,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -868,7 +858,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {

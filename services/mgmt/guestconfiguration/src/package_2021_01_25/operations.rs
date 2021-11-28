@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn guest_configuration_assignment_reports(&self) -> guest_configuration_assignment_reports::Client {
         guest_configuration_assignment_reports::Client(self.clone())
     }
@@ -145,9 +141,6 @@ pub mod guest_configuration_assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -156,7 +149,7 @@ pub mod guest_configuration_assignments {
             vm_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 guest_configuration_assignment_name: guest_configuration_assignment_name.into(),
                 subscription_id: subscription_id.into(),
@@ -172,7 +165,7 @@ pub mod guest_configuration_assignments {
             vm_name: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 guest_configuration_assignment_name: guest_configuration_assignment_name.into(),
                 parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
@@ -188,7 +181,7 @@ pub mod guest_configuration_assignments {
             vm_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 guest_configuration_assignment_name: guest_configuration_assignment_name.into(),
                 subscription_id: subscription_id.into(),
@@ -197,13 +190,13 @@ pub mod guest_configuration_assignments {
         }
         pub fn subscription_list(&self, subscription_id: impl Into<String>) -> subscription_list::Builder {
             subscription_list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn rg_list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> rg_list::Builder {
             rg_list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -215,7 +208,7 @@ pub mod guest_configuration_assignments {
             vm_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 vm_name: vm_name.into(),
@@ -248,7 +241,7 @@ pub mod guest_configuration_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) guest_configuration_assignment_name: String,
             pub(crate) subscription_id: String,
@@ -327,7 +320,7 @@ pub mod guest_configuration_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) guest_configuration_assignment_name: String,
             pub(crate) parameters: models::GuestConfigurationAssignment,
             pub(crate) subscription_id: String,
@@ -407,7 +400,7 @@ pub mod guest_configuration_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) guest_configuration_assignment_name: String,
             pub(crate) subscription_id: String,
@@ -479,7 +472,7 @@ pub mod guest_configuration_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -558,7 +551,7 @@ pub mod guest_configuration_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
@@ -634,7 +627,7 @@ pub mod guest_configuration_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) vm_name: String,
@@ -686,9 +679,6 @@ pub mod guest_configuration_assignment_reports {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -697,7 +687,7 @@ pub mod guest_configuration_assignment_reports {
             vm_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 guest_configuration_assignment_name: guest_configuration_assignment_name.into(),
                 subscription_id: subscription_id.into(),
@@ -713,7 +703,7 @@ pub mod guest_configuration_assignment_reports {
             vm_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 guest_configuration_assignment_name: guest_configuration_assignment_name.into(),
                 report_id: report_id.into(),
@@ -748,7 +738,7 @@ pub mod guest_configuration_assignment_reports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) guest_configuration_assignment_name: String,
             pub(crate) subscription_id: String,
@@ -823,7 +813,7 @@ pub mod guest_configuration_assignment_reports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) guest_configuration_assignment_name: String,
             pub(crate) report_id: String,
@@ -877,9 +867,6 @@ pub mod guest_configuration_hcrp_assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -888,7 +875,7 @@ pub mod guest_configuration_hcrp_assignments {
             machine_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 guest_configuration_assignment_name: guest_configuration_assignment_name.into(),
                 subscription_id: subscription_id.into(),
@@ -904,7 +891,7 @@ pub mod guest_configuration_hcrp_assignments {
             machine_name: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 guest_configuration_assignment_name: guest_configuration_assignment_name.into(),
                 parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
@@ -920,7 +907,7 @@ pub mod guest_configuration_hcrp_assignments {
             machine_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 guest_configuration_assignment_name: guest_configuration_assignment_name.into(),
                 subscription_id: subscription_id.into(),
@@ -934,7 +921,7 @@ pub mod guest_configuration_hcrp_assignments {
             machine_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 machine_name: machine_name.into(),
@@ -967,7 +954,7 @@ pub mod guest_configuration_hcrp_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) guest_configuration_assignment_name: String,
             pub(crate) subscription_id: String,
@@ -1046,7 +1033,7 @@ pub mod guest_configuration_hcrp_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) guest_configuration_assignment_name: String,
             pub(crate) parameters: models::GuestConfigurationAssignment,
             pub(crate) subscription_id: String,
@@ -1126,7 +1113,7 @@ pub mod guest_configuration_hcrp_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) guest_configuration_assignment_name: String,
             pub(crate) subscription_id: String,
@@ -1193,7 +1180,7 @@ pub mod guest_configuration_hcrp_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) machine_name: String,
@@ -1245,9 +1232,6 @@ pub mod guest_configuration_hcrp_assignment_reports {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1256,7 +1240,7 @@ pub mod guest_configuration_hcrp_assignment_reports {
             machine_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 guest_configuration_assignment_name: guest_configuration_assignment_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1272,7 +1256,7 @@ pub mod guest_configuration_hcrp_assignment_reports {
             machine_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 guest_configuration_assignment_name: guest_configuration_assignment_name.into(),
                 report_id: report_id.into(),
@@ -1307,7 +1291,7 @@ pub mod guest_configuration_hcrp_assignment_reports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) guest_configuration_assignment_name: String,
             pub(crate) subscription_id: String,
@@ -1382,7 +1366,7 @@ pub mod guest_configuration_hcrp_assignment_reports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) guest_configuration_assignment_name: String,
             pub(crate) report_id: String,
@@ -1436,9 +1420,6 @@ pub mod guest_configuration_assignments_vmss {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1447,7 +1428,7 @@ pub mod guest_configuration_assignments_vmss {
             vmss_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1462,7 +1443,7 @@ pub mod guest_configuration_assignments_vmss {
             vmss_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1476,7 +1457,7 @@ pub mod guest_configuration_assignments_vmss {
             vmss_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 vmss_name: vmss_name.into(),
@@ -1509,7 +1490,7 @@ pub mod guest_configuration_assignments_vmss {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -1588,7 +1569,7 @@ pub mod guest_configuration_assignments_vmss {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -1661,7 +1642,7 @@ pub mod guest_configuration_assignments_vmss {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) vmss_name: String,
@@ -1713,9 +1694,6 @@ pub mod guest_configuration_assignment_reports_vmss {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1724,7 +1702,7 @@ pub mod guest_configuration_assignment_reports_vmss {
             vmss_name: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -1740,7 +1718,7 @@ pub mod guest_configuration_assignment_reports_vmss {
             vmss_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
                 id: id.into(),
@@ -1775,7 +1753,7 @@ pub mod guest_configuration_assignment_reports_vmss {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
@@ -1850,7 +1828,7 @@ pub mod guest_configuration_assignment_reports_vmss {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
@@ -1904,11 +1882,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -1937,7 +1912,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationList, Error>> {

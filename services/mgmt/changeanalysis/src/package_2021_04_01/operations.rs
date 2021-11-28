@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn changes(&self) -> changes::Client {
         changes::Client(self.clone())
     }
@@ -101,12 +97,9 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 skip_token: None,
             }
         }
@@ -137,7 +130,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
@@ -194,12 +187,9 @@ pub mod resource_changes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, resource_id: impl Into<String>, start_time: impl Into<String>, end_time: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_id: resource_id.into(),
                 start_time: start_time.into(),
                 end_time: end_time.into(),
@@ -233,7 +223,7 @@ pub mod resource_changes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_id: String,
             pub(crate) start_time: String,
             pub(crate) end_time: String,
@@ -300,9 +290,6 @@ pub mod changes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_changes_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -311,7 +298,7 @@ pub mod changes {
             end_time: impl Into<String>,
         ) -> list_changes_by_resource_group::Builder {
             list_changes_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 start_time: start_time.into(),
@@ -326,7 +313,7 @@ pub mod changes {
             end_time: impl Into<String>,
         ) -> list_changes_by_subscription::Builder {
             list_changes_by_subscription::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 start_time: start_time.into(),
                 end_time: end_time.into(),
@@ -360,7 +347,7 @@ pub mod changes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) start_time: String,
@@ -449,7 +436,7 @@ pub mod changes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) start_time: String,
             pub(crate) end_time: String,

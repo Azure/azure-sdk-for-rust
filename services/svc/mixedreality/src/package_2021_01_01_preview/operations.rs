@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn remote_rendering(&self) -> remote_rendering::Client {
         remote_rendering::Client(self.clone())
     }
@@ -103,12 +99,9 @@ pub mod remote_rendering {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_conversion(&self, account_id: impl Into<String>, conversion_id: impl Into<String>) -> get_conversion::Builder {
             get_conversion::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 account_id: account_id.into(),
                 conversion_id: conversion_id.into(),
             }
@@ -120,7 +113,7 @@ pub mod remote_rendering {
             body: impl Into<models::CreateConversionSettings>,
         ) -> create_conversion::Builder {
             create_conversion::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 account_id: account_id.into(),
                 conversion_id: conversion_id.into(),
                 body: body.into(),
@@ -128,13 +121,13 @@ pub mod remote_rendering {
         }
         pub fn list_conversions(&self, account_id: impl Into<String>) -> list_conversions::Builder {
             list_conversions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 account_id: account_id.into(),
             }
         }
         pub fn get_session(&self, account_id: impl Into<String>, session_id: impl Into<String>) -> get_session::Builder {
             get_session::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 account_id: account_id.into(),
                 session_id: session_id.into(),
             }
@@ -146,7 +139,7 @@ pub mod remote_rendering {
             body: impl Into<models::CreateSessionSettings>,
         ) -> create_session::Builder {
             create_session::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 account_id: account_id.into(),
                 session_id: session_id.into(),
                 body: body.into(),
@@ -159,7 +152,7 @@ pub mod remote_rendering {
             body: impl Into<models::UpdateSessionSettings>,
         ) -> update_session::Builder {
             update_session::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 account_id: account_id.into(),
                 session_id: session_id.into(),
                 body: body.into(),
@@ -167,14 +160,14 @@ pub mod remote_rendering {
         }
         pub fn stop_session(&self, account_id: impl Into<String>, session_id: impl Into<String>) -> stop_session::Builder {
             stop_session::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 account_id: account_id.into(),
                 session_id: session_id.into(),
             }
         }
         pub fn list_sessions(&self, account_id: impl Into<String>) -> list_sessions::Builder {
             list_sessions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 account_id: account_id.into(),
             }
         }
@@ -212,7 +205,7 @@ pub mod remote_rendering {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) conversion_id: String,
         }
@@ -309,7 +302,7 @@ pub mod remote_rendering {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) conversion_id: String,
             pub(crate) body: models::CreateConversionSettings,
@@ -416,7 +409,7 @@ pub mod remote_rendering {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
         }
         impl Builder {
@@ -499,7 +492,7 @@ pub mod remote_rendering {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) session_id: String,
         }
@@ -596,7 +589,7 @@ pub mod remote_rendering {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) session_id: String,
             pub(crate) body: models::CreateSessionSettings,
@@ -707,7 +700,7 @@ pub mod remote_rendering {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) session_id: String,
             pub(crate) body: models::UpdateSessionSettings,
@@ -805,7 +798,7 @@ pub mod remote_rendering {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
             pub(crate) session_id: String,
         }
@@ -889,7 +882,7 @@ pub mod remote_rendering {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) account_id: String,
         }
         impl Builder {

@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn subscription_definitions(&self) -> subscription_definitions::Client {
         subscription_definitions::Client(self.clone())
     }
@@ -100,11 +96,8 @@ pub mod subscription_definitions_operation_metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -133,7 +126,7 @@ pub mod subscription_definitions_operation_metadata {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -180,12 +173,9 @@ pub mod subscription_definitions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, subscription_definition_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_definition_name: subscription_definition_name.into(),
             }
         }
@@ -195,17 +185,17 @@ pub mod subscription_definitions {
             body: impl Into<models::SubscriptionDefinition>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_definition_name: subscription_definition_name.into(),
                 body: body.into(),
             }
         }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get_operation_status(&self, operation_id: impl Into<String>) -> get_operation_status::Builder {
             get_operation_status::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 operation_id: operation_id.into(),
             }
         }
@@ -236,7 +226,7 @@ pub mod subscription_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_definition_name: String,
         }
         impl Builder {
@@ -314,7 +304,7 @@ pub mod subscription_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_definition_name: String,
             pub(crate) body: models::SubscriptionDefinition,
         }
@@ -390,7 +380,7 @@ pub mod subscription_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -465,7 +455,7 @@ pub mod subscription_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) operation_id: String,
         }
         impl Builder {

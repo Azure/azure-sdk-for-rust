@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn network_interfaces(&self) -> network_interfaces::Client {
         network_interfaces::Client(self.clone())
     }
@@ -122,9 +118,6 @@ pub mod network_interfaces {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_virtual_machine_scale_set_vm_network_interfaces(
             &self,
             resource_group_name: impl Into<String>,
@@ -133,7 +126,7 @@ pub mod network_interfaces {
             subscription_id: impl Into<String>,
         ) -> list_virtual_machine_scale_set_vm_network_interfaces::Builder {
             list_virtual_machine_scale_set_vm_network_interfaces::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
                 virtualmachine_index: virtualmachine_index.into(),
@@ -147,7 +140,7 @@ pub mod network_interfaces {
             subscription_id: impl Into<String>,
         ) -> list_virtual_machine_scale_set_network_interfaces::Builder {
             list_virtual_machine_scale_set_network_interfaces::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
                 subscription_id: subscription_id.into(),
@@ -162,7 +155,7 @@ pub mod network_interfaces {
             subscription_id: impl Into<String>,
         ) -> get_virtual_machine_scale_set_network_interface::Builder {
             get_virtual_machine_scale_set_network_interface::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
                 virtualmachine_index: virtualmachine_index.into(),
@@ -180,7 +173,7 @@ pub mod network_interfaces {
             subscription_id: impl Into<String>,
         ) -> list_virtual_machine_scale_set_ip_configurations::Builder {
             list_virtual_machine_scale_set_ip_configurations::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
                 virtualmachine_index: virtualmachine_index.into(),
@@ -199,7 +192,7 @@ pub mod network_interfaces {
             subscription_id: impl Into<String>,
         ) -> get_virtual_machine_scale_set_ip_configuration::Builder {
             get_virtual_machine_scale_set_ip_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
                 virtualmachine_index: virtualmachine_index.into(),
@@ -233,7 +226,7 @@ pub mod network_interfaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) virtual_machine_scale_set_name: String,
             pub(crate) virtualmachine_index: String,
@@ -302,7 +295,7 @@ pub mod network_interfaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) virtual_machine_scale_set_name: String,
             pub(crate) subscription_id: String,
@@ -376,7 +369,7 @@ pub mod network_interfaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) virtual_machine_scale_set_name: String,
             pub(crate) virtualmachine_index: String,
@@ -452,7 +445,7 @@ pub mod network_interfaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) virtual_machine_scale_set_name: String,
             pub(crate) virtualmachine_index: String,
@@ -531,7 +524,7 @@ pub mod network_interfaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) virtual_machine_scale_set_name: String,
             pub(crate) virtualmachine_index: String,
@@ -592,9 +585,6 @@ pub mod public_ip_addresses {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_virtual_machine_scale_set_public_ip_addresses(
             &self,
             resource_group_name: impl Into<String>,
@@ -602,7 +592,7 @@ pub mod public_ip_addresses {
             subscription_id: impl Into<String>,
         ) -> list_virtual_machine_scale_set_public_ip_addresses::Builder {
             list_virtual_machine_scale_set_public_ip_addresses::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
                 subscription_id: subscription_id.into(),
@@ -618,7 +608,7 @@ pub mod public_ip_addresses {
             subscription_id: impl Into<String>,
         ) -> list_virtual_machine_scale_set_vm_public_ip_addresses::Builder {
             list_virtual_machine_scale_set_vm_public_ip_addresses::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
                 virtualmachine_index: virtualmachine_index.into(),
@@ -638,7 +628,7 @@ pub mod public_ip_addresses {
             subscription_id: impl Into<String>,
         ) -> get_virtual_machine_scale_set_public_ip_address::Builder {
             get_virtual_machine_scale_set_public_ip_address::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 virtual_machine_scale_set_name: virtual_machine_scale_set_name.into(),
                 virtualmachine_index: virtualmachine_index.into(),
@@ -673,7 +663,7 @@ pub mod public_ip_addresses {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) virtual_machine_scale_set_name: String,
             pub(crate) subscription_id: String,
@@ -745,7 +735,7 @@ pub mod public_ip_addresses {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) virtual_machine_scale_set_name: String,
             pub(crate) virtualmachine_index: String,
@@ -814,7 +804,7 @@ pub mod public_ip_addresses {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) virtual_machine_scale_set_name: String,
             pub(crate) virtualmachine_index: String,

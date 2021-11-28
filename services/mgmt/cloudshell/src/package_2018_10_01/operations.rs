@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -119,7 +115,7 @@ impl Client {
         location: impl Into<String>,
     ) -> get_user_settings_with_location::Builder {
         get_user_settings_with_location::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             user_settings_name: user_settings_name.into(),
             location: location.into(),
         }
@@ -131,7 +127,7 @@ impl Client {
         parameters: impl Into<models::CloudShellUserSettings>,
     ) -> put_user_settings_with_location::Builder {
         put_user_settings_with_location::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             user_settings_name: user_settings_name.into(),
             location: location.into(),
             parameters: parameters.into(),
@@ -144,7 +140,7 @@ impl Client {
         parameters: impl Into<models::CloudShellPatchUserSettings>,
     ) -> patch_user_settings_with_location::Builder {
         patch_user_settings_with_location::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             user_settings_name: user_settings_name.into(),
             location: location.into(),
             parameters: parameters.into(),
@@ -156,7 +152,7 @@ impl Client {
         location: impl Into<String>,
     ) -> delete_user_settings_with_location::Builder {
         delete_user_settings_with_location::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             user_settings_name: user_settings_name.into(),
             location: location.into(),
         }
@@ -167,7 +163,7 @@ impl Client {
         location: impl Into<String>,
     ) -> get_console_with_location::Builder {
         get_console_with_location::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             console_name: console_name.into(),
             location: location.into(),
         }
@@ -178,7 +174,7 @@ impl Client {
         location: impl Into<String>,
     ) -> put_console_with_location::Builder {
         put_console_with_location::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             console_name: console_name.into(),
             location: location.into(),
         }
@@ -189,7 +185,7 @@ impl Client {
         location: impl Into<String>,
     ) -> delete_console_with_location::Builder {
         delete_console_with_location::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             console_name: console_name.into(),
             location: location.into(),
         }
@@ -200,14 +196,14 @@ impl Client {
         location: impl Into<String>,
     ) -> keep_alive_with_location::Builder {
         keep_alive_with_location::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             console_name: console_name.into(),
             location: location.into(),
         }
     }
     pub fn get_user_settings(&self, user_settings_name: impl Into<String>) -> get_user_settings::Builder {
         get_user_settings::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             user_settings_name: user_settings_name.into(),
         }
     }
@@ -217,7 +213,7 @@ impl Client {
         parameters: impl Into<models::CloudShellUserSettings>,
     ) -> put_user_settings::Builder {
         put_user_settings::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             user_settings_name: user_settings_name.into(),
             parameters: parameters.into(),
         }
@@ -228,39 +224,39 @@ impl Client {
         parameters: impl Into<models::CloudShellPatchUserSettings>,
     ) -> patch_user_settings::Builder {
         patch_user_settings::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             user_settings_name: user_settings_name.into(),
             parameters: parameters.into(),
         }
     }
     pub fn delete_user_settings(&self, user_settings_name: impl Into<String>) -> delete_user_settings::Builder {
         delete_user_settings::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             user_settings_name: user_settings_name.into(),
         }
     }
     pub fn get_console(&self, console_name: impl Into<String>) -> get_console::Builder {
         get_console::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             console_name: console_name.into(),
         }
     }
     pub fn put_console(&self, console_name: impl Into<String>, parameters: impl Into<models::ConsoleDefinition>) -> put_console::Builder {
         put_console::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             console_name: console_name.into(),
             parameters: parameters.into(),
         }
     }
     pub fn delete_console(&self, console_name: impl Into<String>) -> delete_console::Builder {
         delete_console::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             console_name: console_name.into(),
         }
     }
     pub fn keep_alive(&self, console_name: impl Into<String>) -> keep_alive::Builder {
         keep_alive::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             console_name: console_name.into(),
         }
     }
@@ -291,7 +287,7 @@ pub mod get_user_settings_with_location {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) location: String,
     }
@@ -366,7 +362,7 @@ pub mod put_user_settings_with_location {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) location: String,
         pub(crate) parameters: models::CloudShellUserSettings,
@@ -443,7 +439,7 @@ pub mod patch_user_settings_with_location {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) location: String,
         pub(crate) parameters: models::CloudShellPatchUserSettings,
@@ -525,7 +521,7 @@ pub mod delete_user_settings_with_location {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) location: String,
     }
@@ -596,7 +592,7 @@ pub mod get_console_with_location {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) console_name: String,
         pub(crate) location: String,
     }
@@ -676,7 +672,7 @@ pub mod put_console_with_location {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) console_name: String,
         pub(crate) location: String,
     }
@@ -762,7 +758,7 @@ pub mod delete_console_with_location {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) console_name: String,
         pub(crate) location: String,
     }
@@ -833,7 +829,7 @@ pub mod keep_alive_with_location {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) console_name: String,
         pub(crate) location: String,
     }
@@ -903,7 +899,7 @@ pub mod get_user_settings {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
     }
     impl Builder {
@@ -976,7 +972,7 @@ pub mod put_user_settings {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) parameters: models::CloudShellUserSettings,
     }
@@ -1051,7 +1047,7 @@ pub mod patch_user_settings {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) parameters: models::CloudShellPatchUserSettings,
     }
@@ -1131,7 +1127,7 @@ pub mod delete_user_settings {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
     }
     impl Builder {
@@ -1200,7 +1196,7 @@ pub mod get_console {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) console_name: String,
     }
     impl Builder {
@@ -1278,7 +1274,7 @@ pub mod put_console {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) console_name: String,
         pub(crate) parameters: models::ConsoleDefinition,
     }
@@ -1364,7 +1360,7 @@ pub mod delete_console {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) console_name: String,
     }
     impl Builder {
@@ -1433,7 +1429,7 @@ pub mod keep_alive {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) console_name: String,
     }
     impl Builder {

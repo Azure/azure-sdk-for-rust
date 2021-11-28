@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn confidential_ledger(&self) -> confidential_ledger::Client {
         confidential_ledger::Client(self.clone())
     }
@@ -111,21 +107,18 @@ pub mod confidential_ledger {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_constitution(&self) -> get_constitution::Builder {
-            get_constitution::Builder { client: self.base_clone() }
+            get_constitution::Builder { client: self.0.clone() }
         }
         pub fn get_consortium_members(&self) -> get_consortium_members::Builder {
-            get_consortium_members::Builder { client: self.base_clone() }
+            get_consortium_members::Builder { client: self.0.clone() }
         }
         pub fn get_enclave_quotes(&self) -> get_enclave_quotes::Builder {
-            get_enclave_quotes::Builder { client: self.base_clone() }
+            get_enclave_quotes::Builder { client: self.0.clone() }
         }
         pub fn get_ledger_entries(&self) -> get_ledger_entries::Builder {
             get_ledger_entries::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 sub_ledger_id: None,
                 from_transaction_id: None,
                 to_transaction_id: None,
@@ -133,39 +126,39 @@ pub mod confidential_ledger {
         }
         pub fn post_ledger_entry(&self) -> post_ledger_entry::Builder {
             post_ledger_entry::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 sub_ledger_id: None,
                 entry: None,
             }
         }
         pub fn get_ledger_entry(&self, transaction_id: impl Into<String>) -> get_ledger_entry::Builder {
             get_ledger_entry::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 transaction_id: transaction_id.into(),
                 sub_ledger_id: None,
             }
         }
         pub fn get_receipt(&self, transaction_id: impl Into<String>) -> get_receipt::Builder {
             get_receipt::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 transaction_id: transaction_id.into(),
             }
         }
         pub fn get_transaction_status(&self, transaction_id: impl Into<String>) -> get_transaction_status::Builder {
             get_transaction_status::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 transaction_id: transaction_id.into(),
             }
         }
         pub fn get_current_ledger_entry(&self) -> get_current_ledger_entry::Builder {
             get_current_ledger_entry::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 sub_ledger_id: None,
             }
         }
         pub fn get_user(&self, user_id: impl Into<String>) -> get_user::Builder {
             get_user::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 user_id: user_id.into(),
             }
         }
@@ -175,14 +168,14 @@ pub mod confidential_ledger {
             user_details: impl Into<models::LedgerUser>,
         ) -> create_or_update_user::Builder {
             create_or_update_user::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 user_id: user_id.into(),
                 user_details: user_details.into(),
             }
         }
         pub fn delete_user(&self, user_id: impl Into<String>) -> delete_user::Builder {
             delete_user::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 user_id: user_id.into(),
             }
         }
@@ -213,7 +206,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Constitution, Error>> {
@@ -281,7 +274,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Consortium, Error>> {
@@ -349,7 +342,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -419,7 +412,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) sub_ledger_id: Option<String>,
             pub(crate) from_transaction_id: Option<String>,
             pub(crate) to_transaction_id: Option<String>,
@@ -511,7 +504,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) sub_ledger_id: Option<String>,
             pub(crate) entry: Option<models::LedgerEntry>,
         }
@@ -597,7 +590,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) transaction_id: String,
             pub(crate) sub_ledger_id: Option<String>,
         }
@@ -674,7 +667,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) transaction_id: String,
         }
         impl Builder {
@@ -743,7 +736,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) transaction_id: String,
         }
         impl Builder {
@@ -812,7 +805,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) sub_ledger_id: Option<String>,
         }
         impl Builder {
@@ -888,7 +881,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) user_id: String,
         }
         impl Builder {
@@ -957,7 +950,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) user_id: String,
             pub(crate) user_details: models::LedgerUser,
         }
@@ -1028,7 +1021,7 @@ pub mod confidential_ledger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) user_id: String,
         }
         impl Builder {

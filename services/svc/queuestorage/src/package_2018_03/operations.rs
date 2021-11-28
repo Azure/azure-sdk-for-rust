@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn message_id(&self) -> message_id::Client {
         message_id::Client(self.clone())
     }
@@ -128,9 +124,6 @@ pub mod service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_properties(
             &self,
             restype: impl Into<String>,
@@ -138,7 +131,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -154,7 +147,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> set_properties::Builder {
             set_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 storage_service_properties: storage_service_properties.into(),
@@ -170,7 +163,7 @@ pub mod service {
             x_ms_version: impl Into<String>,
         ) -> get_statistics::Builder {
             get_statistics::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -180,7 +173,7 @@ pub mod service {
         }
         pub fn list_queues_segment(&self, comp: impl Into<String>, x_ms_version: impl Into<String>) -> list_queues_segment::Builder {
             list_queues_segment::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
                 prefix: None,
@@ -218,7 +211,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
@@ -309,7 +302,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) storage_service_properties: models::StorageServiceProperties,
@@ -397,7 +390,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
@@ -488,7 +481,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
@@ -584,12 +577,9 @@ pub mod queue {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn create(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -599,7 +589,7 @@ pub mod queue {
         }
         pub fn delete(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -613,7 +603,7 @@ pub mod queue {
             x_ms_version: impl Into<String>,
         ) -> get_properties::Builder {
             get_properties::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -628,7 +618,7 @@ pub mod queue {
             x_ms_version: impl Into<String>,
         ) -> set_metadata::Builder {
             set_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -644,7 +634,7 @@ pub mod queue {
             x_ms_version: impl Into<String>,
         ) -> get_access_policy::Builder {
             get_access_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -659,7 +649,7 @@ pub mod queue {
             x_ms_version: impl Into<String>,
         ) -> set_access_policy::Builder {
             set_access_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 comp: comp.into(),
                 x_ms_version: x_ms_version.into(),
@@ -700,7 +690,7 @@ pub mod queue {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -790,7 +780,7 @@ pub mod queue {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -871,7 +861,7 @@ pub mod queue {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
@@ -955,7 +945,7 @@ pub mod queue {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
@@ -1047,7 +1037,7 @@ pub mod queue {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
@@ -1136,7 +1126,7 @@ pub mod queue {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) comp: String,
             pub(crate) x_ms_version: String,
@@ -1209,12 +1199,9 @@ pub mod messages {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn dequeue(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> dequeue::Builder {
             dequeue::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
                 numofmessages: None,
@@ -1230,7 +1217,7 @@ pub mod messages {
             x_ms_version: impl Into<String>,
         ) -> enqueue::Builder {
             enqueue::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 queue_message: queue_message.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1242,7 +1229,7 @@ pub mod messages {
         }
         pub fn clear(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> clear::Builder {
             clear::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 x_ms_version: x_ms_version.into(),
                 timeout: None,
@@ -1251,7 +1238,7 @@ pub mod messages {
         }
         pub fn peek(&self, queue_name: impl Into<String>, peekonly: impl Into<String>, x_ms_version: impl Into<String>) -> peek::Builder {
             peek::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 peekonly: peekonly.into(),
                 x_ms_version: x_ms_version.into(),
@@ -1287,7 +1274,7 @@ pub mod messages {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) numofmessages: Option<i64>,
@@ -1390,7 +1377,7 @@ pub mod messages {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) queue_message: models::QueueMessage,
             pub(crate) x_ms_version: String,
@@ -1495,7 +1482,7 @@ pub mod messages {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
@@ -1576,7 +1563,7 @@ pub mod messages {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) peekonly: String,
             pub(crate) x_ms_version: String,
@@ -1652,9 +1639,6 @@ pub mod message_id {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn update(
             &self,
             queue_name: impl Into<String>,
@@ -1664,7 +1648,7 @@ pub mod message_id {
             x_ms_version: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 messageid: messageid.into(),
                 popreceipt: popreceipt.into(),
@@ -1683,7 +1667,7 @@ pub mod message_id {
             x_ms_version: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 queue_name: queue_name.into(),
                 messageid: messageid.into(),
                 popreceipt: popreceipt.into(),
@@ -1719,7 +1703,7 @@ pub mod message_id {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) messageid: String,
             pub(crate) popreceipt: String,
@@ -1818,7 +1802,7 @@ pub mod message_id {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) queue_name: String,
             pub(crate) messageid: String,
             pub(crate) popreceipt: String,

@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
@@ -124,14 +120,14 @@ pub enum Error {
 }
 impl Client {
     pub fn list_operations(&self) -> list_operations::Builder {
-        list_operations::Builder { client: self.base_clone() }
+        list_operations::Builder { client: self.clone() }
     }
     pub fn list_addresses_at_subscription_level(
         &self,
         subscription_id: impl Into<String>,
     ) -> list_addresses_at_subscription_level::Builder {
         list_addresses_at_subscription_level::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             filter: None,
             skip_token: None,
@@ -143,7 +139,7 @@ impl Client {
         product_families_request: impl Into<models::ProductFamiliesRequest>,
     ) -> list_product_families::Builder {
         list_product_families::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             product_families_request: product_families_request.into(),
             expand: None,
@@ -156,7 +152,7 @@ impl Client {
         configurations_request: impl Into<models::ConfigurationsRequest>,
     ) -> list_configurations::Builder {
         list_configurations::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             configurations_request: configurations_request.into(),
             skip_token: None,
@@ -164,14 +160,14 @@ impl Client {
     }
     pub fn list_product_families_metadata(&self, subscription_id: impl Into<String>) -> list_product_families_metadata::Builder {
         list_product_families_metadata::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             skip_token: None,
         }
     }
     pub fn list_order_at_subscription_level(&self, subscription_id: impl Into<String>) -> list_order_at_subscription_level::Builder {
         list_order_at_subscription_level::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             skip_token: None,
         }
@@ -181,7 +177,7 @@ impl Client {
         subscription_id: impl Into<String>,
     ) -> list_order_items_at_subscription_level::Builder {
         list_order_items_at_subscription_level::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             filter: None,
             expand: None,
@@ -194,7 +190,7 @@ impl Client {
         resource_group_name: impl Into<String>,
     ) -> list_addresses_at_resource_group_level::Builder {
         list_addresses_at_resource_group_level::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
             filter: None,
@@ -208,7 +204,7 @@ impl Client {
         resource_group_name: impl Into<String>,
     ) -> get_address_by_name::Builder {
         get_address_by_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             address_name: address_name.into(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -222,7 +218,7 @@ impl Client {
         address_resource: impl Into<models::AddressResource>,
     ) -> create_address::Builder {
         create_address::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             address_name: address_name.into(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -237,7 +233,7 @@ impl Client {
         address_update_parameter: impl Into<models::AddressUpdateParameter>,
     ) -> update_address::Builder {
         update_address::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             address_name: address_name.into(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -252,7 +248,7 @@ impl Client {
         resource_group_name: impl Into<String>,
     ) -> delete_address_by_name::Builder {
         delete_address_by_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             address_name: address_name.into(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -264,7 +260,7 @@ impl Client {
         resource_group_name: impl Into<String>,
     ) -> list_order_at_resource_group_level::Builder {
         list_order_at_resource_group_level::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
             skip_token: None,
@@ -278,7 +274,7 @@ impl Client {
         location: impl Into<String>,
     ) -> get_order_by_name::Builder {
         get_order_by_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             order_name: order_name.into(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -291,7 +287,7 @@ impl Client {
         resource_group_name: impl Into<String>,
     ) -> list_order_items_at_resource_group_level::Builder {
         list_order_items_at_resource_group_level::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
             filter: None,
@@ -306,7 +302,7 @@ impl Client {
         resource_group_name: impl Into<String>,
     ) -> get_order_item_by_name::Builder {
         get_order_item_by_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -321,7 +317,7 @@ impl Client {
         order_item_resource: impl Into<models::OrderItemResource>,
     ) -> create_order_item::Builder {
         create_order_item::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -336,7 +332,7 @@ impl Client {
         order_item_update_parameter: impl Into<models::OrderItemUpdateParameter>,
     ) -> update_order_item::Builder {
         update_order_item::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -351,7 +347,7 @@ impl Client {
         resource_group_name: impl Into<String>,
     ) -> delete_order_item_by_name::Builder {
         delete_order_item_by_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -365,7 +361,7 @@ impl Client {
         cancellation_reason: impl Into<models::CancellationReason>,
     ) -> cancel_order_item::Builder {
         cancel_order_item::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -380,7 +376,7 @@ impl Client {
         return_order_item_details: impl Into<models::ReturnOrderItemDetails>,
     ) -> return_order_item::Builder {
         return_order_item::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             order_item_name: order_item_name.into(),
             subscription_id: subscription_id.into(),
             resource_group_name: resource_group_name.into(),
@@ -414,7 +410,7 @@ pub mod list_operations {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -482,7 +478,7 @@ pub mod list_addresses_at_subscription_level {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) filter: Option<String>,
         pub(crate) skip_token: Option<String>,
@@ -571,7 +567,7 @@ pub mod list_product_families {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) product_families_request: models::ProductFamiliesRequest,
         pub(crate) expand: Option<String>,
@@ -662,7 +658,7 @@ pub mod list_configurations {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) configurations_request: models::ConfigurationsRequest,
         pub(crate) skip_token: Option<String>,
@@ -745,7 +741,7 @@ pub mod list_product_families_metadata {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) skip_token: Option<String>,
     }
@@ -827,7 +823,7 @@ pub mod list_order_at_subscription_level {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) skip_token: Option<String>,
     }
@@ -908,7 +904,7 @@ pub mod list_order_items_at_subscription_level {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) filter: Option<String>,
         pub(crate) expand: Option<String>,
@@ -1005,7 +1001,7 @@ pub mod list_addresses_at_resource_group_level {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
         pub(crate) filter: Option<String>,
@@ -1096,7 +1092,7 @@ pub mod get_address_by_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) address_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
@@ -1178,7 +1174,7 @@ pub mod create_address {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) address_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
@@ -1263,7 +1259,7 @@ pub mod update_address {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) address_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
@@ -1357,7 +1353,7 @@ pub mod delete_address_by_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) address_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
@@ -1431,7 +1427,7 @@ pub mod list_order_at_resource_group_level {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
         pub(crate) skip_token: Option<String>,
@@ -1514,7 +1510,7 @@ pub mod get_order_by_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) order_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
@@ -1593,7 +1589,7 @@ pub mod list_order_items_at_resource_group_level {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
         pub(crate) filter: Option<String>,
@@ -1692,7 +1688,7 @@ pub mod get_order_item_by_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
@@ -1782,7 +1778,7 @@ pub mod create_order_item {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
@@ -1867,7 +1863,7 @@ pub mod update_order_item {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
@@ -1961,7 +1957,7 @@ pub mod delete_order_item_by_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
@@ -2040,7 +2036,7 @@ pub mod cancel_order_item {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,
@@ -2120,7 +2116,7 @@ pub mod return_order_item {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) order_item_name: String,
         pub(crate) subscription_id: String,
         pub(crate) resource_group_name: String,

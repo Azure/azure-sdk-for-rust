@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn ingestion_settings(&self) -> ingestion_settings::Client {
         ingestion_settings::Client(self.clone())
     }
@@ -99,18 +95,15 @@ pub mod ingestion_settings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn get(&self, subscription_id: impl Into<String>, ingestion_setting_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 ingestion_setting_name: ingestion_setting_name.into(),
             }
@@ -122,7 +115,7 @@ pub mod ingestion_settings {
             ingestion_setting: impl Into<models::IngestionSetting>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 ingestion_setting_name: ingestion_setting_name.into(),
                 ingestion_setting: ingestion_setting.into(),
@@ -130,14 +123,14 @@ pub mod ingestion_settings {
         }
         pub fn delete(&self, subscription_id: impl Into<String>, ingestion_setting_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 ingestion_setting_name: ingestion_setting_name.into(),
             }
         }
         pub fn list_tokens(&self, subscription_id: impl Into<String>, ingestion_setting_name: impl Into<String>) -> list_tokens::Builder {
             list_tokens::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 ingestion_setting_name: ingestion_setting_name.into(),
             }
@@ -148,7 +141,7 @@ pub mod ingestion_settings {
             ingestion_setting_name: impl Into<String>,
         ) -> list_connection_strings::Builder {
             list_connection_strings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 ingestion_setting_name: ingestion_setting_name.into(),
             }
@@ -180,7 +173,7 @@ pub mod ingestion_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -253,7 +246,7 @@ pub mod ingestion_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) ingestion_setting_name: String,
         }
@@ -328,7 +321,7 @@ pub mod ingestion_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) ingestion_setting_name: String,
             pub(crate) ingestion_setting: models::IngestionSetting,
@@ -410,7 +403,7 @@ pub mod ingestion_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) ingestion_setting_name: String,
         }
@@ -481,7 +474,7 @@ pub mod ingestion_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) ingestion_setting_name: String,
         }
@@ -557,7 +550,7 @@ pub mod ingestion_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) ingestion_setting_name: String,
         }

@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn metric_baseline(&self) -> metric_baseline::Client {
         metric_baseline::Client(self.clone())
     }
@@ -91,12 +87,9 @@ pub mod metric_baseline {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, resource_uri: impl Into<String>, metric_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 metric_name: metric_name.into(),
                 timespan: None,
@@ -112,7 +105,7 @@ pub mod metric_baseline {
             time_series_information: impl Into<models::TimeSeriesInformation>,
         ) -> calculate_baseline::Builder {
             calculate_baseline::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 time_series_information: time_series_information.into(),
             }
@@ -144,7 +137,7 @@ pub mod metric_baseline {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) metric_name: String,
             pub(crate) timespan: Option<String>,
@@ -259,7 +252,7 @@ pub mod metric_baseline {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) time_series_information: models::TimeSeriesInformation,
         }

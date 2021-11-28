@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn ad_domain_service_members(&self) -> ad_domain_service_members::Client {
         ad_domain_service_members::Client(self.clone())
     }
@@ -289,12 +285,9 @@ pub mod adds_services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter: None,
                 service_type: None,
                 skip_count: None,
@@ -303,33 +296,33 @@ pub mod adds_services {
         }
         pub fn add(&self, service: impl Into<models::ServiceProperties>) -> add::Builder {
             add::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service: service.into(),
             }
         }
         pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
         pub fn update(&self, service_name: impl Into<String>, service: impl Into<models::ServiceProperties>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service: service.into(),
             }
         }
         pub fn delete(&self, service_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 confirm: None,
             }
         }
         pub fn get_forest_summary(&self, service_name: impl Into<String>) -> get_forest_summary::Builder {
             get_forest_summary::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
@@ -340,7 +333,7 @@ pub mod adds_services {
             group_name: impl Into<String>,
         ) -> list_metrics_average::Builder {
             list_metrics_average::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
                 group_name: group_name.into(),
@@ -353,7 +346,7 @@ pub mod adds_services {
             group_name: impl Into<String>,
         ) -> list_metrics_sum::Builder {
             list_metrics_sum::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
                 group_name: group_name.into(),
@@ -361,7 +354,7 @@ pub mod adds_services {
         }
         pub fn list_metric_metadata(&self, service_name: impl Into<String>) -> list_metric_metadata::Builder {
             list_metric_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
                 perf_counter: None,
@@ -369,7 +362,7 @@ pub mod adds_services {
         }
         pub fn get_metric_metadata(&self, service_name: impl Into<String>, metric_name: impl Into<String>) -> get_metric_metadata::Builder {
             get_metric_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
             }
@@ -381,7 +374,7 @@ pub mod adds_services {
             group_name: impl Into<String>,
         ) -> get_metric_metadata_for_group::Builder {
             get_metric_metadata_for_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
                 group_name: group_name.into(),
@@ -392,7 +385,7 @@ pub mod adds_services {
         }
         pub fn list_replication_details(&self, service_name: impl Into<String>) -> list_replication_details::Builder {
             list_replication_details::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
                 with_details: None,
@@ -407,7 +400,7 @@ pub mod adds_services {
             next_row_key: impl Into<String>,
         ) -> list_replication_summary::Builder {
             list_replication_summary::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 is_groupby_site,
                 query: query.into(),
@@ -423,7 +416,7 @@ pub mod adds_services {
             service_name: impl Into<String>,
         ) -> list_server_alerts::Builder {
             list_server_alerts::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_member_id: service_member_id.into(),
                 service_name: service_name.into(),
                 filter: None,
@@ -434,7 +427,7 @@ pub mod adds_services {
         }
         pub fn list_premium_services(&self) -> list_premium_services::Builder {
             list_premium_services::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter: None,
                 service_type: None,
                 skip_count: None,
@@ -465,7 +458,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) service_type: Option<String>,
             pub(crate) skip_count: Option<i64>,
@@ -560,7 +553,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service: models::ServiceProperties,
         }
         impl Builder {
@@ -625,7 +618,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -693,7 +686,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service: models::ServiceProperties,
         }
@@ -763,7 +756,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) confirm: Option<bool>,
         }
@@ -834,7 +827,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -902,7 +895,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
@@ -974,7 +967,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
@@ -1046,7 +1039,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) perf_counter: Option<bool>,
@@ -1130,7 +1123,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
         }
@@ -1200,7 +1193,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
@@ -1296,7 +1289,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) with_details: Option<bool>,
@@ -1380,7 +1373,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) is_groupby_site: bool,
             pub(crate) query: String,
@@ -1476,7 +1469,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_member_id: String,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
@@ -1578,7 +1571,7 @@ pub mod adds_services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) service_type: Option<String>,
             pub(crate) skip_count: Option<i64>,
@@ -1658,12 +1651,9 @@ pub mod alerts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_adds_alerts(&self, service_name: impl Into<String>) -> list_adds_alerts::Builder {
             list_adds_alerts::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
                 state: None,
@@ -1695,7 +1685,7 @@ pub mod alerts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) state: Option<String>,
@@ -1777,25 +1767,22 @@ pub mod configuration {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_adds_configurations(&self, service_name: impl Into<String>) -> list_adds_configurations::Builder {
             list_adds_configurations::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 grouping: None,
             }
         }
         pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.base_clone() }
+            get::Builder { client: self.0.clone() }
         }
         pub fn add(&self) -> add::Builder {
-            add::Builder { client: self.base_clone() }
+            add::Builder { client: self.0.clone() }
         }
         pub fn update(&self, tenant: impl Into<models::Tenant>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 tenant: tenant.into(),
             }
         }
@@ -1823,7 +1810,7 @@ pub mod configuration {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) grouping: Option<String>,
         }
@@ -1898,7 +1885,7 @@ pub mod configuration {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Tenant, Error>> {
@@ -1961,7 +1948,7 @@ pub mod configuration {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Tenant, Error>> {
@@ -2025,7 +2012,7 @@ pub mod configuration {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) tenant: models::Tenant,
         }
         impl Builder {
@@ -2072,12 +2059,9 @@ pub mod dimensions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_adds_dimensions(&self, service_name: impl Into<String>, dimension: impl Into<String>) -> list_adds_dimensions::Builder {
             list_adds_dimensions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 dimension: dimension.into(),
             }
@@ -2106,7 +2090,7 @@ pub mod dimensions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) dimension: String,
         }
@@ -2158,26 +2142,23 @@ pub mod adds_service_members {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
             }
         }
         pub fn get(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
             }
         }
         pub fn delete(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
                 confirm: None,
@@ -2185,7 +2166,7 @@ pub mod adds_service_members {
         }
         pub fn list_credentials(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> list_credentials::Builder {
             list_credentials::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
                 filter: None,
@@ -2215,7 +2196,7 @@ pub mod adds_service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
         }
@@ -2291,7 +2272,7 @@ pub mod adds_service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
@@ -2361,7 +2342,7 @@ pub mod adds_service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
             pub(crate) confirm: Option<bool>,
@@ -2434,7 +2415,7 @@ pub mod adds_service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
             pub(crate) filter: Option<String>,
@@ -2494,9 +2475,6 @@ pub mod ad_domain_service_members {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(
             &self,
             service_name: impl Into<String>,
@@ -2505,7 +2483,7 @@ pub mod ad_domain_service_members {
             next_row_key: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 is_groupby_site,
                 next_partition_key: next_partition_key.into(),
@@ -2539,7 +2517,7 @@ pub mod ad_domain_service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) is_groupby_site: bool,
             pub(crate) next_partition_key: String,
@@ -2622,12 +2600,9 @@ pub mod adds_services_user_preference {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, service_name: impl Into<String>, feature_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 feature_name: feature_name.into(),
             }
@@ -2639,7 +2614,7 @@ pub mod adds_services_user_preference {
             setting: impl Into<models::UserPreference>,
         ) -> add::Builder {
             add::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 feature_name: feature_name.into(),
                 setting: setting.into(),
@@ -2647,7 +2622,7 @@ pub mod adds_services_user_preference {
         }
         pub fn delete(&self, service_name: impl Into<String>, feature_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 feature_name: feature_name.into(),
             }
@@ -2676,7 +2651,7 @@ pub mod adds_services_user_preference {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) feature_name: String,
         }
@@ -2746,7 +2721,7 @@ pub mod adds_services_user_preference {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) feature_name: String,
             pub(crate) setting: models::UserPreference,
@@ -2813,7 +2788,7 @@ pub mod adds_services_user_preference {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) feature_name: String,
         }
@@ -2860,9 +2835,6 @@ pub mod adds_service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_metrics(
             &self,
             service_name: impl Into<String>,
@@ -2870,7 +2842,7 @@ pub mod adds_service {
             group_name: impl Into<String>,
         ) -> get_metrics::Builder {
             get_metrics::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
                 group_name: group_name.into(),
@@ -2903,7 +2875,7 @@ pub mod adds_service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
@@ -2981,12 +2953,9 @@ pub mod adds_services_replication_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
@@ -3014,7 +2983,7 @@ pub mod adds_services_replication_status {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -3064,12 +3033,9 @@ pub mod adds_services_service_members {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
                 dimension_type: None,
@@ -3078,7 +3044,7 @@ pub mod adds_services_service_members {
         }
         pub fn add(&self, service_name: impl Into<String>, service_member: impl Into<models::ServiceMember>) -> add::Builder {
             add::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member: service_member.into(),
             }
@@ -3107,7 +3073,7 @@ pub mod adds_services_service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) dimension_type: Option<String>,
@@ -3199,7 +3165,7 @@ pub mod adds_services_service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member: models::ServiceMember,
         }
@@ -3251,11 +3217,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -3281,7 +3244,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResponse, Error>> {
@@ -3326,11 +3289,8 @@ pub mod reports {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_dev_ops(&self) -> get_dev_ops::Builder {
-            get_dev_ops::Builder { client: self.base_clone() }
+            get_dev_ops::Builder { client: self.0.clone() }
         }
     }
     pub mod get_dev_ops {
@@ -3356,7 +3316,7 @@ pub mod reports {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Result, Error>> {
@@ -3404,12 +3364,9 @@ pub mod services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter: None,
                 service_type: None,
                 skip_count: None,
@@ -3418,13 +3375,13 @@ pub mod services {
         }
         pub fn add(&self, service: impl Into<models::ServiceProperties>) -> add::Builder {
             add::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service: service.into(),
             }
         }
         pub fn list_premium(&self) -> list_premium::Builder {
             list_premium::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter: None,
                 service_type: None,
                 skip_count: None,
@@ -3433,27 +3390,27 @@ pub mod services {
         }
         pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
         pub fn update(&self, service_name: impl Into<String>, service: impl Into<models::ServiceProperties>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service: service.into(),
             }
         }
         pub fn delete(&self, service_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 confirm: None,
             }
         }
         pub fn list_alerts(&self, service_name: impl Into<String>) -> list_alerts::Builder {
             list_alerts::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
                 state: None,
@@ -3467,14 +3424,14 @@ pub mod services {
             feature_name: impl Into<String>,
         ) -> get_feature_availibility::Builder {
             get_feature_availibility::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 feature_name: feature_name.into(),
             }
         }
         pub fn list_export_errors(&self, service_name: impl Into<String>) -> list_export_errors::Builder {
             list_export_errors::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
@@ -3484,14 +3441,14 @@ pub mod services {
             error_bucket: impl Into<String>,
         ) -> list_export_errors_v2::Builder {
             list_export_errors_v2::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 error_bucket: error_bucket.into(),
             }
         }
         pub fn list_export_status(&self, service_name: impl Into<String>) -> list_export_status::Builder {
             list_export_status::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
@@ -3501,14 +3458,14 @@ pub mod services {
             alert_feedback: impl Into<models::AlertFeedback>,
         ) -> add_alert_feedback::Builder {
             add_alert_feedback::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 alert_feedback: alert_feedback.into(),
             }
         }
         pub fn list_alert_feedback(&self, service_name: impl Into<String>, short_name: impl Into<String>) -> list_alert_feedback::Builder {
             list_alert_feedback::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 short_name: short_name.into(),
             }
@@ -3520,7 +3477,7 @@ pub mod services {
             group_name: impl Into<String>,
         ) -> list_metrics_average::Builder {
             list_metrics_average::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
                 group_name: group_name.into(),
@@ -3533,7 +3490,7 @@ pub mod services {
             group_name: impl Into<String>,
         ) -> list_metrics_sum::Builder {
             list_metrics_sum::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
                 group_name: group_name.into(),
@@ -3541,7 +3498,7 @@ pub mod services {
         }
         pub fn list_metric_metadata(&self, service_name: impl Into<String>) -> list_metric_metadata::Builder {
             list_metric_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
                 perf_counter: None,
@@ -3549,7 +3506,7 @@ pub mod services {
         }
         pub fn get_metric_metadata(&self, service_name: impl Into<String>, metric_name: impl Into<String>) -> get_metric_metadata::Builder {
             get_metric_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
             }
@@ -3561,7 +3518,7 @@ pub mod services {
             group_name: impl Into<String>,
         ) -> get_metric_metadata_for_group::Builder {
             get_metric_metadata_for_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
                 group_name: group_name.into(),
@@ -3576,20 +3533,20 @@ pub mod services {
             configuration_setting: impl Into<models::Item>,
         ) -> update_monitoring_configuration::Builder {
             update_monitoring_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 configuration_setting: configuration_setting.into(),
             }
         }
         pub fn list_monitoring_configurations(&self, service_name: impl Into<String>) -> list_monitoring_configurations::Builder {
             list_monitoring_configurations::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
         pub fn list_user_bad_password_report(&self, service_name: impl Into<String>) -> list_user_bad_password_report::Builder {
             list_user_bad_password_report::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 data_source: None,
             }
@@ -3600,14 +3557,14 @@ pub mod services {
             feature_name: impl Into<String>,
         ) -> get_tenant_whitelisting::Builder {
             get_tenant_whitelisting::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 feature_name: feature_name.into(),
             }
         }
         pub fn list_all_risky_ip_download_report(&self, service_name: impl Into<String>) -> list_all_risky_ip_download_report::Builder {
             list_all_risky_ip_download_report::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
@@ -3616,7 +3573,7 @@ pub mod services {
             service_name: impl Into<String>,
         ) -> list_current_risky_ip_download_report::Builder {
             list_current_risky_ip_download_report::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
@@ -3644,7 +3601,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) service_type: Option<String>,
             pub(crate) skip_count: Option<i64>,
@@ -3739,7 +3696,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service: models::ServiceProperties,
         }
         impl Builder {
@@ -3804,7 +3761,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) service_type: Option<String>,
             pub(crate) skip_count: Option<i64>,
@@ -3902,7 +3859,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -3970,7 +3927,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service: models::ServiceProperties,
         }
@@ -4040,7 +3997,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) confirm: Option<bool>,
         }
@@ -4111,7 +4068,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) state: Option<String>,
@@ -4211,7 +4168,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) feature_name: String,
         }
@@ -4281,7 +4238,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -4349,7 +4306,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) error_bucket: String,
         }
@@ -4420,7 +4377,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -4488,7 +4445,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) alert_feedback: models::AlertFeedback,
         }
@@ -4558,7 +4515,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) short_name: String,
         }
@@ -4628,7 +4585,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
@@ -4700,7 +4657,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
@@ -4772,7 +4729,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) perf_counter: Option<bool>,
@@ -4856,7 +4813,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
         }
@@ -4926,7 +4883,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
@@ -5022,7 +4979,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) configuration_setting: models::Item,
         }
@@ -5087,7 +5044,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -5155,7 +5112,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) data_source: Option<String>,
         }
@@ -5231,7 +5188,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) feature_name: String,
         }
@@ -5301,7 +5258,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -5369,7 +5326,7 @@ pub mod services {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -5420,9 +5377,6 @@ pub mod service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_metrics(
             &self,
             service_name: impl Into<String>,
@@ -5430,7 +5384,7 @@ pub mod service {
             group_name: impl Into<String>,
         ) -> get_metrics::Builder {
             get_metrics::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
                 group_name: group_name.into(),
@@ -5463,7 +5417,7 @@ pub mod service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
@@ -5541,12 +5495,9 @@ pub mod service_members {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
                 dimension_type: None,
@@ -5555,21 +5506,21 @@ pub mod service_members {
         }
         pub fn add(&self, service_name: impl Into<String>, service_member: impl Into<models::ServiceMember>) -> add::Builder {
             add::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member: service_member.into(),
             }
         }
         pub fn get(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
             }
         }
         pub fn delete(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
                 confirm: None,
@@ -5577,7 +5528,7 @@ pub mod service_members {
         }
         pub fn list_alerts(&self, service_member_id: impl Into<String>, service_name: impl Into<String>) -> list_alerts::Builder {
             list_alerts::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_member_id: service_member_id.into(),
                 service_name: service_name.into(),
                 filter: None,
@@ -5588,14 +5539,14 @@ pub mod service_members {
         }
         pub fn list_connectors(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> list_connectors::Builder {
             list_connectors::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
             }
         }
         pub fn list_credentials(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> list_credentials::Builder {
             list_credentials::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
                 filter: None,
@@ -5603,7 +5554,7 @@ pub mod service_members {
         }
         pub fn delete_data(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete_data::Builder {
             delete_data::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
             }
@@ -5614,7 +5565,7 @@ pub mod service_members {
             service_member_id: impl Into<String>,
         ) -> list_data_freshness::Builder {
             list_data_freshness::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
             }
@@ -5625,7 +5576,7 @@ pub mod service_members {
             service_member_id: impl Into<String>,
         ) -> list_export_status::Builder {
             list_export_status::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
             }
@@ -5636,7 +5587,7 @@ pub mod service_members {
             service_member_id: impl Into<String>,
         ) -> list_global_configuration::Builder {
             list_global_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
             }
@@ -5649,7 +5600,7 @@ pub mod service_members {
             service_member_id: impl Into<String>,
         ) -> get_metrics::Builder {
             get_metrics::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
                 group_name: group_name.into(),
@@ -5665,7 +5616,7 @@ pub mod service_members {
             service_member_id: impl Into<String>,
         ) -> get_service_configuration::Builder {
             get_service_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
             }
@@ -5677,7 +5628,7 @@ pub mod service_members {
             metric_name: impl Into<String>,
         ) -> get_connector_metadata::Builder {
             get_connector_metadata::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
                 metric_name: metric_name.into(),
@@ -5707,7 +5658,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) dimension_type: Option<String>,
@@ -5799,7 +5750,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member: models::ServiceMember,
         }
@@ -5869,7 +5820,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
@@ -5939,7 +5890,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
             pub(crate) confirm: Option<bool>,
@@ -6012,7 +5963,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_member_id: String,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
@@ -6114,7 +6065,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
@@ -6184,7 +6135,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
             pub(crate) filter: Option<String>,
@@ -6262,7 +6213,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
@@ -6327,7 +6278,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
@@ -6397,7 +6348,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
@@ -6467,7 +6418,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
@@ -6537,7 +6488,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
@@ -6635,7 +6586,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
@@ -6705,7 +6656,7 @@ pub mod service_members {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
             pub(crate) metric_name: String,
@@ -6759,19 +6710,16 @@ pub mod list {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn ip_address_aggregates_by_service(&self, service_name: impl Into<String>) -> ip_address_aggregates_by_service::Builder {
             ip_address_aggregates_by_service::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 skiptoken: None,
             }
         }
         pub fn ip_address_aggregate_settings(&self, service_name: impl Into<String>) -> ip_address_aggregate_settings::Builder {
             ip_address_aggregate_settings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
@@ -6799,7 +6747,7 @@ pub mod list {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) skiptoken: Option<String>,
         }
@@ -6875,7 +6823,7 @@ pub mod list {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
         impl Builder {
@@ -6925,16 +6873,13 @@ pub mod update {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn ip_address_aggregate_settings(
             &self,
             service_name: impl Into<String>,
             ip_address_aggregate_setting: impl Into<models::IpAddressAggregateSetting>,
         ) -> ip_address_aggregate_settings::Builder {
             ip_address_aggregate_settings::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 service_name: service_name.into(),
                 ip_address_aggregate_setting: ip_address_aggregate_setting.into(),
             }
@@ -6963,7 +6908,7 @@ pub mod update {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) ip_address_aggregate_setting: models::IpAddressAggregateSetting,
         }

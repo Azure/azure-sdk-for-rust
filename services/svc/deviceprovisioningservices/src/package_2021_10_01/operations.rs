@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn device_registration_state(&self) -> device_registration_state::Client {
         device_registration_state::Client(self.clone())
     }
@@ -123,12 +119,9 @@ pub mod individual_enrollment {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
             }
         }
@@ -138,7 +131,7 @@ pub mod individual_enrollment {
             enrollment: impl Into<models::IndividualEnrollment>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 enrollment: enrollment.into(),
                 if_match: None,
@@ -146,14 +139,14 @@ pub mod individual_enrollment {
         }
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 if_match: None,
             }
         }
         pub fn query(&self, query_specification: impl Into<models::QuerySpecification>) -> query::Builder {
             query::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 query_specification: query_specification.into(),
                 x_ms_max_item_count: None,
                 x_ms_continuation: None,
@@ -161,13 +154,13 @@ pub mod individual_enrollment {
         }
         pub fn get_attestation_mechanism(&self, id: impl Into<String>) -> get_attestation_mechanism::Builder {
             get_attestation_mechanism::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
             }
         }
         pub fn run_bulk_operation(&self, bulk_operation: impl Into<models::BulkEnrollmentOperation>) -> run_bulk_operation::Builder {
             run_bulk_operation::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 bulk_operation: bulk_operation.into(),
             }
         }
@@ -198,7 +191,7 @@ pub mod individual_enrollment {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
         impl Builder {
@@ -267,7 +260,7 @@ pub mod individual_enrollment {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) enrollment: models::IndividualEnrollment,
             pub(crate) if_match: Option<String>,
@@ -346,7 +339,7 @@ pub mod individual_enrollment {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) if_match: Option<String>,
         }
@@ -418,7 +411,7 @@ pub mod individual_enrollment {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) query_specification: models::QuerySpecification,
             pub(crate) x_ms_max_item_count: Option<i32>,
             pub(crate) x_ms_continuation: Option<String>,
@@ -504,7 +497,7 @@ pub mod individual_enrollment {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
         impl Builder {
@@ -574,7 +567,7 @@ pub mod individual_enrollment {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) bulk_operation: models::BulkEnrollmentOperation,
         }
         impl Builder {
@@ -625,12 +618,9 @@ pub mod enrollment_group {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
             }
         }
@@ -640,7 +630,7 @@ pub mod enrollment_group {
             enrollment_group: impl Into<models::EnrollmentGroup>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 enrollment_group: enrollment_group.into(),
                 if_match: None,
@@ -648,14 +638,14 @@ pub mod enrollment_group {
         }
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 if_match: None,
             }
         }
         pub fn query(&self, query_specification: impl Into<models::QuerySpecification>) -> query::Builder {
             query::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 query_specification: query_specification.into(),
                 x_ms_max_item_count: None,
                 x_ms_continuation: None,
@@ -663,13 +653,13 @@ pub mod enrollment_group {
         }
         pub fn get_attestation_mechanism(&self, id: impl Into<String>) -> get_attestation_mechanism::Builder {
             get_attestation_mechanism::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
             }
         }
         pub fn run_bulk_operation(&self, bulk_operation: impl Into<models::BulkEnrollmentGroupOperation>) -> run_bulk_operation::Builder {
             run_bulk_operation::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 bulk_operation: bulk_operation.into(),
             }
         }
@@ -700,7 +690,7 @@ pub mod enrollment_group {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
         impl Builder {
@@ -769,7 +759,7 @@ pub mod enrollment_group {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) enrollment_group: models::EnrollmentGroup,
             pub(crate) if_match: Option<String>,
@@ -848,7 +838,7 @@ pub mod enrollment_group {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) if_match: Option<String>,
         }
@@ -920,7 +910,7 @@ pub mod enrollment_group {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) query_specification: models::QuerySpecification,
             pub(crate) x_ms_max_item_count: Option<i32>,
             pub(crate) x_ms_continuation: Option<String>,
@@ -1006,7 +996,7 @@ pub mod enrollment_group {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
         impl Builder {
@@ -1076,7 +1066,7 @@ pub mod enrollment_group {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) bulk_operation: models::BulkEnrollmentGroupOperation,
         }
         impl Builder {
@@ -1127,25 +1117,22 @@ pub mod device_registration_state {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
             }
         }
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 if_match: None,
             }
         }
         pub fn query(&self, id: impl Into<String>) -> query::Builder {
             query::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 x_ms_max_item_count: None,
                 x_ms_continuation: None,
@@ -1178,7 +1165,7 @@ pub mod device_registration_state {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
         impl Builder {
@@ -1247,7 +1234,7 @@ pub mod device_registration_state {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) if_match: Option<String>,
         }
@@ -1319,7 +1306,7 @@ pub mod device_registration_state {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) x_ms_max_item_count: Option<i32>,
             pub(crate) x_ms_continuation: Option<String>,

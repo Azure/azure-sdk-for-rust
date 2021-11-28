@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn entities(&self) -> entities::Client {
         entities::Client(self.clone())
     }
@@ -122,19 +118,16 @@ pub mod management_groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 cache_control: None,
                 skiptoken: None,
             }
         }
         pub fn get(&self, group_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 expand: None,
                 recurse: None,
@@ -148,7 +141,7 @@ pub mod management_groups {
             create_management_group_request: impl Into<models::CreateManagementGroupRequest>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 create_management_group_request: create_management_group_request.into(),
                 cache_control: None,
@@ -160,7 +153,7 @@ pub mod management_groups {
             patch_group_request: impl Into<models::PatchManagementGroupRequest>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 patch_group_request: patch_group_request.into(),
                 cache_control: None,
@@ -168,14 +161,14 @@ pub mod management_groups {
         }
         pub fn delete(&self, group_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 cache_control: None,
             }
         }
         pub fn get_descendants(&self, group_id: impl Into<String>) -> get_descendants::Builder {
             get_descendants::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 skiptoken: None,
                 top: None,
@@ -208,7 +201,7 @@ pub mod management_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) cache_control: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
@@ -292,7 +285,7 @@ pub mod management_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) expand: Option<String>,
             pub(crate) recurse: Option<bool>,
@@ -402,7 +395,7 @@ pub mod management_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) create_management_group_request: models::CreateManagementGroupRequest,
             pub(crate) cache_control: Option<String>,
@@ -491,7 +484,7 @@ pub mod management_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) patch_group_request: models::PatchManagementGroupRequest,
             pub(crate) cache_control: Option<String>,
@@ -579,7 +572,7 @@ pub mod management_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) cache_control: Option<String>,
         }
@@ -661,7 +654,7 @@ pub mod management_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) skiptoken: Option<String>,
             pub(crate) top: Option<i64>,
@@ -729,12 +722,9 @@ pub mod management_group_subscriptions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn create(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 subscription_id: subscription_id.into(),
                 cache_control: None,
@@ -742,7 +732,7 @@ pub mod management_group_subscriptions {
         }
         pub fn delete(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 subscription_id: subscription_id.into(),
                 cache_control: None,
@@ -775,7 +765,7 @@ pub mod management_group_subscriptions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) subscription_id: String,
             pub(crate) cache_control: Option<String>,
@@ -853,7 +843,7 @@ pub mod management_group_subscriptions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) subscription_id: String,
             pub(crate) cache_control: Option<String>,
@@ -910,11 +900,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -943,7 +930,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -992,15 +979,15 @@ impl Client {
         check_name_availability_request: impl Into<models::CheckNameAvailabilityRequest>,
     ) -> check_name_availability::Builder {
         check_name_availability::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             check_name_availability_request: check_name_availability_request.into(),
         }
     }
     pub fn start_tenant_backfill(&self) -> start_tenant_backfill::Builder {
-        start_tenant_backfill::Builder { client: self.base_clone() }
+        start_tenant_backfill::Builder { client: self.clone() }
     }
     pub fn tenant_backfill_status(&self) -> tenant_backfill_status::Builder {
-        tenant_backfill_status::Builder { client: self.base_clone() }
+        tenant_backfill_status::Builder { client: self.clone() }
     }
 }
 pub mod check_name_availability {
@@ -1029,7 +1016,7 @@ pub mod check_name_availability {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) check_name_availability_request: models::CheckNameAvailabilityRequest,
     }
     impl Builder {
@@ -1099,7 +1086,7 @@ pub mod start_tenant_backfill {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TenantBackfillStatusResult, Error>> {
@@ -1168,7 +1155,7 @@ pub mod tenant_backfill_status {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TenantBackfillStatusResult, Error>> {
@@ -1215,12 +1202,9 @@ pub mod entities {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 skiptoken: None,
                 skip: None,
                 top: None,
@@ -1259,7 +1243,7 @@ pub mod entities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) skiptoken: Option<String>,
             pub(crate) skip: Option<i64>,
             pub(crate) top: Option<i64>,

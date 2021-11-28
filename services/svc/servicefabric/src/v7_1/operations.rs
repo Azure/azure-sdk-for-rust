@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn mesh_application(&self) -> mesh_application::Client {
         mesh_application::Client(self.clone())
     }
@@ -588,13 +584,13 @@ pub enum Error {
 impl Client {
     pub fn get_cluster_manifest(&self) -> get_cluster_manifest::Builder {
         get_cluster_manifest::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn get_cluster_health(&self) -> get_cluster_health::Builder {
         get_cluster_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             nodes_health_state_filter: None,
             applications_health_state_filter: None,
             events_health_state_filter: None,
@@ -605,7 +601,7 @@ impl Client {
     }
     pub fn get_cluster_health_using_policy(&self) -> get_cluster_health_using_policy::Builder {
         get_cluster_health_using_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             nodes_health_state_filter: None,
             applications_health_state_filter: None,
             events_health_state_filter: None,
@@ -617,7 +613,7 @@ impl Client {
     }
     pub fn get_cluster_health_chunk(&self) -> get_cluster_health_chunk::Builder {
         get_cluster_health_chunk::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
@@ -625,14 +621,14 @@ impl Client {
         &self,
     ) -> get_cluster_health_chunk_using_policy_and_advanced_filters::Builder {
         get_cluster_health_chunk_using_policy_and_advanced_filters::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             cluster_health_chunk_query_description: None,
             timeout: None,
         }
     }
     pub fn report_cluster_health(&self, health_information: impl Into<models::HealthInformation>) -> report_cluster_health::Builder {
         report_cluster_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             health_information: health_information.into(),
             immediate: None,
             timeout: None,
@@ -640,40 +636,40 @@ impl Client {
     }
     pub fn get_provisioned_fabric_code_version_info_list(&self) -> get_provisioned_fabric_code_version_info_list::Builder {
         get_provisioned_fabric_code_version_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             code_version: None,
             timeout: None,
         }
     }
     pub fn get_provisioned_fabric_config_version_info_list(&self) -> get_provisioned_fabric_config_version_info_list::Builder {
         get_provisioned_fabric_config_version_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             config_version: None,
             timeout: None,
         }
     }
     pub fn get_cluster_upgrade_progress(&self) -> get_cluster_upgrade_progress::Builder {
         get_cluster_upgrade_progress::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn get_cluster_configuration(&self, configuration_api_version: impl Into<String>) -> get_cluster_configuration::Builder {
         get_cluster_configuration::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             configuration_api_version: configuration_api_version.into(),
             timeout: None,
         }
     }
     pub fn get_cluster_configuration_upgrade_status(&self) -> get_cluster_configuration_upgrade_status::Builder {
         get_cluster_configuration_upgrade_status::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn get_upgrade_orchestration_service_state(&self) -> get_upgrade_orchestration_service_state::Builder {
         get_upgrade_orchestration_service_state::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
@@ -682,7 +678,7 @@ impl Client {
         upgrade_orchestration_service_state: impl Into<models::UpgradeOrchestrationServiceState>,
     ) -> set_upgrade_orchestration_service_state::Builder {
         set_upgrade_orchestration_service_state::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             upgrade_orchestration_service_state: upgrade_orchestration_service_state.into(),
             timeout: None,
         }
@@ -692,7 +688,7 @@ impl Client {
         provision_fabric_description: impl Into<models::ProvisionFabricDescription>,
     ) -> provision_cluster::Builder {
         provision_cluster::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             provision_fabric_description: provision_fabric_description.into(),
             timeout: None,
         }
@@ -702,14 +698,14 @@ impl Client {
         unprovision_fabric_description: impl Into<models::UnprovisionFabricDescription>,
     ) -> unprovision_cluster::Builder {
         unprovision_cluster::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             unprovision_fabric_description: unprovision_fabric_description.into(),
             timeout: None,
         }
     }
     pub fn rollback_cluster_upgrade(&self) -> rollback_cluster_upgrade::Builder {
         rollback_cluster_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
@@ -718,7 +714,7 @@ impl Client {
         resume_cluster_upgrade_description: impl Into<models::ResumeClusterUpgradeDescription>,
     ) -> resume_cluster_upgrade::Builder {
         resume_cluster_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             resume_cluster_upgrade_description: resume_cluster_upgrade_description.into(),
             timeout: None,
         }
@@ -728,7 +724,7 @@ impl Client {
         start_cluster_upgrade_description: impl Into<models::StartClusterUpgradeDescription>,
     ) -> start_cluster_upgrade::Builder {
         start_cluster_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             start_cluster_upgrade_description: start_cluster_upgrade_description.into(),
             timeout: None,
         }
@@ -738,7 +734,7 @@ impl Client {
         cluster_configuration_upgrade_description: impl Into<models::ClusterConfigurationUpgradeDescription>,
     ) -> start_cluster_configuration_upgrade::Builder {
         start_cluster_configuration_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             cluster_configuration_upgrade_description: cluster_configuration_upgrade_description.into(),
             timeout: None,
         }
@@ -748,26 +744,26 @@ impl Client {
         update_cluster_upgrade_description: impl Into<models::UpdateClusterUpgradeDescription>,
     ) -> update_cluster_upgrade::Builder {
         update_cluster_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             update_cluster_upgrade_description: update_cluster_upgrade_description.into(),
             timeout: None,
         }
     }
     pub fn get_aad_metadata(&self) -> get_aad_metadata::Builder {
         get_aad_metadata::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn get_cluster_version(&self) -> get_cluster_version::Builder {
         get_cluster_version::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn get_cluster_load(&self) -> get_cluster_load::Builder {
         get_cluster_load::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
@@ -776,14 +772,14 @@ impl Client {
         enabled: bool,
     ) -> toggle_verbose_service_placement_health_reporting::Builder {
         toggle_verbose_service_placement_health_reporting::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             enabled,
             timeout: None,
         }
     }
     pub fn get_node_info_list(&self) -> get_node_info_list::Builder {
         get_node_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             continuation_token: None,
             node_status_filter: None,
             max_results: None,
@@ -792,14 +788,14 @@ impl Client {
     }
     pub fn get_node_info(&self, node_name: impl Into<String>) -> get_node_info::Builder {
         get_node_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
         }
     }
     pub fn get_node_health(&self, node_name: impl Into<String>) -> get_node_health::Builder {
         get_node_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             events_health_state_filter: None,
             timeout: None,
@@ -807,7 +803,7 @@ impl Client {
     }
     pub fn get_node_health_using_policy(&self, node_name: impl Into<String>) -> get_node_health_using_policy::Builder {
         get_node_health_using_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             events_health_state_filter: None,
             cluster_health_policy: None,
@@ -820,7 +816,7 @@ impl Client {
         health_information: impl Into<models::HealthInformation>,
     ) -> report_node_health::Builder {
         report_node_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             health_information: health_information.into(),
             immediate: None,
@@ -829,7 +825,7 @@ impl Client {
     }
     pub fn get_node_load_info(&self, node_name: impl Into<String>) -> get_node_load_info::Builder {
         get_node_load_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
         }
@@ -840,7 +836,7 @@ impl Client {
         deactivation_intent_description: impl Into<models::DeactivationIntentDescription>,
     ) -> disable_node::Builder {
         disable_node::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             deactivation_intent_description: deactivation_intent_description.into(),
             timeout: None,
@@ -848,14 +844,14 @@ impl Client {
     }
     pub fn enable_node(&self, node_name: impl Into<String>) -> enable_node::Builder {
         enable_node::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
         }
     }
     pub fn remove_node_state(&self, node_name: impl Into<String>) -> remove_node_state::Builder {
         remove_node_state::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
         }
@@ -866,7 +862,7 @@ impl Client {
         restart_node_description: impl Into<models::RestartNodeDescription>,
     ) -> restart_node::Builder {
         restart_node::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             restart_node_description: restart_node_description.into(),
             timeout: None,
@@ -874,14 +870,14 @@ impl Client {
     }
     pub fn remove_configuration_overrides(&self, node_name: impl Into<String>) -> remove_configuration_overrides::Builder {
         remove_configuration_overrides::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
         }
     }
     pub fn get_configuration_overrides(&self, node_name: impl Into<String>) -> get_configuration_overrides::Builder {
         get_configuration_overrides::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
         }
@@ -892,7 +888,7 @@ impl Client {
         config_parameter_override_list: impl Into<models::ConfigParameterOverrideList>,
     ) -> add_configuration_parameter_overrides::Builder {
         add_configuration_parameter_overrides::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             config_parameter_override_list: config_parameter_override_list.into(),
             force: None,
@@ -901,7 +897,7 @@ impl Client {
     }
     pub fn get_application_type_info_list(&self) -> get_application_type_info_list::Builder {
         get_application_type_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_type_definition_kind_filter: None,
             exclude_application_parameters: None,
             continuation_token: None,
@@ -914,7 +910,7 @@ impl Client {
         application_type_name: impl Into<String>,
     ) -> get_application_type_info_list_by_name::Builder {
         get_application_type_info_list_by_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_type_name: application_type_name.into(),
             application_type_version: None,
             exclude_application_parameters: None,
@@ -928,7 +924,7 @@ impl Client {
         provision_application_type_description_base_required_body_param: impl Into<models::ProvisionApplicationTypeDescriptionBase>,
     ) -> provision_application_type::Builder {
         provision_application_type::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             provision_application_type_description_base_required_body_param:
                 provision_application_type_description_base_required_body_param.into(),
             timeout: None,
@@ -940,7 +936,7 @@ impl Client {
         unprovision_application_type_description_info: impl Into<models::UnprovisionApplicationTypeDescriptionInfo>,
     ) -> unprovision_application_type::Builder {
         unprovision_application_type::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_type_name: application_type_name.into(),
             unprovision_application_type_description_info: unprovision_application_type_description_info.into(),
             timeout: None,
@@ -952,7 +948,7 @@ impl Client {
         application_type_version: impl Into<String>,
     ) -> get_service_type_info_list::Builder {
         get_service_type_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_type_name: application_type_name.into(),
             application_type_version: application_type_version.into(),
             timeout: None,
@@ -965,7 +961,7 @@ impl Client {
         service_type_name: impl Into<String>,
     ) -> get_service_type_info_by_name::Builder {
         get_service_type_info_by_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_type_name: application_type_name.into(),
             application_type_version: application_type_version.into(),
             service_type_name: service_type_name.into(),
@@ -979,7 +975,7 @@ impl Client {
         service_manifest_name: impl Into<String>,
     ) -> get_service_manifest::Builder {
         get_service_manifest::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_type_name: application_type_name.into(),
             application_type_version: application_type_version.into(),
             service_manifest_name: service_manifest_name.into(),
@@ -992,7 +988,7 @@ impl Client {
         application_id: impl Into<String>,
     ) -> get_deployed_service_type_info_list::Builder {
         get_deployed_service_type_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             service_manifest_name: None,
@@ -1006,7 +1002,7 @@ impl Client {
         service_type_name: impl Into<String>,
     ) -> get_deployed_service_type_info_by_name::Builder {
         get_deployed_service_type_info_by_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             service_type_name: service_type_name.into(),
@@ -1016,14 +1012,14 @@ impl Client {
     }
     pub fn create_application(&self, application_description: impl Into<models::ApplicationDescription>) -> create_application::Builder {
         create_application::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_description: application_description.into(),
             timeout: None,
         }
     }
     pub fn delete_application(&self, application_id: impl Into<String>) -> delete_application::Builder {
         delete_application::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             force_remove: None,
             timeout: None,
@@ -1031,14 +1027,14 @@ impl Client {
     }
     pub fn get_application_load_info(&self, application_id: impl Into<String>) -> get_application_load_info::Builder {
         get_application_load_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
         }
     }
     pub fn get_application_info_list(&self) -> get_application_info_list::Builder {
         get_application_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_definition_kind_filter: None,
             application_type_name: None,
             exclude_application_parameters: None,
@@ -1049,7 +1045,7 @@ impl Client {
     }
     pub fn get_application_info(&self, application_id: impl Into<String>) -> get_application_info::Builder {
         get_application_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             exclude_application_parameters: None,
             timeout: None,
@@ -1057,7 +1053,7 @@ impl Client {
     }
     pub fn get_application_health(&self, application_id: impl Into<String>) -> get_application_health::Builder {
         get_application_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             events_health_state_filter: None,
             deployed_applications_health_state_filter: None,
@@ -1068,7 +1064,7 @@ impl Client {
     }
     pub fn get_application_health_using_policy(&self, application_id: impl Into<String>) -> get_application_health_using_policy::Builder {
         get_application_health_using_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             events_health_state_filter: None,
             deployed_applications_health_state_filter: None,
@@ -1084,7 +1080,7 @@ impl Client {
         health_information: impl Into<models::HealthInformation>,
     ) -> report_application_health::Builder {
         report_application_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             health_information: health_information.into(),
             immediate: None,
@@ -1097,7 +1093,7 @@ impl Client {
         application_upgrade_description: impl Into<models::ApplicationUpgradeDescription>,
     ) -> start_application_upgrade::Builder {
         start_application_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             application_upgrade_description: application_upgrade_description.into(),
             timeout: None,
@@ -1105,7 +1101,7 @@ impl Client {
     }
     pub fn get_application_upgrade(&self, application_id: impl Into<String>) -> get_application_upgrade::Builder {
         get_application_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
         }
@@ -1116,7 +1112,7 @@ impl Client {
         application_upgrade_update_description: impl Into<models::ApplicationUpgradeUpdateDescription>,
     ) -> update_application_upgrade::Builder {
         update_application_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             application_upgrade_update_description: application_upgrade_update_description.into(),
             timeout: None,
@@ -1128,7 +1124,7 @@ impl Client {
         resume_application_upgrade_description: impl Into<models::ResumeApplicationUpgradeDescription>,
     ) -> resume_application_upgrade::Builder {
         resume_application_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             resume_application_upgrade_description: resume_application_upgrade_description.into(),
             timeout: None,
@@ -1136,14 +1132,14 @@ impl Client {
     }
     pub fn rollback_application_upgrade(&self, application_id: impl Into<String>) -> rollback_application_upgrade::Builder {
         rollback_application_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
         }
     }
     pub fn get_deployed_application_info_list(&self, node_name: impl Into<String>) -> get_deployed_application_info_list::Builder {
         get_deployed_application_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
             include_health_state: None,
@@ -1157,7 +1153,7 @@ impl Client {
         application_id: impl Into<String>,
     ) -> get_deployed_application_info::Builder {
         get_deployed_application_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             timeout: None,
@@ -1170,7 +1166,7 @@ impl Client {
         application_id: impl Into<String>,
     ) -> get_deployed_application_health::Builder {
         get_deployed_application_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             events_health_state_filter: None,
@@ -1185,7 +1181,7 @@ impl Client {
         application_id: impl Into<String>,
     ) -> get_deployed_application_health_using_policy::Builder {
         get_deployed_application_health_using_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             events_health_state_filter: None,
@@ -1202,7 +1198,7 @@ impl Client {
         health_information: impl Into<models::HealthInformation>,
     ) -> report_deployed_application_health::Builder {
         report_deployed_application_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             health_information: health_information.into(),
@@ -1216,7 +1212,7 @@ impl Client {
         application_type_version: impl Into<String>,
     ) -> get_application_manifest::Builder {
         get_application_manifest::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_type_name: application_type_name.into(),
             application_type_version: application_type_version.into(),
             timeout: None,
@@ -1224,7 +1220,7 @@ impl Client {
     }
     pub fn get_service_info_list(&self, application_id: impl Into<String>) -> get_service_info_list::Builder {
         get_service_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             service_type_name: None,
             continuation_token: None,
@@ -1233,7 +1229,7 @@ impl Client {
     }
     pub fn get_service_info(&self, application_id: impl Into<String>, service_id: impl Into<String>) -> get_service_info::Builder {
         get_service_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             service_id: service_id.into(),
             timeout: None,
@@ -1241,7 +1237,7 @@ impl Client {
     }
     pub fn get_application_name_info(&self, service_id: impl Into<String>) -> get_application_name_info::Builder {
         get_application_name_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
         }
@@ -1252,7 +1248,7 @@ impl Client {
         service_description: impl Into<models::ServiceDescription>,
     ) -> create_service::Builder {
         create_service::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             service_description: service_description.into(),
             timeout: None,
@@ -1264,7 +1260,7 @@ impl Client {
         service_from_template_description: impl Into<models::ServiceFromTemplateDescription>,
     ) -> create_service_from_template::Builder {
         create_service_from_template::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             service_from_template_description: service_from_template_description.into(),
             timeout: None,
@@ -1272,7 +1268,7 @@ impl Client {
     }
     pub fn delete_service(&self, service_id: impl Into<String>) -> delete_service::Builder {
         delete_service::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             force_remove: None,
             timeout: None,
@@ -1284,7 +1280,7 @@ impl Client {
         service_update_description: impl Into<models::ServiceUpdateDescription>,
     ) -> update_service::Builder {
         update_service::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             service_update_description: service_update_description.into(),
             timeout: None,
@@ -1292,14 +1288,14 @@ impl Client {
     }
     pub fn get_service_description(&self, service_id: impl Into<String>) -> get_service_description::Builder {
         get_service_description::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
         }
     }
     pub fn get_service_health(&self, service_id: impl Into<String>) -> get_service_health::Builder {
         get_service_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             events_health_state_filter: None,
             partitions_health_state_filter: None,
@@ -1309,7 +1305,7 @@ impl Client {
     }
     pub fn get_service_health_using_policy(&self, service_id: impl Into<String>) -> get_service_health_using_policy::Builder {
         get_service_health_using_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             events_health_state_filter: None,
             partitions_health_state_filter: None,
@@ -1324,7 +1320,7 @@ impl Client {
         health_information: impl Into<models::HealthInformation>,
     ) -> report_service_health::Builder {
         report_service_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             health_information: health_information.into(),
             immediate: None,
@@ -1333,7 +1329,7 @@ impl Client {
     }
     pub fn resolve_service(&self, service_id: impl Into<String>) -> resolve_service::Builder {
         resolve_service::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             partition_key_type: None,
             partition_key_value: None,
@@ -1343,7 +1339,7 @@ impl Client {
     }
     pub fn get_unplaced_replica_information(&self, service_id: impl Into<String>) -> get_unplaced_replica_information::Builder {
         get_unplaced_replica_information::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             partition_id: None,
             only_query_primaries: None,
@@ -1352,7 +1348,7 @@ impl Client {
     }
     pub fn get_partition_info_list(&self, service_id: impl Into<String>) -> get_partition_info_list::Builder {
         get_partition_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             continuation_token: None,
             timeout: None,
@@ -1360,21 +1356,21 @@ impl Client {
     }
     pub fn get_partition_info(&self, partition_id: impl Into<String>) -> get_partition_info::Builder {
         get_partition_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
         }
     }
     pub fn get_service_name_info(&self, partition_id: impl Into<String>) -> get_service_name_info::Builder {
         get_service_name_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
         }
     }
     pub fn get_partition_health(&self, partition_id: impl Into<String>) -> get_partition_health::Builder {
         get_partition_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             events_health_state_filter: None,
             replicas_health_state_filter: None,
@@ -1384,7 +1380,7 @@ impl Client {
     }
     pub fn get_partition_health_using_policy(&self, partition_id: impl Into<String>) -> get_partition_health_using_policy::Builder {
         get_partition_health_using_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             events_health_state_filter: None,
             replicas_health_state_filter: None,
@@ -1399,7 +1395,7 @@ impl Client {
         health_information: impl Into<models::HealthInformation>,
     ) -> report_partition_health::Builder {
         report_partition_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             health_information: health_information.into(),
             immediate: None,
@@ -1408,47 +1404,47 @@ impl Client {
     }
     pub fn get_partition_load_information(&self, partition_id: impl Into<String>) -> get_partition_load_information::Builder {
         get_partition_load_information::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
         }
     }
     pub fn reset_partition_load(&self, partition_id: impl Into<String>) -> reset_partition_load::Builder {
         reset_partition_load::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
         }
     }
     pub fn recover_partition(&self, partition_id: impl Into<String>) -> recover_partition::Builder {
         recover_partition::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
         }
     }
     pub fn recover_service_partitions(&self, service_id: impl Into<String>) -> recover_service_partitions::Builder {
         recover_service_partitions::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
         }
     }
     pub fn recover_system_partitions(&self) -> recover_system_partitions::Builder {
         recover_system_partitions::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn recover_all_partitions(&self) -> recover_all_partitions::Builder {
         recover_all_partitions::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn move_primary_replica(&self, partition_id: impl Into<String>) -> move_primary_replica::Builder {
         move_primary_replica::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             node_name: None,
             ignore_constraints: None,
@@ -1461,7 +1457,7 @@ impl Client {
         current_node_name: impl Into<String>,
     ) -> move_secondary_replica::Builder {
         move_secondary_replica::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             current_node_name: current_node_name.into(),
             new_node_name: None,
@@ -1471,7 +1467,7 @@ impl Client {
     }
     pub fn create_repair_task(&self, repair_task: impl Into<models::RepairTask>) -> create_repair_task::Builder {
         create_repair_task::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             repair_task: repair_task.into(),
         }
     }
@@ -1480,7 +1476,7 @@ impl Client {
         repair_task_cancel_description: impl Into<models::RepairTaskCancelDescription>,
     ) -> cancel_repair_task::Builder {
         cancel_repair_task::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             repair_task_cancel_description: repair_task_cancel_description.into(),
         }
     }
@@ -1489,13 +1485,13 @@ impl Client {
         repair_task_delete_description: impl Into<models::RepairTaskDeleteDescription>,
     ) -> delete_repair_task::Builder {
         delete_repair_task::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             repair_task_delete_description: repair_task_delete_description.into(),
         }
     }
     pub fn get_repair_task_list(&self) -> get_repair_task_list::Builder {
         get_repair_task_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             task_id_filter: None,
             state_filter: None,
             executor_filter: None,
@@ -1506,7 +1502,7 @@ impl Client {
         repair_task_approve_description: impl Into<models::RepairTaskApproveDescription>,
     ) -> force_approve_repair_task::Builder {
         force_approve_repair_task::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             repair_task_approve_description: repair_task_approve_description.into(),
         }
     }
@@ -1515,19 +1511,19 @@ impl Client {
         repair_task_update_health_policy_description: impl Into<models::RepairTaskUpdateHealthPolicyDescription>,
     ) -> update_repair_task_health_policy::Builder {
         update_repair_task_health_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             repair_task_update_health_policy_description: repair_task_update_health_policy_description.into(),
         }
     }
     pub fn update_repair_execution_state(&self, repair_task: impl Into<models::RepairTask>) -> update_repair_execution_state::Builder {
         update_repair_execution_state::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             repair_task: repair_task.into(),
         }
     }
     pub fn get_replica_info_list(&self, partition_id: impl Into<String>) -> get_replica_info_list::Builder {
         get_replica_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             continuation_token: None,
             timeout: None,
@@ -1535,7 +1531,7 @@ impl Client {
     }
     pub fn get_replica_info(&self, partition_id: impl Into<String>, replica_id: impl Into<String>) -> get_replica_info::Builder {
         get_replica_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
             timeout: None,
@@ -1543,7 +1539,7 @@ impl Client {
     }
     pub fn get_replica_health(&self, partition_id: impl Into<String>, replica_id: impl Into<String>) -> get_replica_health::Builder {
         get_replica_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
             events_health_state_filter: None,
@@ -1556,7 +1552,7 @@ impl Client {
         replica_id: impl Into<String>,
     ) -> get_replica_health_using_policy::Builder {
         get_replica_health_using_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
             events_health_state_filter: None,
@@ -1572,7 +1568,7 @@ impl Client {
         health_information: impl Into<models::HealthInformation>,
     ) -> report_replica_health::Builder {
         report_replica_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
             service_kind: service_kind.into(),
@@ -1587,7 +1583,7 @@ impl Client {
         application_id: impl Into<String>,
     ) -> get_deployed_service_replica_info_list::Builder {
         get_deployed_service_replica_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             partition_id: None,
@@ -1602,7 +1598,7 @@ impl Client {
         replica_id: impl Into<String>,
     ) -> get_deployed_service_replica_detail_info::Builder {
         get_deployed_service_replica_detail_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
@@ -1615,7 +1611,7 @@ impl Client {
         partition_id: impl Into<String>,
     ) -> get_deployed_service_replica_detail_info_by_partition_id::Builder {
         get_deployed_service_replica_detail_info_by_partition_id::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -1628,7 +1624,7 @@ impl Client {
         replica_id: impl Into<String>,
     ) -> restart_replica::Builder {
         restart_replica::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
@@ -1642,7 +1638,7 @@ impl Client {
         replica_id: impl Into<String>,
     ) -> remove_replica::Builder {
         remove_replica::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
@@ -1656,7 +1652,7 @@ impl Client {
         application_id: impl Into<String>,
     ) -> get_deployed_service_package_info_list::Builder {
         get_deployed_service_package_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             timeout: None,
@@ -1669,7 +1665,7 @@ impl Client {
         service_package_name: impl Into<String>,
     ) -> get_deployed_service_package_info_list_by_name::Builder {
         get_deployed_service_package_info_list_by_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             service_package_name: service_package_name.into(),
@@ -1683,7 +1679,7 @@ impl Client {
         service_package_name: impl Into<String>,
     ) -> get_deployed_service_package_health::Builder {
         get_deployed_service_package_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             service_package_name: service_package_name.into(),
@@ -1698,7 +1694,7 @@ impl Client {
         service_package_name: impl Into<String>,
     ) -> get_deployed_service_package_health_using_policy::Builder {
         get_deployed_service_package_health_using_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             service_package_name: service_package_name.into(),
@@ -1715,7 +1711,7 @@ impl Client {
         health_information: impl Into<models::HealthInformation>,
     ) -> report_deployed_service_package_health::Builder {
         report_deployed_service_package_health::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             service_package_name: service_package_name.into(),
@@ -1730,7 +1726,7 @@ impl Client {
         deploy_service_package_to_node_description: impl Into<models::DeployServicePackageToNodeDescription>,
     ) -> deploy_service_package_to_node::Builder {
         deploy_service_package_to_node::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             deploy_service_package_to_node_description: deploy_service_package_to_node_description.into(),
             timeout: None,
@@ -1742,7 +1738,7 @@ impl Client {
         application_id: impl Into<String>,
     ) -> get_deployed_code_package_info_list::Builder {
         get_deployed_code_package_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             service_manifest_name: None,
@@ -1757,7 +1753,7 @@ impl Client {
         restart_deployed_code_package_description: impl Into<models::RestartDeployedCodePackageDescription>,
     ) -> restart_deployed_code_package::Builder {
         restart_deployed_code_package::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             restart_deployed_code_package_description: restart_deployed_code_package_description.into(),
@@ -1772,7 +1768,7 @@ impl Client {
         code_package_name: impl Into<String>,
     ) -> get_container_logs_deployed_on_node::Builder {
         get_container_logs_deployed_on_node::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             service_manifest_name: service_manifest_name.into(),
@@ -1792,7 +1788,7 @@ impl Client {
         container_api_request_body: impl Into<models::ContainerApiRequestBody>,
     ) -> invoke_container_api::Builder {
         invoke_container_api::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
             service_manifest_name: service_manifest_name.into(),
@@ -1807,21 +1803,21 @@ impl Client {
         create_compose_deployment_description: impl Into<models::CreateComposeDeploymentDescription>,
     ) -> create_compose_deployment::Builder {
         create_compose_deployment::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             create_compose_deployment_description: create_compose_deployment_description.into(),
             timeout: None,
         }
     }
     pub fn get_compose_deployment_status(&self, deployment_name: impl Into<String>) -> get_compose_deployment_status::Builder {
         get_compose_deployment_status::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             deployment_name: deployment_name.into(),
             timeout: None,
         }
     }
     pub fn get_compose_deployment_status_list(&self) -> get_compose_deployment_status_list::Builder {
         get_compose_deployment_status_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             continuation_token: None,
             max_results: None,
             timeout: None,
@@ -1832,14 +1828,14 @@ impl Client {
         deployment_name: impl Into<String>,
     ) -> get_compose_deployment_upgrade_progress::Builder {
         get_compose_deployment_upgrade_progress::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             deployment_name: deployment_name.into(),
             timeout: None,
         }
     }
     pub fn remove_compose_deployment(&self, deployment_name: impl Into<String>) -> remove_compose_deployment::Builder {
         remove_compose_deployment::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             deployment_name: deployment_name.into(),
             timeout: None,
         }
@@ -1850,7 +1846,7 @@ impl Client {
         compose_deployment_upgrade_description: impl Into<models::ComposeDeploymentUpgradeDescription>,
     ) -> start_compose_deployment_upgrade::Builder {
         start_compose_deployment_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             deployment_name: deployment_name.into(),
             compose_deployment_upgrade_description: compose_deployment_upgrade_description.into(),
             timeout: None,
@@ -1861,33 +1857,33 @@ impl Client {
         deployment_name: impl Into<String>,
     ) -> start_rollback_compose_deployment_upgrade::Builder {
         start_rollback_compose_deployment_upgrade::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             deployment_name: deployment_name.into(),
             timeout: None,
         }
     }
     pub fn get_chaos(&self) -> get_chaos::Builder {
         get_chaos::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn start_chaos(&self, chaos_parameters: impl Into<models::ChaosParameters>) -> start_chaos::Builder {
         start_chaos::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             chaos_parameters: chaos_parameters.into(),
             timeout: None,
         }
     }
     pub fn stop_chaos(&self) -> stop_chaos::Builder {
         stop_chaos::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn get_chaos_events(&self) -> get_chaos_events::Builder {
         get_chaos_events::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             continuation_token: None,
             start_time_utc: None,
             end_time_utc: None,
@@ -1897,41 +1893,41 @@ impl Client {
     }
     pub fn get_chaos_schedule(&self) -> get_chaos_schedule::Builder {
         get_chaos_schedule::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn post_chaos_schedule(&self, chaos_schedule: impl Into<models::ChaosScheduleDescription>) -> post_chaos_schedule::Builder {
         post_chaos_schedule::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             chaos_schedule: chaos_schedule.into(),
             timeout: None,
         }
     }
     pub fn get_image_store_content(&self, content_path: impl Into<String>) -> get_image_store_content::Builder {
         get_image_store_content::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             content_path: content_path.into(),
             timeout: None,
         }
     }
     pub fn upload_file(&self, content_path: impl Into<String>) -> upload_file::Builder {
         upload_file::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             content_path: content_path.into(),
             timeout: None,
         }
     }
     pub fn delete_image_store_content(&self, content_path: impl Into<String>) -> delete_image_store_content::Builder {
         delete_image_store_content::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             content_path: content_path.into(),
             timeout: None,
         }
     }
     pub fn get_image_store_root_content(&self) -> get_image_store_root_content::Builder {
         get_image_store_root_content::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
@@ -1940,28 +1936,28 @@ impl Client {
         image_store_copy_description: impl Into<models::ImageStoreCopyDescription>,
     ) -> copy_image_store_content::Builder {
         copy_image_store_content::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             image_store_copy_description: image_store_copy_description.into(),
             timeout: None,
         }
     }
     pub fn delete_image_store_upload_session(&self, session_id: impl Into<String>) -> delete_image_store_upload_session::Builder {
         delete_image_store_upload_session::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             session_id: session_id.into(),
             timeout: None,
         }
     }
     pub fn commit_image_store_upload_session(&self, session_id: impl Into<String>) -> commit_image_store_upload_session::Builder {
         commit_image_store_upload_session::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             session_id: session_id.into(),
             timeout: None,
         }
     }
     pub fn get_image_store_upload_session_by_id(&self, session_id: impl Into<String>) -> get_image_store_upload_session_by_id::Builder {
         get_image_store_upload_session_by_id::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             session_id: session_id.into(),
             timeout: None,
         }
@@ -1971,7 +1967,7 @@ impl Client {
         content_path: impl Into<String>,
     ) -> get_image_store_upload_session_by_path::Builder {
         get_image_store_upload_session_by_path::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             content_path: content_path.into(),
             timeout: None,
         }
@@ -1983,7 +1979,7 @@ impl Client {
         content_range: impl Into<String>,
     ) -> upload_file_chunk::Builder {
         upload_file_chunk::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             content_path: content_path.into(),
             session_id: session_id.into(),
             content_range: content_range.into(),
@@ -1992,26 +1988,26 @@ impl Client {
     }
     pub fn get_image_store_root_folder_size(&self) -> get_image_store_root_folder_size::Builder {
         get_image_store_root_folder_size::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn get_image_store_folder_size(&self, content_path: impl Into<String>) -> get_image_store_folder_size::Builder {
         get_image_store_folder_size::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             content_path: content_path.into(),
             timeout: None,
         }
     }
     pub fn get_image_store_info(&self) -> get_image_store_info::Builder {
         get_image_store_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             timeout: None,
         }
     }
     pub fn invoke_infrastructure_command(&self, command: impl Into<String>) -> invoke_infrastructure_command::Builder {
         invoke_infrastructure_command::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             command: command.into(),
             service_id: None,
             timeout: None,
@@ -2019,7 +2015,7 @@ impl Client {
     }
     pub fn invoke_infrastructure_query(&self, command: impl Into<String>) -> invoke_infrastructure_query::Builder {
         invoke_infrastructure_query::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             command: command.into(),
             service_id: None,
             timeout: None,
@@ -2033,7 +2029,7 @@ impl Client {
         data_loss_mode: impl Into<String>,
     ) -> start_data_loss::Builder {
         start_data_loss::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
             operation_id: operation_id.into(),
@@ -2048,7 +2044,7 @@ impl Client {
         operation_id: impl Into<String>,
     ) -> get_data_loss_progress::Builder {
         get_data_loss_progress::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
             operation_id: operation_id.into(),
@@ -2064,7 +2060,7 @@ impl Client {
         quorum_loss_duration: i64,
     ) -> start_quorum_loss::Builder {
         start_quorum_loss::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
             operation_id: operation_id.into(),
@@ -2080,7 +2076,7 @@ impl Client {
         operation_id: impl Into<String>,
     ) -> get_quorum_loss_progress::Builder {
         get_quorum_loss_progress::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
             operation_id: operation_id.into(),
@@ -2095,7 +2091,7 @@ impl Client {
         restart_partition_mode: impl Into<String>,
     ) -> start_partition_restart::Builder {
         start_partition_restart::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
             operation_id: operation_id.into(),
@@ -2110,7 +2106,7 @@ impl Client {
         operation_id: impl Into<String>,
     ) -> get_partition_restart_progress::Builder {
         get_partition_restart_progress::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
             operation_id: operation_id.into(),
@@ -2126,7 +2122,7 @@ impl Client {
         stop_duration_in_seconds: i32,
     ) -> start_node_transition::Builder {
         start_node_transition::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             operation_id: operation_id.into(),
             node_transition_type: node_transition_type.into(),
@@ -2141,7 +2137,7 @@ impl Client {
         operation_id: impl Into<String>,
     ) -> get_node_transition_progress::Builder {
         get_node_transition_progress::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             operation_id: operation_id.into(),
             timeout: None,
@@ -2149,7 +2145,7 @@ impl Client {
     }
     pub fn get_fault_operation_list(&self, type_filter: i64, state_filter: i64) -> get_fault_operation_list::Builder {
         get_fault_operation_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             type_filter,
             state_filter,
             timeout: None,
@@ -2157,7 +2153,7 @@ impl Client {
     }
     pub fn cancel_operation(&self, operation_id: impl Into<String>, force: bool) -> cancel_operation::Builder {
         cancel_operation::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             operation_id: operation_id.into(),
             force,
             timeout: None,
@@ -2168,21 +2164,21 @@ impl Client {
         backup_policy_description: impl Into<models::BackupPolicyDescription>,
     ) -> create_backup_policy::Builder {
         create_backup_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             backup_policy_description: backup_policy_description.into(),
             timeout: None,
         }
     }
     pub fn delete_backup_policy(&self, backup_policy_name: impl Into<String>) -> delete_backup_policy::Builder {
         delete_backup_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             backup_policy_name: backup_policy_name.into(),
             timeout: None,
         }
     }
     pub fn get_backup_policy_list(&self) -> get_backup_policy_list::Builder {
         get_backup_policy_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             continuation_token: None,
             max_results: None,
             timeout: None,
@@ -2190,7 +2186,7 @@ impl Client {
     }
     pub fn get_backup_policy_by_name(&self, backup_policy_name: impl Into<String>) -> get_backup_policy_by_name::Builder {
         get_backup_policy_by_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             backup_policy_name: backup_policy_name.into(),
             timeout: None,
         }
@@ -2200,7 +2196,7 @@ impl Client {
         backup_policy_name: impl Into<String>,
     ) -> get_all_entities_backed_up_by_policy::Builder {
         get_all_entities_backed_up_by_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             backup_policy_name: backup_policy_name.into(),
             continuation_token: None,
             max_results: None,
@@ -2213,7 +2209,7 @@ impl Client {
         backup_policy_name: impl Into<String>,
     ) -> update_backup_policy::Builder {
         update_backup_policy::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             backup_policy_description: backup_policy_description.into(),
             backup_policy_name: backup_policy_name.into(),
             timeout: None,
@@ -2225,7 +2221,7 @@ impl Client {
         enable_backup_description: impl Into<models::EnableBackupDescription>,
     ) -> enable_application_backup::Builder {
         enable_application_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             enable_backup_description: enable_backup_description.into(),
             timeout: None,
@@ -2233,7 +2229,7 @@ impl Client {
     }
     pub fn disable_application_backup(&self, application_id: impl Into<String>) -> disable_application_backup::Builder {
         disable_application_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
             disable_backup_description: None,
@@ -2244,7 +2240,7 @@ impl Client {
         application_id: impl Into<String>,
     ) -> get_application_backup_configuration_info::Builder {
         get_application_backup_configuration_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             continuation_token: None,
             max_results: None,
@@ -2253,7 +2249,7 @@ impl Client {
     }
     pub fn get_application_backup_list(&self, application_id: impl Into<String>) -> get_application_backup_list::Builder {
         get_application_backup_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
             latest: None,
@@ -2265,14 +2261,14 @@ impl Client {
     }
     pub fn suspend_application_backup(&self, application_id: impl Into<String>) -> suspend_application_backup::Builder {
         suspend_application_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
         }
     }
     pub fn resume_application_backup(&self, application_id: impl Into<String>) -> resume_application_backup::Builder {
         resume_application_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
         }
@@ -2283,7 +2279,7 @@ impl Client {
         enable_backup_description: impl Into<models::EnableBackupDescription>,
     ) -> enable_service_backup::Builder {
         enable_service_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             enable_backup_description: enable_backup_description.into(),
             timeout: None,
@@ -2291,7 +2287,7 @@ impl Client {
     }
     pub fn disable_service_backup(&self, service_id: impl Into<String>) -> disable_service_backup::Builder {
         disable_service_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             disable_backup_description: None,
             timeout: None,
@@ -2299,7 +2295,7 @@ impl Client {
     }
     pub fn get_service_backup_configuration_info(&self, service_id: impl Into<String>) -> get_service_backup_configuration_info::Builder {
         get_service_backup_configuration_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             continuation_token: None,
             max_results: None,
@@ -2308,7 +2304,7 @@ impl Client {
     }
     pub fn get_service_backup_list(&self, service_id: impl Into<String>) -> get_service_backup_list::Builder {
         get_service_backup_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
             latest: None,
@@ -2320,14 +2316,14 @@ impl Client {
     }
     pub fn suspend_service_backup(&self, service_id: impl Into<String>) -> suspend_service_backup::Builder {
         suspend_service_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
         }
     }
     pub fn resume_service_backup(&self, service_id: impl Into<String>) -> resume_service_backup::Builder {
         resume_service_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
         }
@@ -2338,7 +2334,7 @@ impl Client {
         enable_backup_description: impl Into<models::EnableBackupDescription>,
     ) -> enable_partition_backup::Builder {
         enable_partition_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             enable_backup_description: enable_backup_description.into(),
             timeout: None,
@@ -2346,7 +2342,7 @@ impl Client {
     }
     pub fn disable_partition_backup(&self, partition_id: impl Into<String>) -> disable_partition_backup::Builder {
         disable_partition_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             disable_backup_description: None,
             timeout: None,
@@ -2357,14 +2353,14 @@ impl Client {
         partition_id: impl Into<String>,
     ) -> get_partition_backup_configuration_info::Builder {
         get_partition_backup_configuration_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
         }
     }
     pub fn get_partition_backup_list(&self, partition_id: impl Into<String>) -> get_partition_backup_list::Builder {
         get_partition_backup_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
             latest: None,
@@ -2374,21 +2370,21 @@ impl Client {
     }
     pub fn suspend_partition_backup(&self, partition_id: impl Into<String>) -> suspend_partition_backup::Builder {
         suspend_partition_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
         }
     }
     pub fn resume_partition_backup(&self, partition_id: impl Into<String>) -> resume_partition_backup::Builder {
         resume_partition_backup::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
         }
     }
     pub fn backup_partition(&self, partition_id: impl Into<String>) -> backup_partition::Builder {
         backup_partition::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             backup_partition_description: None,
             backup_timeout: None,
@@ -2397,7 +2393,7 @@ impl Client {
     }
     pub fn get_partition_backup_progress(&self, partition_id: impl Into<String>) -> get_partition_backup_progress::Builder {
         get_partition_backup_progress::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
         }
@@ -2408,7 +2404,7 @@ impl Client {
         restore_partition_description: impl Into<models::RestorePartitionDescription>,
     ) -> restore_partition::Builder {
         restore_partition::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             restore_partition_description: restore_partition_description.into(),
             restore_timeout: None,
@@ -2417,7 +2413,7 @@ impl Client {
     }
     pub fn get_partition_restore_progress(&self, partition_id: impl Into<String>) -> get_partition_restore_progress::Builder {
         get_partition_restore_progress::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
         }
@@ -2427,7 +2423,7 @@ impl Client {
         get_backup_by_storage_query_description: impl Into<models::GetBackupByStorageQueryDescription>,
     ) -> get_backups_from_backup_location::Builder {
         get_backups_from_backup_location::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             get_backup_by_storage_query_description: get_backup_by_storage_query_description.into(),
             timeout: None,
             continuation_token: None,
@@ -2436,28 +2432,28 @@ impl Client {
     }
     pub fn create_name(&self, name_description: impl Into<models::NameDescription>) -> create_name::Builder {
         create_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name_description: name_description.into(),
             timeout: None,
         }
     }
     pub fn get_name_exists_info(&self, name_id: impl Into<String>) -> get_name_exists_info::Builder {
         get_name_exists_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name_id: name_id.into(),
             timeout: None,
         }
     }
     pub fn delete_name(&self, name_id: impl Into<String>) -> delete_name::Builder {
         delete_name::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name_id: name_id.into(),
             timeout: None,
         }
     }
     pub fn get_sub_name_info_list(&self, name_id: impl Into<String>) -> get_sub_name_info_list::Builder {
         get_sub_name_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name_id: name_id.into(),
             recursive: None,
             continuation_token: None,
@@ -2466,7 +2462,7 @@ impl Client {
     }
     pub fn get_property_info_list(&self, name_id: impl Into<String>) -> get_property_info_list::Builder {
         get_property_info_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name_id: name_id.into(),
             include_values: None,
             continuation_token: None,
@@ -2475,7 +2471,7 @@ impl Client {
     }
     pub fn get_property_info(&self, name_id: impl Into<String>, property_name: impl Into<String>) -> get_property_info::Builder {
         get_property_info::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name_id: name_id.into(),
             property_name: property_name.into(),
             timeout: None,
@@ -2487,7 +2483,7 @@ impl Client {
         property_description: impl Into<models::PropertyDescription>,
     ) -> put_property::Builder {
         put_property::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name_id: name_id.into(),
             property_description: property_description.into(),
             timeout: None,
@@ -2495,7 +2491,7 @@ impl Client {
     }
     pub fn delete_property(&self, name_id: impl Into<String>, property_name: impl Into<String>) -> delete_property::Builder {
         delete_property::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name_id: name_id.into(),
             property_name: property_name.into(),
             timeout: None,
@@ -2507,7 +2503,7 @@ impl Client {
         property_batch_description_list: impl Into<models::PropertyBatchDescriptionList>,
     ) -> submit_property_batch::Builder {
         submit_property_batch::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             name_id: name_id.into(),
             property_batch_description_list: property_batch_description_list.into(),
             timeout: None,
@@ -2519,7 +2515,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_cluster_event_list::Builder {
         get_cluster_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
             timeout: None,
@@ -2534,7 +2530,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_containers_event_list::Builder {
         get_containers_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
             timeout: None,
@@ -2550,7 +2546,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_node_event_list::Builder {
         get_node_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             node_name: node_name.into(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
@@ -2566,7 +2562,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_nodes_event_list::Builder {
         get_nodes_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
             timeout: None,
@@ -2582,7 +2578,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_application_event_list::Builder {
         get_application_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             application_id: application_id.into(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
@@ -2598,7 +2594,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_applications_event_list::Builder {
         get_applications_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
             timeout: None,
@@ -2614,7 +2610,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_service_event_list::Builder {
         get_service_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             service_id: service_id.into(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
@@ -2630,7 +2626,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_services_event_list::Builder {
         get_services_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
             timeout: None,
@@ -2646,7 +2642,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_partition_event_list::Builder {
         get_partition_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
@@ -2662,7 +2658,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_partitions_event_list::Builder {
         get_partitions_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
             timeout: None,
@@ -2679,7 +2675,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_partition_replica_event_list::Builder {
         get_partition_replica_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
             start_time_utc: start_time_utc.into(),
@@ -2697,7 +2693,7 @@ impl Client {
         end_time_utc: impl Into<String>,
     ) -> get_partition_replicas_event_list::Builder {
         get_partition_replicas_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             partition_id: partition_id.into(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
@@ -2709,7 +2705,7 @@ impl Client {
     }
     pub fn get_correlated_event_list(&self, event_instance_id: impl Into<String>) -> get_correlated_event_list::Builder {
         get_correlated_event_list::Builder {
-            client: self.base_clone(),
+            client: self.clone(),
             event_instance_id: event_instance_id.into(),
             timeout: None,
         }
@@ -2741,7 +2737,7 @@ pub mod get_cluster_manifest {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -2817,7 +2813,7 @@ pub mod get_cluster_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) nodes_health_state_filter: Option<i64>,
         pub(crate) applications_health_state_filter: Option<i64>,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -2940,7 +2936,7 @@ pub mod get_cluster_health_using_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) nodes_health_state_filter: Option<i64>,
         pub(crate) applications_health_state_filter: Option<i64>,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -3073,7 +3069,7 @@ pub mod get_cluster_health_chunk {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -3149,7 +3145,7 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) cluster_health_chunk_query_description: Option<models::ClusterHealthChunkQueryDescription>,
         pub(crate) timeout: Option<i64>,
     }
@@ -3238,7 +3234,7 @@ pub mod report_cluster_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) health_information: models::HealthInformation,
         pub(crate) immediate: Option<bool>,
         pub(crate) timeout: Option<i64>,
@@ -3319,7 +3315,7 @@ pub mod get_provisioned_fabric_code_version_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) code_version: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
@@ -3403,7 +3399,7 @@ pub mod get_provisioned_fabric_config_version_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) config_version: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
@@ -3487,7 +3483,7 @@ pub mod get_cluster_upgrade_progress {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -3563,7 +3559,7 @@ pub mod get_cluster_configuration {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) configuration_api_version: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -3643,7 +3639,7 @@ pub mod get_cluster_configuration_upgrade_status {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -3721,7 +3717,7 @@ pub mod get_upgrade_orchestration_service_state {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -3799,7 +3795,7 @@ pub mod set_upgrade_orchestration_service_state {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) upgrade_orchestration_service_state: models::UpgradeOrchestrationServiceState,
         pub(crate) timeout: Option<i64>,
     }
@@ -3879,7 +3875,7 @@ pub mod provision_cluster {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) provision_fabric_description: models::ProvisionFabricDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -3952,7 +3948,7 @@ pub mod unprovision_cluster {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) unprovision_fabric_description: models::UnprovisionFabricDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -4025,7 +4021,7 @@ pub mod rollback_cluster_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -4097,7 +4093,7 @@ pub mod resume_cluster_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) resume_cluster_upgrade_description: models::ResumeClusterUpgradeDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -4170,7 +4166,7 @@ pub mod start_cluster_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) start_cluster_upgrade_description: models::StartClusterUpgradeDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -4243,7 +4239,7 @@ pub mod start_cluster_configuration_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) cluster_configuration_upgrade_description: models::ClusterConfigurationUpgradeDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -4316,7 +4312,7 @@ pub mod update_cluster_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) update_cluster_upgrade_description: models::UpdateClusterUpgradeDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -4389,7 +4385,7 @@ pub mod get_aad_metadata {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -4465,7 +4461,7 @@ pub mod get_cluster_version {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -4541,7 +4537,7 @@ pub mod get_cluster_load {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -4617,7 +4613,7 @@ pub mod toggle_verbose_service_placement_health_reporting {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) enabled: bool,
         pub(crate) timeout: Option<i64>,
     }
@@ -4692,7 +4688,7 @@ pub mod get_node_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) continuation_token: Option<String>,
         pub(crate) node_status_filter: Option<String>,
         pub(crate) max_results: Option<i64>,
@@ -4797,7 +4793,7 @@ pub mod get_node_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -4875,7 +4871,7 @@ pub mod get_node_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) timeout: Option<i64>,
@@ -4961,7 +4957,7 @@ pub mod get_node_health_using_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) cluster_health_policy: Option<models::ClusterHealthPolicy>,
@@ -5057,7 +5053,7 @@ pub mod report_node_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) health_information: models::HealthInformation,
         pub(crate) immediate: Option<bool>,
@@ -5139,7 +5135,7 @@ pub mod get_node_load_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -5216,7 +5212,7 @@ pub mod disable_node {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) deactivation_intent_description: models::DeactivationIntentDescription,
         pub(crate) timeout: Option<i64>,
@@ -5290,7 +5286,7 @@ pub mod enable_node {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -5363,7 +5359,7 @@ pub mod remove_node_state {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -5436,7 +5432,7 @@ pub mod restart_node {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) restart_node_description: models::RestartNodeDescription,
         pub(crate) timeout: Option<i64>,
@@ -5510,7 +5506,7 @@ pub mod remove_configuration_overrides {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -5586,7 +5582,7 @@ pub mod get_configuration_overrides {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -5663,7 +5659,7 @@ pub mod add_configuration_parameter_overrides {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) config_parameter_override_list: models::ConfigParameterOverrideList,
         pub(crate) force: Option<bool>,
@@ -5749,7 +5745,7 @@ pub mod get_application_type_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_type_definition_kind_filter: Option<i64>,
         pub(crate) exclude_application_parameters: Option<bool>,
         pub(crate) continuation_token: Option<String>,
@@ -5861,7 +5857,7 @@ pub mod get_application_type_info_list_by_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) application_type_version: Option<String>,
         pub(crate) exclude_application_parameters: Option<bool>,
@@ -5977,7 +5973,7 @@ pub mod provision_application_type {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) provision_application_type_description_base_required_body_param: models::ProvisionApplicationTypeDescriptionBase,
         pub(crate) timeout: Option<i64>,
     }
@@ -6057,7 +6053,7 @@ pub mod unprovision_application_type {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) unprovision_application_type_description_info: models::UnprovisionApplicationTypeDescriptionInfo,
         pub(crate) timeout: Option<i64>,
@@ -6136,7 +6132,7 @@ pub mod get_service_type_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) application_type_version: String,
         pub(crate) timeout: Option<i64>,
@@ -6226,7 +6222,7 @@ pub mod get_service_type_info_by_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) application_type_version: String,
         pub(crate) service_type_name: String,
@@ -6314,7 +6310,7 @@ pub mod get_service_manifest {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) application_type_version: String,
         pub(crate) service_manifest_name: String,
@@ -6402,7 +6398,7 @@ pub mod get_deployed_service_type_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) service_manifest_name: Option<String>,
@@ -6498,7 +6494,7 @@ pub mod get_deployed_service_type_info_by_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) service_type_name: String,
@@ -6592,7 +6588,7 @@ pub mod create_application {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_description: models::ApplicationDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -6665,7 +6661,7 @@ pub mod delete_application {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) force_remove: Option<bool>,
         pub(crate) timeout: Option<i64>,
@@ -6751,7 +6747,7 @@ pub mod get_application_load_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -6833,7 +6829,7 @@ pub mod get_application_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_definition_kind_filter: Option<i64>,
         pub(crate) application_type_name: Option<String>,
         pub(crate) exclude_application_parameters: Option<bool>,
@@ -6956,7 +6952,7 @@ pub mod get_application_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) exclude_application_parameters: Option<bool>,
         pub(crate) timeout: Option<i64>,
@@ -7043,7 +7039,7 @@ pub mod get_application_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) deployed_applications_health_state_filter: Option<i64>,
@@ -7158,7 +7154,7 @@ pub mod get_application_health_using_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) deployed_applications_health_state_filter: Option<i64>,
@@ -7283,7 +7279,7 @@ pub mod report_application_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) health_information: models::HealthInformation,
         pub(crate) immediate: Option<bool>,
@@ -7365,7 +7361,7 @@ pub mod start_application_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) application_upgrade_description: models::ApplicationUpgradeDescription,
         pub(crate) timeout: Option<i64>,
@@ -7439,7 +7435,7 @@ pub mod get_application_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -7522,7 +7518,7 @@ pub mod update_application_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) application_upgrade_update_description: models::ApplicationUpgradeUpdateDescription,
         pub(crate) timeout: Option<i64>,
@@ -7596,7 +7592,7 @@ pub mod resume_application_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) resume_application_upgrade_description: models::ResumeApplicationUpgradeDescription,
         pub(crate) timeout: Option<i64>,
@@ -7674,7 +7670,7 @@ pub mod rollback_application_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -7747,7 +7743,7 @@ pub mod get_deployed_application_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
         pub(crate) include_health_state: Option<bool>,
@@ -7856,7 +7852,7 @@ pub mod get_deployed_application_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
@@ -7949,7 +7945,7 @@ pub mod get_deployed_application_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -8061,7 +8057,7 @@ pub mod get_deployed_application_health_using_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -8183,7 +8179,7 @@ pub mod report_deployed_application_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) health_information: models::HealthInformation,
@@ -8271,7 +8267,7 @@ pub mod get_application_manifest {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) application_type_version: String,
         pub(crate) timeout: Option<i64>,
@@ -8356,7 +8352,7 @@ pub mod get_service_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) service_type_name: Option<String>,
         pub(crate) continuation_token: Option<String>,
@@ -8454,7 +8450,7 @@ pub mod get_service_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
@@ -8538,7 +8534,7 @@ pub mod get_application_name_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -8615,7 +8611,7 @@ pub mod create_service {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) service_description: models::ServiceDescription,
         pub(crate) timeout: Option<i64>,
@@ -8693,7 +8689,7 @@ pub mod create_service_from_template {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) service_from_template_description: models::ServiceFromTemplateDescription,
         pub(crate) timeout: Option<i64>,
@@ -8771,7 +8767,7 @@ pub mod delete_service {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) force_remove: Option<bool>,
         pub(crate) timeout: Option<i64>,
@@ -8852,7 +8848,7 @@ pub mod update_service {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) service_update_description: models::ServiceUpdateDescription,
         pub(crate) timeout: Option<i64>,
@@ -8926,7 +8922,7 @@ pub mod get_service_description {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -9003,7 +8999,7 @@ pub mod get_service_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) partitions_health_state_filter: Option<i64>,
@@ -9107,7 +9103,7 @@ pub mod get_service_health_using_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) partitions_health_state_filter: Option<i64>,
@@ -9221,7 +9217,7 @@ pub mod report_service_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) health_information: models::HealthInformation,
         pub(crate) immediate: Option<bool>,
@@ -9303,7 +9299,7 @@ pub mod resolve_service {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_key_type: Option<i64>,
         pub(crate) partition_key_value: Option<String>,
@@ -9405,7 +9401,7 @@ pub mod get_unplaced_replica_information {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: Option<String>,
         pub(crate) only_query_primaries: Option<bool>,
@@ -9503,7 +9499,7 @@ pub mod get_partition_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) continuation_token: Option<String>,
         pub(crate) timeout: Option<i64>,
@@ -9593,7 +9589,7 @@ pub mod get_partition_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -9671,7 +9667,7 @@ pub mod get_service_name_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -9748,7 +9744,7 @@ pub mod get_partition_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) replicas_health_state_filter: Option<i64>,
@@ -9852,7 +9848,7 @@ pub mod get_partition_health_using_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) replicas_health_state_filter: Option<i64>,
@@ -9966,7 +9962,7 @@ pub mod report_partition_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) health_information: models::HealthInformation,
         pub(crate) immediate: Option<bool>,
@@ -10048,7 +10044,7 @@ pub mod get_partition_load_information {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -10125,7 +10121,7 @@ pub mod reset_partition_load {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -10198,7 +10194,7 @@ pub mod recover_partition {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -10271,7 +10267,7 @@ pub mod recover_service_partitions {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -10348,7 +10344,7 @@ pub mod recover_system_partitions {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -10420,7 +10416,7 @@ pub mod recover_all_partitions {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -10492,7 +10488,7 @@ pub mod move_primary_replica {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) node_name: Option<String>,
         pub(crate) ignore_constraints: Option<bool>,
@@ -10582,7 +10578,7 @@ pub mod move_secondary_replica {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) current_node_name: String,
         pub(crate) new_node_name: Option<String>,
@@ -10679,7 +10675,7 @@ pub mod create_repair_task {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) repair_task: models::RepairTask,
     }
     impl Builder {
@@ -10749,7 +10745,7 @@ pub mod cancel_repair_task {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) repair_task_cancel_description: models::RepairTaskCancelDescription,
     }
     impl Builder {
@@ -10819,7 +10815,7 @@ pub mod delete_repair_task {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) repair_task_delete_description: models::RepairTaskDeleteDescription,
     }
     impl Builder {
@@ -10884,7 +10880,7 @@ pub mod get_repair_task_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) task_id_filter: Option<String>,
         pub(crate) state_filter: Option<i64>,
         pub(crate) executor_filter: Option<String>,
@@ -10976,7 +10972,7 @@ pub mod force_approve_repair_task {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) repair_task_approve_description: models::RepairTaskApproveDescription,
     }
     impl Builder {
@@ -11046,7 +11042,7 @@ pub mod update_repair_task_health_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) repair_task_update_health_policy_description: models::RepairTaskUpdateHealthPolicyDescription,
     }
     impl Builder {
@@ -11116,7 +11112,7 @@ pub mod update_repair_execution_state {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) repair_task: models::RepairTask,
     }
     impl Builder {
@@ -11186,7 +11182,7 @@ pub mod get_replica_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) continuation_token: Option<String>,
         pub(crate) timeout: Option<i64>,
@@ -11276,7 +11272,7 @@ pub mod get_replica_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
         pub(crate) timeout: Option<i64>,
@@ -11360,7 +11356,7 @@ pub mod get_replica_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -11452,7 +11448,7 @@ pub mod get_replica_health_using_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -11554,7 +11550,7 @@ pub mod report_replica_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
         pub(crate) service_kind: String,
@@ -11650,7 +11646,7 @@ pub mod get_deployed_service_replica_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) partition_id: Option<String>,
@@ -11750,7 +11746,7 @@ pub mod get_deployed_service_replica_detail_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
@@ -11837,7 +11833,7 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
@@ -11922,7 +11918,7 @@ pub mod restart_replica {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
@@ -12003,7 +11999,7 @@ pub mod remove_replica {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
@@ -12092,7 +12088,7 @@ pub mod get_deployed_service_package_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
@@ -12182,7 +12178,7 @@ pub mod get_deployed_service_package_info_list_by_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) service_package_name: String,
@@ -12268,7 +12264,7 @@ pub mod get_deployed_service_package_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) service_package_name: String,
@@ -12362,7 +12358,7 @@ pub mod get_deployed_service_package_health_using_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) service_package_name: String,
@@ -12466,7 +12462,7 @@ pub mod report_deployed_service_package_health {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) service_package_name: String,
@@ -12556,7 +12552,7 @@ pub mod deploy_service_package_to_node {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) deploy_service_package_to_node_description: models::DeployServicePackageToNodeDescription,
         pub(crate) timeout: Option<i64>,
@@ -12630,7 +12626,7 @@ pub mod get_deployed_code_package_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) service_manifest_name: Option<String>,
@@ -12729,7 +12725,7 @@ pub mod restart_deployed_code_package {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) restart_deployed_code_package_description: models::RestartDeployedCodePackageDescription,
@@ -12809,7 +12805,7 @@ pub mod get_container_logs_deployed_on_node {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) service_manifest_name: String,
@@ -12914,7 +12910,7 @@ pub mod invoke_container_api {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) service_manifest_name: String,
@@ -13008,7 +13004,7 @@ pub mod create_compose_deployment {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) create_compose_deployment_description: models::CreateComposeDeploymentDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -13081,7 +13077,7 @@ pub mod get_compose_deployment_status {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) deployment_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -13158,7 +13154,7 @@ pub mod get_compose_deployment_status_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
@@ -13252,7 +13248,7 @@ pub mod get_compose_deployment_upgrade_progress {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) deployment_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -13335,7 +13331,7 @@ pub mod remove_compose_deployment {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) deployment_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -13408,7 +13404,7 @@ pub mod start_compose_deployment_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) deployment_name: String,
         pub(crate) compose_deployment_upgrade_description: models::ComposeDeploymentUpgradeDescription,
         pub(crate) timeout: Option<i64>,
@@ -13482,7 +13478,7 @@ pub mod start_rollback_compose_deployment_upgrade {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) deployment_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -13559,7 +13555,7 @@ pub mod get_chaos {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -13635,7 +13631,7 @@ pub mod start_chaos {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) chaos_parameters: models::ChaosParameters,
         pub(crate) timeout: Option<i64>,
     }
@@ -13708,7 +13704,7 @@ pub mod stop_chaos {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -13780,7 +13776,7 @@ pub mod get_chaos_events {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) continuation_token: Option<String>,
         pub(crate) start_time_utc: Option<String>,
         pub(crate) end_time_utc: Option<String>,
@@ -13888,7 +13884,7 @@ pub mod get_chaos_schedule {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -13964,7 +13960,7 @@ pub mod post_chaos_schedule {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) chaos_schedule: models::ChaosScheduleDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -14037,7 +14033,7 @@ pub mod get_image_store_content {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -14114,7 +14110,7 @@ pub mod upload_file {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -14186,7 +14182,7 @@ pub mod delete_image_store_content {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -14258,7 +14254,7 @@ pub mod get_image_store_root_content {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -14334,7 +14330,7 @@ pub mod copy_image_store_content {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) image_store_copy_description: models::ImageStoreCopyDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -14407,7 +14403,7 @@ pub mod delete_image_store_upload_session {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) session_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -14481,7 +14477,7 @@ pub mod commit_image_store_upload_session {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) session_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -14556,7 +14552,7 @@ pub mod get_image_store_upload_session_by_id {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) session_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -14635,7 +14631,7 @@ pub mod get_image_store_upload_session_by_path {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -14712,7 +14708,7 @@ pub mod upload_file_chunk {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) session_id: String,
         pub(crate) content_range: String,
@@ -14789,7 +14785,7 @@ pub mod get_image_store_root_folder_size {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -14865,7 +14861,7 @@ pub mod get_image_store_folder_size {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -14942,7 +14938,7 @@ pub mod get_image_store_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
@@ -15018,7 +15014,7 @@ pub mod invoke_infrastructure_command {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) command: String,
         pub(crate) service_id: Option<String>,
         pub(crate) timeout: Option<i64>,
@@ -15106,7 +15102,7 @@ pub mod invoke_infrastructure_query {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) command: String,
         pub(crate) service_id: Option<String>,
         pub(crate) timeout: Option<i64>,
@@ -15193,7 +15189,7 @@ pub mod start_data_loss {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
         pub(crate) operation_id: String,
@@ -15278,7 +15274,7 @@ pub mod get_data_loss_progress {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
         pub(crate) operation_id: String,
@@ -15364,7 +15360,7 @@ pub mod start_quorum_loss {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
         pub(crate) operation_id: String,
@@ -15453,7 +15449,7 @@ pub mod get_quorum_loss_progress {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
         pub(crate) operation_id: String,
@@ -15539,7 +15535,7 @@ pub mod start_partition_restart {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
         pub(crate) operation_id: String,
@@ -15624,7 +15620,7 @@ pub mod get_partition_restart_progress {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
         pub(crate) operation_id: String,
@@ -15710,7 +15706,7 @@ pub mod start_node_transition {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) operation_id: String,
         pub(crate) node_transition_type: String,
@@ -15796,7 +15792,7 @@ pub mod get_node_transition_progress {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) operation_id: String,
         pub(crate) timeout: Option<i64>,
@@ -15880,7 +15876,7 @@ pub mod get_fault_operation_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) type_filter: i64,
         pub(crate) state_filter: i64,
         pub(crate) timeout: Option<i64>,
@@ -15962,7 +15958,7 @@ pub mod cancel_operation {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) operation_id: String,
         pub(crate) force: bool,
         pub(crate) timeout: Option<i64>,
@@ -16040,7 +16036,7 @@ pub mod create_backup_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) backup_policy_description: models::BackupPolicyDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -16113,7 +16109,7 @@ pub mod delete_backup_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) backup_policy_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -16190,7 +16186,7 @@ pub mod get_backup_policy_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
@@ -16284,7 +16280,7 @@ pub mod get_backup_policy_by_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) backup_policy_name: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -16365,7 +16361,7 @@ pub mod get_all_entities_backed_up_by_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) backup_policy_name: String,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
@@ -16462,7 +16458,7 @@ pub mod update_backup_policy {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) backup_policy_description: models::BackupPolicyDescription,
         pub(crate) backup_policy_name: String,
         pub(crate) timeout: Option<i64>,
@@ -16540,7 +16536,7 @@ pub mod enable_application_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) enable_backup_description: models::EnableBackupDescription,
         pub(crate) timeout: Option<i64>,
@@ -16614,7 +16610,7 @@ pub mod disable_application_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
         pub(crate) disable_backup_description: Option<models::DisableBackupDescription>,
@@ -16696,7 +16692,7 @@ pub mod get_application_backup_configuration_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
@@ -16795,7 +16791,7 @@ pub mod get_application_backup_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
         pub(crate) latest: Option<bool>,
@@ -16912,7 +16908,7 @@ pub mod suspend_application_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -16985,7 +16981,7 @@ pub mod resume_application_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -17058,7 +17054,7 @@ pub mod enable_service_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) enable_backup_description: models::EnableBackupDescription,
         pub(crate) timeout: Option<i64>,
@@ -17132,7 +17128,7 @@ pub mod disable_service_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) disable_backup_description: Option<models::DisableBackupDescription>,
         pub(crate) timeout: Option<i64>,
@@ -17214,7 +17210,7 @@ pub mod get_service_backup_configuration_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
@@ -17313,7 +17309,7 @@ pub mod get_service_backup_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
         pub(crate) latest: Option<bool>,
@@ -17430,7 +17426,7 @@ pub mod suspend_service_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -17503,7 +17499,7 @@ pub mod resume_service_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -17576,7 +17572,7 @@ pub mod enable_partition_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) enable_backup_description: models::EnableBackupDescription,
         pub(crate) timeout: Option<i64>,
@@ -17650,7 +17646,7 @@ pub mod disable_partition_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) disable_backup_description: Option<models::DisableBackupDescription>,
         pub(crate) timeout: Option<i64>,
@@ -17732,7 +17728,7 @@ pub mod get_partition_backup_configuration_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -17815,7 +17811,7 @@ pub mod get_partition_backup_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
         pub(crate) latest: Option<bool>,
@@ -17916,7 +17912,7 @@ pub mod suspend_partition_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -17989,7 +17985,7 @@ pub mod resume_partition_backup {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -18062,7 +18058,7 @@ pub mod backup_partition {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) backup_partition_description: Option<models::BackupPartitionDescription>,
         pub(crate) backup_timeout: Option<i64>,
@@ -18152,7 +18148,7 @@ pub mod get_partition_backup_progress {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -18229,7 +18225,7 @@ pub mod restore_partition {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) restore_partition_description: models::RestorePartitionDescription,
         pub(crate) restore_timeout: Option<i64>,
@@ -18311,7 +18307,7 @@ pub mod get_partition_restore_progress {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -18388,7 +18384,7 @@ pub mod get_backups_from_backup_location {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) get_backup_by_storage_query_description: models::GetBackupByStorageQueryDescription,
         pub(crate) timeout: Option<i64>,
         pub(crate) continuation_token: Option<String>,
@@ -18482,7 +18478,7 @@ pub mod create_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name_description: models::NameDescription,
         pub(crate) timeout: Option<i64>,
     }
@@ -18555,7 +18551,7 @@ pub mod get_name_exists_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -18627,7 +18623,7 @@ pub mod delete_name {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -18699,7 +18695,7 @@ pub mod get_sub_name_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) recursive: Option<bool>,
         pub(crate) continuation_token: Option<String>,
@@ -18792,7 +18788,7 @@ pub mod get_property_info_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) include_values: Option<bool>,
         pub(crate) continuation_token: Option<String>,
@@ -18885,7 +18881,7 @@ pub mod get_property_info {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) property_name: String,
         pub(crate) timeout: Option<i64>,
@@ -18965,7 +18961,7 @@ pub mod put_property {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) property_description: models::PropertyDescription,
         pub(crate) timeout: Option<i64>,
@@ -19039,7 +19035,7 @@ pub mod delete_property {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) property_name: String,
         pub(crate) timeout: Option<i64>,
@@ -19116,7 +19112,7 @@ pub mod submit_property_batch {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) property_batch_description_list: models::PropertyBatchDescriptionList,
         pub(crate) timeout: Option<i64>,
@@ -19201,7 +19197,7 @@ pub mod get_cluster_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
         pub(crate) timeout: Option<i64>,
@@ -19309,7 +19305,7 @@ pub mod get_containers_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
         pub(crate) timeout: Option<i64>,
@@ -19417,7 +19413,7 @@ pub mod get_node_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
@@ -19526,7 +19522,7 @@ pub mod get_nodes_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
         pub(crate) timeout: Option<i64>,
@@ -19634,7 +19630,7 @@ pub mod get_application_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
@@ -19747,7 +19743,7 @@ pub mod get_applications_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
         pub(crate) timeout: Option<i64>,
@@ -19855,7 +19851,7 @@ pub mod get_service_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
@@ -19964,7 +19960,7 @@ pub mod get_services_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
         pub(crate) timeout: Option<i64>,
@@ -20072,7 +20068,7 @@ pub mod get_partition_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
@@ -20181,7 +20177,7 @@ pub mod get_partitions_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
         pub(crate) timeout: Option<i64>,
@@ -20289,7 +20285,7 @@ pub mod get_partition_replica_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
         pub(crate) start_time_utc: String,
@@ -20404,7 +20400,7 @@ pub mod get_partition_replicas_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
@@ -20517,7 +20513,7 @@ pub mod get_correlated_event_list {
     }
     #[derive(Clone)]
     pub struct Builder {
-        pub(crate) client: crate::operations::Client,
+        pub(crate) client: super::Client,
         pub(crate) event_instance_id: String,
         pub(crate) timeout: Option<i64>,
     }
@@ -20576,12 +20572,9 @@ pub mod mesh_secret {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, secret_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
             }
         }
@@ -20591,19 +20584,19 @@ pub mod mesh_secret {
             secret_resource_description: impl Into<models::SecretResourceDescription>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
                 secret_resource_description: secret_resource_description.into(),
             }
         }
         pub fn delete(&self, secret_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
             }
         }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -20632,7 +20625,7 @@ pub mod mesh_secret {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
         }
         impl Builder {
@@ -20707,7 +20700,7 @@ pub mod mesh_secret {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
             pub(crate) secret_resource_description: models::SecretResourceDescription,
         }
@@ -20791,7 +20784,7 @@ pub mod mesh_secret {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
         }
         impl Builder {
@@ -20857,7 +20850,7 @@ pub mod mesh_secret {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -20906,12 +20899,9 @@ pub mod mesh_secret_value {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
                 secret_value_resource_name: secret_value_resource_name.into(),
             }
@@ -20923,7 +20913,7 @@ pub mod mesh_secret_value {
             secret_value_resource_description: impl Into<models::SecretValueResourceDescription>,
         ) -> add_value::Builder {
             add_value::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
                 secret_value_resource_name: secret_value_resource_name.into(),
                 secret_value_resource_description: secret_value_resource_description.into(),
@@ -20931,20 +20921,20 @@ pub mod mesh_secret_value {
         }
         pub fn delete(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
                 secret_value_resource_name: secret_value_resource_name.into(),
             }
         }
         pub fn list(&self, secret_resource_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
             }
         }
         pub fn show(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> show::Builder {
             show::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
                 secret_value_resource_name: secret_value_resource_name.into(),
             }
@@ -20976,7 +20966,7 @@ pub mod mesh_secret_value {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
             pub(crate) secret_value_resource_name: String,
         }
@@ -21059,7 +21049,7 @@ pub mod mesh_secret_value {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
             pub(crate) secret_value_resource_name: String,
             pub(crate) secret_value_resource_description: models::SecretValueResourceDescription,
@@ -21149,7 +21139,7 @@ pub mod mesh_secret_value {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
             pub(crate) secret_value_resource_name: String,
         }
@@ -21221,7 +21211,7 @@ pub mod mesh_secret_value {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
         }
         impl Builder {
@@ -21293,7 +21283,7 @@ pub mod mesh_secret_value {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
             pub(crate) secret_value_resource_name: String,
         }
@@ -21348,12 +21338,9 @@ pub mod mesh_volume {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, volume_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 volume_resource_name: volume_resource_name.into(),
             }
         }
@@ -21363,19 +21350,19 @@ pub mod mesh_volume {
             volume_resource_description: impl Into<models::VolumeResourceDescription>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 volume_resource_name: volume_resource_name.into(),
                 volume_resource_description: volume_resource_description.into(),
             }
         }
         pub fn delete(&self, volume_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 volume_resource_name: volume_resource_name.into(),
             }
         }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -21404,7 +21391,7 @@ pub mod mesh_volume {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) volume_resource_name: String,
         }
         impl Builder {
@@ -21479,7 +21466,7 @@ pub mod mesh_volume {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) volume_resource_name: String,
             pub(crate) volume_resource_description: models::VolumeResourceDescription,
         }
@@ -21563,7 +21550,7 @@ pub mod mesh_volume {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) volume_resource_name: String,
         }
         impl Builder {
@@ -21629,7 +21616,7 @@ pub mod mesh_volume {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -21678,12 +21665,9 @@ pub mod mesh_network {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, network_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 network_resource_name: network_resource_name.into(),
             }
         }
@@ -21693,19 +21677,19 @@ pub mod mesh_network {
             network_resource_description: impl Into<models::NetworkResourceDescription>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 network_resource_name: network_resource_name.into(),
                 network_resource_description: network_resource_description.into(),
             }
         }
         pub fn delete(&self, network_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 network_resource_name: network_resource_name.into(),
             }
         }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -21734,7 +21718,7 @@ pub mod mesh_network {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) network_resource_name: String,
         }
         impl Builder {
@@ -21811,7 +21795,7 @@ pub mod mesh_network {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) network_resource_name: String,
             pub(crate) network_resource_description: models::NetworkResourceDescription,
         }
@@ -21895,7 +21879,7 @@ pub mod mesh_network {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) network_resource_name: String,
         }
         impl Builder {
@@ -21961,7 +21945,7 @@ pub mod mesh_network {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -22010,12 +21994,9 @@ pub mod mesh_application {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, application_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
             }
         }
@@ -22025,23 +22006,23 @@ pub mod mesh_application {
             application_resource_description: impl Into<models::ApplicationResourceDescription>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
                 application_resource_description: application_resource_description.into(),
             }
         }
         pub fn delete(&self, application_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
             }
         }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get_upgrade_progress(&self, application_resource_name: impl Into<String>) -> get_upgrade_progress::Builder {
             get_upgrade_progress::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
             }
         }
@@ -22072,7 +22053,7 @@ pub mod mesh_application {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
         impl Builder {
@@ -22153,7 +22134,7 @@ pub mod mesh_application {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
             pub(crate) application_resource_description: models::ApplicationResourceDescription,
         }
@@ -22241,7 +22222,7 @@ pub mod mesh_application {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
         impl Builder {
@@ -22311,7 +22292,7 @@ pub mod mesh_application {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -22382,7 +22363,7 @@ pub mod mesh_application {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
         impl Builder {
@@ -22437,19 +22418,16 @@ pub mod mesh_service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, application_resource_name: impl Into<String>, service_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
                 service_resource_name: service_resource_name.into(),
             }
         }
         pub fn list(&self, application_resource_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
             }
         }
@@ -22480,7 +22458,7 @@ pub mod mesh_service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
             pub(crate) service_resource_name: String,
         }
@@ -22557,7 +22535,7 @@ pub mod mesh_service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
         impl Builder {
@@ -22611,9 +22589,6 @@ pub mod mesh_code_package {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_container_logs(
             &self,
             application_resource_name: impl Into<String>,
@@ -22622,7 +22597,7 @@ pub mod mesh_code_package {
             code_package_name: impl Into<String>,
         ) -> get_container_logs::Builder {
             get_container_logs::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
                 service_resource_name: service_resource_name.into(),
                 replica_name: replica_name.into(),
@@ -22657,7 +22632,7 @@ pub mod mesh_code_package {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
             pub(crate) service_resource_name: String,
             pub(crate) replica_name: String,
@@ -22723,9 +22698,6 @@ pub mod mesh_service_replica {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             application_resource_name: impl Into<String>,
@@ -22733,7 +22705,7 @@ pub mod mesh_service_replica {
             replica_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
                 service_resource_name: service_resource_name.into(),
                 replica_name: replica_name.into(),
@@ -22741,7 +22713,7 @@ pub mod mesh_service_replica {
         }
         pub fn list(&self, application_resource_name: impl Into<String>, service_resource_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
                 service_resource_name: service_resource_name.into(),
             }
@@ -22773,7 +22745,7 @@ pub mod mesh_service_replica {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
             pub(crate) service_resource_name: String,
             pub(crate) replica_name: String,
@@ -22850,7 +22822,7 @@ pub mod mesh_service_replica {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
             pub(crate) service_resource_name: String,
         }
@@ -22906,12 +22878,9 @@ pub mod mesh_gateway {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, gateway_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 gateway_resource_name: gateway_resource_name.into(),
             }
         }
@@ -22921,19 +22890,19 @@ pub mod mesh_gateway {
             gateway_resource_description: impl Into<models::GatewayResourceDescription>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 gateway_resource_name: gateway_resource_name.into(),
                 gateway_resource_description: gateway_resource_description.into(),
             }
         }
         pub fn delete(&self, gateway_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 gateway_resource_name: gateway_resource_name.into(),
             }
         }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -22962,7 +22931,7 @@ pub mod mesh_gateway {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) gateway_resource_name: String,
         }
         impl Builder {
@@ -23039,7 +23008,7 @@ pub mod mesh_gateway {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) gateway_resource_name: String,
             pub(crate) gateway_resource_description: models::GatewayResourceDescription,
         }
@@ -23123,7 +23092,7 @@ pub mod mesh_gateway {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) gateway_resource_name: String,
         }
         impl Builder {
@@ -23189,7 +23158,7 @@ pub mod mesh_gateway {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(

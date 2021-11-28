@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn monitoring(&self) -> monitoring::Client {
         monitoring::Client(self.clone())
     }
@@ -91,18 +87,15 @@ pub mod monitoring {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_spark_job_list(&self) -> get_spark_job_list::Builder {
             get_spark_job_list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 x_ms_client_request_id: None,
             }
         }
         pub fn get_sql_job_query_string(&self) -> get_sql_job_query_string::Builder {
             get_sql_job_query_string::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 x_ms_client_request_id: None,
                 filter: None,
                 orderby: None,
@@ -133,7 +126,7 @@ pub mod monitoring {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
@@ -204,7 +197,7 @@ pub mod monitoring {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) filter: Option<String>,
             pub(crate) orderby: Option<String>,

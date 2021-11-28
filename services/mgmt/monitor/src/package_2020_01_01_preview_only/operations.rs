@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn management_group_diagnostic_settings(&self) -> management_group_diagnostic_settings::Client {
         management_group_diagnostic_settings::Client(self.clone())
     }
@@ -95,12 +91,9 @@ pub mod management_group_diagnostic_settings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, management_group_id: impl Into<String>, name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 management_group_id: management_group_id.into(),
                 name: name.into(),
             }
@@ -112,7 +105,7 @@ pub mod management_group_diagnostic_settings {
             name: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 management_group_id: management_group_id.into(),
                 parameters: parameters.into(),
                 name: name.into(),
@@ -120,14 +113,14 @@ pub mod management_group_diagnostic_settings {
         }
         pub fn delete(&self, management_group_id: impl Into<String>, name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 management_group_id: management_group_id.into(),
                 name: name.into(),
             }
         }
         pub fn list(&self, management_group_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 management_group_id: management_group_id.into(),
             }
         }
@@ -158,7 +151,7 @@ pub mod management_group_diagnostic_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) management_group_id: String,
             pub(crate) name: String,
         }
@@ -236,7 +229,7 @@ pub mod management_group_diagnostic_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) management_group_id: String,
             pub(crate) parameters: models::ManagementGroupDiagnosticSettingsResource,
             pub(crate) name: String,
@@ -321,7 +314,7 @@ pub mod management_group_diagnostic_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) management_group_id: String,
             pub(crate) name: String,
         }
@@ -392,7 +385,7 @@ pub mod management_group_diagnostic_settings {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) management_group_id: String,
         }
         impl Builder {

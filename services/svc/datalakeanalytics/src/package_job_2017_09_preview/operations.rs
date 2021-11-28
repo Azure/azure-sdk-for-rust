@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn job(&self) -> job::Client {
         job::Client(self.clone())
     }
@@ -119,12 +115,9 @@ pub mod job {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter: None,
                 top: None,
                 skip: None,
@@ -135,51 +128,51 @@ pub mod job {
         }
         pub fn get(&self, job_identity: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
         pub fn create(&self, job_identity: impl Into<String>, parameters: impl Into<models::CreateJobParameters>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
                 parameters: parameters.into(),
             }
         }
         pub fn update(&self, job_identity: impl Into<String>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
                 parameters: None,
             }
         }
         pub fn get_statistics(&self, job_identity: impl Into<String>) -> get_statistics::Builder {
             get_statistics::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
         pub fn get_debug_data_path(&self, job_identity: impl Into<String>) -> get_debug_data_path::Builder {
             get_debug_data_path::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
         pub fn cancel(&self, job_identity: impl Into<String>) -> cancel::Builder {
             cancel::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
         pub fn yield_(&self, job_identity: impl Into<String>) -> yield_::Builder {
             yield_::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
         pub fn build(&self, parameters: impl Into<models::BuildJobParameters>) -> build::Builder {
             build::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
             }
         }
@@ -207,7 +200,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
             pub(crate) skip: Option<i32>,
@@ -318,7 +311,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
         impl Builder {
@@ -382,7 +375,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
             pub(crate) parameters: models::CreateJobParameters,
         }
@@ -454,7 +447,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
             pub(crate) parameters: Option<models::UpdateJobParameters>,
         }
@@ -530,7 +523,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
         impl Builder {
@@ -594,7 +587,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
         impl Builder {
@@ -664,7 +657,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
         impl Builder {
@@ -732,7 +725,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) job_identity: String,
         }
         impl Builder {
@@ -794,7 +787,7 @@ pub mod job {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::BuildJobParameters,
         }
         impl Builder {
@@ -841,19 +834,16 @@ pub mod pipeline {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 start_date_time: None,
                 end_date_time: None,
             }
         }
         pub fn get(&self, pipeline_identity: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 pipeline_identity: pipeline_identity.into(),
                 start_date_time: None,
                 end_date_time: None,
@@ -883,7 +873,7 @@ pub mod pipeline {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) start_date_time: Option<String>,
             pub(crate) end_date_time: Option<String>,
         }
@@ -964,7 +954,7 @@ pub mod pipeline {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) pipeline_identity: String,
             pub(crate) start_date_time: Option<String>,
             pub(crate) end_date_time: Option<String>,
@@ -1026,19 +1016,16 @@ pub mod recurrence {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 start_date_time: None,
                 end_date_time: None,
             }
         }
         pub fn get(&self, recurrence_identity: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 recurrence_identity: recurrence_identity.into(),
                 start_date_time: None,
                 end_date_time: None,
@@ -1068,7 +1055,7 @@ pub mod recurrence {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) start_date_time: Option<String>,
             pub(crate) end_date_time: Option<String>,
         }
@@ -1149,7 +1136,7 @@ pub mod recurrence {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) recurrence_identity: String,
             pub(crate) start_date_time: Option<String>,
             pub(crate) end_date_time: Option<String>,

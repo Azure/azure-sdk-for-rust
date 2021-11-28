@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn blob(&self) -> blob::Client {
         blob::Client(self.clone())
     }
@@ -93,18 +89,15 @@ pub mod blob {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn start_upload(&self, name: impl Into<String>) -> start_upload::Builder {
             start_upload::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 name: name.into(),
             }
         }
         pub fn get_chunk(&self, name: impl Into<String>, digest: impl Into<String>, range: impl Into<String>) -> get_chunk::Builder {
             get_chunk::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 name: name.into(),
                 digest: digest.into(),
                 range: range.into(),
@@ -112,7 +105,7 @@ pub mod blob {
         }
         pub fn check_chunk(&self, name: impl Into<String>, digest: impl Into<String>, range: impl Into<String>) -> check_chunk::Builder {
             check_chunk::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 name: name.into(),
                 digest: digest.into(),
                 range: range.into(),
@@ -145,7 +138,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
         impl Builder {
@@ -209,7 +202,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) digest: String,
             pub(crate) range: String,
@@ -279,7 +272,7 @@ pub mod blob {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) digest: String,
             pub(crate) range: String,

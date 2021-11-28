@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn kql_script(&self) -> kql_script::Client {
         kql_script::Client(self.clone())
     }
@@ -100,11 +96,8 @@ pub mod kql_scripts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_all(&self) -> get_all::Builder {
-            get_all::Builder { client: self.base_clone() }
+            get_all::Builder { client: self.0.clone() }
         }
     }
     pub mod get_all {
@@ -133,7 +126,7 @@ pub mod kql_scripts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -182,12 +175,9 @@ pub mod kql_script {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_by_name(&self, kql_script_name: impl Into<String>) -> get_by_name::Builder {
             get_by_name::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 kql_script_name: kql_script_name.into(),
             }
         }
@@ -197,14 +187,14 @@ pub mod kql_script {
             kql_script: impl Into<models::KqlScriptResource>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 kql_script_name: kql_script_name.into(),
                 kql_script: kql_script.into(),
             }
         }
         pub fn delete_by_name(&self, kql_script_name: impl Into<String>) -> delete_by_name::Builder {
             delete_by_name::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 kql_script_name: kql_script_name.into(),
             }
         }
@@ -214,7 +204,7 @@ pub mod kql_script {
             rename_request: impl Into<models::ArtifactRenameRequest>,
         ) -> rename::Builder {
             rename::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 kql_script_name: kql_script_name.into(),
                 rename_request: rename_request.into(),
             }
@@ -246,7 +236,7 @@ pub mod kql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) kql_script_name: String,
         }
         impl Builder {
@@ -320,7 +310,7 @@ pub mod kql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) kql_script_name: String,
             pub(crate) kql_script: models::KqlScriptResource,
         }
@@ -398,7 +388,7 @@ pub mod kql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) kql_script_name: String,
         }
         impl Builder {
@@ -469,7 +459,7 @@ pub mod kql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) kql_script_name: String,
             pub(crate) rename_request: models::ArtifactRenameRequest,
         }

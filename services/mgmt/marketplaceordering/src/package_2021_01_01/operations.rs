@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn marketplace_agreements(&self) -> marketplace_agreements::Client {
         marketplace_agreements::Client(self.clone())
     }
@@ -104,9 +100,6 @@ pub mod marketplace_agreements {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -116,7 +109,7 @@ pub mod marketplace_agreements {
             plan_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 offer_type: offer_type.into(),
                 publisher_id: publisher_id.into(),
@@ -134,7 +127,7 @@ pub mod marketplace_agreements {
             parameters: impl Into<models::AgreementTerms>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 offer_type: offer_type.into(),
                 subscription_id: subscription_id.into(),
                 publisher_id: publisher_id.into(),
@@ -151,7 +144,7 @@ pub mod marketplace_agreements {
             plan_id: impl Into<String>,
         ) -> sign::Builder {
             sign::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 publisher_id: publisher_id.into(),
                 offer_id: offer_id.into(),
@@ -166,7 +159,7 @@ pub mod marketplace_agreements {
             plan_id: impl Into<String>,
         ) -> cancel::Builder {
             cancel::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 publisher_id: publisher_id.into(),
                 offer_id: offer_id.into(),
@@ -181,7 +174,7 @@ pub mod marketplace_agreements {
             plan_id: impl Into<String>,
         ) -> get_agreement::Builder {
             get_agreement::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 publisher_id: publisher_id.into(),
                 offer_id: offer_id.into(),
@@ -190,7 +183,7 @@ pub mod marketplace_agreements {
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -221,7 +214,7 @@ pub mod marketplace_agreements {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) offer_type: String,
             pub(crate) publisher_id: String,
@@ -294,7 +287,7 @@ pub mod marketplace_agreements {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) offer_type: String,
             pub(crate) subscription_id: String,
             pub(crate) publisher_id: String,
@@ -369,7 +362,7 @@ pub mod marketplace_agreements {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) publisher_id: String,
             pub(crate) offer_id: String,
@@ -449,7 +442,7 @@ pub mod marketplace_agreements {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) publisher_id: String,
             pub(crate) offer_id: String,
@@ -529,7 +522,7 @@ pub mod marketplace_agreements {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) publisher_id: String,
             pub(crate) offer_id: String,
@@ -608,7 +601,7 @@ pub mod marketplace_agreements {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -660,11 +653,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -693,7 +683,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {

@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn big_data_pools(&self) -> big_data_pools::Client {
         big_data_pools::Client(self.clone())
     }
@@ -320,32 +316,29 @@ pub mod metastore {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_database_operations(&self, id: impl Into<String>) -> get_database_operations::Builder {
             get_database_operations::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
             }
         }
         pub fn register(&self, id: impl Into<String>, register_body: impl Into<models::MetastoreRegisterObject>) -> register::Builder {
             register::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 register_body: register_body.into(),
             }
         }
         pub fn update(&self, id: impl Into<String>, update_body: impl Into<models::MetastoreUpdateObject>) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
                 update_body: update_body.into(),
             }
         }
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 id: id.into(),
             }
         }
@@ -376,7 +369,7 @@ pub mod metastore {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
         impl Builder {
@@ -447,7 +440,7 @@ pub mod metastore {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) register_body: models::MetastoreRegisterObject,
         }
@@ -520,7 +513,7 @@ pub mod metastore {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) update_body: models::MetastoreUpdateObject,
         }
@@ -591,7 +584,7 @@ pub mod metastore {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
         impl Builder {
@@ -634,11 +627,8 @@ pub mod kql_scripts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_all(&self) -> get_all::Builder {
-            get_all::Builder { client: self.base_clone() }
+            get_all::Builder { client: self.0.clone() }
         }
     }
     pub mod get_all {
@@ -667,7 +657,7 @@ pub mod kql_scripts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -716,12 +706,9 @@ pub mod kql_script {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_by_name(&self, kql_script_name: impl Into<String>) -> get_by_name::Builder {
             get_by_name::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 kql_script_name: kql_script_name.into(),
             }
         }
@@ -731,14 +718,14 @@ pub mod kql_script {
             kql_script: impl Into<models::KqlScriptResource>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 kql_script_name: kql_script_name.into(),
                 kql_script: kql_script.into(),
             }
         }
         pub fn delete_by_name(&self, kql_script_name: impl Into<String>) -> delete_by_name::Builder {
             delete_by_name::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 kql_script_name: kql_script_name.into(),
             }
         }
@@ -748,7 +735,7 @@ pub mod kql_script {
             rename_request: impl Into<models::ArtifactRenameRequest>,
         ) -> rename::Builder {
             rename::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 kql_script_name: kql_script_name.into(),
                 rename_request: rename_request.into(),
             }
@@ -780,7 +767,7 @@ pub mod kql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) kql_script_name: String,
         }
         impl Builder {
@@ -854,7 +841,7 @@ pub mod kql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) kql_script_name: String,
             pub(crate) kql_script: models::KqlScriptResource,
         }
@@ -932,7 +919,7 @@ pub mod kql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) kql_script_name: String,
         }
         impl Builder {
@@ -1003,7 +990,7 @@ pub mod kql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) kql_script_name: String,
             pub(crate) rename_request: models::ArtifactRenameRequest,
         }
@@ -1049,15 +1036,12 @@ pub mod spark_configuration {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_spark_configurations_by_workspace(&self) -> get_spark_configurations_by_workspace::Builder {
-            get_spark_configurations_by_workspace::Builder { client: self.base_clone() }
+            get_spark_configurations_by_workspace::Builder { client: self.0.clone() }
         }
         pub fn get_spark_configuration(&self, spark_configuration_name: impl Into<String>) -> get_spark_configuration::Builder {
             get_spark_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 spark_configuration_name: spark_configuration_name.into(),
                 if_none_match: None,
             }
@@ -1068,7 +1052,7 @@ pub mod spark_configuration {
             spark_configuration: impl Into<models::SparkConfigurationResource>,
         ) -> create_or_update_spark_configuration::Builder {
             create_or_update_spark_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 spark_configuration_name: spark_configuration_name.into(),
                 spark_configuration: spark_configuration.into(),
                 if_match: None,
@@ -1076,7 +1060,7 @@ pub mod spark_configuration {
         }
         pub fn delete_spark_configuration(&self, spark_configuration_name: impl Into<String>) -> delete_spark_configuration::Builder {
             delete_spark_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 spark_configuration_name: spark_configuration_name.into(),
             }
         }
@@ -1086,7 +1070,7 @@ pub mod spark_configuration {
             request: impl Into<models::ArtifactRenameRequest>,
         ) -> rename_spark_configuration::Builder {
             rename_spark_configuration::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 spark_configuration_name: spark_configuration_name.into(),
                 request: request.into(),
             }
@@ -1118,7 +1102,7 @@ pub mod spark_configuration {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -1190,7 +1174,7 @@ pub mod spark_configuration {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) spark_configuration_name: String,
             pub(crate) if_none_match: Option<String>,
         }
@@ -1275,7 +1259,7 @@ pub mod spark_configuration {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) spark_configuration_name: String,
             pub(crate) spark_configuration: models::SparkConfigurationResource,
             pub(crate) if_match: Option<String>,
@@ -1361,7 +1345,7 @@ pub mod spark_configuration {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) spark_configuration_name: String,
         }
         impl Builder {
@@ -1432,7 +1416,7 @@ pub mod spark_configuration {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) spark_configuration_name: String,
             pub(crate) request: models::ArtifactRenameRequest,
         }
@@ -1482,15 +1466,12 @@ pub mod big_data_pools {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, big_data_pool_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 big_data_pool_name: big_data_pool_name.into(),
             }
         }
@@ -1521,7 +1502,7 @@ pub mod big_data_pools {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -1591,7 +1572,7 @@ pub mod big_data_pools {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) big_data_pool_name: String,
         }
         impl Builder {
@@ -1639,12 +1620,9 @@ pub mod data_flow {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_data_flow(&self, data_flow_name: impl Into<String>) -> get_data_flow::Builder {
             get_data_flow::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_flow_name: data_flow_name.into(),
                 if_none_match: None,
             }
@@ -1655,7 +1633,7 @@ pub mod data_flow {
             data_flow: impl Into<models::DataFlowResource>,
         ) -> create_or_update_data_flow::Builder {
             create_or_update_data_flow::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_flow_name: data_flow_name.into(),
                 data_flow: data_flow.into(),
                 if_match: None,
@@ -1663,7 +1641,7 @@ pub mod data_flow {
         }
         pub fn delete_data_flow(&self, data_flow_name: impl Into<String>) -> delete_data_flow::Builder {
             delete_data_flow::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_flow_name: data_flow_name.into(),
             }
         }
@@ -1673,13 +1651,13 @@ pub mod data_flow {
             request: impl Into<models::ArtifactRenameRequest>,
         ) -> rename_data_flow::Builder {
             rename_data_flow::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 data_flow_name: data_flow_name.into(),
                 request: request.into(),
             }
         }
         pub fn get_data_flows_by_workspace(&self) -> get_data_flows_by_workspace::Builder {
-            get_data_flows_by_workspace::Builder { client: self.base_clone() }
+            get_data_flows_by_workspace::Builder { client: self.0.clone() }
         }
     }
     pub mod get_data_flow {
@@ -1708,7 +1686,7 @@ pub mod data_flow {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_flow_name: String,
             pub(crate) if_none_match: Option<String>,
         }
@@ -1790,7 +1768,7 @@ pub mod data_flow {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_flow_name: String,
             pub(crate) data_flow: models::DataFlowResource,
             pub(crate) if_match: Option<String>,
@@ -1876,7 +1854,7 @@ pub mod data_flow {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_flow_name: String,
         }
         impl Builder {
@@ -1947,7 +1925,7 @@ pub mod data_flow {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) data_flow_name: String,
             pub(crate) request: models::ArtifactRenameRequest,
         }
@@ -2014,7 +1992,7 @@ pub mod data_flow {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DataFlowListResponse, Error>> {
@@ -2061,24 +2039,21 @@ pub mod data_flow_debug_session {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn create_data_flow_debug_session(
             &self,
             request: impl Into<models::CreateDataFlowDebugSessionRequest>,
         ) -> create_data_flow_debug_session::Builder {
             create_data_flow_debug_session::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 request: request.into(),
             }
         }
         pub fn query_data_flow_debug_sessions_by_workspace(&self) -> query_data_flow_debug_sessions_by_workspace::Builder {
-            query_data_flow_debug_sessions_by_workspace::Builder { client: self.base_clone() }
+            query_data_flow_debug_sessions_by_workspace::Builder { client: self.0.clone() }
         }
         pub fn add_data_flow(&self, request: impl Into<models::DataFlowDebugPackage>) -> add_data_flow::Builder {
             add_data_flow::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 request: request.into(),
             }
         }
@@ -2087,13 +2062,13 @@ pub mod data_flow_debug_session {
             request: impl Into<models::DeleteDataFlowDebugSessionRequest>,
         ) -> delete_data_flow_debug_session::Builder {
             delete_data_flow_debug_session::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 request: request.into(),
             }
         }
         pub fn execute_command(&self, request: impl Into<models::DataFlowDebugCommandRequest>) -> execute_command::Builder {
             execute_command::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 request: request.into(),
             }
         }
@@ -2129,7 +2104,7 @@ pub mod data_flow_debug_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) request: models::CreateDataFlowDebugSessionRequest,
         }
         impl Builder {
@@ -2200,7 +2175,7 @@ pub mod data_flow_debug_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -2271,7 +2246,7 @@ pub mod data_flow_debug_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) request: models::DataFlowDebugPackage,
         }
         impl Builder {
@@ -2343,7 +2318,7 @@ pub mod data_flow_debug_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) request: models::DeleteDataFlowDebugSessionRequest,
         }
         impl Builder {
@@ -2413,7 +2388,7 @@ pub mod data_flow_debug_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) request: models::DataFlowDebugCommandRequest,
         }
         impl Builder {
@@ -2463,15 +2438,12 @@ pub mod dataset {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_datasets_by_workspace(&self) -> get_datasets_by_workspace::Builder {
-            get_datasets_by_workspace::Builder { client: self.base_clone() }
+            get_datasets_by_workspace::Builder { client: self.0.clone() }
         }
         pub fn get_dataset(&self, dataset_name: impl Into<String>) -> get_dataset::Builder {
             get_dataset::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 dataset_name: dataset_name.into(),
                 if_none_match: None,
             }
@@ -2482,7 +2454,7 @@ pub mod dataset {
             dataset: impl Into<models::DatasetResource>,
         ) -> create_or_update_dataset::Builder {
             create_or_update_dataset::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 dataset_name: dataset_name.into(),
                 dataset: dataset.into(),
                 if_match: None,
@@ -2490,7 +2462,7 @@ pub mod dataset {
         }
         pub fn delete_dataset(&self, dataset_name: impl Into<String>) -> delete_dataset::Builder {
             delete_dataset::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 dataset_name: dataset_name.into(),
             }
         }
@@ -2500,7 +2472,7 @@ pub mod dataset {
             request: impl Into<models::ArtifactRenameRequest>,
         ) -> rename_dataset::Builder {
             rename_dataset::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 dataset_name: dataset_name.into(),
                 request: request.into(),
             }
@@ -2532,7 +2504,7 @@ pub mod dataset {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DatasetListResponse, Error>> {
@@ -2602,7 +2574,7 @@ pub mod dataset {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) dataset_name: String,
             pub(crate) if_none_match: Option<String>,
         }
@@ -2685,7 +2657,7 @@ pub mod dataset {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) dataset_name: String,
             pub(crate) dataset: models::DatasetResource,
             pub(crate) if_match: Option<String>,
@@ -2771,7 +2743,7 @@ pub mod dataset {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) dataset_name: String,
         }
         impl Builder {
@@ -2842,7 +2814,7 @@ pub mod dataset {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) dataset_name: String,
             pub(crate) request: models::ArtifactRenameRequest,
         }
@@ -2888,15 +2860,12 @@ pub mod linked_service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_linked_services_by_workspace(&self) -> get_linked_services_by_workspace::Builder {
-            get_linked_services_by_workspace::Builder { client: self.base_clone() }
+            get_linked_services_by_workspace::Builder { client: self.0.clone() }
         }
         pub fn get_linked_service(&self, linked_service_name: impl Into<String>) -> get_linked_service::Builder {
             get_linked_service::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 linked_service_name: linked_service_name.into(),
                 if_none_match: None,
             }
@@ -2907,7 +2876,7 @@ pub mod linked_service {
             linked_service: impl Into<models::LinkedServiceResource>,
         ) -> create_or_update_linked_service::Builder {
             create_or_update_linked_service::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 linked_service_name: linked_service_name.into(),
                 linked_service: linked_service.into(),
                 if_match: None,
@@ -2915,7 +2884,7 @@ pub mod linked_service {
         }
         pub fn delete_linked_service(&self, linked_service_name: impl Into<String>) -> delete_linked_service::Builder {
             delete_linked_service::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 linked_service_name: linked_service_name.into(),
             }
         }
@@ -2925,7 +2894,7 @@ pub mod linked_service {
             request: impl Into<models::ArtifactRenameRequest>,
         ) -> rename_linked_service::Builder {
             rename_linked_service::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 linked_service_name: linked_service_name.into(),
                 request: request.into(),
             }
@@ -2957,7 +2926,7 @@ pub mod linked_service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LinkedServiceListResponse, Error>> {
@@ -3027,7 +2996,7 @@ pub mod linked_service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) linked_service_name: String,
             pub(crate) if_none_match: Option<String>,
         }
@@ -3110,7 +3079,7 @@ pub mod linked_service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) linked_service_name: String,
             pub(crate) linked_service: models::LinkedServiceResource,
             pub(crate) if_match: Option<String>,
@@ -3196,7 +3165,7 @@ pub mod linked_service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) linked_service_name: String,
         }
         impl Builder {
@@ -3267,7 +3236,7 @@ pub mod linked_service {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) linked_service_name: String,
             pub(crate) request: models::ArtifactRenameRequest,
         }
@@ -3313,15 +3282,12 @@ pub mod workspace_git_repo_management {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_git_hub_access_token(
             &self,
             git_hub_access_token_request: impl Into<models::GitHubAccessTokenRequest>,
         ) -> get_git_hub_access_token::Builder {
             get_git_hub_access_token::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 git_hub_access_token_request: git_hub_access_token_request.into(),
                 x_ms_client_request_id: None,
             }
@@ -3350,7 +3316,7 @@ pub mod workspace_git_repo_management {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) git_hub_access_token_request: models::GitHubAccessTokenRequest,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -3405,15 +3371,12 @@ pub mod integration_runtimes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, integration_runtime_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
@@ -3444,7 +3407,7 @@ pub mod integration_runtimes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -3514,7 +3477,7 @@ pub mod integration_runtimes {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) integration_runtime_name: String,
         }
         impl Builder {
@@ -3564,12 +3527,9 @@ pub mod library {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn append(&self, comp: impl Into<String>, library_name: impl Into<String>, content: impl Into<String>) -> append::Builder {
             append::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 comp: comp.into(),
                 library_name: library_name.into(),
                 content: content.into(),
@@ -3603,7 +3563,7 @@ pub mod library {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) comp: String,
             pub(crate) library_name: String,
             pub(crate) content: String,
@@ -3659,18 +3619,15 @@ pub mod notebook {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_notebooks_by_workspace(&self) -> get_notebooks_by_workspace::Builder {
-            get_notebooks_by_workspace::Builder { client: self.base_clone() }
+            get_notebooks_by_workspace::Builder { client: self.0.clone() }
         }
         pub fn get_notebook_summary_by_work_space(&self) -> get_notebook_summary_by_work_space::Builder {
-            get_notebook_summary_by_work_space::Builder { client: self.base_clone() }
+            get_notebook_summary_by_work_space::Builder { client: self.0.clone() }
         }
         pub fn get_notebook(&self, notebook_name: impl Into<String>) -> get_notebook::Builder {
             get_notebook::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 notebook_name: notebook_name.into(),
                 if_none_match: None,
             }
@@ -3681,7 +3638,7 @@ pub mod notebook {
             notebook: impl Into<models::NotebookResource>,
         ) -> create_or_update_notebook::Builder {
             create_or_update_notebook::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 notebook_name: notebook_name.into(),
                 notebook: notebook.into(),
                 if_match: None,
@@ -3689,7 +3646,7 @@ pub mod notebook {
         }
         pub fn delete_notebook(&self, notebook_name: impl Into<String>) -> delete_notebook::Builder {
             delete_notebook::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 notebook_name: notebook_name.into(),
             }
         }
@@ -3699,7 +3656,7 @@ pub mod notebook {
             request: impl Into<models::ArtifactRenameRequest>,
         ) -> rename_notebook::Builder {
             rename_notebook::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 notebook_name: notebook_name.into(),
                 request: request.into(),
             }
@@ -3731,7 +3688,7 @@ pub mod notebook {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NotebookListResponse, Error>> {
@@ -3799,7 +3756,7 @@ pub mod notebook {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NotebookListResponse, Error>> {
@@ -3869,7 +3826,7 @@ pub mod notebook {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) notebook_name: String,
             pub(crate) if_none_match: Option<String>,
         }
@@ -3952,7 +3909,7 @@ pub mod notebook {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) notebook_name: String,
             pub(crate) notebook: models::NotebookResource,
             pub(crate) if_match: Option<String>,
@@ -4038,7 +3995,7 @@ pub mod notebook {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) notebook_name: String,
         }
         impl Builder {
@@ -4109,7 +4066,7 @@ pub mod notebook {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) notebook_name: String,
             pub(crate) request: models::ArtifactRenameRequest,
         }
@@ -4155,12 +4112,9 @@ pub mod notebook_operation_result {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, operation_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 operation_id: operation_id.into(),
             }
         }
@@ -4198,7 +4152,7 @@ pub mod notebook_operation_result {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) operation_id: String,
         }
         impl Builder {
@@ -4244,15 +4198,12 @@ pub mod pipeline {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_pipelines_by_workspace(&self) -> get_pipelines_by_workspace::Builder {
-            get_pipelines_by_workspace::Builder { client: self.base_clone() }
+            get_pipelines_by_workspace::Builder { client: self.0.clone() }
         }
         pub fn get_pipeline(&self, pipeline_name: impl Into<String>) -> get_pipeline::Builder {
             get_pipeline::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 pipeline_name: pipeline_name.into(),
                 if_none_match: None,
             }
@@ -4263,7 +4214,7 @@ pub mod pipeline {
             pipeline: impl Into<models::PipelineResource>,
         ) -> create_or_update_pipeline::Builder {
             create_or_update_pipeline::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 pipeline_name: pipeline_name.into(),
                 pipeline: pipeline.into(),
                 if_match: None,
@@ -4271,7 +4222,7 @@ pub mod pipeline {
         }
         pub fn delete_pipeline(&self, pipeline_name: impl Into<String>) -> delete_pipeline::Builder {
             delete_pipeline::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 pipeline_name: pipeline_name.into(),
             }
         }
@@ -4281,14 +4232,14 @@ pub mod pipeline {
             request: impl Into<models::ArtifactRenameRequest>,
         ) -> rename_pipeline::Builder {
             rename_pipeline::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 pipeline_name: pipeline_name.into(),
                 request: request.into(),
             }
         }
         pub fn create_pipeline_run(&self, pipeline_name: impl Into<String>) -> create_pipeline_run::Builder {
             create_pipeline_run::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 pipeline_name: pipeline_name.into(),
                 reference_pipeline_run_id: None,
                 is_recovery: None,
@@ -4323,7 +4274,7 @@ pub mod pipeline {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PipelineListResponse, Error>> {
@@ -4393,7 +4344,7 @@ pub mod pipeline {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) pipeline_name: String,
             pub(crate) if_none_match: Option<String>,
         }
@@ -4476,7 +4427,7 @@ pub mod pipeline {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) pipeline_name: String,
             pub(crate) pipeline: models::PipelineResource,
             pub(crate) if_match: Option<String>,
@@ -4562,7 +4513,7 @@ pub mod pipeline {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) pipeline_name: String,
         }
         impl Builder {
@@ -4633,7 +4584,7 @@ pub mod pipeline {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) pipeline_name: String,
             pub(crate) request: models::ArtifactRenameRequest,
         }
@@ -4700,7 +4651,7 @@ pub mod pipeline {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) pipeline_name: String,
             pub(crate) reference_pipeline_run_id: Option<String>,
             pub(crate) is_recovery: Option<bool>,
@@ -4783,21 +4734,18 @@ pub mod pipeline_run {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn query_pipeline_runs_by_workspace(
             &self,
             filter_parameters: impl Into<models::RunFilterParameters>,
         ) -> query_pipeline_runs_by_workspace::Builder {
             query_pipeline_runs_by_workspace::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter_parameters: filter_parameters.into(),
             }
         }
         pub fn get_pipeline_run(&self, run_id: impl Into<String>) -> get_pipeline_run::Builder {
             get_pipeline_run::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 run_id: run_id.into(),
             }
         }
@@ -4808,7 +4756,7 @@ pub mod pipeline_run {
             filter_parameters: impl Into<models::RunFilterParameters>,
         ) -> query_activity_runs::Builder {
             query_activity_runs::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 pipeline_name: pipeline_name.into(),
                 run_id: run_id.into(),
                 filter_parameters: filter_parameters.into(),
@@ -4816,7 +4764,7 @@ pub mod pipeline_run {
         }
         pub fn cancel_pipeline_run(&self, run_id: impl Into<String>) -> cancel_pipeline_run::Builder {
             cancel_pipeline_run::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 run_id: run_id.into(),
                 is_recursive: None,
             }
@@ -4848,7 +4796,7 @@ pub mod pipeline_run {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter_parameters: models::RunFilterParameters,
         }
         impl Builder {
@@ -4918,7 +4866,7 @@ pub mod pipeline_run {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) run_id: String,
         }
         impl Builder {
@@ -4987,7 +4935,7 @@ pub mod pipeline_run {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) pipeline_name: String,
             pub(crate) run_id: String,
             pub(crate) filter_parameters: models::RunFilterParameters,
@@ -5064,7 +5012,7 @@ pub mod pipeline_run {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) run_id: String,
             pub(crate) is_recursive: Option<bool>,
         }
@@ -5116,15 +5064,12 @@ pub mod spark_job_definition {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_spark_job_definitions_by_workspace(&self) -> get_spark_job_definitions_by_workspace::Builder {
-            get_spark_job_definitions_by_workspace::Builder { client: self.base_clone() }
+            get_spark_job_definitions_by_workspace::Builder { client: self.0.clone() }
         }
         pub fn get_spark_job_definition(&self, spark_job_definition_name: impl Into<String>) -> get_spark_job_definition::Builder {
             get_spark_job_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 spark_job_definition_name: spark_job_definition_name.into(),
                 if_none_match: None,
             }
@@ -5135,7 +5080,7 @@ pub mod spark_job_definition {
             spark_job_definition: impl Into<models::SparkJobDefinitionResource>,
         ) -> create_or_update_spark_job_definition::Builder {
             create_or_update_spark_job_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 spark_job_definition_name: spark_job_definition_name.into(),
                 spark_job_definition: spark_job_definition.into(),
                 if_match: None,
@@ -5143,13 +5088,13 @@ pub mod spark_job_definition {
         }
         pub fn delete_spark_job_definition(&self, spark_job_definition_name: impl Into<String>) -> delete_spark_job_definition::Builder {
             delete_spark_job_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 spark_job_definition_name: spark_job_definition_name.into(),
             }
         }
         pub fn execute_spark_job_definition(&self, spark_job_definition_name: impl Into<String>) -> execute_spark_job_definition::Builder {
             execute_spark_job_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 spark_job_definition_name: spark_job_definition_name.into(),
             }
         }
@@ -5159,7 +5104,7 @@ pub mod spark_job_definition {
             request: impl Into<models::ArtifactRenameRequest>,
         ) -> rename_spark_job_definition::Builder {
             rename_spark_job_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 spark_job_definition_name: spark_job_definition_name.into(),
                 request: request.into(),
             }
@@ -5169,7 +5114,7 @@ pub mod spark_job_definition {
             spark_job_definition_azure_resource: impl Into<models::SparkJobDefinitionResource>,
         ) -> debug_spark_job_definition::Builder {
             debug_spark_job_definition::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 spark_job_definition_azure_resource: spark_job_definition_azure_resource.into(),
             }
         }
@@ -5200,7 +5145,7 @@ pub mod spark_job_definition {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -5272,7 +5217,7 @@ pub mod spark_job_definition {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) spark_job_definition_name: String,
             pub(crate) if_none_match: Option<String>,
         }
@@ -5357,7 +5302,7 @@ pub mod spark_job_definition {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) spark_job_definition_name: String,
             pub(crate) spark_job_definition: models::SparkJobDefinitionResource,
             pub(crate) if_match: Option<String>,
@@ -5443,7 +5388,7 @@ pub mod spark_job_definition {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) spark_job_definition_name: String,
         }
         impl Builder {
@@ -5514,7 +5459,7 @@ pub mod spark_job_definition {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) spark_job_definition_name: String,
         }
         impl Builder {
@@ -5599,7 +5544,7 @@ pub mod spark_job_definition {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) spark_job_definition_name: String,
             pub(crate) request: models::ArtifactRenameRequest,
         }
@@ -5675,7 +5620,7 @@ pub mod spark_job_definition {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) spark_job_definition_azure_resource: models::SparkJobDefinitionResource,
         }
         impl Builder {
@@ -5730,15 +5675,12 @@ pub mod sql_pools {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
         pub fn get(&self, sql_pool_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 sql_pool_name: sql_pool_name.into(),
             }
         }
@@ -5769,7 +5711,7 @@ pub mod sql_pools {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlPoolInfoListResult, Error>> {
@@ -5837,7 +5779,7 @@ pub mod sql_pools {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) sql_pool_name: String,
         }
         impl Builder {
@@ -5885,15 +5827,12 @@ pub mod sql_script {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_sql_scripts_by_workspace(&self) -> get_sql_scripts_by_workspace::Builder {
-            get_sql_scripts_by_workspace::Builder { client: self.base_clone() }
+            get_sql_scripts_by_workspace::Builder { client: self.0.clone() }
         }
         pub fn get_sql_script(&self, sql_script_name: impl Into<String>) -> get_sql_script::Builder {
             get_sql_script::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 sql_script_name: sql_script_name.into(),
                 if_none_match: None,
             }
@@ -5904,7 +5843,7 @@ pub mod sql_script {
             sql_script: impl Into<models::SqlScriptResource>,
         ) -> create_or_update_sql_script::Builder {
             create_or_update_sql_script::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 sql_script_name: sql_script_name.into(),
                 sql_script: sql_script.into(),
                 if_match: None,
@@ -5912,7 +5851,7 @@ pub mod sql_script {
         }
         pub fn delete_sql_script(&self, sql_script_name: impl Into<String>) -> delete_sql_script::Builder {
             delete_sql_script::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 sql_script_name: sql_script_name.into(),
             }
         }
@@ -5922,7 +5861,7 @@ pub mod sql_script {
             request: impl Into<models::ArtifactRenameRequest>,
         ) -> rename_sql_script::Builder {
             rename_sql_script::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 sql_script_name: sql_script_name.into(),
                 request: request.into(),
             }
@@ -5954,7 +5893,7 @@ pub mod sql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SqlScriptsListResponse, Error>> {
@@ -6024,7 +5963,7 @@ pub mod sql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) sql_script_name: String,
             pub(crate) if_none_match: Option<String>,
         }
@@ -6107,7 +6046,7 @@ pub mod sql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) sql_script_name: String,
             pub(crate) sql_script: models::SqlScriptResource,
             pub(crate) if_match: Option<String>,
@@ -6193,7 +6132,7 @@ pub mod sql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) sql_script_name: String,
         }
         impl Builder {
@@ -6264,7 +6203,7 @@ pub mod sql_script {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) sql_script_name: String,
             pub(crate) request: models::ArtifactRenameRequest,
         }
@@ -6310,15 +6249,12 @@ pub mod trigger {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_triggers_by_workspace(&self) -> get_triggers_by_workspace::Builder {
-            get_triggers_by_workspace::Builder { client: self.base_clone() }
+            get_triggers_by_workspace::Builder { client: self.0.clone() }
         }
         pub fn get_trigger(&self, trigger_name: impl Into<String>) -> get_trigger::Builder {
             get_trigger::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 trigger_name: trigger_name.into(),
                 if_none_match: None,
             }
@@ -6329,7 +6265,7 @@ pub mod trigger {
             trigger: impl Into<models::TriggerResource>,
         ) -> create_or_update_trigger::Builder {
             create_or_update_trigger::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 trigger_name: trigger_name.into(),
                 trigger: trigger.into(),
                 if_match: None,
@@ -6337,37 +6273,37 @@ pub mod trigger {
         }
         pub fn delete_trigger(&self, trigger_name: impl Into<String>) -> delete_trigger::Builder {
             delete_trigger::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 trigger_name: trigger_name.into(),
             }
         }
         pub fn subscribe_trigger_to_events(&self, trigger_name: impl Into<String>) -> subscribe_trigger_to_events::Builder {
             subscribe_trigger_to_events::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 trigger_name: trigger_name.into(),
             }
         }
         pub fn get_event_subscription_status(&self, trigger_name: impl Into<String>) -> get_event_subscription_status::Builder {
             get_event_subscription_status::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 trigger_name: trigger_name.into(),
             }
         }
         pub fn unsubscribe_trigger_from_events(&self, trigger_name: impl Into<String>) -> unsubscribe_trigger_from_events::Builder {
             unsubscribe_trigger_from_events::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 trigger_name: trigger_name.into(),
             }
         }
         pub fn start_trigger(&self, trigger_name: impl Into<String>) -> start_trigger::Builder {
             start_trigger::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 trigger_name: trigger_name.into(),
             }
         }
         pub fn stop_trigger(&self, trigger_name: impl Into<String>) -> stop_trigger::Builder {
             stop_trigger::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 trigger_name: trigger_name.into(),
             }
         }
@@ -6398,7 +6334,7 @@ pub mod trigger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TriggerListResponse, Error>> {
@@ -6468,7 +6404,7 @@ pub mod trigger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) trigger_name: String,
             pub(crate) if_none_match: Option<String>,
         }
@@ -6551,7 +6487,7 @@ pub mod trigger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) trigger_name: String,
             pub(crate) trigger: models::TriggerResource,
             pub(crate) if_match: Option<String>,
@@ -6637,7 +6573,7 @@ pub mod trigger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) trigger_name: String,
         }
         impl Builder {
@@ -6708,7 +6644,7 @@ pub mod trigger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) trigger_name: String,
         }
         impl Builder {
@@ -6779,7 +6715,7 @@ pub mod trigger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) trigger_name: String,
         }
         impl Builder {
@@ -6860,7 +6796,7 @@ pub mod trigger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) trigger_name: String,
         }
         impl Builder {
@@ -6931,7 +6867,7 @@ pub mod trigger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) trigger_name: String,
         }
         impl Builder {
@@ -6996,7 +6932,7 @@ pub mod trigger {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) trigger_name: String,
         }
         impl Builder {
@@ -7040,16 +6976,13 @@ pub mod trigger_run {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn rerun_trigger_instance(
             &self,
             trigger_name: impl Into<String>,
             run_id: impl Into<String>,
         ) -> rerun_trigger_instance::Builder {
             rerun_trigger_instance::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 trigger_name: trigger_name.into(),
                 run_id: run_id.into(),
             }
@@ -7060,7 +6993,7 @@ pub mod trigger_run {
             run_id: impl Into<String>,
         ) -> cancel_trigger_instance::Builder {
             cancel_trigger_instance::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 trigger_name: trigger_name.into(),
                 run_id: run_id.into(),
             }
@@ -7070,7 +7003,7 @@ pub mod trigger_run {
             filter_parameters: impl Into<models::RunFilterParameters>,
         ) -> query_trigger_runs_by_workspace::Builder {
             query_trigger_runs_by_workspace::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 filter_parameters: filter_parameters.into(),
             }
         }
@@ -7101,7 +7034,7 @@ pub mod trigger_run {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) trigger_name: String,
             pub(crate) run_id: String,
         }
@@ -7172,7 +7105,7 @@ pub mod trigger_run {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) trigger_name: String,
             pub(crate) run_id: String,
         }
@@ -7243,7 +7176,7 @@ pub mod trigger_run {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) filter_parameters: models::RunFilterParameters,
         }
         impl Builder {
@@ -7292,11 +7225,8 @@ pub mod workspace {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.base_clone() }
+            get::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -7325,7 +7255,7 @@ pub mod workspace {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Workspace, Error>> {

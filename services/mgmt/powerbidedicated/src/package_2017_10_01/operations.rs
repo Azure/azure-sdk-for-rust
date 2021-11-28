@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn capacities(&self) -> capacities::Client {
         capacities::Client(self.clone())
     }
@@ -114,9 +110,6 @@ pub mod capacities {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_details(
             &self,
             resource_group_name: impl Into<String>,
@@ -124,7 +117,7 @@ pub mod capacities {
             subscription_id: impl Into<String>,
         ) -> get_details::Builder {
             get_details::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 dedicated_capacity_name: dedicated_capacity_name.into(),
                 subscription_id: subscription_id.into(),
@@ -138,7 +131,7 @@ pub mod capacities {
             subscription_id: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 dedicated_capacity_name: dedicated_capacity_name.into(),
                 capacity_parameters: capacity_parameters.into(),
@@ -153,7 +146,7 @@ pub mod capacities {
             subscription_id: impl Into<String>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 dedicated_capacity_name: dedicated_capacity_name.into(),
                 capacity_update_parameters: capacity_update_parameters.into(),
@@ -167,7 +160,7 @@ pub mod capacities {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 dedicated_capacity_name: dedicated_capacity_name.into(),
                 subscription_id: subscription_id.into(),
@@ -180,7 +173,7 @@ pub mod capacities {
             subscription_id: impl Into<String>,
         ) -> suspend::Builder {
             suspend::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 dedicated_capacity_name: dedicated_capacity_name.into(),
                 subscription_id: subscription_id.into(),
@@ -193,7 +186,7 @@ pub mod capacities {
             subscription_id: impl Into<String>,
         ) -> resume::Builder {
             resume::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 dedicated_capacity_name: dedicated_capacity_name.into(),
                 subscription_id: subscription_id.into(),
@@ -205,20 +198,20 @@ pub mod capacities {
             subscription_id: impl Into<String>,
         ) -> list_by_resource_group::Builder {
             list_by_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list_skus(&self, subscription_id: impl Into<String>) -> list_skus::Builder {
             list_skus::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -229,7 +222,7 @@ pub mod capacities {
             subscription_id: impl Into<String>,
         ) -> list_skus_for_capacity::Builder {
             list_skus_for_capacity::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 dedicated_capacity_name: dedicated_capacity_name.into(),
                 subscription_id: subscription_id.into(),
@@ -242,7 +235,7 @@ pub mod capacities {
             subscription_id: impl Into<String>,
         ) -> check_name_availability::Builder {
             check_name_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 location: location.into(),
                 capacity_parameters: capacity_parameters.into(),
                 subscription_id: subscription_id.into(),
@@ -275,7 +268,7 @@ pub mod capacities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) dedicated_capacity_name: String,
             pub(crate) subscription_id: String,
@@ -357,7 +350,7 @@ pub mod capacities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) dedicated_capacity_name: String,
             pub(crate) capacity_parameters: models::DedicatedCapacity,
@@ -447,7 +440,7 @@ pub mod capacities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) dedicated_capacity_name: String,
             pub(crate) capacity_update_parameters: models::DedicatedCapacityUpdateParameters,
@@ -538,7 +531,7 @@ pub mod capacities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) dedicated_capacity_name: String,
             pub(crate) subscription_id: String,
@@ -617,7 +610,7 @@ pub mod capacities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) dedicated_capacity_name: String,
             pub(crate) subscription_id: String,
@@ -696,7 +689,7 @@ pub mod capacities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) dedicated_capacity_name: String,
             pub(crate) subscription_id: String,
@@ -770,7 +763,7 @@ pub mod capacities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
@@ -845,7 +838,7 @@ pub mod capacities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -918,7 +911,7 @@ pub mod capacities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -993,7 +986,7 @@ pub mod capacities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) dedicated_capacity_name: String,
             pub(crate) subscription_id: String,
@@ -1073,7 +1066,7 @@ pub mod capacities {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) location: String,
             pub(crate) capacity_parameters: models::CheckCapacityNameAvailabilityParameters,
             pub(crate) subscription_id: String,
@@ -1131,11 +1124,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -1164,7 +1154,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {

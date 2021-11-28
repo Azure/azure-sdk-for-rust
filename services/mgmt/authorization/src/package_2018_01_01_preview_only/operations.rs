@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn provider_operations_metadata(&self) -> provider_operations_metadata::Client {
         provider_operations_metadata::Client(self.clone())
     }
@@ -119,19 +115,16 @@ pub mod provider_operations_metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, resource_provider_namespace: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 expand: None,
             }
         }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 expand: None,
             }
         }
@@ -162,7 +155,7 @@ pub mod provider_operations_metadata {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_provider_namespace: String,
             pub(crate) expand: Option<String>,
         }
@@ -245,7 +238,7 @@ pub mod provider_operations_metadata {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) expand: Option<String>,
         }
         impl Builder {
@@ -302,9 +295,6 @@ pub mod role_assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_for_resource(
             &self,
             resource_group_name: impl Into<String>,
@@ -315,7 +305,7 @@ pub mod role_assignments {
             subscription_id: impl Into<String>,
         ) -> list_for_resource::Builder {
             list_for_resource::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 parent_resource_path: parent_resource_path.into(),
@@ -331,7 +321,7 @@ pub mod role_assignments {
             subscription_id: impl Into<String>,
         ) -> list_for_resource_group::Builder {
             list_for_resource_group::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -339,7 +329,7 @@ pub mod role_assignments {
         }
         pub fn get(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
             }
@@ -351,7 +341,7 @@ pub mod role_assignments {
             parameters: impl Into<models::RoleAssignmentCreateParameters>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
                 parameters: parameters.into(),
@@ -359,14 +349,14 @@ pub mod role_assignments {
         }
         pub fn delete(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
             }
         }
         pub fn get_by_id(&self, role_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 role_id: role_id.into(),
             }
         }
@@ -376,27 +366,27 @@ pub mod role_assignments {
             parameters: impl Into<models::RoleAssignmentCreateParameters>,
         ) -> create_by_id::Builder {
             create_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 role_id: role_id.into(),
                 parameters: parameters.into(),
             }
         }
         pub fn delete_by_id(&self, role_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 role_id: role_id.into(),
             }
         }
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
             }
         }
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
             }
@@ -428,7 +418,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
             pub(crate) parent_resource_path: String,
@@ -519,7 +509,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
@@ -602,7 +592,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
         }
@@ -677,7 +667,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
             pub(crate) parameters: models::RoleAssignmentCreateParameters,
@@ -759,7 +749,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
         }
@@ -835,7 +825,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) role_id: String,
         }
         impl Builder {
@@ -904,7 +894,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) role_id: String,
             pub(crate) parameters: models::RoleAssignmentCreateParameters,
         }
@@ -980,7 +970,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) role_id: String,
         }
         impl Builder {
@@ -1050,7 +1040,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
@@ -1131,7 +1121,7 @@ pub mod role_assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
         }
@@ -1191,12 +1181,9 @@ pub mod role_definitions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_by_id(&self, role_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 role_id: role_id.into(),
             }
         }
@@ -1227,7 +1214,7 @@ pub mod role_definitions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) role_id: String,
         }
         impl Builder {

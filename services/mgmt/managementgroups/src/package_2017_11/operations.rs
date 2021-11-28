@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn management_group_subscriptions(&self) -> management_group_subscriptions::Client {
         management_group_subscriptions::Client(self.clone())
     }
@@ -109,19 +105,16 @@ pub mod management_groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 cache_control: None,
                 skiptoken: None,
             }
         }
         pub fn get(&self, group_id: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 expand: None,
                 recurse: None,
@@ -134,7 +127,7 @@ pub mod management_groups {
             create_management_group_request: impl Into<models::CreateManagementGroupRequest>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 create_management_group_request: create_management_group_request.into(),
                 cache_control: None,
@@ -146,7 +139,7 @@ pub mod management_groups {
             create_management_group_request: impl Into<models::CreateManagementGroupRequest>,
         ) -> update::Builder {
             update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 create_management_group_request: create_management_group_request.into(),
                 cache_control: None,
@@ -154,7 +147,7 @@ pub mod management_groups {
         }
         pub fn delete(&self, group_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 cache_control: None,
             }
@@ -186,7 +179,7 @@ pub mod management_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) cache_control: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
@@ -270,7 +263,7 @@ pub mod management_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) expand: Option<String>,
             pub(crate) recurse: Option<bool>,
@@ -367,7 +360,7 @@ pub mod management_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) create_management_group_request: models::CreateManagementGroupRequest,
             pub(crate) cache_control: Option<String>,
@@ -450,7 +443,7 @@ pub mod management_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) create_management_group_request: models::CreateManagementGroupRequest,
             pub(crate) cache_control: Option<String>,
@@ -538,7 +531,7 @@ pub mod management_groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) cache_control: Option<String>,
         }
@@ -594,12 +587,9 @@ pub mod management_group_subscriptions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn create(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 subscription_id: subscription_id.into(),
                 cache_control: None,
@@ -607,7 +597,7 @@ pub mod management_group_subscriptions {
         }
         pub fn delete(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 group_id: group_id.into(),
                 subscription_id: subscription_id.into(),
                 cache_control: None,
@@ -640,7 +630,7 @@ pub mod management_group_subscriptions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) subscription_id: String,
             pub(crate) cache_control: Option<String>,
@@ -718,7 +708,7 @@ pub mod management_group_subscriptions {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) group_id: String,
             pub(crate) subscription_id: String,
             pub(crate) cache_control: Option<String>,
@@ -775,11 +765,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -808,7 +795,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {

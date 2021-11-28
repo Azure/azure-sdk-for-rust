@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn notification(&self) -> notification::Client {
         notification::Client(self.clone())
     }
@@ -96,12 +92,9 @@ pub mod notifications {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, subscription: impl Into<String>, principal_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription: subscription.into(),
                 principal_id: principal_id.into(),
             }
@@ -133,7 +126,7 @@ pub mod notifications {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription: String,
             pub(crate) principal_id: String,
         }
@@ -188,9 +181,6 @@ pub mod notification {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             subscription: impl Into<String>,
@@ -198,14 +188,14 @@ pub mod notification {
             principal_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription: subscription.into(),
                 notification: notification.into(),
                 principal_id: principal_id.into(),
             }
         }
         pub fn get_operations(&self) -> get_operations::Builder {
-            get_operations::Builder { client: self.base_clone() }
+            get_operations::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -234,7 +224,7 @@ pub mod notification {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription: String,
             pub(crate) notification: String,
             pub(crate) principal_id: String,
@@ -312,7 +302,7 @@ pub mod notification {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AvailableOperations, Error>> {

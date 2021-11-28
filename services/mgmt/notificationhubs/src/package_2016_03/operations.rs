@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn namespaces(&self) -> namespaces::Client {
         namespaces::Client(self.clone())
     }
@@ -140,16 +136,13 @@ pub mod namespaces {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn check_availability(
             &self,
             parameters: impl Into<models::CheckAvailabilityParameters>,
             subscription_id: impl Into<String>,
         ) -> check_availability::Builder {
             check_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -161,7 +154,7 @@ pub mod namespaces {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 subscription_id: subscription_id.into(),
@@ -175,7 +168,7 @@ pub mod namespaces {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 parameters: parameters.into(),
@@ -190,7 +183,7 @@ pub mod namespaces {
             subscription_id: impl Into<String>,
         ) -> patch::Builder {
             patch::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 parameters: parameters.into(),
@@ -204,7 +197,7 @@ pub mod namespaces {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 subscription_id: subscription_id.into(),
@@ -218,7 +211,7 @@ pub mod namespaces {
             subscription_id: impl Into<String>,
         ) -> get_authorization_rule::Builder {
             get_authorization_rule::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 authorization_rule_name: authorization_rule_name.into(),
@@ -234,7 +227,7 @@ pub mod namespaces {
             subscription_id: impl Into<String>,
         ) -> create_or_update_authorization_rule::Builder {
             create_or_update_authorization_rule::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 authorization_rule_name: authorization_rule_name.into(),
@@ -250,7 +243,7 @@ pub mod namespaces {
             subscription_id: impl Into<String>,
         ) -> delete_authorization_rule::Builder {
             delete_authorization_rule::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 authorization_rule_name: authorization_rule_name.into(),
@@ -259,14 +252,14 @@ pub mod namespaces {
         }
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -277,7 +270,7 @@ pub mod namespaces {
             subscription_id: impl Into<String>,
         ) -> list_authorization_rules::Builder {
             list_authorization_rules::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 subscription_id: subscription_id.into(),
@@ -291,7 +284,7 @@ pub mod namespaces {
             subscription_id: impl Into<String>,
         ) -> list_keys::Builder {
             list_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 authorization_rule_name: authorization_rule_name.into(),
@@ -307,7 +300,7 @@ pub mod namespaces {
             subscription_id: impl Into<String>,
         ) -> regenerate_keys::Builder {
             regenerate_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 authorization_rule_name: authorization_rule_name.into(),
@@ -339,7 +332,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) parameters: models::CheckAvailabilityParameters,
             pub(crate) subscription_id: String,
         }
@@ -409,7 +402,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) subscription_id: String,
@@ -486,7 +479,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) parameters: models::NamespaceCreateOrUpdateParameters,
@@ -566,7 +559,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) parameters: models::NamespacePatchParameters,
@@ -646,7 +639,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) subscription_id: String,
@@ -715,7 +708,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) authorization_rule_name: String,
@@ -792,7 +785,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) authorization_rule_name: String,
@@ -876,7 +869,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) authorization_rule_name: String,
@@ -946,7 +939,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
@@ -1016,7 +1009,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -1084,7 +1077,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) subscription_id: String,
@@ -1159,7 +1152,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) authorization_rule_name: String,
@@ -1227,7 +1220,7 @@ pub mod namespaces {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) authorization_rule_name: String,
@@ -1278,9 +1271,6 @@ pub mod notification_hubs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn check_availability(
             &self,
             resource_group_name: impl Into<String>,
@@ -1289,7 +1279,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> check_availability::Builder {
             check_availability::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 parameters: parameters.into(),
@@ -1304,7 +1294,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 notification_hub_name: notification_hub_name.into(),
@@ -1320,7 +1310,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 notification_hub_name: notification_hub_name.into(),
@@ -1336,7 +1326,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 notification_hub_name: notification_hub_name.into(),
@@ -1352,7 +1342,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> get_authorization_rule::Builder {
             get_authorization_rule::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 notification_hub_name: notification_hub_name.into(),
@@ -1370,7 +1360,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> create_or_update_authorization_rule::Builder {
             create_or_update_authorization_rule::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 notification_hub_name: notification_hub_name.into(),
@@ -1388,7 +1378,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> delete_authorization_rule::Builder {
             delete_authorization_rule::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 notification_hub_name: notification_hub_name.into(),
@@ -1403,7 +1393,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1417,7 +1407,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> list_authorization_rules::Builder {
             list_authorization_rules::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 notification_hub_name: notification_hub_name.into(),
@@ -1433,7 +1423,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> list_keys::Builder {
             list_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 notification_hub_name: notification_hub_name.into(),
@@ -1451,7 +1441,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> regenerate_keys::Builder {
             regenerate_keys::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 notification_hub_name: notification_hub_name.into(),
@@ -1468,7 +1458,7 @@ pub mod notification_hubs {
             subscription_id: impl Into<String>,
         ) -> get_pns_credentials::Builder {
             get_pns_credentials::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
                 notification_hub_name: notification_hub_name.into(),
@@ -1499,7 +1489,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) parameters: models::CheckAvailabilityParameters,
@@ -1567,7 +1557,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
@@ -1646,7 +1636,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
@@ -1728,7 +1718,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
@@ -1797,7 +1787,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
@@ -1868,7 +1858,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
@@ -1946,7 +1936,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
@@ -2010,7 +2000,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) subscription_id: String,
@@ -2082,7 +2072,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
@@ -2152,7 +2142,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
@@ -2221,7 +2211,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
@@ -2291,7 +2281,7 @@ pub mod notification_hubs {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,

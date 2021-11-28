@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn artifacts(&self) -> artifacts::Client {
         artifacts::Client(self.clone())
     }
@@ -144,12 +140,9 @@ pub mod blueprints {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, resource_scope: impl Into<String>, blueprint_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
             }
@@ -161,7 +154,7 @@ pub mod blueprints {
             blueprint: impl Into<models::Blueprint>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
                 blueprint: blueprint.into(),
@@ -169,14 +162,14 @@ pub mod blueprints {
         }
         pub fn delete(&self, resource_scope: impl Into<String>, blueprint_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
             }
         }
         pub fn list(&self, resource_scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
             }
         }
@@ -207,7 +200,7 @@ pub mod blueprints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
         }
@@ -282,7 +275,7 @@ pub mod blueprints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
             pub(crate) blueprint: models::Blueprint,
@@ -364,7 +357,7 @@ pub mod blueprints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
         }
@@ -440,7 +433,7 @@ pub mod blueprints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
         }
         impl Builder {
@@ -492,9 +485,6 @@ pub mod artifacts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_scope: impl Into<String>,
@@ -502,7 +492,7 @@ pub mod artifacts {
             artifact_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
                 artifact_name: artifact_name.into(),
@@ -516,7 +506,7 @@ pub mod artifacts {
             artifact: impl Into<models::Artifact>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
                 artifact_name: artifact_name.into(),
@@ -530,7 +520,7 @@ pub mod artifacts {
             artifact_name: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
                 artifact_name: artifact_name.into(),
@@ -538,7 +528,7 @@ pub mod artifacts {
         }
         pub fn list(&self, resource_scope: impl Into<String>, blueprint_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
             }
@@ -570,7 +560,7 @@ pub mod artifacts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
             pub(crate) artifact_name: String,
@@ -647,7 +637,7 @@ pub mod artifacts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
             pub(crate) artifact_name: String,
@@ -731,7 +721,7 @@ pub mod artifacts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
             pub(crate) artifact_name: String,
@@ -809,7 +799,7 @@ pub mod artifacts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
         }
@@ -863,9 +853,6 @@ pub mod published_blueprints {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_scope: impl Into<String>,
@@ -873,7 +860,7 @@ pub mod published_blueprints {
             version_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
                 version_id: version_id.into(),
@@ -886,7 +873,7 @@ pub mod published_blueprints {
             version_id: impl Into<String>,
         ) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
                 version_id: version_id.into(),
@@ -900,7 +887,7 @@ pub mod published_blueprints {
             version_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
                 version_id: version_id.into(),
@@ -908,7 +895,7 @@ pub mod published_blueprints {
         }
         pub fn list(&self, resource_scope: impl Into<String>, blueprint_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
             }
@@ -940,7 +927,7 @@ pub mod published_blueprints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
             pub(crate) version_id: String,
@@ -1017,7 +1004,7 @@ pub mod published_blueprints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
             pub(crate) version_id: String,
@@ -1109,7 +1096,7 @@ pub mod published_blueprints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
             pub(crate) version_id: String,
@@ -1187,7 +1174,7 @@ pub mod published_blueprints {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
         }
@@ -1241,9 +1228,6 @@ pub mod published_artifacts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(
             &self,
             resource_scope: impl Into<String>,
@@ -1252,7 +1236,7 @@ pub mod published_artifacts {
             artifact_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
                 version_id: version_id.into(),
@@ -1266,7 +1250,7 @@ pub mod published_artifacts {
             version_id: impl Into<String>,
         ) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 blueprint_name: blueprint_name.into(),
                 version_id: version_id.into(),
@@ -1299,7 +1283,7 @@ pub mod published_artifacts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
             pub(crate) version_id: String,
@@ -1378,7 +1362,7 @@ pub mod published_artifacts {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) blueprint_name: String,
             pub(crate) version_id: String,
@@ -1434,12 +1418,9 @@ pub mod assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, resource_scope: impl Into<String>, assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 assignment_name: assignment_name.into(),
             }
@@ -1451,7 +1432,7 @@ pub mod assignments {
             assignment: impl Into<models::Assignment>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 assignment_name: assignment_name.into(),
                 assignment: assignment.into(),
@@ -1459,7 +1440,7 @@ pub mod assignments {
         }
         pub fn delete(&self, resource_scope: impl Into<String>, assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 assignment_name: assignment_name.into(),
                 delete_behavior: None,
@@ -1467,14 +1448,14 @@ pub mod assignments {
         }
         pub fn who_is_blueprint(&self, resource_scope: impl Into<String>, assignment_name: impl Into<String>) -> who_is_blueprint::Builder {
             who_is_blueprint::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 assignment_name: assignment_name.into(),
             }
         }
         pub fn list(&self, resource_scope: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
             }
         }
@@ -1505,7 +1486,7 @@ pub mod assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) assignment_name: String,
         }
@@ -1580,7 +1561,7 @@ pub mod assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) assignment_name: String,
             pub(crate) assignment: models::Assignment,
@@ -1662,7 +1643,7 @@ pub mod assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) assignment_name: String,
             pub(crate) delete_behavior: Option<String>,
@@ -1746,7 +1727,7 @@ pub mod assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) assignment_name: String,
         }
@@ -1822,7 +1803,7 @@ pub mod assignments {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
         }
         impl Builder {
@@ -1874,12 +1855,9 @@ pub mod assignment_operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self, resource_scope: impl Into<String>, assignment_name: impl Into<String>) -> list::Builder {
             list::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 assignment_name: assignment_name.into(),
             }
@@ -1891,7 +1869,7 @@ pub mod assignment_operations {
             assignment_operation_name: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 resource_scope: resource_scope.into(),
                 assignment_name: assignment_name.into(),
                 assignment_operation_name: assignment_operation_name.into(),
@@ -1924,7 +1902,7 @@ pub mod assignment_operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) assignment_name: String,
         }
@@ -1999,7 +1977,7 @@ pub mod assignment_operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) resource_scope: String,
             pub(crate) assignment_name: String,
             pub(crate) assignment_operation_name: String,

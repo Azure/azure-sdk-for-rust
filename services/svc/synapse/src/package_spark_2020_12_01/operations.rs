@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn spark_batch(&self) -> spark_batch::Client {
         spark_batch::Client(self.clone())
     }
@@ -116,16 +112,13 @@ pub mod spark_batch {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_spark_batch_jobs(
             &self,
             livy_api_version: impl Into<String>,
             spark_pool_name: impl Into<String>,
         ) -> get_spark_batch_jobs::Builder {
             get_spark_batch_jobs::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 from: None,
@@ -140,7 +133,7 @@ pub mod spark_batch {
             spark_batch_job_options: impl Into<models::SparkBatchJobOptions>,
         ) -> create_spark_batch_job::Builder {
             create_spark_batch_job::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 spark_batch_job_options: spark_batch_job_options.into(),
@@ -154,7 +147,7 @@ pub mod spark_batch {
             batch_id: i32,
         ) -> get_spark_batch_job::Builder {
             get_spark_batch_job::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 batch_id,
@@ -168,7 +161,7 @@ pub mod spark_batch {
             batch_id: i32,
         ) -> cancel_spark_batch_job::Builder {
             cancel_spark_batch_job::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 batch_id,
@@ -198,7 +191,7 @@ pub mod spark_batch {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) from: Option<i32>,
@@ -291,7 +284,7 @@ pub mod spark_batch {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) spark_batch_job_options: models::SparkBatchJobOptions,
@@ -370,7 +363,7 @@ pub mod spark_batch {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) batch_id: i32,
@@ -449,7 +442,7 @@ pub mod spark_batch {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) batch_id: i32,
@@ -497,16 +490,13 @@ pub mod spark_session {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_spark_sessions(
             &self,
             livy_api_version: impl Into<String>,
             spark_pool_name: impl Into<String>,
         ) -> get_spark_sessions::Builder {
             get_spark_sessions::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 from: None,
@@ -521,7 +511,7 @@ pub mod spark_session {
             spark_session_options: impl Into<models::SparkSessionOptions>,
         ) -> create_spark_session::Builder {
             create_spark_session::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 spark_session_options: spark_session_options.into(),
@@ -535,7 +525,7 @@ pub mod spark_session {
             session_id: i32,
         ) -> get_spark_session::Builder {
             get_spark_session::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 session_id,
@@ -549,7 +539,7 @@ pub mod spark_session {
             session_id: i32,
         ) -> cancel_spark_session::Builder {
             cancel_spark_session::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 session_id,
@@ -562,7 +552,7 @@ pub mod spark_session {
             session_id: i32,
         ) -> reset_spark_session_timeout::Builder {
             reset_spark_session_timeout::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 session_id,
@@ -575,7 +565,7 @@ pub mod spark_session {
             session_id: i32,
         ) -> get_spark_statements::Builder {
             get_spark_statements::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 session_id,
@@ -589,7 +579,7 @@ pub mod spark_session {
             spark_statement_options: impl Into<models::SparkStatementOptions>,
         ) -> create_spark_statement::Builder {
             create_spark_statement::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 session_id,
@@ -604,7 +594,7 @@ pub mod spark_session {
             statement_id: i32,
         ) -> get_spark_statement::Builder {
             get_spark_statement::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 session_id,
@@ -619,7 +609,7 @@ pub mod spark_session {
             statement_id: i32,
         ) -> cancel_spark_statement::Builder {
             cancel_spark_statement::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 livy_api_version: livy_api_version.into(),
                 spark_pool_name: spark_pool_name.into(),
                 session_id,
@@ -650,7 +640,7 @@ pub mod spark_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) from: Option<i32>,
@@ -743,7 +733,7 @@ pub mod spark_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) spark_session_options: models::SparkSessionOptions,
@@ -822,7 +812,7 @@ pub mod spark_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) session_id: i32,
@@ -901,7 +891,7 @@ pub mod spark_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) session_id: i32,
@@ -967,7 +957,7 @@ pub mod spark_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) session_id: i32,
@@ -1033,7 +1023,7 @@ pub mod spark_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) session_id: i32,
@@ -1104,7 +1094,7 @@ pub mod spark_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) session_id: i32,
@@ -1177,7 +1167,7 @@ pub mod spark_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) session_id: i32,
@@ -1250,7 +1240,7 @@ pub mod spark_session {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) livy_api_version: String,
             pub(crate) spark_pool_name: String,
             pub(crate) session_id: i32,

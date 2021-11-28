@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn applications(&self) -> applications::Client {
         applications::Client(self.clone())
     }
@@ -126,12 +122,9 @@ pub mod o_auth2_permission_grant {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
             }
@@ -163,7 +156,7 @@ pub mod o_auth2_permission_grant {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
@@ -219,16 +212,13 @@ pub mod signed_in_user {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_owned_objects_next(
             &self,
             next_link: impl Into<String>,
             tenant_id: impl Into<String>,
         ) -> list_owned_objects_next::Builder {
             list_owned_objects_next::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
             }
@@ -260,7 +250,7 @@ pub mod signed_in_user {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
@@ -314,12 +304,9 @@ pub mod groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
             }
@@ -330,7 +317,7 @@ pub mod groups {
             tenant_id: impl Into<String>,
         ) -> get_group_members_next::Builder {
             get_group_members_next::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
             }
@@ -362,7 +349,7 @@ pub mod groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
@@ -432,7 +419,7 @@ pub mod groups {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
@@ -486,12 +473,9 @@ pub mod applications {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
             }
@@ -523,7 +507,7 @@ pub mod applications {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
@@ -577,12 +561,9 @@ pub mod deleted_applications {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
             }
@@ -614,7 +595,7 @@ pub mod deleted_applications {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
@@ -668,12 +649,9 @@ pub mod service_principals {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
             }
@@ -705,7 +683,7 @@ pub mod service_principals {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
@@ -761,12 +739,9 @@ pub mod users {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
             }
@@ -798,7 +773,7 @@ pub mod users {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }
@@ -847,16 +822,13 @@ pub mod objects {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_objects_by_object_ids_next(
             &self,
             next_link: impl Into<String>,
             tenant_id: impl Into<String>,
         ) -> get_objects_by_object_ids_next::Builder {
             get_objects_by_object_ids_next::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 next_link: next_link.into(),
                 tenant_id: tenant_id.into(),
             }
@@ -885,7 +857,7 @@ pub mod objects {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) next_link: String,
             pub(crate) tenant_id: String,
         }

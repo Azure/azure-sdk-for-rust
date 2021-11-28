@@ -70,10 +70,6 @@ impl Client {
             pipeline,
         }
     }
-    #[allow(dead_code)]
-    pub(crate) fn base_clone(&self) -> Self {
-        self.clone()
-    }
     pub fn alias(&self) -> alias::Client {
         alias::Client(self.clone())
     }
@@ -127,25 +123,22 @@ pub mod subscription {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn cancel(&self, subscription_id: impl Into<String>) -> cancel::Builder {
             cancel::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         pub fn rename(&self, subscription_id: impl Into<String>, body: impl Into<models::SubscriptionName>) -> rename::Builder {
             rename::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 body: body.into(),
             }
         }
         pub fn enable(&self, subscription_id: impl Into<String>) -> enable::Builder {
             enable::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -155,14 +148,14 @@ pub mod subscription {
             body: impl Into<models::AcceptOwnershipRequest>,
         ) -> accept_ownership::Builder {
             accept_ownership::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 body: body.into(),
             }
         }
         pub fn accept_ownership_status(&self, subscription_id: impl Into<String>) -> accept_ownership_status::Builder {
             accept_ownership_status::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -193,7 +186,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -267,7 +260,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) body: models::SubscriptionName,
         }
@@ -342,7 +335,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -416,7 +409,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) body: models::AcceptOwnershipRequest,
         }
@@ -486,7 +479,7 @@ pub mod subscription {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -540,11 +533,8 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -573,7 +563,7 @@ pub mod operations {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationListResult, Error>> {
@@ -620,30 +610,27 @@ pub mod alias {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get(&self, alias_name: impl Into<String>) -> get::Builder {
             get::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 alias_name: alias_name.into(),
             }
         }
         pub fn create(&self, alias_name: impl Into<String>, body: impl Into<models::PutAliasRequest>) -> create::Builder {
             create::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 alias_name: alias_name.into(),
                 body: body.into(),
             }
         }
         pub fn delete(&self, alias_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 alias_name: alias_name.into(),
             }
         }
         pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.base_clone() }
+            list::Builder { client: self.0.clone() }
         }
     }
     pub mod get {
@@ -672,7 +659,7 @@ pub mod alias {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) alias_name: String,
         }
         impl Builder {
@@ -750,7 +737,7 @@ pub mod alias {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) alias_name: String,
             pub(crate) body: models::PutAliasRequest,
         }
@@ -836,7 +823,7 @@ pub mod alias {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) alias_name: String,
         }
         impl Builder {
@@ -905,7 +892,7 @@ pub mod alias {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -954,23 +941,20 @@ pub mod subscription_policy {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_policy_for_tenant(&self) -> get_policy_for_tenant::Builder {
-            get_policy_for_tenant::Builder { client: self.base_clone() }
+            get_policy_for_tenant::Builder { client: self.0.clone() }
         }
         pub fn add_update_policy_for_tenant(
             &self,
             body: impl Into<models::PutTenantPolicyRequestProperties>,
         ) -> add_update_policy_for_tenant::Builder {
             add_update_policy_for_tenant::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 body: body.into(),
             }
         }
         pub fn list_policy_for_tenant(&self) -> list_policy_for_tenant::Builder {
-            list_policy_for_tenant::Builder { client: self.base_clone() }
+            list_policy_for_tenant::Builder { client: self.0.clone() }
         }
     }
     pub mod get_policy_for_tenant {
@@ -999,7 +983,7 @@ pub mod subscription_policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::GetTenantPolicyResponse, Error>> {
@@ -1067,7 +1051,7 @@ pub mod subscription_policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) body: models::PutTenantPolicyRequestProperties,
         }
         impl Builder {
@@ -1137,7 +1121,7 @@ pub mod subscription_policy {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
         }
         impl Builder {
             pub fn into_future(
@@ -1186,12 +1170,9 @@ pub mod billing_account {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub(crate) fn base_clone(&self) -> super::Client {
-            self.0.clone()
-        }
         pub fn get_policy(&self, billing_account_id: impl Into<String>) -> get_policy::Builder {
             get_policy::Builder {
-                client: self.base_clone(),
+                client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
             }
         }
@@ -1222,7 +1203,7 @@ pub mod billing_account {
         }
         #[derive(Clone)]
         pub struct Builder {
-            pub(crate) client: crate::operations::Client,
+            pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
         }
         impl Builder {
