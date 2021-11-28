@@ -274,7 +274,7 @@ pub mod schema {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value = rsp_body.clone();
+                            let rsp_value = rsp_body;
                             Ok(rsp_value)
                         }
                         status_code => {

@@ -34877,7 +34877,7 @@ pub mod web_apps {
                         http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value = rsp_body.clone();
+                            let rsp_value = rsp_body;
                             Ok(Response::Ok200(rsp_value))
                         }
                         status_code => {
@@ -34960,7 +34960,7 @@ pub mod web_apps {
                         http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value = rsp_body.clone();
+                            let rsp_value = rsp_body;
                             Ok(Response::Ok200(rsp_value))
                         }
                         status_code => {
@@ -39451,7 +39451,7 @@ pub mod web_apps {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value = rsp_body.clone();
+                            let rsp_value = rsp_body;
                             Ok(rsp_value)
                         }
                         http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
@@ -42745,7 +42745,7 @@ pub mod web_apps {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value = rsp_body.clone();
+                            let rsp_value = rsp_body;
                             Ok(rsp_value)
                         }
                         http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
@@ -43395,7 +43395,7 @@ pub mod web_apps {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value = rsp_body.clone();
+                            let rsp_value = rsp_body;
                             Ok(rsp_value)
                         }
                         status_code => {
@@ -48153,7 +48153,7 @@ pub mod web_apps {
                         http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value = rsp_body.clone();
+                            let rsp_value = rsp_body;
                             Ok(Response::Ok200(rsp_value))
                         }
                         status_code => {
@@ -48238,7 +48238,7 @@ pub mod web_apps {
                         http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value = rsp_body.clone();
+                            let rsp_value = rsp_body;
                             Ok(Response::Ok200(rsp_value))
                         }
                         status_code => {
@@ -52797,7 +52797,7 @@ pub mod web_apps {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value = rsp_body.clone();
+                            let rsp_value = rsp_body;
                             Ok(rsp_value)
                         }
                         http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
@@ -55988,7 +55988,7 @@ pub mod web_apps {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value = rsp_body.clone();
+                            let rsp_value = rsp_body;
                             Ok(rsp_value)
                         }
                         http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
@@ -56654,7 +56654,7 @@ pub mod web_apps {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value = rsp_body.clone();
+                            let rsp_value = rsp_body;
                             Ok(rsp_value)
                         }
                         status_code => {
