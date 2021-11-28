@@ -686,7 +686,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
 fn create_rsp_value(tp: Option<&TokenStream>) -> TokenStream {
     if tp.map(|tp| tp.to_string()) == Some("bytes :: Bytes".to_owned()) {
         quote! {
-            let rsp_value = rsp_body.clone();
+            let rsp_value = rsp_body;
         }
     } else {
         quote! {

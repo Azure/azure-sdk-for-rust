@@ -286,10 +286,6 @@ pub enum Error {
     TypeName(#[source] Box<crate::codegen::Error>),
 }
 
-impl Error {}
-
-impl Error {}
-
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RefKey {
     pub file_path: PathBuf,
