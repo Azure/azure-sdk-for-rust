@@ -353,7 +353,7 @@ pub struct KeyVaultCredentialSettings {
     #[serde(rename = "credentialName", default, skip_serializing_if = "Option::is_none")]
     pub credential_name: Option<String>,
     #[serde(rename = "azureKeyVaultUrl", default, skip_serializing_if = "Option::is_none")]
-    pub azure_security_keyvault_url: Option<String>,
+    pub azure_key_vault_url: Option<String>,
     #[serde(rename = "servicePrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_name: Option<String>,
     #[serde(rename = "servicePrincipalSecret", default, skip_serializing_if = "Option::is_none")]

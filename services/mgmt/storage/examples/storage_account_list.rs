@@ -6,16 +6,15 @@ cargo run --package azure_mgmt_storage --example storage_account_list
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
-use azure_mgmt_storage::operations::storage_accounts;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let http_client = azure_core::new_http_client();
-    let token_credential = AzureCliCredential {};
-    let subscription_id = &AzureCliCredential::get_subscription()?;
-    let config = &azure_mgmt_storage::config(http_client, Box::new(token_credential)).build();
+    let credential = Arc::new(AzureCliCredential {});
+    let subscription_id = AzureCliCredential::get_subscription()?;
+    let client = azure_mgmt_storage::ClientBuilder::new(credential).build();
 
-    let accounts = storage_accounts::list(config, subscription_id).await?;
+    let accounts = client.storage_accounts().list(subscription_id).into_future().await?;
     println!("# of storage accounts {}", accounts.value.len());
     for account in &accounts.value {
         println!("{:?}", account.tracked_resource.resource.id);

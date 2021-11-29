@@ -32,6 +32,7 @@ bytes = "1.0"
 thiserror = "1.0"
 http = "0.2"
 url = "2.2"
+futures = "0.3"
 
 [dev-dependencies]
 azure_identity = {{ path = "../../../sdk/identity", version = "0.1.0" }}

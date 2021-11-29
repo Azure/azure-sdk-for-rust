@@ -3,6 +3,74 @@
 #![allow(unused_variables)]
 #![allow(unused_imports)]
 use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub(crate) fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub(crate) fn token_credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub(crate) fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+}
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
@@ -38,40 +106,118 @@ pub enum Error {
     #[error(transparent)]
     UpdateAcrManifestAttributes(#[from] update_acr_manifest_attributes::Error),
 }
-pub async fn get_docker_registry_v2_support(
-    operation_config: &crate::OperationConfig,
-) -> std::result::Result<(), get_docker_registry_v2_support::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/v2/", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(get_docker_registry_v2_support::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_docker_registry_v2_support::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+impl Client {
+    pub fn get_docker_registry_v2_support(&self) -> get_docker_registry_v2_support::Builder {
+        get_docker_registry_v2_support::Builder { client: self.clone() }
     }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(get_docker_registry_v2_support::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_docker_registry_v2_support::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => Ok(()),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_docker_registry_v2_support::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_docker_registry_v2_support::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            })
+    pub fn get_tag_list(&self, name: impl Into<String>) -> get_tag_list::Builder {
+        get_tag_list::Builder {
+            client: self.clone(),
+            name: name.into(),
+        }
+    }
+    pub fn get_manifest(&self, name: impl Into<String>, reference: impl Into<String>) -> get_manifest::Builder {
+        get_manifest::Builder {
+            client: self.clone(),
+            name: name.into(),
+            reference: reference.into(),
+        }
+    }
+    pub fn get_repositories(&self) -> get_repositories::Builder {
+        get_repositories::Builder {
+            client: self.clone(),
+            last: None,
+            n: None,
+        }
+    }
+    pub fn get_acr_repositories(&self) -> get_acr_repositories::Builder {
+        get_acr_repositories::Builder {
+            client: self.clone(),
+            last: None,
+            n: None,
+        }
+    }
+    pub fn get_acr_repository_attributes(&self, name: impl Into<String>) -> get_acr_repository_attributes::Builder {
+        get_acr_repository_attributes::Builder {
+            client: self.clone(),
+            name: name.into(),
+        }
+    }
+    pub fn update_acr_repository_attributes(&self, name: impl Into<String>) -> update_acr_repository_attributes::Builder {
+        update_acr_repository_attributes::Builder {
+            client: self.clone(),
+            name: name.into(),
+            value: None,
+        }
+    }
+    pub fn delete_acr_repository(&self, name: impl Into<String>) -> delete_acr_repository::Builder {
+        delete_acr_repository::Builder {
+            client: self.clone(),
+            name: name.into(),
+        }
+    }
+    pub fn get_acr_tags(&self, name: impl Into<String>) -> get_acr_tags::Builder {
+        get_acr_tags::Builder {
+            client: self.clone(),
+            name: name.into(),
+            last: None,
+            n: None,
+            orderby: None,
+            digest: None,
+        }
+    }
+    pub fn get_acr_tag_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_acr_tag_attributes::Builder {
+        get_acr_tag_attributes::Builder {
+            client: self.clone(),
+            name: name.into(),
+            reference: reference.into(),
+        }
+    }
+    pub fn update_acr_tag_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> update_acr_tag_attributes::Builder {
+        update_acr_tag_attributes::Builder {
+            client: self.clone(),
+            name: name.into(),
+            reference: reference.into(),
+            value: None,
+        }
+    }
+    pub fn delete_acr_tag(&self, name: impl Into<String>, reference: impl Into<String>) -> delete_acr_tag::Builder {
+        delete_acr_tag::Builder {
+            client: self.clone(),
+            name: name.into(),
+            reference: reference.into(),
+        }
+    }
+    pub fn get_acr_manifests(&self, name: impl Into<String>) -> get_acr_manifests::Builder {
+        get_acr_manifests::Builder {
+            client: self.clone(),
+            name: name.into(),
+            last: None,
+            n: None,
+            orderby: None,
+        }
+    }
+    pub fn get_acr_manifest_attributes(
+        &self,
+        name: impl Into<String>,
+        reference: impl Into<String>,
+    ) -> get_acr_manifest_attributes::Builder {
+        get_acr_manifest_attributes::Builder {
+            client: self.clone(),
+            name: name.into(),
+            reference: reference.into(),
+        }
+    }
+    pub fn update_acr_manifest_attributes(
+        &self,
+        name: impl Into<String>,
+        reference: impl Into<String>,
+    ) -> update_acr_manifest_attributes::Builder {
+        update_acr_manifest_attributes::Builder {
+            client: self.clone(),
+            name: name.into(),
+            reference: reference.into(),
+            value: None,
         }
     }
 }
@@ -85,57 +231,54 @@ pub mod get_docker_registry_v2_support {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_tag_list(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-) -> std::result::Result<models::RepositoryTags, get_tag_list::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/v2/{}/tags/list", operation_config.base_path(), name);
-    let mut url = url::Url::parse(url_str).map_err(get_tag_list::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_tag_list::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
     }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_tag_list::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_tag_list::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::RepositoryTags =
-                serde_json::from_slice(rsp_body).map_err(|source| get_tag_list::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
-        }
-        http::StatusCode::NOT_FOUND => Err(get_tag_list::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors =
-                serde_json::from_slice(rsp_body).map_err(|source| get_tag_list::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_tag_list::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/v2/", self.client.endpoint(),);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => Ok(()),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -152,58 +295,61 @@ pub mod get_tag_list {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_manifest(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-    reference: &str,
-) -> std::result::Result<models::Manifest, get_manifest::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/v2/{}/manifests/{}", operation_config.base_path(), name, reference);
-    let mut url = url::Url::parse(url_str).map_err(get_manifest::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_manifest::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
     }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_manifest::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_manifest::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Manifest =
-                serde_json::from_slice(rsp_body).map_err(|source| get_manifest::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
-        }
-        http::StatusCode::NOT_FOUND => Err(get_manifest::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors =
-                serde_json::from_slice(rsp_body).map_err(|source| get_manifest::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_manifest::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RepositoryTags, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/v2/{}/tags/list", self.client.endpoint(), &self.name);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::RepositoryTags =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -220,63 +366,62 @@ pub mod get_manifest {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_repositories(
-    operation_config: &crate::OperationConfig,
-    last: Option<&str>,
-    n: Option<&str>,
-) -> std::result::Result<models::Repositories, get_repositories::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/v2/_catalog", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(get_repositories::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_repositories::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
+        pub(crate) reference: String,
     }
-    if let Some(last) = last {
-        url.query_pairs_mut().append_pair("last", last);
-    }
-    if let Some(n) = n {
-        url.query_pairs_mut().append_pair("n", n);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_repositories::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_repositories::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Repositories =
-                serde_json::from_slice(rsp_body).map_err(|source| get_repositories::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors =
-                serde_json::from_slice(rsp_body).map_err(|source| get_repositories::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_repositories::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Manifest, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/v2/{}/manifests/{}", self.client.endpoint(), &self.name, &self.reference);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Manifest =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -291,63 +436,75 @@ pub mod get_repositories {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_acr_repositories(
-    operation_config: &crate::OperationConfig,
-    last: Option<&str>,
-    n: Option<&str>,
-) -> std::result::Result<models::Repositories, get_acr_repositories::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/acr/v1/_catalog", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(get_acr_repositories::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_acr_repositories::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) last: Option<String>,
+        pub(crate) n: Option<String>,
     }
-    if let Some(last) = last {
-        url.query_pairs_mut().append_pair("last", last);
-    }
-    if let Some(n) = n {
-        url.query_pairs_mut().append_pair("n", n);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_acr_repositories::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_acr_repositories::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::Repositories = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_acr_repositories::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn last(mut self, last: impl Into<String>) -> Self {
+            self.last = Some(last.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_acr_repositories::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_acr_repositories::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn n(mut self, n: impl Into<String>) -> Self {
+            self.n = Some(n.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Repositories, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/v2/_catalog", self.client.endpoint(),);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                if let Some(last) = &self.last {
+                    url.query_pairs_mut().append_pair("last", last);
+                }
+                if let Some(n) = &self.n {
+                    url.query_pairs_mut().append_pair("n", n);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Repositories =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -362,59 +519,75 @@ pub mod get_acr_repositories {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_acr_repository_attributes(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-) -> std::result::Result<models::RepositoryAttributes, get_acr_repository_attributes::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/acr/v1/{}", operation_config.base_path(), name);
-    let mut url = url::Url::parse(url_str).map_err(get_acr_repository_attributes::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_acr_repository_attributes::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) last: Option<String>,
+        pub(crate) n: Option<String>,
     }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(get_acr_repository_attributes::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_acr_repository_attributes::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::RepositoryAttributes = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_acr_repository_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn last(mut self, last: impl Into<String>) -> Self {
+            self.last = Some(last.into());
+            self
         }
-        http::StatusCode::NOT_FOUND => Err(get_acr_repository_attributes::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_acr_repository_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_acr_repository_attributes::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn n(mut self, n: impl Into<String>) -> Self {
+            self.n = Some(n.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Repositories, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/acr/v1/_catalog", self.client.endpoint(),);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                if let Some(last) = &self.last {
+                    url.query_pairs_mut().append_pair("last", last);
+                }
+                if let Some(n) = &self.n {
+                    url.query_pairs_mut().append_pair("n", n);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Repositories =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -431,60 +604,61 @@ pub mod get_acr_repository_attributes {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn update_acr_repository_attributes(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-    value: Option<&models::ChangeableAttributes>,
-) -> std::result::Result<(), update_acr_repository_attributes::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/acr/v1/{}", operation_config.base_path(), name);
-    let mut url = url::Url::parse(url_str).map_err(update_acr_repository_attributes::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::PATCH);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(update_acr_repository_attributes::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
     }
-    let req_body = if let Some(value) = value {
-        req_builder = req_builder.header("content-type", "application/json");
-        azure_core::to_json(value).map_err(update_acr_repository_attributes::Error::SerializeError)?
-    } else {
-        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-    };
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(update_acr_repository_attributes::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(update_acr_repository_attributes::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::NO_CONTENT => Ok(()),
-        http::StatusCode::NOT_FOUND => Err(update_acr_repository_attributes::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
-                .map_err(|source| update_acr_repository_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(update_acr_repository_attributes::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::RepositoryAttributes, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/acr/v1/{}", self.client.endpoint(), &self.name);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::RepositoryAttributes =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -501,59 +675,66 @@ pub mod update_acr_repository_attributes {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn delete_acr_repository(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-) -> std::result::Result<models::DeletedRepository, delete_acr_repository::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/acr/v1/{}", operation_config.base_path(), name);
-    let mut url = url::Url::parse(url_str).map_err(delete_acr_repository::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::DELETE);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(delete_acr_repository::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
+        pub(crate) value: Option<models::ChangeableAttributes>,
     }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(delete_acr_repository::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(delete_acr_repository::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::ACCEPTED => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::DeletedRepository = serde_json::from_slice(rsp_body)
-                .map_err(|source| delete_acr_repository::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
+            self.value = Some(value.into());
+            self
         }
-        http::StatusCode::NOT_FOUND => Err(delete_acr_repository::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
-                .map_err(|source| delete_acr_repository::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(delete_acr_repository::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/acr/v1/{}", self.client.endpoint(), &self.name);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::PATCH);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                let req_body = if let Some(value) = &self.value {
+                    req_builder = req_builder.header("content-type", "application/json");
+                    azure_core::to_json(value).map_err(Error::Serialize)?
+                } else {
+                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                };
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::NO_CONTENT => Ok(()),
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -570,73 +751,61 @@ pub mod delete_acr_repository {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_acr_tags(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-    last: Option<&str>,
-    n: Option<&str>,
-    orderby: Option<&str>,
-    digest: Option<&str>,
-) -> std::result::Result<models::AcrRepositoryTags, get_acr_tags::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/acr/v1/{}/_tags", operation_config.base_path(), name);
-    let mut url = url::Url::parse(url_str).map_err(get_acr_tags::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_acr_tags::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
     }
-    if let Some(last) = last {
-        url.query_pairs_mut().append_pair("last", last);
-    }
-    if let Some(n) = n {
-        url.query_pairs_mut().append_pair("n", n);
-    }
-    if let Some(orderby) = orderby {
-        url.query_pairs_mut().append_pair("orderby", orderby);
-    }
-    if let Some(digest) = digest {
-        url.query_pairs_mut().append_pair("digest", digest);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_acr_tags::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_acr_tags::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrRepositoryTags =
-                serde_json::from_slice(rsp_body).map_err(|source| get_acr_tags::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
-        }
-        http::StatusCode::NOT_FOUND => Err(get_acr_tags::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors =
-                serde_json::from_slice(rsp_body).map_err(|source| get_acr_tags::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_acr_tags::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeletedRepository, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/acr/v1/{}", self.client.endpoint(), &self.name);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::DELETE);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::ACCEPTED => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::DeletedRepository =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -653,60 +822,93 @@ pub mod get_acr_tags {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_acr_tag_attributes(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-    reference: &str,
-) -> std::result::Result<models::AcrTagAttributes, get_acr_tag_attributes::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/acr/v1/{}/_tags/{}", operation_config.base_path(), name, reference);
-    let mut url = url::Url::parse(url_str).map_err(get_acr_tag_attributes::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_acr_tag_attributes::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
+        pub(crate) last: Option<String>,
+        pub(crate) n: Option<String>,
+        pub(crate) orderby: Option<String>,
+        pub(crate) digest: Option<String>,
     }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(get_acr_tag_attributes::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_acr_tag_attributes::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrTagAttributes = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_acr_tag_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn last(mut self, last: impl Into<String>) -> Self {
+            self.last = Some(last.into());
+            self
         }
-        http::StatusCode::NOT_FOUND => Err(get_acr_tag_attributes::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_acr_tag_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_acr_tag_attributes::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn n(mut self, n: impl Into<String>) -> Self {
+            self.n = Some(n.into());
+            self
+        }
+        pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+            self.orderby = Some(orderby.into());
+            self
+        }
+        pub fn digest(mut self, digest: impl Into<String>) -> Self {
+            self.digest = Some(digest.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AcrRepositoryTags, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/acr/v1/{}/_tags", self.client.endpoint(), &self.name);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                if let Some(last) = &self.last {
+                    url.query_pairs_mut().append_pair("last", last);
+                }
+                if let Some(n) = &self.n {
+                    url.query_pairs_mut().append_pair("n", n);
+                }
+                if let Some(orderby) = &self.orderby {
+                    url.query_pairs_mut().append_pair("orderby", orderby);
+                }
+                if let Some(digest) = &self.digest {
+                    url.query_pairs_mut().append_pair("digest", digest);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrRepositoryTags =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -723,61 +925,62 @@ pub mod get_acr_tag_attributes {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn update_acr_tag_attributes(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-    reference: &str,
-    value: Option<&models::ChangeableAttributes>,
-) -> std::result::Result<(), update_acr_tag_attributes::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/acr/v1/{}/_tags/{}", operation_config.base_path(), name, reference);
-    let mut url = url::Url::parse(url_str).map_err(update_acr_tag_attributes::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::PATCH);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(update_acr_tag_attributes::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
+        pub(crate) reference: String,
     }
-    let req_body = if let Some(value) = value {
-        req_builder = req_builder.header("content-type", "application/json");
-        azure_core::to_json(value).map_err(update_acr_tag_attributes::Error::SerializeError)?
-    } else {
-        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-    };
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(update_acr_tag_attributes::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(update_acr_tag_attributes::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::NO_CONTENT => Ok(()),
-        http::StatusCode::NOT_FOUND => Err(update_acr_tag_attributes::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
-                .map_err(|source| update_acr_tag_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(update_acr_tag_attributes::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AcrTagAttributes, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/acr/v1/{}/_tags/{}", self.client.endpoint(), &self.name, &self.reference);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrTagAttributes =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -794,53 +997,67 @@ pub mod update_acr_tag_attributes {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn delete_acr_tag(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-    reference: &str,
-) -> std::result::Result<(), delete_acr_tag::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/acr/v1/{}/_tags/{}", operation_config.base_path(), name, reference);
-    let mut url = url::Url::parse(url_str).map_err(delete_acr_tag::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::DELETE);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(delete_acr_tag::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
+        pub(crate) reference: String,
+        pub(crate) value: Option<models::ChangeableAttributes>,
     }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(delete_acr_tag::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(delete_acr_tag::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::NO_CONTENT => Ok(()),
-        http::StatusCode::NOT_FOUND => Err(delete_acr_tag::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors =
-                serde_json::from_slice(rsp_body).map_err(|source| delete_acr_tag::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(delete_acr_tag::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
+            self.value = Some(value.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/acr/v1/{}/_tags/{}", self.client.endpoint(), &self.name, &self.reference);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::PATCH);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                let req_body = if let Some(value) = &self.value {
+                    req_builder = req_builder.header("content-type", "application/json");
+                    azure_core::to_json(value).map_err(Error::Serialize)?
+                } else {
+                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                };
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::NO_CONTENT => Ok(()),
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -857,69 +1074,57 @@ pub mod delete_acr_tag {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_acr_manifests(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-    last: Option<&str>,
-    n: Option<&str>,
-    orderby: Option<&str>,
-) -> std::result::Result<models::AcrManifests, get_acr_manifests::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/acr/v1/{}/_manifests", operation_config.base_path(), name);
-    let mut url = url::Url::parse(url_str).map_err(get_acr_manifests::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_acr_manifests::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
+        pub(crate) reference: String,
     }
-    if let Some(last) = last {
-        url.query_pairs_mut().append_pair("last", last);
-    }
-    if let Some(n) = n {
-        url.query_pairs_mut().append_pair("n", n);
-    }
-    if let Some(orderby) = orderby {
-        url.query_pairs_mut().append_pair("orderby", orderby);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_acr_manifests::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_acr_manifests::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrManifests =
-                serde_json::from_slice(rsp_body).map_err(|source| get_acr_manifests::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
-        }
-        http::StatusCode::NOT_FOUND => Err(get_acr_manifests::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors =
-                serde_json::from_slice(rsp_body).map_err(|source| get_acr_manifests::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_acr_manifests::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/acr/v1/{}/_tags/{}", self.client.endpoint(), &self.name, &self.reference);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::DELETE);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::NO_CONTENT => Ok(()),
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -936,60 +1141,85 @@ pub mod get_acr_manifests {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_acr_manifest_attributes(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-    reference: &str,
-) -> std::result::Result<models::AcrManifestAttributes, get_acr_manifest_attributes::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/acr/v1/{}/_manifests/{}", operation_config.base_path(), name, reference);
-    let mut url = url::Url::parse(url_str).map_err(get_acr_manifest_attributes::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_acr_manifest_attributes::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
+        pub(crate) last: Option<String>,
+        pub(crate) n: Option<String>,
+        pub(crate) orderby: Option<String>,
     }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(get_acr_manifest_attributes::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_acr_manifest_attributes::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrManifestAttributes = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_acr_manifest_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn last(mut self, last: impl Into<String>) -> Self {
+            self.last = Some(last.into());
+            self
         }
-        http::StatusCode::NOT_FOUND => Err(get_acr_manifest_attributes::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_acr_manifest_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_acr_manifest_attributes::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn n(mut self, n: impl Into<String>) -> Self {
+            self.n = Some(n.into());
+            self
+        }
+        pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+            self.orderby = Some(orderby.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AcrManifests, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/acr/v1/{}/_manifests", self.client.endpoint(), &self.name);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                if let Some(last) = &self.last {
+                    url.query_pairs_mut().append_pair("last", last);
+                }
+                if let Some(n) = &self.n {
+                    url.query_pairs_mut().append_pair("n", n);
+                }
+                if let Some(orderby) = &self.orderby {
+                    url.query_pairs_mut().append_pair("orderby", orderby);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrManifests =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -1006,61 +1236,62 @@ pub mod get_acr_manifest_attributes {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn update_acr_manifest_attributes(
-    operation_config: &crate::OperationConfig,
-    name: &str,
-    reference: &str,
-    value: Option<&models::ChangeableAttributes>,
-) -> std::result::Result<(), update_acr_manifest_attributes::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/acr/v1/{}/_manifests/{}", operation_config.base_path(), name, reference);
-    let mut url = url::Url::parse(url_str).map_err(update_acr_manifest_attributes::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::PATCH);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(update_acr_manifest_attributes::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
+        pub(crate) reference: String,
     }
-    let req_body = if let Some(value) = value {
-        req_builder = req_builder.header("content-type", "application/json");
-        azure_core::to_json(value).map_err(update_acr_manifest_attributes::Error::SerializeError)?
-    } else {
-        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-    };
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(update_acr_manifest_attributes::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(update_acr_manifest_attributes::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::NO_CONTENT => Ok(()),
-        http::StatusCode::NOT_FOUND => Err(update_acr_manifest_attributes::Error::NotFound404 {}),
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: models::AcrErrors = serde_json::from_slice(rsp_body)
-                .map_err(|source| update_acr_manifest_attributes::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(update_acr_manifest_attributes::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AcrManifestAttributes, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/acr/v1/{}/_manifests/{}", self.client.endpoint(), &self.name, &self.reference);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrManifestAttributes =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
@@ -1077,16 +1308,68 @@ pub mod update_acr_manifest_attributes {
             value: models::AcrErrors,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
+    }
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) name: String,
+        pub(crate) reference: String,
+        pub(crate) value: Option<models::ChangeableAttributes>,
+    }
+    impl Builder {
+        pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
+            self.value = Some(value.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/acr/v1/{}/_manifests/{}", self.client.endpoint(), &self.name, &self.reference);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::PATCH);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                let req_body = if let Some(value) = &self.value {
+                    req_builder = req_builder.header("content-type", "application/json");
+                    azure_core::to_json(value).map_err(Error::Serialize)?
+                } else {
+                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                };
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::NO_CONTENT => Ok(()),
+                    http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AcrErrors =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
     }
 }

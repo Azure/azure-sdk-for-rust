@@ -6,7 +6,7 @@ cargo run --package azure_svc_batch --example create_task
 
 use azure_identity::token_credentials::AzureCliCredential;
 use azure_svc_batch::models::{JobAddParameter, PoolInformation, TaskAddParameter};
-use azure_svc_batch::operations::{job, task};
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -16,13 +16,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let job_id = std::env::args().nth(4).expect("please specify job_id");
     let task_id = std::env::args().nth(5).expect("please specify task_id");
 
-    let base_path = format!("https://{}.{}.batch.azure.com", account_name, region);
-
-    let http_client = azure_core::new_http_client();
-    let token_credential = Box::new(AzureCliCredential {});
-    let config = &azure_svc_batch::config(http_client, token_credential)
-        .base_path(base_path)
-        .token_credential_resource("https://batch.core.windows.net/")
+    let endpoint = format!("https://{}.{}.batch.azure.com", account_name, region);
+    let scopes = &["https://batch.core.windows.net/"];
+    let credential = Arc::new(AzureCliCredential {});
+    let client = azure_svc_batch::ClientBuilder::new(credential)
+        .endpoint(endpoint)
+        .scopes(scopes)
         .build();
 
     let pool_id = Some(pool_id);
@@ -50,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("creating job");
-    job::add(&config, &job_params, None, None, None, None).await?;
+    client.job().add(job_params).into_future().await?;
 
     let constraints = None;
     let command_line = "echo hello there".to_string();
@@ -74,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     println!("creating task");
-    task::add(&config, &job_id, &task, None, None, None, None).await?;
+    client.task().add(job_id, task).into_future().await?;
 
     Ok(())
 }

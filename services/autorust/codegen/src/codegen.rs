@@ -123,14 +123,6 @@ pub fn is_vec(ts: &TokenStream) -> bool {
     ts.to_string().starts_with("Vec <")
 }
 
-pub fn is_array(schema: &SchemaCommon) -> bool {
-    matches!(schema.type_, Some(DataType::Array))
-}
-
-pub fn is_string(schema: &SchemaCommon) -> bool {
-    matches!(schema.type_, Some(DataType::String))
-}
-
 pub fn get_schema_array_items(schema: &SchemaCommon) -> Result<&ReferenceOr<Schema>, Error> {
     schema.items.as_ref().as_ref().ok_or(Error::ArrayExpectedToHaveItems)
 }
@@ -157,12 +149,12 @@ pub fn is_basic_type(property: &ResolvedSchema) -> bool {
     )
 }
 
-/// Wraps a type in an Option if is not required.
-pub fn require(is_required: bool, tp: TokenStream) -> TokenStream {
-    if is_required {
-        tp
-    } else {
+/// Wraps a type in an Option
+pub fn add_option(is_option: bool, tp: TokenStream) -> TokenStream {
+    if is_option {
         quote! { Option<#tp> }
+    } else {
+        tp
     }
 }
 
@@ -200,29 +192,32 @@ impl TypeName {
                     idt
                 };
                 match as_ref {
-                    true => quote! { &#idt },
+                    true => quote! { impl Into<#idt> },
                     false => idt,
                 }
             }
             TypeName::Array(vec_items_typ) => {
-                let vec_items_typ = vec_items_typ.to_token_stream(as_ref, qualify_models)?;
+                let vec_items_typ = vec_items_typ.to_token_stream(false, qualify_models)?;
                 match as_ref {
-                    true => quote! { &[#vec_items_typ] },
+                    true => quote! { impl Into<Vec<#vec_items_typ>> },
                     false => quote! { Vec<#vec_items_typ> },
                 }
             }
             TypeName::Value => match as_ref {
-                true => quote! { &serde_json::Value },
+                true => quote! { impl Into<serde_json::Value> },
                 false => quote! { serde_json::Value },
             },
-            TypeName::Bytes => quote! { bytes::Bytes },
+            TypeName::Bytes => match as_ref {
+                true => quote! { impl Into<bytes::Bytes> },
+                false => quote! { bytes::Bytes },
+            },
             TypeName::Int32 => quote! { i32 },
             TypeName::Int64 => quote! { i64 },
             TypeName::Float32 => quote! { f32 },
             TypeName::Float64 => quote! { f64 },
             TypeName::Boolean => quote! { bool },
             TypeName::String => match as_ref {
-                true => quote! { &str },
+                true => quote! { impl Into<String> },
                 false => quote! { String },
             },
         })

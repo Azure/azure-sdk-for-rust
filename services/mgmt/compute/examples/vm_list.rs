@@ -6,16 +6,15 @@ cargo run --package azure_mgmt_compute --example vm_list
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
-use azure_mgmt_compute::operations::virtual_machines;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let http_client = azure_core::new_http_client();
-    let token_credential = AzureCliCredential {};
-    let subscription_id = &AzureCliCredential::get_subscription()?;
-    let config = &azure_mgmt_compute::config(http_client, Box::new(token_credential)).build();
+    let credential = Arc::new(AzureCliCredential {});
+    let subscription_id = AzureCliCredential::get_subscription()?;
+    let client = azure_mgmt_compute::ClientBuilder::new(credential).build();
 
-    let vms = virtual_machines::list_all(config, subscription_id, None).await?;
+    let vms = client.virtual_machines().list_all(subscription_id).into_future().await?;
     println!("# of virtual machines {}", vms.value.len());
     for vm in &vms.value {
         println!("{:?}", &vm.resource.id);
