@@ -3,12 +3,22 @@ use super::{
 };
 use azure_core::TokenResponse;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
 pub struct DefaultAzureCredentialBuilder {
     include_environment_credential: bool,
     include_managed_identity_credential: bool,
     include_cli_credential: bool,
+}
+
+impl Default for DefaultAzureCredentialBuilder {
+    fn default() -> Self {
+        Self {
+            include_environment_credential: true,
+            include_managed_identity_credential: true,
+            include_cli_credential: true,
+        }
+    }
 }
 
 impl DefaultAzureCredentialBuilder {
@@ -167,4 +177,112 @@ fn format_aggregate_error(errors: &[DefaultAzureCredentialError]) -> String {
         .map(|error| error.to_string())
         .collect::<Vec<String>>()
         .join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::matches;
+
+    #[test]
+    fn test_builder_included_credential_flags() {
+        let builder = DefaultAzureCredentialBuilder::new();
+        assert_eq!(builder.include_cli_credential, true);
+        assert_eq!(builder.include_environment_credential, true);
+        assert_eq!(builder.include_managed_identity_credential, true);
+
+        let mut builder = DefaultAzureCredentialBuilder::new();
+        builder.exclude_cli_credential();
+        assert_eq!(builder.include_cli_credential, false);
+        assert_eq!(builder.include_environment_credential, true);
+        assert_eq!(builder.include_managed_identity_credential, true);
+
+        let mut builder = DefaultAzureCredentialBuilder::new();
+        builder.exclude_environment_credential();
+        assert_eq!(builder.include_cli_credential, true);
+        assert_eq!(builder.include_environment_credential, false);
+        assert_eq!(builder.include_managed_identity_credential, true);
+
+        let mut builder = DefaultAzureCredentialBuilder::new();
+        builder.exclude_managed_identity_credential();
+        assert_eq!(builder.include_cli_credential, true);
+        assert_eq!(builder.include_environment_credential, true);
+        assert_eq!(builder.include_managed_identity_credential, false);
+    }
+
+    macro_rules! contains_credential {
+        ($creds:expr, $p:pat) => {
+            $creds.sources.iter().any(|x| matches!(x, $p))
+        };
+    }
+
+    #[test]
+    fn test_credential_sources() {
+        let mut builder = DefaultAzureCredentialBuilder::new();
+
+        // test with all sources
+
+        let credential = builder.build();
+        assert_eq!(credential.sources.len(), 3);
+
+        assert!(contains_credential!(
+            credential,
+            DefaultAzureCredentialEnum::Environment(_)
+        ));
+        assert!(contains_credential!(
+            credential,
+            DefaultAzureCredentialEnum::AzureCli(_)
+        ));
+        assert!(contains_credential!(
+            credential,
+            DefaultAzureCredentialEnum::ManagedIdentity(_)
+        ));
+
+        // remove environment source
+
+        builder.exclude_environment_credential();
+        let credential = builder.build();
+
+        assert_eq!(credential.sources.len(), 2);
+
+        assert!(!contains_credential!(
+            credential,
+            DefaultAzureCredentialEnum::Environment(_)
+        ));
+        assert!(contains_credential!(
+            credential,
+            DefaultAzureCredentialEnum::AzureCli(_)
+        ));
+        assert!(contains_credential!(
+            credential,
+            DefaultAzureCredentialEnum::ManagedIdentity(_)
+        ));
+
+        // remove cli source
+
+        builder.exclude_cli_credential();
+        let credential = builder.build();
+
+        assert_eq!(credential.sources.len(), 1);
+
+        assert!(!contains_credential!(
+            credential,
+            DefaultAzureCredentialEnum::Environment(_)
+        ));
+        assert!(!contains_credential!(
+            credential,
+            DefaultAzureCredentialEnum::AzureCli(_)
+        ));
+        assert!(contains_credential!(
+            credential,
+            DefaultAzureCredentialEnum::ManagedIdentity(_)
+        ));
+
+        // remove managed identity source
+
+        builder.exclude_managed_identity_credential();
+        let credential = builder.build();
+
+        assert_eq!(credential.sources.len(), 0);
+    }
 }

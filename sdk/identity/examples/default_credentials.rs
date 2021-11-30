@@ -6,7 +6,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
     let sub_id = std::env::var("AZURE_SUBSCRIPTION_ID")?;
-    let creds = DefaultAzureCredential::default();
+    let creds = DefaultAzureCredentialBuilder::new()
+        .exclude_cli_credential() // disable using CLI for credentials (just as an example)
+        .build();
+
     let res = creds
         .get_token("https://management.azure.com/")
         .await
