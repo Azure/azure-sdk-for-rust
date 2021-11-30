@@ -1,5 +1,3 @@
-use std::borrow::BorrowMut;
-
 use azure_identity::token_credentials::*;
 use url::Url;
 
