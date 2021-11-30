@@ -1,12 +1,8 @@
-use crate::{
-    codegen::{get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
-    path,
-};
+use crate::path;
 use autorust_openapi::{
     AdditionalProperties, CollectionFormat, DataType, MsExamples, OpenAPI, Operation, Parameter, ParameterType, PathItem, Reference,
-    ReferenceOr, Response, Schema, StatusCode,
+    ReferenceOr, Response, Schema, SchemaCommon, StatusCode,
 };
-use heck::SnakeCase;
 use indexmap::{IndexMap, IndexSet};
 use std::{
     ffi::OsStr,
@@ -255,6 +251,7 @@ impl Spec {
                         parameters: self.resolve_parameters(&op.doc_file, &op.parameters)?,
                         responses: op.responses,
                         examples: op.examples,
+                        summary: op.summary,
                     })
                 }
             })
@@ -284,6 +281,12 @@ pub enum Error {
     DeserializeJson { source: serde_json::Error, path: PathBuf },
     #[error("TypeName {0}")]
     TypeName(#[source] Box<crate::codegen::Error>),
+    #[error("creating function name: {0}")]
+    FunctionName(#[source] crate::identifier::Error),
+    #[error("ArrayExpectedToHaveItems")]
+    ArrayExpectedToHaveItems,
+    #[error("NoNameForRef")]
+    NoNameForRef,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -411,6 +414,7 @@ struct WebOperationUnresolved {
     pub parameters: Vec<ReferenceOr<Parameter>>,
     pub responses: IndexMap<StatusCode, Response>,
     pub examples: MsExamples,
+    pub summary: Option<String>,
 }
 
 // contains resolved parameters
@@ -418,9 +422,24 @@ pub struct WebOperation {
     pub id: Option<String>,
     pub path: String,
     pub verb: WebVerb,
-    parameters: Vec<WebParameter>,
+    pub parameters: Vec<WebParameter>,
     pub responses: IndexMap<StatusCode, Response>,
     pub examples: MsExamples,
+    pub summary: Option<String>,
+}
+
+impl Default for WebOperation {
+    fn default() -> Self {
+        Self {
+            id: Default::default(),
+            path: Default::default(),
+            verb: WebVerb::Get,
+            parameters: Default::default(),
+            responses: Default::default(),
+            examples: Default::default(),
+            summary: Default::default(),
+        }
+    }
 }
 
 pub struct WebParameter(Parameter);
@@ -460,9 +479,9 @@ impl WebParameter {
 
     pub fn type_name(&self) -> Result<TypeName, Error> {
         Ok(if let Some(_data_type) = self.data_type() {
-            get_type_name_for_schema(&self.0.common).map_err(|err| Error::TypeName(Box::new(err)))?
+            get_type_name_for_schema(&self.0.common)?
         } else if let Some(schema) = &self.0.schema {
-            get_type_name_for_schema_ref(schema).map_err(|err| Error::TypeName(Box::new(err)))?
+            get_type_name_for_schema_ref(schema)?
         } else {
             // eprintln!("WARN unknown param type name for {}", self.name());
             TypeName::Value
@@ -494,31 +513,8 @@ impl WebOperation {
         self.id_parts().len() == 2
     }
 
-    pub fn rust_module_name(&self) -> Option<String> {
-        match &self.id {
-            Some(id) => {
-                let parts: Vec<&str> = id.splitn(2, '_').collect();
-                if parts.len() == 2 {
-                    Some(parts[0].to_snake_case())
-                } else {
-                    None
-                }
-            }
-            None => None,
-        }
-    }
-    pub fn rust_function_name(&self) -> String {
-        match &self.id {
-            Some(id) => {
-                let parts: Vec<&str> = id.splitn(2, '_').collect();
-                if parts.len() == 2 {
-                    parts[1].to_snake_case()
-                } else {
-                    parts[0].to_snake_case()
-                }
-            }
-            None => create_function_name(&self.verb, &self.path),
-        }
+    pub fn has_body_parameter(&self) -> bool {
+        self.parameters.iter().any(|p| p.type_() == &ParameterType::Body)
     }
 }
 
@@ -544,14 +540,6 @@ impl<'a> WebVerb {
             WebVerb::Head => "head",
         }
     }
-}
-
-/// Creating a function name from the path and verb when an operationId is not specified.
-/// All azure-rest-api-specs operations should have an operationId.
-fn create_function_name(verb: &WebVerb, path: &str) -> String {
-    let mut path = path.split('/').filter(|&x| !x.is_empty()).collect::<Vec<_>>();
-    path.insert(0, verb.as_str());
-    path.join("_")
 }
 
 struct OperationVerb<'a> {
@@ -603,6 +591,7 @@ fn path_operations_unresolved<P: AsRef<Path>>(doc_file: P, path: &str, item: &Pa
                 parameters,
                 responses: op.responses.clone(),
                 examples: op.x_ms_examples.clone(),
+                summary: op.summary.clone(),
             })
         }
         None => None,
@@ -673,54 +662,66 @@ fn add_references_for_schema(list: &mut Vec<TypedReference>, schema: &Schema) {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub enum TypeName {
+    Reference(String),
+    Array(Box<TypeName>),
+    Value,
+    Bytes,
+    Int32,
+    Int64,
+    Float32,
+    Float64,
+    Boolean,
+    String,
+}
 
-    #[test]
-    fn test_create_function_name() {
-        assert_eq!(create_function_name(&WebVerb::Get, "/pets"), "get_pets");
-    }
+pub fn get_type_name_for_schema(schema: &SchemaCommon) -> Result<TypeName, Error> {
+    Ok(if let Some(schema_type) = &schema.type_ {
+        let format = schema.format.as_deref();
+        match schema_type {
+            DataType::Array => {
+                let items = get_schema_array_items(schema)?;
+                let vec_items_typ = get_type_name_for_schema_ref(items)?;
+                TypeName::Array(Box::new(vec_items_typ))
+            }
+            DataType::Integer => {
+                if format == Some("int32") {
+                    TypeName::Int32
+                } else {
+                    TypeName::Int64
+                }
+            }
+            DataType::Number => {
+                if format == Some("float") {
+                    TypeName::Float32
+                } else {
+                    TypeName::Float64
+                }
+            }
+            DataType::String => TypeName::String,
+            DataType::Boolean => TypeName::Boolean,
+            DataType::Object => TypeName::Value,
+            DataType::File => TypeName::Bytes,
+        }
+    } else {
+        // eprintln!(
+        //     "WARN unknown type in get_type_name_for_schema, description {:?}",
+        //     schema.description
+        // );
+        TypeName::Value
+    })
+}
 
-    #[test]
-    fn test_function_name_from_operation_id() {
-        let operation = WebOperation {
-            id: Some("PrivateClouds_CreateOrUpdate".to_owned()),
-            path: "/horse".to_owned(),
-            verb: WebVerb::Get,
-            parameters: Vec::new(),
-            responses: IndexMap::new(),
-            examples: IndexMap::new(),
-        };
-        assert_eq!(Some("private_clouds".to_owned()), operation.rust_module_name());
-        assert_eq!("create_or_update", operation.rust_function_name());
-    }
+pub fn get_type_name_for_schema_ref(schema: &ReferenceOr<Schema>) -> Result<TypeName, Error> {
+    Ok(match schema {
+        ReferenceOr::Reference { reference, .. } => {
+            let name = reference.name.as_ref().ok_or(Error::NoNameForRef)?;
+            TypeName::Reference(name.to_owned())
+        }
+        ReferenceOr::Item(schema) => get_type_name_for_schema(&schema.common)?,
+    })
+}
 
-    #[test]
-    fn test_function_name_from_verb_and_path() {
-        let operation = WebOperation {
-            id: None,
-            path: "/horse".to_owned(),
-            verb: WebVerb::Get,
-            parameters: Vec::new(),
-            responses: IndexMap::new(),
-            examples: IndexMap::new(),
-        };
-        assert_eq!(None, operation.rust_module_name());
-        assert_eq!("get_horse", operation.rust_function_name());
-    }
-
-    #[test]
-    fn test_function_name_with_no_module_name() {
-        let operation = WebOperation {
-            id: Some("PerformConnectivityCheck".to_owned()),
-            path: "/horse".to_owned(),
-            verb: WebVerb::Put,
-            parameters: Vec::new(),
-            responses: IndexMap::new(),
-            examples: IndexMap::new(),
-        };
-        assert_eq!(None, operation.rust_module_name());
-        assert_eq!("perform_connectivity_check", operation.rust_function_name());
-    }
+pub fn get_schema_array_items(schema: &SchemaCommon) -> Result<&ReferenceOr<Schema>, Error> {
+    schema.items.as_ref().as_ref().ok_or(Error::ArrayExpectedToHaveItems)
 }
