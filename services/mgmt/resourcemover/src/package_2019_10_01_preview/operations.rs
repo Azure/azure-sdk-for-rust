@@ -267,6 +267,7 @@ pub mod move_collections {
                 body: None,
             }
         }
+        #[doc = "Get all Move Collections."]
         pub fn list_move_collections_by_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -276,6 +277,7 @@ pub mod move_collections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all Move Collections."]
         pub fn list_move_collections_by_resource_group(
             &self,
             subscription_id: impl Into<String>,

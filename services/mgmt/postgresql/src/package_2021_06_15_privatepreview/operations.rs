@@ -658,6 +658,7 @@ pub mod migrations {
     }
 }
 impl Client {
+    #[doc = "Check migration name validity and availability"]
     pub fn check_migration_name_availability(
         &self,
         target_db_server_subscription_id: impl Into<String>,

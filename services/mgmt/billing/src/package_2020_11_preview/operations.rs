@@ -7152,6 +7152,7 @@ pub mod promotion {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific Promotion."]
         pub fn get(&self, promotion_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -7325,6 +7326,7 @@ pub mod activate {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Activate promotion"]
         pub fn promotion(
             &self,
             promotion_id: impl Into<String>,
@@ -7417,6 +7419,7 @@ pub mod promotions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all `Promotion`s."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

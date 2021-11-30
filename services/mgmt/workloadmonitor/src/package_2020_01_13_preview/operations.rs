@@ -96,6 +96,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of all available REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -173,6 +174,7 @@ pub mod health_monitors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the current health status of all monitors of a virtual machine. Optional parameters: $expand (retrieve the monitor's evidence and configuration) and $filter (filter by monitor name)."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -192,6 +194,7 @@ pub mod health_monitors {
                 expand: None,
             }
         }
+        #[doc = "Get the current health status of a monitor of a virtual machine. Optional parameter: $expand (retrieve the monitor's evidence and configuration)."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -212,6 +215,7 @@ pub mod health_monitors {
                 expand: None,
             }
         }
+        #[doc = "Get the health state changes of a monitor of a virtual machine within the provided time window (default is the last 24 hours). Optional parameters: $expand (retrieve the monitor's evidence and configuration) and $filter (filter by heartbeat condition)."]
         pub fn list_state_changes(
             &self,
             subscription_id: impl Into<String>,
@@ -235,6 +239,7 @@ pub mod health_monitors {
                 end_timestamp_utc: None,
             }
         }
+        #[doc = "Get the health state change of a monitor of a virtual machine at the provided timestamp. Optional parameter: $expand (retrieve the monitor's evidence and configuration)."]
         pub fn get_state_change(
             &self,
             subscription_id: impl Into<String>,

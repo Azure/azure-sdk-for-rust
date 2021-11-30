@@ -292,15 +292,18 @@ pub mod api_tokens {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of API tokens in an application. The token value will never be returned for security reasons."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Get an API token by ID."]
         pub fn get(&self, token_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 token_id: token_id.into(),
             }
         }
+        #[doc = "Create a new API token in the application to use in the IoT Central public API. The token value will be returned in the response, and won't be returned again in subsequent requests."]
         pub fn create(&self, token_id: impl Into<String>, body: impl Into<models::ApiToken>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -308,6 +311,7 @@ pub mod api_tokens {
                 body: body.into(),
             }
         }
+        #[doc = "Delete an API token."]
         pub fn remove(&self, token_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -572,15 +576,18 @@ pub mod destinations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of destinations in an application."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Get a destination by ID."]
         pub fn get(&self, destination_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 destination_id: destination_id.into(),
             }
         }
+        #[doc = "Create or update a destination"]
         pub fn create(&self, destination_id: impl Into<String>, body: impl Into<models::Destination>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -588,6 +595,7 @@ pub mod destinations {
                 body: body.into(),
             }
         }
+        #[doc = "Patch a destination."]
         pub fn update(&self, destination_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -595,12 +603,14 @@ pub mod destinations {
                 body: body.into(),
             }
         }
+        #[doc = "Delete a destination."]
         pub fn remove(&self, destination_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
                 destination_id: destination_id.into(),
             }
         }
+        #[doc = "List all exports connected to the given destination."]
         pub fn list_exports(&self, destination_id: impl Into<String>) -> list_exports::Builder {
             list_exports::Builder {
                 client: self.0.clone(),
@@ -999,15 +1009,18 @@ pub mod exports {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of exports in an application."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Get an export by ID."]
         pub fn get(&self, export_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 export_id: export_id.into(),
             }
         }
+        #[doc = "Create or update an export"]
         pub fn create(&self, export_id: impl Into<String>, body: impl Into<models::Export>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -1015,6 +1028,7 @@ pub mod exports {
                 body: body.into(),
             }
         }
+        #[doc = "Patch an export."]
         pub fn update(&self, export_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -1022,12 +1036,14 @@ pub mod exports {
                 body: body.into(),
             }
         }
+        #[doc = "Delete an export."]
         pub fn remove(&self, export_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
                 export_id: export_id.into(),
             }
         }
+        #[doc = "List all destinations connected to the given export."]
         pub fn list_destinations(&self, export_id: impl Into<String>) -> list_destinations::Builder {
             list_destinations::Builder {
                 client: self.0.clone(),
@@ -1422,6 +1438,7 @@ pub mod device_groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of device groups in an application."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1494,6 +1511,7 @@ pub mod device_templates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of device templates in an application with basic ODATA support ($top, $filter, $orderby), [more details](https://aka.ms/iotcentralodatasupport)."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1502,12 +1520,14 @@ pub mod device_templates {
                 orderby: None,
             }
         }
+        #[doc = "Get a device template by ID"]
         pub fn get(&self, device_template_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 device_template_id: device_template_id.into(),
             }
         }
+        #[doc = "Publish a new device template. Default views will be automatically generated for new device templates created this way."]
         pub fn create(&self, device_template_id: impl Into<String>, body: impl Into<models::DeviceTemplate>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -1515,6 +1535,7 @@ pub mod device_templates {
                 body: body.into(),
             }
         }
+        #[doc = "Update the cloud properties and overrides of an existing device template via patch."]
         pub fn update(&self, device_template_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -1522,6 +1543,7 @@ pub mod device_templates {
                 body: body.into(),
             }
         }
+        #[doc = "Delete a device template"]
         pub fn remove(&self, device_template_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -1876,6 +1898,7 @@ pub mod devices {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of devices in an application with basic ODATA support ($top, $filter, $orderby), [more details](https://aka.ms/iotcentralodatasupport)."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1884,12 +1907,14 @@ pub mod devices {
                 orderby: None,
             }
         }
+        #[doc = "Get a device by ID"]
         pub fn get(&self, device_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
+        #[doc = "Create or update a device"]
         pub fn create(&self, device_id: impl Into<String>, body: impl Into<models::Device>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -1897,6 +1922,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Update a device via patch"]
         pub fn update(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -1904,18 +1930,21 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Delete a device"]
         pub fn remove(&self, device_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
+        #[doc = "Get device attestation"]
         pub fn get_attestation(&self, device_id: impl Into<String>) -> get_attestation::Builder {
             get_attestation::Builder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
+        #[doc = "Create an individual device attestation"]
         pub fn create_attestation(
             &self,
             device_id: impl Into<String>,
@@ -1927,6 +1956,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Update an individual device attestation via patch"]
         pub fn update_attestation(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update_attestation::Builder {
             update_attestation::Builder {
                 client: self.0.clone(),
@@ -1934,12 +1964,14 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Remove an individual device attestation"]
         pub fn remove_attestation(&self, device_id: impl Into<String>) -> remove_attestation::Builder {
             remove_attestation::Builder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
+        #[doc = "Get device command history"]
         pub fn get_command_history(&self, device_id: impl Into<String>, command_name: impl Into<String>) -> get_command_history::Builder {
             get_command_history::Builder {
                 client: self.0.clone(),
@@ -1947,6 +1979,7 @@ pub mod devices {
                 command_name: command_name.into(),
             }
         }
+        #[doc = "Run a device command"]
         pub fn run_command(
             &self,
             device_id: impl Into<String>,
@@ -1960,12 +1993,14 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "List the components present in a device"]
         pub fn list_components(&self, device_id: impl Into<String>) -> list_components::Builder {
             list_components::Builder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
+        #[doc = "Get component command history"]
         pub fn get_component_command_history(
             &self,
             device_id: impl Into<String>,
@@ -1979,6 +2014,7 @@ pub mod devices {
                 command_name: command_name.into(),
             }
         }
+        #[doc = "Run a component command"]
         pub fn run_component_command(
             &self,
             device_id: impl Into<String>,
@@ -1994,6 +2030,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Get device properties for a specific component"]
         pub fn get_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2005,6 +2042,7 @@ pub mod devices {
                 component_name: component_name.into(),
             }
         }
+        #[doc = "Replace device properties for a specific component"]
         pub fn replace_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2018,6 +2056,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Update device properties for a specific component via patch"]
         pub fn update_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2031,6 +2070,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Get component telemetry value"]
         pub fn get_component_telemetry_value(
             &self,
             device_id: impl Into<String>,
@@ -2044,18 +2084,21 @@ pub mod devices {
                 telemetry_name: telemetry_name.into(),
             }
         }
+        #[doc = "Get device credentials"]
         pub fn get_credentials(&self, device_id: impl Into<String>) -> get_credentials::Builder {
             get_credentials::Builder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
+        #[doc = "List the modules present in a device"]
         pub fn list_modules(&self, device_id: impl Into<String>) -> list_modules::Builder {
             list_modules::Builder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
+        #[doc = "Get module command history"]
         pub fn get_module_command_history(
             &self,
             device_id: impl Into<String>,
@@ -2069,6 +2112,7 @@ pub mod devices {
                 command_name: command_name.into(),
             }
         }
+        #[doc = "Run a module command"]
         pub fn run_module_command(
             &self,
             device_id: impl Into<String>,
@@ -2084,6 +2128,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "List the components present in a module"]
         pub fn list_module_components(
             &self,
             device_id: impl Into<String>,
@@ -2095,6 +2140,7 @@ pub mod devices {
                 module_name: module_name.into(),
             }
         }
+        #[doc = "Get module component command history"]
         pub fn get_module_component_command_history(
             &self,
             device_id: impl Into<String>,
@@ -2110,6 +2156,7 @@ pub mod devices {
                 command_name: command_name.into(),
             }
         }
+        #[doc = "Run a module component command"]
         pub fn run_module_component_command(
             &self,
             device_id: impl Into<String>,
@@ -2127,6 +2174,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Get module properties for a specific component"]
         pub fn get_module_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2140,6 +2188,7 @@ pub mod devices {
                 component_name: component_name.into(),
             }
         }
+        #[doc = "Replace module properties for a specific component"]
         pub fn replace_module_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2155,6 +2204,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Update module properties for a specific component via patch"]
         pub fn update_module_component_properties(
             &self,
             device_id: impl Into<String>,
@@ -2170,6 +2220,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Get module component telemetry value"]
         pub fn get_module_component_telemetry_value(
             &self,
             device_id: impl Into<String>,
@@ -2185,6 +2236,7 @@ pub mod devices {
                 telemetry_name: telemetry_name.into(),
             }
         }
+        #[doc = "Get module properties"]
         pub fn get_module_properties(
             &self,
             device_id: impl Into<String>,
@@ -2196,6 +2248,7 @@ pub mod devices {
                 module_name: module_name.into(),
             }
         }
+        #[doc = "Replace module properties"]
         pub fn replace_module_properties(
             &self,
             device_id: impl Into<String>,
@@ -2209,6 +2262,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Update module properties via patch"]
         pub fn update_module_properties(
             &self,
             device_id: impl Into<String>,
@@ -2222,6 +2276,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Get module telemetry value"]
         pub fn get_module_telemetry_value(
             &self,
             device_id: impl Into<String>,
@@ -2235,12 +2290,14 @@ pub mod devices {
                 telemetry_name: telemetry_name.into(),
             }
         }
+        #[doc = "Get device properties"]
         pub fn get_properties(&self, device_id: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
+        #[doc = "Replace device properties"]
         pub fn replace_properties(
             &self,
             device_id: impl Into<String>,
@@ -2252,6 +2309,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Update device properties via patch"]
         pub fn update_properties(&self, device_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update_properties::Builder {
             update_properties::Builder {
                 client: self.0.clone(),
@@ -2259,12 +2317,14 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Given the ID for an upstream device, will return the upstream and the downstream relationships associated with that gateway. These downstream relationships are only those associated with the direct downstream level (they don’t work recursively)."]
         pub fn list_relationships(&self, device_id: impl Into<String>) -> list_relationships::Builder {
             list_relationships::Builder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
             }
         }
+        #[doc = "Given the ID for a device and a relationship ID associated with this device, get the details of the relationship."]
         pub fn get_relationship(&self, device_id: impl Into<String>, relationship_id: impl Into<String>) -> get_relationship::Builder {
             get_relationship::Builder {
                 client: self.0.clone(),
@@ -2272,6 +2332,7 @@ pub mod devices {
                 relationship_id: relationship_id.into(),
             }
         }
+        #[doc = "Given the ID for a device and a relationship ID associated with this device, create a new relationship for between the given device and a second device specified in the body."]
         pub fn create_relationship(
             &self,
             device_id: impl Into<String>,
@@ -2285,6 +2346,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Patch a given relationship given the relationship ID and a given device ID."]
         pub fn update_relationship(
             &self,
             device_id: impl Into<String>,
@@ -2298,6 +2360,7 @@ pub mod devices {
                 body: body.into(),
             }
         }
+        #[doc = "Given the ID for a device and an associated relationship ID, delete the relationship. The given device ID can be that of the upstream or downstream device."]
         pub fn remove_relationship(
             &self,
             device_id: impl Into<String>,
@@ -2309,6 +2372,7 @@ pub mod devices {
                 relationship_id: relationship_id.into(),
             }
         }
+        #[doc = "Get device telemetry value"]
         pub fn get_telemetry_value(&self, device_id: impl Into<String>, telemetry_name: impl Into<String>) -> get_telemetry_value::Builder {
             get_telemetry_value::Builder {
                 client: self.0.clone(),
@@ -5242,21 +5306,25 @@ pub mod file_uploads {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the file upload storage account configuration."]
         pub fn get(&self) -> get::Builder {
             get::Builder { client: self.0.clone() }
         }
+        #[doc = "Create the file upload storage account configuration."]
         pub fn create(&self, body: impl Into<models::FileUpload>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
                 body: body.into(),
             }
         }
+        #[doc = "Update the file upload storage account configuration"]
         pub fn update(&self, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
                 body: body.into(),
             }
         }
+        #[doc = "Delete the file upload storage configuration."]
         pub fn remove(&self) -> remove::Builder {
             remove::Builder { client: self.0.clone() }
         }
@@ -5513,15 +5581,18 @@ pub mod jobs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of jobs in an application"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Get a job by ID"]
         pub fn get(&self, job_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
             }
         }
+        #[doc = "Execute a new job"]
         pub fn create(&self, job_id: impl Into<String>, body: impl Into<models::Job>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -5529,12 +5600,14 @@ pub mod jobs {
                 body: body.into(),
             }
         }
+        #[doc = "Get device statuses"]
         pub fn get_devices(&self, job_id: impl Into<String>) -> get_devices::Builder {
             get_devices::Builder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
             }
         }
+        #[doc = "Rerun a job on failed devices"]
         pub fn rerun(&self, job_id: impl Into<String>, rerun_id: impl Into<String>) -> rerun::Builder {
             rerun::Builder {
                 client: self.0.clone(),
@@ -5542,12 +5615,14 @@ pub mod jobs {
                 rerun_id: rerun_id.into(),
             }
         }
+        #[doc = "Resume a stopped job"]
         pub fn resume(&self, job_id: impl Into<String>) -> resume::Builder {
             resume::Builder {
                 client: self.0.clone(),
                 job_id: job_id.into(),
             }
         }
+        #[doc = "Stop a running job"]
         pub fn stop(&self, job_id: impl Into<String>) -> stop::Builder {
             stop::Builder {
                 client: self.0.clone(),
@@ -6002,15 +6077,18 @@ pub mod organizations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of organizations the user has access to in an application"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Get an organization by ID"]
         pub fn get(&self, organization_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 organization_id: organization_id.into(),
             }
         }
+        #[doc = "Create an organization in the application"]
         pub fn create(&self, organization_id: impl Into<String>, body: impl Into<models::Organization>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -6018,6 +6096,7 @@ pub mod organizations {
                 body: body.into(),
             }
         }
+        #[doc = "Update an organization in the application via patch"]
         pub fn update(&self, organization_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -6025,6 +6104,7 @@ pub mod organizations {
                 body: body.into(),
             }
         }
+        #[doc = "Delete an organization"]
         pub fn remove(&self, organization_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -6355,6 +6435,7 @@ pub mod query {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Run a query and obtain the result"]
         pub fn run(&self, body: impl Into<models::QueryRequest>) -> run::Builder {
             run::Builder {
                 client: self.0.clone(),
@@ -6432,9 +6513,11 @@ pub mod roles {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of roles in an application."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Get a role by ID."]
         pub fn get(&self, role_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -6574,15 +6657,18 @@ pub mod users {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of users in an application"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Get a user by ID"]
         pub fn get(&self, user_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 user_id: user_id.into(),
             }
         }
+        #[doc = "Create a user in the application"]
         pub fn create(&self, user_id: impl Into<String>, body: impl Into<models::User>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -6590,6 +6676,7 @@ pub mod users {
                 body: body.into(),
             }
         }
+        #[doc = "Update a user in the application via patch"]
         pub fn update(&self, user_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -6597,6 +6684,7 @@ pub mod users {
                 body: body.into(),
             }
         }
+        #[doc = "Delete a user"]
         pub fn remove(&self, user_id: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),

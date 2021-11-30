@@ -1,9 +1,9 @@
 use crate::{
-    codegen::{add_option, create_generated_by_header, get_type_name_for_schema_ref, Error},
-    codegen::{parse_params, PARAM_RE},
+    codegen::{add_option, create_generated_by_header, Error},
+    codegen::{parse_params, type_name_gen, PARAM_RE},
     identifier::ident,
     identifier::SnakeCaseIdent,
-    spec::{WebOperation, WebParameter, WebVerb},
+    spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
     status_codes::{get_error_responses, get_response_type_name, get_success_responses, has_default_response},
     status_codes::{get_response_type_ident, get_status_code_ident},
     CodeGen,
@@ -16,7 +16,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use std::collections::{BTreeSet, HashSet};
 
-fn error_variant(operation: &WebOperation) -> Result<TokenStream, Error> {
+fn error_variant(operation: &WebOperationGen) -> Result<TokenStream, Error> {
     let function = operation.rust_function_name().to_camel_case();
     if let Some(module) = operation.rust_module_name() {
         let module = module.to_camel_case();
@@ -26,7 +26,7 @@ fn error_variant(operation: &WebOperation) -> Result<TokenStream, Error> {
     }
 }
 
-fn error_fqn(operation: &WebOperation) -> Result<TokenStream, Error> {
+fn error_fqn(operation: &WebOperationGen) -> Result<TokenStream, Error> {
     let function = ident(&operation.rust_function_name()).map_err(Error::FunctionName)?;
     if let Some(module) = operation.rust_module_name() {
         let module = ident(&module).map_err(Error::ModuleName)?;
@@ -143,7 +143,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
     let mut operations_code: IndexMap<Option<String>, OperationCode> = IndexMap::new();
     // println!("input_files {:?}", cg.input_files());
 
-    let operations = cg.spec.operations()?;
+    let operations: Vec<_> = cg.spec.operations()?.into_iter().map(WebOperationGen).collect();
     let module_names: BTreeSet<_> = operations.iter().flat_map(|op| op.rust_module_name()).collect();
     let module_names: Vec<_> = module_names.into_iter().collect();
     file.extend(create_client(&module_names)?);
@@ -167,9 +167,9 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         }
     });
 
-    for operation in &operations {
+    for operation in operations {
         let module_name = operation.rust_module_name();
-        let code = create_operation_code(cg, operation)?;
+        let code = create_operation_code(cg, &operation)?;
         // append code to existing module if it already exists
         match operations_code.get_mut(&module_name) {
             Some(operation_code) => {
@@ -223,11 +223,52 @@ struct OperationCode {
     module_code: TokenStream,
 }
 
-// Create code for the web operation
-fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<OperationCode, Error> {
-    let fname = ident(&operation.rust_function_name()).map_err(Error::FunctionName)?;
+struct WebOperationGen(WebOperation);
 
-    let params = parse_params(&operation.path);
+impl WebOperationGen {
+    fn rust_module_name(&self) -> Option<String> {
+        match &self.0.id {
+            Some(id) => {
+                let parts: Vec<&str> = id.splitn(2, '_').collect();
+                if parts.len() == 2 {
+                    Some(parts[0].to_snake_case())
+                } else {
+                    None
+                }
+            }
+            None => None,
+        }
+    }
+    fn rust_function_name(&self) -> String {
+        match &self.0.id {
+            Some(id) => {
+                let parts: Vec<&str> = id.splitn(2, '_').collect();
+                if parts.len() == 2 {
+                    parts[1].to_snake_case()
+                } else {
+                    parts[0].to_snake_case()
+                }
+            }
+            None => create_function_name(&self.0.verb, &self.0.path),
+        }
+    }
+
+    pub fn function_name(&self) -> Result<TokenStream, Error> {
+        ident(&self.rust_function_name()).map_err(Error::FunctionName)
+    }
+}
+
+/// Creating a function name from the path and verb when an operationId is not specified.
+/// All azure-rest-api-specs operations should have an operationId.
+fn create_function_name(verb: &WebVerb, path: &str) -> String {
+    let mut path = path.split('/').filter(|&x| !x.is_empty()).collect::<Vec<_>>();
+    path.insert(0, verb.as_str());
+    path.join("_")
+}
+
+// Create code for the web operation
+fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<OperationCode, Error> {
+    let params = parse_params(&operation.0.path);
     // println!("path params {:#?}", params);
     let params: Result<Vec<_>, Error> = params
         .iter()
@@ -239,9 +280,9 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
     let params = params?;
     let url_str_args = quote! { #(#params),* };
 
-    let fpath = format!("{{}}{}", &format_path(&operation.path));
+    let fpath = format!("{{}}{}", &format_path(&operation.0.path));
 
-    let parameters = operation.parameters();
+    let parameters = operation.0.parameters();
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
@@ -253,7 +294,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
     let mut ts_request_builder = TokenStream::new();
 
     let mut is_post = false;
-    let req_verb = match operation.verb {
+    let req_verb = match operation.0.verb {
         WebVerb::Get => quote! { req_builder = req_builder.method(http::Method::GET); },
         WebVerb::Post => {
             is_post = true;
@@ -291,7 +332,6 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
         .any(|p| p.name().to_snake_case() == "content_type" && p.type_() == &ParameterType::Header);
 
     // params
-    let mut has_body_parameter = false;
     for param in &parameters {
         let param_name = param.name();
         let param_name_var = get_param_name(param)?;
@@ -376,7 +416,6 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
                 }
             }
             ParameterType::Body => {
-                has_body_parameter = true;
                 let set_content_type = if !has_content_type_header {
                     let json_content_type = cg.get_request_content_type_json();
                     quote! {
@@ -423,6 +462,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
         }
     }
 
+    let has_body_parameter = operation.0.has_body_parameter();
     if !has_body_parameter {
         ts_request_builder.extend(quote! {
             let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
@@ -436,7 +476,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
         });
     }
 
-    let responses = &operation.responses;
+    let responses = &operation.0.responses;
     let success_responses = get_success_responses(responses);
     let error_responses = get_error_responses(responses);
     let is_single_response = success_responses.len() == 1;
@@ -615,11 +655,12 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperation) -> Result<Opera
         });
     }
 
-    let in_group = operation.in_group();
-    let builder_instance_code = create_builder_instance_code(&fname, &parameters, in_group)?;
+    let in_group = operation.0.in_group();
+    let builder_instance_code = create_builder_instance_code(operation, &parameters, in_group)?;
     let builder_struct_code = create_builder_struct_code(&parameters, in_group)?;
     let builder_setters_code = create_builder_setters_code(&parameters)?;
 
+    let fname = operation.function_name()?;
     let module_code = quote! {
 
         pub mod #fname {
@@ -710,7 +751,7 @@ fn create_function_params_code(parameters: &[&WebParameter]) -> Result<TokenStre
     Ok(quote! { #(#params),* })
 }
 
-fn create_builder_instance_code(fname: &TokenStream, parameters: &[&WebParameter], in_group: bool) -> Result<TokenStream, Error> {
+fn create_builder_instance_code(operation: &WebOperationGen, parameters: &[&WebParameter], in_group: bool) -> Result<TokenStream, Error> {
     let fparams = create_function_params_code(parameters)?;
     let mut params: Vec<TokenStream> = Vec::new();
     if in_group {
@@ -734,7 +775,16 @@ fn create_builder_instance_code(fname: &TokenStream, parameters: &[&WebParameter
             params.push(quote! { #name: None });
         }
     }
+    let summary = if let Some(summary) = &operation.0.summary {
+        quote! {
+            #[doc = #summary]
+        }
+    } else {
+        quote! {}
+    };
+    let fname = operation.function_name()?;
     Ok(quote! {
+        #summary
         pub fn #fname(#fparams) -> #fname::Builder {
             #fname::Builder {
                 #(#params),*
@@ -806,14 +856,59 @@ fn get_param_type(param: &WebParameter, as_ref: bool, may_be_option: bool) -> Re
     let is_required = param.required();
     let is_array = param.is_array();
     let is_option = may_be_option && !(is_required || is_array);
-    let tp = param.type_name()?.to_token_stream(as_ref, true)?;
+    let tp = type_name_gen(&param.type_name()?, as_ref, true)?;
     Ok(add_option(is_option, tp))
 }
 
 fn create_response_type(rsp: &Response) -> Result<Option<TokenStream>, Error> {
     if let Some(schema) = &rsp.schema {
-        Ok(Some(get_type_name_for_schema_ref(schema)?.to_token_stream(false, true)?))
+        Ok(Some(type_name_gen(&get_type_name_for_schema_ref(schema)?, false, true)?))
     } else {
         Ok(None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_function_name() {
+        assert_eq!(create_function_name(&WebVerb::Get, "/pets"), "get_pets");
+    }
+
+    #[test]
+    fn test_function_name_from_operation_id() {
+        let operation = WebOperationGen(WebOperation {
+            id: Some("PrivateClouds_CreateOrUpdate".to_owned()),
+            path: "/horse".to_owned(),
+            verb: WebVerb::Get,
+            ..Default::default()
+        });
+        assert_eq!(Some("private_clouds".to_owned()), operation.rust_module_name());
+        assert_eq!("create_or_update", operation.rust_function_name());
+    }
+
+    #[test]
+    fn test_function_name_from_verb_and_path() {
+        let operation = WebOperationGen(WebOperation {
+            path: "/horse".to_owned(),
+            verb: WebVerb::Get,
+            ..Default::default()
+        });
+        assert_eq!(None, operation.rust_module_name());
+        assert_eq!("get_horse", operation.rust_function_name());
+    }
+
+    #[test]
+    fn test_function_name_with_no_module_name() {
+        let operation = WebOperationGen(WebOperation {
+            id: Some("PerformConnectivityCheck".to_owned()),
+            path: "/horse".to_owned(),
+            verb: WebVerb::Put,
+            ..Default::default()
+        });
+        assert_eq!(None, operation.rust_module_name());
+        assert_eq!("perform_connectivity_check", operation.rust_function_name());
     }
 }

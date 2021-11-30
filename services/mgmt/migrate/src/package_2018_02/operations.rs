@@ -250,6 +250,7 @@ pub mod assessment_options {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the assessment options."]
         pub fn get(&self, subscription_id: impl Into<String>, location_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -349,6 +350,7 @@ pub mod projects {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all projects."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -356,6 +358,7 @@ pub mod projects {
                 accept_language: None,
             }
         }
+        #[doc = "Get all projects."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -368,6 +371,7 @@ pub mod projects {
                 accept_language: None,
             }
         }
+        #[doc = "Get the specified project."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -382,6 +386,7 @@ pub mod projects {
                 accept_language: None,
             }
         }
+        #[doc = "Create or update project."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -397,6 +402,7 @@ pub mod projects {
                 project: None,
             }
         }
+        #[doc = "Update project."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -412,6 +418,7 @@ pub mod projects {
                 project: None,
             }
         }
+        #[doc = "Delete the project"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -426,6 +433,7 @@ pub mod projects {
                 accept_language: None,
             }
         }
+        #[doc = "Get shared keys for the project."]
         pub fn get_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -1062,6 +1070,7 @@ pub mod machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all machines in the project"]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1076,6 +1085,7 @@ pub mod machines {
                 accept_language: None,
             }
         }
+        #[doc = "Get a specific machine."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1270,6 +1280,7 @@ pub mod groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all groups"]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1284,6 +1295,7 @@ pub mod groups {
                 accept_language: None,
             }
         }
+        #[doc = "Get a specific group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1300,6 +1312,7 @@ pub mod groups {
                 accept_language: None,
             }
         }
+        #[doc = "Create a new group with specified settings. If group with the name provided already exists, then the existing group is updated."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1317,6 +1330,7 @@ pub mod groups {
                 group: None,
             }
         }
+        #[doc = "Delete the group"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1701,6 +1715,7 @@ pub mod assessments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all assessments created for the specified group."]
         pub fn list_by_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1717,6 +1732,7 @@ pub mod assessments {
                 accept_language: None,
             }
         }
+        #[doc = "Get all assessments created in the project."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1731,6 +1747,7 @@ pub mod assessments {
                 accept_language: None,
             }
         }
+        #[doc = "Get an assessment."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1749,6 +1766,7 @@ pub mod assessments {
                 accept_language: None,
             }
         }
+        #[doc = "Create or Update assessment."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1768,6 +1786,7 @@ pub mod assessments {
                 assessment: None,
             }
         }
+        #[doc = "Deletes an assessment from the project."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1786,6 +1805,7 @@ pub mod assessments {
                 accept_language: None,
             }
         }
+        #[doc = "Get download URL for the assessment report."]
         pub fn get_report_download_url(
             &self,
             subscription_id: impl Into<String>,
@@ -2347,6 +2367,7 @@ pub mod assessed_machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get assessed machines for assessment."]
         pub fn list_by_assessment(
             &self,
             subscription_id: impl Into<String>,
@@ -2365,6 +2386,7 @@ pub mod assessed_machines {
                 accept_language: None,
             }
         }
+        #[doc = "Get an assessed machine."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2554,6 +2576,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of operations supported in the API."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

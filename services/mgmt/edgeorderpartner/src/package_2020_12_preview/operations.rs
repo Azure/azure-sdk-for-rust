@@ -88,6 +88,7 @@ impl Client {
     pub fn list_operations_partner(&self) -> list_operations_partner::Builder {
         list_operations_partner::Builder { client: self.clone() }
     }
+    #[doc = "API for updating inventory metadata and inventory configuration"]
     pub fn manage_inventory_metadata(
         &self,
         family_identifier: impl Into<String>,
@@ -105,6 +106,7 @@ impl Client {
             manage_inventory_metadata_request: manage_inventory_metadata_request.into(),
         }
     }
+    #[doc = "API for linking management resource with inventory"]
     pub fn manage_link(
         &self,
         family_identifier: impl Into<String>,
@@ -122,6 +124,7 @@ impl Client {
             manage_link_request: manage_link_request.into(),
         }
     }
+    #[doc = "API for Search inventories"]
     pub fn search_inventories(
         &self,
         subscription_id: impl Into<String>,

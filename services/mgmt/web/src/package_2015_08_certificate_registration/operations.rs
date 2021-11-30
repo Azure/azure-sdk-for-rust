@@ -130,12 +130,14 @@ pub mod app_service_certificate_orders {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all certificate orders in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Validate information for a certificate order."]
         pub fn validate_purchase_information(
             &self,
             app_service_certificate_order: impl Into<models::AppServiceCertificateOrder>,
@@ -147,6 +149,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get certificate orders in a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -158,6 +161,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a certificate order."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -171,6 +175,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a certificate purchase order."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -186,6 +191,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a certificate purchase order."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -201,6 +207,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete an existing certificate order."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -214,6 +221,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all certificates associated with a certificate order."]
         pub fn list_certificates(
             &self,
             resource_group_name: impl Into<String>,
@@ -227,6 +235,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the certificate associated with a certificate order."]
         pub fn get_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -242,6 +251,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a certificate and associates with key vault secret."]
         pub fn create_or_update_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -259,6 +269,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a certificate and associates with key vault secret."]
         pub fn update_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -276,6 +287,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the certificate associated with a certificate order."]
         pub fn delete_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -291,6 +303,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reissue an existing certificate order."]
         pub fn reissue(
             &self,
             resource_group_name: impl Into<String>,
@@ -306,6 +319,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Renew an existing certificate order."]
         pub fn renew(
             &self,
             resource_group_name: impl Into<String>,
@@ -321,6 +335,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resend certificate email."]
         pub fn resend_email(
             &self,
             resource_group_name: impl Into<String>,
@@ -334,6 +349,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Verify domain ownership for this certificate order."]
         pub fn resend_request_emails(
             &self,
             resource_group_name: impl Into<String>,
@@ -349,6 +365,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Verify domain ownership for this certificate order."]
         pub fn retrieve_site_seal(
             &self,
             resource_group_name: impl Into<String>,
@@ -364,6 +381,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Verify domain ownership for this certificate order."]
         pub fn verify_domain_ownership(
             &self,
             resource_group_name: impl Into<String>,
@@ -377,6 +395,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve the list of certificate actions."]
         pub fn retrieve_certificate_actions(
             &self,
             resource_group_name: impl Into<String>,
@@ -390,6 +409,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve email history."]
         pub fn retrieve_certificate_email_history(
             &self,
             resource_group_name: impl Into<String>,
@@ -1827,6 +1847,7 @@ pub mod certificate_registration_provider {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }

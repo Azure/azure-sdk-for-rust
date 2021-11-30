@@ -246,12 +246,14 @@ pub mod managed_clusters {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of managed clusters in the specified subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists managed clusters in the specified subscription and resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -263,6 +265,7 @@ pub mod managed_clusters {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets upgrade profile for a managed cluster."]
         pub fn get_upgrade_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -276,6 +279,7 @@ pub mod managed_clusters {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets an access profile of a managed cluster."]
         pub fn get_access_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -291,6 +295,7 @@ pub mod managed_clusters {
                 role_name: role_name.into(),
             }
         }
+        #[doc = "Gets cluster admin credential of a managed cluster."]
         pub fn list_cluster_admin_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -304,6 +309,7 @@ pub mod managed_clusters {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets cluster user credential of a managed cluster."]
         pub fn list_cluster_user_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -317,6 +323,7 @@ pub mod managed_clusters {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets cluster monitoring user credential of a managed cluster."]
         pub fn list_cluster_monitoring_user_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -330,6 +337,7 @@ pub mod managed_clusters {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets a managed cluster."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -343,6 +351,7 @@ pub mod managed_clusters {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Creates or updates a managed cluster."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -358,6 +367,7 @@ pub mod managed_clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates tags on a managed cluster."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -373,6 +383,7 @@ pub mod managed_clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a managed cluster."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -386,6 +397,7 @@ pub mod managed_clusters {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Reset Service Principal Profile of a managed cluster."]
         pub fn reset_service_principal_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -401,6 +413,7 @@ pub mod managed_clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Reset AAD Profile of a managed cluster."]
         pub fn reset_aad_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -416,6 +429,7 @@ pub mod managed_clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Rotate certificates of a managed cluster."]
         pub fn rotate_cluster_certificates(
             &self,
             subscription_id: impl Into<String>,
@@ -429,6 +443,7 @@ pub mod managed_clusters {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Stop Managed Cluster"]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -442,6 +457,7 @@ pub mod managed_clusters {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Start Managed Cluster"]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -1682,6 +1698,7 @@ pub mod maintenance_configurations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of maintenance configurations in the specified managed cluster."]
         pub fn list_by_managed_cluster(
             &self,
             subscription_id: impl Into<String>,
@@ -1695,6 +1712,7 @@ pub mod maintenance_configurations {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets the maintenance configuration."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1710,6 +1728,7 @@ pub mod maintenance_configurations {
                 config_name: config_name.into(),
             }
         }
+        #[doc = "Creates or updates a maintenance configurations."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1727,6 +1746,7 @@ pub mod maintenance_configurations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a maintenance configuration."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2040,6 +2060,7 @@ pub mod agent_pools {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of agent pools in the specified managed cluster."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2053,6 +2074,7 @@ pub mod agent_pools {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets the agent pool."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2068,6 +2090,7 @@ pub mod agent_pools {
                 agent_pool_name: agent_pool_name.into(),
             }
         }
+        #[doc = "Creates or updates an agent pool."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2085,6 +2108,7 @@ pub mod agent_pools {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an agent pool."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2100,6 +2124,7 @@ pub mod agent_pools {
                 agent_pool_name: agent_pool_name.into(),
             }
         }
+        #[doc = "Gets upgrade profile for an agent pool."]
         pub fn get_upgrade_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -2115,6 +2140,7 @@ pub mod agent_pools {
                 agent_pool_name: agent_pool_name.into(),
             }
         }
+        #[doc = "Gets a list of supported versions for the specified agent pool."]
         pub fn get_available_agent_pool_versions(
             &self,
             subscription_id: impl Into<String>,
@@ -2128,6 +2154,7 @@ pub mod agent_pools {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Upgrade node image version of an agent pool to the latest."]
         pub fn upgrade_node_image_version(
             &self,
             subscription_id: impl Into<String>,
@@ -2696,6 +2723,7 @@ pub mod private_endpoint_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of private endpoint connections in the specified managed cluster."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2709,6 +2737,7 @@ pub mod private_endpoint_connections {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets the private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2724,6 +2753,7 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Updates a private endpoint connection."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2741,6 +2771,7 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3054,6 +3085,7 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of private link resources in the specified managed cluster."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3146,6 +3178,7 @@ pub mod resolve_private_link_service_id {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link service ID for the specified managed cluster."]
         pub fn post(
             &self,
             subscription_id: impl Into<String>,

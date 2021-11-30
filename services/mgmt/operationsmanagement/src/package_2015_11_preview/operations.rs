@@ -122,6 +122,7 @@ pub mod solutions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve solution."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -135,6 +136,7 @@ pub mod solutions {
                 solution_name: solution_name.into(),
             }
         }
+        #[doc = "Create/Update Solution."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -150,6 +152,7 @@ pub mod solutions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Patch a Solution."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -165,6 +168,7 @@ pub mod solutions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the solution"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -178,6 +182,7 @@ pub mod solutions {
                 solution_name: solution_name.into(),
             }
         }
+        #[doc = "Retrieves the solution list for the subscription"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -189,6 +194,7 @@ pub mod solutions {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieves the solution list for the subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -656,12 +662,14 @@ pub mod management_associations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the ManagementAssociations list for the subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve ManagementAssociation."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -681,6 +689,7 @@ pub mod management_associations {
                 management_association_name: management_association_name.into(),
             }
         }
+        #[doc = "Create/Update ManagementAssociation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -702,6 +711,7 @@ pub mod management_associations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the ManagementAssociation"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1021,12 +1031,14 @@ pub mod management_configurations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the ManagementConfigurations list for the subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve ManagementConfiguration."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1040,6 +1052,7 @@ pub mod management_configurations {
                 management_configuration_name: management_configuration_name.into(),
             }
         }
+        #[doc = "Create/Update ManagementConfiguration."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1055,6 +1068,7 @@ pub mod management_configurations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the ManagementConfiguration"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

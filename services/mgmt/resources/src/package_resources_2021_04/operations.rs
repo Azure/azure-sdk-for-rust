@@ -378,6 +378,7 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Deploys resources at a given scope."]
         pub fn create_or_update_at_scope(
             &self,
             scope: impl Into<String>,
@@ -391,6 +392,7 @@ pub mod deployments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a deployment from the deployment history."]
         pub fn delete_at_scope(&self, scope: impl Into<String>, deployment_name: impl Into<String>) -> delete_at_scope::Builder {
             delete_at_scope::Builder {
                 client: self.0.clone(),
@@ -409,6 +411,7 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Cancels a currently running template deployment."]
         pub fn cancel_at_scope(&self, scope: impl Into<String>, deployment_name: impl Into<String>) -> cancel_at_scope::Builder {
             cancel_at_scope::Builder {
                 client: self.0.clone(),
@@ -454,6 +457,7 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Deploys resources at tenant scope."]
         pub fn create_or_update_at_tenant_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -465,6 +469,7 @@ pub mod deployments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a deployment from the deployment history."]
         pub fn delete_at_tenant_scope(&self, deployment_name: impl Into<String>) -> delete_at_tenant_scope::Builder {
             delete_at_tenant_scope::Builder {
                 client: self.0.clone(),
@@ -477,6 +482,7 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Cancels a currently running template deployment."]
         pub fn cancel_at_tenant_scope(&self, deployment_name: impl Into<String>) -> cancel_at_tenant_scope::Builder {
             cancel_at_tenant_scope::Builder {
                 client: self.0.clone(),
@@ -529,6 +535,7 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Deploys resources at management group scope."]
         pub fn create_or_update_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -542,6 +549,7 @@ pub mod deployments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a deployment from the deployment history."]
         pub fn delete_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -564,6 +572,7 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Cancels a currently running template deployment."]
         pub fn cancel_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -631,6 +640,7 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deploys resources at subscription scope."]
         pub fn create_or_update_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -644,6 +654,7 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a deployment from the deployment history."]
         pub fn delete_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -666,6 +677,7 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Cancels a currently running template deployment."]
         pub fn cancel_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -735,6 +747,7 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deploys resources to a resource group."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -750,6 +763,7 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a deployment from the deployment history."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -776,6 +790,7 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Cancels a currently running template deployment."]
         pub fn cancel(
             &self,
             resource_group_name: impl Into<String>,
@@ -5261,6 +5276,7 @@ pub mod resources {
                 top: None,
             }
         }
+        #[doc = "Moves resources from one resource group to another resource group."]
         pub fn move_resources(
             &self,
             source_resource_group_name: impl Into<String>,
@@ -5274,6 +5290,7 @@ pub mod resources {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Validates whether resources can be moved from one resource group to another resource group."]
         pub fn validate_move_resources(
             &self,
             source_resource_group_name: impl Into<String>,
@@ -6617,6 +6634,7 @@ pub mod resource_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a resource group."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6630,6 +6648,7 @@ pub mod resource_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a resource group."]
         pub fn delete(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -7241,6 +7260,7 @@ pub mod tags {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Creates a predefined value for a predefined tag name."]
         pub fn create_or_update_value(
             &self,
             tag_name: impl Into<String>,
@@ -7254,6 +7274,7 @@ pub mod tags {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a predefined tag value for a predefined tag name."]
         pub fn delete_value(
             &self,
             tag_name: impl Into<String>,
@@ -7267,6 +7288,7 @@ pub mod tags {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a predefined tag name."]
         pub fn create_or_update(&self, tag_name: impl Into<String>, subscription_id: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -7274,6 +7296,7 @@ pub mod tags {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a predefined tag name."]
         pub fn delete(&self, tag_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -7281,18 +7304,21 @@ pub mod tags {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a summary of tag usage under the subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the entire set of tags on a resource or subscription."]
         pub fn get_at_scope(&self, scope: impl Into<String>) -> get_at_scope::Builder {
             get_at_scope::Builder {
                 client: self.0.clone(),
                 scope: scope.into(),
             }
         }
+        #[doc = "Creates or updates the entire set of tags on a resource or subscription."]
         pub fn create_or_update_at_scope(
             &self,
             scope: impl Into<String>,
@@ -7304,6 +7330,7 @@ pub mod tags {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Selectively updates the set of tags on a resource or subscription."]
         pub fn update_at_scope(
             &self,
             scope: impl Into<String>,
@@ -7315,6 +7342,7 @@ pub mod tags {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the entire set of tags on a resource or subscription."]
         pub fn delete_at_scope(&self, scope: impl Into<String>) -> delete_at_scope::Builder {
             delete_at_scope::Builder {
                 client: self.0.clone(),

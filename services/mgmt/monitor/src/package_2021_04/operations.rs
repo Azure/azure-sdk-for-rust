@@ -7569,6 +7569,7 @@ pub mod data_collection_endpoints {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all data collection endpoints in the specified resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -7580,12 +7581,14 @@ pub mod data_collection_endpoints {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all data collection endpoints in the specified subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the specified data collection endpoint."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7599,6 +7602,7 @@ pub mod data_collection_endpoints {
                 data_collection_endpoint_name: data_collection_endpoint_name.into(),
             }
         }
+        #[doc = "Creates or updates a data collection endpoint."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -7613,6 +7617,7 @@ pub mod data_collection_endpoints {
                 body: None,
             }
         }
+        #[doc = "Updates part of a data collection endpoint."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -7627,6 +7632,7 @@ pub mod data_collection_endpoints {
                 body: None,
             }
         }
+        #[doc = "Deletes a data collection endpoint."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -8144,6 +8150,7 @@ pub mod data_collection_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all data collection rules in the specified resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -8155,12 +8162,14 @@ pub mod data_collection_rules {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all data collection rules in the specified subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the specified data collection rule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -8174,6 +8183,7 @@ pub mod data_collection_rules {
                 data_collection_rule_name: data_collection_rule_name.into(),
             }
         }
+        #[doc = "Creates or updates a data collection rule."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -8188,6 +8198,7 @@ pub mod data_collection_rules {
                 body: None,
             }
         }
+        #[doc = "Updates part of a data collection rule."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -8202,6 +8213,7 @@ pub mod data_collection_rules {
                 body: None,
             }
         }
+        #[doc = "Deletes a data collection rule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -8717,12 +8729,14 @@ pub mod data_collection_rule_associations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists associations for the specified resource."]
         pub fn list_by_resource(&self, resource_uri: impl Into<String>) -> list_by_resource::Builder {
             list_by_resource::Builder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
             }
         }
+        #[doc = "Lists associations for the specified data collection rule."]
         pub fn list_by_rule(
             &self,
             subscription_id: impl Into<String>,
@@ -8736,6 +8750,7 @@ pub mod data_collection_rule_associations {
                 data_collection_rule_name: data_collection_rule_name.into(),
             }
         }
+        #[doc = "Returns the specified association."]
         pub fn get(&self, resource_uri: impl Into<String>, association_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -8743,6 +8758,7 @@ pub mod data_collection_rule_associations {
                 association_name: association_name.into(),
             }
         }
+        #[doc = "Creates or updates an association."]
         pub fn create(&self, resource_uri: impl Into<String>, association_name: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -8751,6 +8767,7 @@ pub mod data_collection_rule_associations {
                 body: None,
             }
         }
+        #[doc = "Deletes an association."]
         pub fn delete(&self, resource_uri: impl Into<String>, association_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),

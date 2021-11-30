@@ -99,6 +99,7 @@ pub mod remote_rendering {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the status of a particular conversion."]
         pub fn get_conversion(&self, account_id: impl Into<String>, conversion_id: impl Into<String>) -> get_conversion::Builder {
             get_conversion::Builder {
                 client: self.0.clone(),
@@ -106,6 +107,7 @@ pub mod remote_rendering {
                 conversion_id: conversion_id.into(),
             }
         }
+        #[doc = "Creates a conversion using an asset stored in an Azure Blob Storage account."]
         pub fn create_conversion(
             &self,
             account_id: impl Into<String>,
@@ -119,12 +121,14 @@ pub mod remote_rendering {
                 body: body.into(),
             }
         }
+        #[doc = "Gets a list of all conversions."]
         pub fn list_conversions(&self, account_id: impl Into<String>) -> list_conversions::Builder {
             list_conversions::Builder {
                 client: self.0.clone(),
                 account_id: account_id.into(),
             }
         }
+        #[doc = "Gets the properties of a particular rendering session."]
         pub fn get_session(&self, account_id: impl Into<String>, session_id: impl Into<String>) -> get_session::Builder {
             get_session::Builder {
                 client: self.0.clone(),
@@ -132,6 +136,7 @@ pub mod remote_rendering {
                 session_id: session_id.into(),
             }
         }
+        #[doc = "Creates a new rendering session."]
         pub fn create_session(
             &self,
             account_id: impl Into<String>,
@@ -145,6 +150,7 @@ pub mod remote_rendering {
                 body: body.into(),
             }
         }
+        #[doc = "Updates the max lease time of a particular rendering session."]
         pub fn update_session(
             &self,
             account_id: impl Into<String>,
@@ -158,6 +164,7 @@ pub mod remote_rendering {
                 body: body.into(),
             }
         }
+        #[doc = "Stops a particular rendering session."]
         pub fn stop_session(&self, account_id: impl Into<String>, session_id: impl Into<String>) -> stop_session::Builder {
             stop_session::Builder {
                 client: self.0.clone(),
@@ -165,6 +172,7 @@ pub mod remote_rendering {
                 session_id: session_id.into(),
             }
         }
+        #[doc = "Gets a list of all rendering sessions."]
         pub fn list_sessions(&self, account_id: impl Into<String>) -> list_sessions::Builder {
             list_sessions::Builder {
                 client: self.0.clone(),

@@ -256,6 +256,7 @@ pub mod backup_vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "API to check for resource name availability"]
         pub fn check_name_availability(
             &self,
             resource_group_name: impl Into<String>,
@@ -838,6 +839,7 @@ pub mod operation_result {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the operation status for a resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -940,6 +942,7 @@ pub mod operation_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the operation status for a resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1136,6 +1139,7 @@ pub mod data_protection {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Validates if a feature is supported"]
         pub fn check_feature_support(
             &self,
             subscription_id: impl Into<String>,
@@ -1324,6 +1328,7 @@ pub mod backup_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a backup policy belonging to a backup vault"]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -1339,6 +1344,7 @@ pub mod backup_policies {
                 backup_policy_name: backup_policy_name.into(),
             }
         }
+        #[doc = "Creates or Updates a backup policy belonging to a backup vault"]
         pub fn create_or_update(
             &self,
             vault_name: impl Into<String>,
@@ -1356,6 +1362,7 @@ pub mod backup_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a backup policy belonging to a backup vault"]
         pub fn delete(
             &self,
             vault_name: impl Into<String>,

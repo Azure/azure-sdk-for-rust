@@ -338,6 +338,7 @@ pub mod workspaces {
                 skip: None,
             }
         }
+        #[doc = "Diagnose workspace setup issue."]
         pub fn diagnose(
             &self,
             subscription_id: impl Into<String>,
@@ -437,6 +438,7 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Called by Client (Portal, CLI, etc) to get a list of all external outbound dependencies (FQDNs) programmatically."]
         pub fn list_outbound_network_dependencies_endpoints(
             &self,
             subscription_id: impl Into<String>,

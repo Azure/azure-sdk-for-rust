@@ -127,6 +127,7 @@ pub mod domains {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check if a domain is available for registration."]
         pub fn check_availability(
             &self,
             identifier: impl Into<models::NameIdentifier>,
@@ -138,18 +139,21 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all domains in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generate a single sign-on request for the domain management portal."]
         pub fn get_control_center_sso_request(&self, subscription_id: impl Into<String>) -> get_control_center_sso_request::Builder {
             get_control_center_sso_request::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get domain name recommendations based on keywords."]
         pub fn list_recommendations(
             &self,
             parameters: impl Into<models::DomainRecommendationSearchParameters>,
@@ -161,6 +165,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all domains in a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -172,6 +177,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a domain."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -185,6 +191,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a domain."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -200,6 +207,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a domain."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -215,6 +223,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a domain."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -229,6 +238,7 @@ pub mod domains {
                 force_hard_delete_domain: None,
             }
         }
+        #[doc = "Lists domain ownership identifiers."]
         pub fn list_ownership_identifiers(
             &self,
             resource_group_name: impl Into<String>,
@@ -242,6 +252,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get ownership identifier for domain"]
         pub fn get_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -257,6 +268,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates an ownership identifier for a domain or updates identifier details for an existing identifier"]
         pub fn create_or_update_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -274,6 +286,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates an ownership identifier for a domain or updates identifier details for an existing identifier"]
         pub fn update_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -291,6 +304,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete ownership identifier for domain"]
         pub fn delete_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -306,6 +320,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Renew a domain."]
         pub fn renew(
             &self,
             resource_group_name: impl Into<String>,
@@ -1422,12 +1437,14 @@ pub mod top_level_domains {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all top-level domains supported for registration."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get details of a top-level domain."]
         pub fn get(&self, name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1435,6 +1452,7 @@ pub mod top_level_domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all legal agreements that user needs to accept before purchasing a domain."]
         pub fn list_agreements(
             &self,
             name: impl Into<String>,
@@ -1666,6 +1684,7 @@ pub mod domain_registration_provider {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }

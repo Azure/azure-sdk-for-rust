@@ -95,12 +95,14 @@ pub mod open_shift_managed_clusters {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of OpenShift managed clusters in the specified subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists OpenShift managed clusters in the specified subscription and resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -112,6 +114,7 @@ pub mod open_shift_managed_clusters {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a OpenShift managed cluster."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -125,6 +128,7 @@ pub mod open_shift_managed_clusters {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Creates or updates an OpenShift managed cluster."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -140,6 +144,7 @@ pub mod open_shift_managed_clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates tags on an OpenShift managed cluster."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -155,6 +160,7 @@ pub mod open_shift_managed_clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an OpenShift managed cluster."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

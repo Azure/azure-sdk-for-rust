@@ -334,6 +334,7 @@ pub mod resource_pools {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a resourcePool."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -347,6 +348,7 @@ pub mod resource_pools {
                 resource_pool_name: resource_pool_name.into(),
             }
         }
+        #[doc = "Implements resourcePool PUT method."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -361,6 +363,7 @@ pub mod resource_pools {
                 body: None,
             }
         }
+        #[doc = "Updates a resourcePool."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -375,6 +378,7 @@ pub mod resource_pools {
                 body: None,
             }
         }
+        #[doc = "Deletes an resourcePool."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -389,12 +393,14 @@ pub mod resource_pools {
                 force: None,
             }
         }
+        #[doc = "Implements GET resourcePools in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Implements GET resourcePools in a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -910,6 +916,7 @@ pub mod clusters {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a cluster."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -923,6 +930,7 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Implements cluster PUT method."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -937,6 +945,7 @@ pub mod clusters {
                 body: None,
             }
         }
+        #[doc = "Updates a cluster."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -951,6 +960,7 @@ pub mod clusters {
                 body: None,
             }
         }
+        #[doc = "Deletes an cluster."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -965,12 +975,14 @@ pub mod clusters {
                 force: None,
             }
         }
+        #[doc = "Implements GET clusters in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Implements GET clusters in a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1486,6 +1498,7 @@ pub mod hosts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a host."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1499,6 +1512,7 @@ pub mod hosts {
                 host_name: host_name.into(),
             }
         }
+        #[doc = "Implements host PUT method."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1513,6 +1527,7 @@ pub mod hosts {
                 body: None,
             }
         }
+        #[doc = "Updates a host."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1527,6 +1542,7 @@ pub mod hosts {
                 body: None,
             }
         }
+        #[doc = "Deletes an host."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1541,12 +1557,14 @@ pub mod hosts {
                 force: None,
             }
         }
+        #[doc = "Implements GET hosts in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Implements GET hosts in a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2062,6 +2080,7 @@ pub mod datastores {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a datastore."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2075,6 +2094,7 @@ pub mod datastores {
                 datastore_name: datastore_name.into(),
             }
         }
+        #[doc = "Implements datastore PUT method."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2089,6 +2109,7 @@ pub mod datastores {
                 body: None,
             }
         }
+        #[doc = "Updates a datastore."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2103,6 +2124,7 @@ pub mod datastores {
                 body: None,
             }
         }
+        #[doc = "Deletes an datastore."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2117,12 +2139,14 @@ pub mod datastores {
                 force: None,
             }
         }
+        #[doc = "Implements GET datastores in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Implements GET datastores in a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2638,6 +2662,7 @@ pub mod v_centers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a vCenter."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2651,6 +2676,7 @@ pub mod v_centers {
                 vcenter_name: vcenter_name.into(),
             }
         }
+        #[doc = "Implements vCenter PUT method."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2665,6 +2691,7 @@ pub mod v_centers {
                 body: None,
             }
         }
+        #[doc = "Updates a vCenter."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2679,6 +2706,7 @@ pub mod v_centers {
                 body: None,
             }
         }
+        #[doc = "Deletes an vCenter."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2693,12 +2721,14 @@ pub mod v_centers {
                 force: None,
             }
         }
+        #[doc = "Implements GET vCenters in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Implements GET vCenters in a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3214,6 +3244,7 @@ pub mod virtual_machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a virtual machine."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3227,6 +3258,7 @@ pub mod virtual_machines {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Implements virtual machine PUT method."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3241,6 +3273,7 @@ pub mod virtual_machines {
                 body: None,
             }
         }
+        #[doc = "Updates a virtual machine."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3255,6 +3288,7 @@ pub mod virtual_machines {
                 body: None,
             }
         }
+        #[doc = "Deletes an virtual machine."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3269,6 +3303,7 @@ pub mod virtual_machines {
                 force: None,
             }
         }
+        #[doc = "Implements the operation to stop a virtual machine."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -3283,6 +3318,7 @@ pub mod virtual_machines {
                 body: None,
             }
         }
+        #[doc = "Implements the operation to start a virtual machine."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -3296,6 +3332,7 @@ pub mod virtual_machines {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Implements the operation to restart a virtual machine."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -3309,12 +3346,14 @@ pub mod virtual_machines {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Implements GET virtualMachines in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Implements GET virtualMachines in a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -4087,6 +4126,7 @@ pub mod virtual_machine_templates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a virtual machine template."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4100,6 +4140,7 @@ pub mod virtual_machine_templates {
                 virtual_machine_template_name: virtual_machine_template_name.into(),
             }
         }
+        #[doc = "Implements virtual machine template PUT method."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -4114,6 +4155,7 @@ pub mod virtual_machine_templates {
                 body: None,
             }
         }
+        #[doc = "Updates a virtual machine template."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4128,6 +4170,7 @@ pub mod virtual_machine_templates {
                 body: None,
             }
         }
+        #[doc = "Deletes an virtual machine template."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4142,12 +4185,14 @@ pub mod virtual_machine_templates {
                 force: None,
             }
         }
+        #[doc = "Implements GET virtualMachineTemplates in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Implements GET virtualMachineTemplates in a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -4667,6 +4712,7 @@ pub mod virtual_networks {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a virtual network."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4680,6 +4726,7 @@ pub mod virtual_networks {
                 virtual_network_name: virtual_network_name.into(),
             }
         }
+        #[doc = "Implements virtual network PUT method."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -4694,6 +4741,7 @@ pub mod virtual_networks {
                 body: None,
             }
         }
+        #[doc = "Updates a virtual network."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4708,6 +4756,7 @@ pub mod virtual_networks {
                 body: None,
             }
         }
+        #[doc = "Deletes an virtual network."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4722,12 +4771,14 @@ pub mod virtual_networks {
                 force: None,
             }
         }
+        #[doc = "Implements GET virtualNetworks in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Implements GET virtualNetworks in a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -5243,6 +5294,7 @@ pub mod inventory_items {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets InventoryItem."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5258,6 +5310,7 @@ pub mod inventory_items {
                 inventory_item_name: inventory_item_name.into(),
             }
         }
+        #[doc = "Implements InventoryItem PUT method."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -5274,6 +5327,7 @@ pub mod inventory_items {
                 body: None,
             }
         }
+        #[doc = "Deletes an inventoryItem."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5289,6 +5343,7 @@ pub mod inventory_items {
                 inventory_item_name: inventory_item_name.into(),
             }
         }
+        #[doc = "Implements GET inventoryItems in a vCenter."]
         pub fn list_by_v_center(
             &self,
             subscription_id: impl Into<String>,
@@ -5633,6 +5688,7 @@ pub mod hybrid_identity_metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets HybridIdentityMetadata."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5648,6 +5704,7 @@ pub mod hybrid_identity_metadata {
                 metadata_name: metadata_name.into(),
             }
         }
+        #[doc = "Implements HybridIdentityMetadata PUT method."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -5664,6 +5721,7 @@ pub mod hybrid_identity_metadata {
                 body: None,
             }
         }
+        #[doc = "Deletes an HybridIdentityMetadata."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5679,6 +5737,7 @@ pub mod hybrid_identity_metadata {
                 metadata_name: metadata_name.into(),
             }
         }
+        #[doc = "Implements GET HybridIdentityMetadata in a vm."]
         pub fn list_by_vm(
             &self,
             subscription_id: impl Into<String>,
@@ -6514,6 +6573,7 @@ pub mod guest_agents {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets GuestAgent."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6529,6 +6589,7 @@ pub mod guest_agents {
                 name: name.into(),
             }
         }
+        #[doc = "Implements GuestAgent PUT method."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -6545,6 +6606,7 @@ pub mod guest_agents {
                 body: None,
             }
         }
+        #[doc = "Deletes an GuestAgent."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6560,6 +6622,7 @@ pub mod guest_agents {
                 name: name.into(),
             }
         }
+        #[doc = "Implements GET GuestAgent in a vm."]
         pub fn list_by_vm(
             &self,
             subscription_id: impl Into<String>,

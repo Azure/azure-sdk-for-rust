@@ -143,6 +143,7 @@ pub mod azure_bare_metal_instances {
                 azure_bare_metal_instance_name: azure_bare_metal_instance_name.into(),
             }
         }
+        #[doc = "Gets a list of Azure BareMetal instances in the specified subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -156,6 +157,7 @@ pub mod azure_bare_metal_instances {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets an Azure BareMetal instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -169,6 +171,7 @@ pub mod azure_bare_metal_instances {
                 azure_bare_metal_instance_name: azure_bare_metal_instance_name.into(),
             }
         }
+        #[doc = "Patches the Tags field of a Azure BareMetal instance."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -184,6 +187,7 @@ pub mod azure_bare_metal_instances {
                 tags_parameter: tags_parameter.into(),
             }
         }
+        #[doc = "Deletes a Azure BareMetal instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

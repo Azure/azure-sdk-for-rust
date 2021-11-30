@@ -181,9 +181,11 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements list of available operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Implements get of async operation"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -362,6 +364,7 @@ pub mod dedicated_cloud_nodes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements list of dedicated cloud nodes within subscription method"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -371,6 +374,7 @@ pub mod dedicated_cloud_nodes {
                 skip_token: None,
             }
         }
+        #[doc = "Implements list of dedicated cloud nodes within RG method"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -385,6 +389,7 @@ pub mod dedicated_cloud_nodes {
                 skip_token: None,
             }
         }
+        #[doc = "Implements dedicated cloud node GET method"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -398,6 +403,7 @@ pub mod dedicated_cloud_nodes {
                 dedicated_cloud_node_name: dedicated_cloud_node_name.into(),
             }
         }
+        #[doc = "Implements dedicated cloud node PUT method"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -415,6 +421,7 @@ pub mod dedicated_cloud_nodes {
                 dedicated_cloud_node_request: dedicated_cloud_node_request.into(),
             }
         }
+        #[doc = "Implements dedicated cloud node PATCH method"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -430,6 +437,7 @@ pub mod dedicated_cloud_nodes {
                 dedicated_cloud_node_request: dedicated_cloud_node_request.into(),
             }
         }
+        #[doc = "Implements dedicated cloud node DELETE method"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -958,6 +966,7 @@ pub mod dedicated_cloud_services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements list of dedicatedCloudService objects within subscription method"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -967,6 +976,7 @@ pub mod dedicated_cloud_services {
                 skip_token: None,
             }
         }
+        #[doc = "Implements list of dedicatedCloudService objects within RG method"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -981,6 +991,7 @@ pub mod dedicated_cloud_services {
                 skip_token: None,
             }
         }
+        #[doc = "Implements dedicatedCloudService GET method"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -994,6 +1005,7 @@ pub mod dedicated_cloud_services {
                 dedicated_cloud_service_name: dedicated_cloud_service_name.into(),
             }
         }
+        #[doc = "Implements dedicated cloud service PUT method"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1009,6 +1021,7 @@ pub mod dedicated_cloud_services {
                 dedicated_cloud_service_request: dedicated_cloud_service_request.into(),
             }
         }
+        #[doc = "Implements dedicatedCloudService PATCH method"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1024,6 +1037,7 @@ pub mod dedicated_cloud_services {
                 dedicated_cloud_service_request: dedicated_cloud_service_request.into(),
             }
         }
+        #[doc = "Implements dedicatedCloudService DELETE method"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1550,6 +1564,7 @@ pub mod skus_availability {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements SkuAvailability List method"]
         pub fn list(&self, subscription_id: impl Into<String>, region_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1649,6 +1664,7 @@ pub mod private_clouds {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements private cloud list GET method"]
         pub fn list(&self, subscription_id: impl Into<String>, region_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1656,6 +1672,7 @@ pub mod private_clouds {
                 region_id: region_id.into(),
             }
         }
+        #[doc = "Implements private cloud GET method"]
         pub fn get(&self, subscription_id: impl Into<String>, pc_name: impl Into<String>, region_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1822,6 +1839,7 @@ pub mod customization_policies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements get of customization policies list"]
         pub fn list(&self, subscription_id: impl Into<String>, region_id: impl Into<String>, pc_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1831,6 +1849,7 @@ pub mod customization_policies {
                 filter: None,
             }
         }
+        #[doc = "Implements get of customization policy"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2018,6 +2037,7 @@ pub mod resource_pools {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements get of resource pools list"]
         pub fn list(&self, subscription_id: impl Into<String>, region_id: impl Into<String>, pc_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2026,6 +2046,7 @@ pub mod resource_pools {
                 pc_name: pc_name.into(),
             }
         }
+        #[doc = "Implements get of resource pool"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2203,6 +2224,7 @@ pub mod virtual_machine_templates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements list of available VM templates"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2218,6 +2240,7 @@ pub mod virtual_machine_templates {
                 resource_pool_name: resource_pool_name.into(),
             }
         }
+        #[doc = "Implements virtual machine template GET method"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2393,6 +2416,7 @@ pub mod virtual_networks {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements list available virtual networks within a subscription method"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2408,6 +2432,7 @@ pub mod virtual_networks {
                 resource_pool_name: resource_pool_name.into(),
             }
         }
+        #[doc = "Implements virtual network GET method"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2590,6 +2615,7 @@ pub mod usages {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements Usages List method"]
         pub fn list(&self, subscription_id: impl Into<String>, region_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2687,6 +2713,7 @@ pub mod virtual_machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements list virtual machine within subscription method"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -2696,6 +2723,7 @@ pub mod virtual_machines {
                 skip_token: None,
             }
         }
+        #[doc = "Implements list virtual machine within RG method"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2710,6 +2738,7 @@ pub mod virtual_machines {
                 skip_token: None,
             }
         }
+        #[doc = "Implements virtual machine GET method"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2723,6 +2752,7 @@ pub mod virtual_machines {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Implements virtual machine PUT method"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2740,6 +2770,7 @@ pub mod virtual_machines {
                 virtual_machine_request: virtual_machine_request.into(),
             }
         }
+        #[doc = "Implements virtual machine PATCH method"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2755,6 +2786,7 @@ pub mod virtual_machines {
                 virtual_machine_request: virtual_machine_request.into(),
             }
         }
+        #[doc = "Implements virtual machine DELETE method"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2770,6 +2802,7 @@ pub mod virtual_machines {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Implements a start method for a virtual machine"]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -2785,6 +2818,7 @@ pub mod virtual_machines {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Implements shutdown, poweroff, and suspend method for a virtual machine"]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,

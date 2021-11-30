@@ -177,12 +177,14 @@ pub mod data_policy_manifests {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves a data policy manifest."]
         pub fn get_by_policy_mode(&self, policy_mode: impl Into<String>) -> get_by_policy_mode::Builder {
             get_by_policy_mode::Builder {
                 client: self.0.clone(),
                 policy_mode: policy_mode.into(),
             }
         }
+        #[doc = "Retrieves data policy manifests"]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -346,6 +348,7 @@ pub mod policy_assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves a policy assignment."]
         pub fn get(&self, scope: impl Into<String>, policy_assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -353,6 +356,7 @@ pub mod policy_assignments {
                 policy_assignment_name: policy_assignment_name.into(),
             }
         }
+        #[doc = "Creates or updates a policy assignment."]
         pub fn create(
             &self,
             scope: impl Into<String>,
@@ -366,6 +370,7 @@ pub mod policy_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a policy assignment."]
         pub fn update(
             &self,
             scope: impl Into<String>,
@@ -379,6 +384,7 @@ pub mod policy_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a policy assignment."]
         pub fn delete(&self, scope: impl Into<String>, policy_assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -386,6 +392,7 @@ pub mod policy_assignments {
                 policy_assignment_name: policy_assignment_name.into(),
             }
         }
+        #[doc = "Retrieves all policy assignments that apply to a resource group."]
         pub fn list_for_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -399,6 +406,7 @@ pub mod policy_assignments {
                 top: None,
             }
         }
+        #[doc = "Retrieves all policy assignments that apply to a resource."]
         pub fn list_for_resource(
             &self,
             resource_group_name: impl Into<String>,
@@ -420,6 +428,7 @@ pub mod policy_assignments {
                 top: None,
             }
         }
+        #[doc = "Retrieves all policy assignments that apply to a management group."]
         pub fn list_for_management_group(&self, management_group_id: impl Into<String>) -> list_for_management_group::Builder {
             list_for_management_group::Builder {
                 client: self.0.clone(),
@@ -428,6 +437,7 @@ pub mod policy_assignments {
                 top: None,
             }
         }
+        #[doc = "Retrieves all policy assignments that apply to a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -436,12 +446,14 @@ pub mod policy_assignments {
                 top: None,
             }
         }
+        #[doc = "Retrieves the policy assignment with the given ID."]
         pub fn get_by_id(&self, policy_assignment_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
                 policy_assignment_id: policy_assignment_id.into(),
             }
         }
+        #[doc = "Creates or updates a policy assignment."]
         pub fn create_by_id(
             &self,
             policy_assignment_id: impl Into<String>,
@@ -453,6 +465,7 @@ pub mod policy_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a policy assignment."]
         pub fn update_by_id(
             &self,
             policy_assignment_id: impl Into<String>,
@@ -464,6 +477,7 @@ pub mod policy_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a policy assignment."]
         pub fn delete_by_id(&self, policy_assignment_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
                 client: self.0.clone(),
@@ -1448,6 +1462,7 @@ pub mod policy_definitions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves a policy definition in a subscription."]
         pub fn get(&self, policy_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1455,6 +1470,7 @@ pub mod policy_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a policy definition in a subscription."]
         pub fn create_or_update(
             &self,
             policy_definition_name: impl Into<String>,
@@ -1468,6 +1484,7 @@ pub mod policy_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a policy definition in a subscription."]
         pub fn delete(&self, policy_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1475,12 +1492,14 @@ pub mod policy_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves a built-in policy definition."]
         pub fn get_built_in(&self, policy_definition_name: impl Into<String>) -> get_built_in::Builder {
             get_built_in::Builder {
                 client: self.0.clone(),
                 policy_definition_name: policy_definition_name.into(),
             }
         }
+        #[doc = "Retrieve a policy definition in a management group."]
         pub fn get_at_management_group(
             &self,
             policy_definition_name: impl Into<String>,
@@ -1492,6 +1511,7 @@ pub mod policy_definitions {
                 management_group_id: management_group_id.into(),
             }
         }
+        #[doc = "Creates or updates a policy definition in a management group."]
         pub fn create_or_update_at_management_group(
             &self,
             policy_definition_name: impl Into<String>,
@@ -1505,6 +1525,7 @@ pub mod policy_definitions {
                 management_group_id: management_group_id.into(),
             }
         }
+        #[doc = "Deletes a policy definition in a management group."]
         pub fn delete_at_management_group(
             &self,
             policy_definition_name: impl Into<String>,
@@ -1516,6 +1537,7 @@ pub mod policy_definitions {
                 management_group_id: management_group_id.into(),
             }
         }
+        #[doc = "Retrieves policy definitions in a subscription"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1524,6 +1546,7 @@ pub mod policy_definitions {
                 top: None,
             }
         }
+        #[doc = "Retrieve built-in policy definitions"]
         pub fn list_built_in(&self) -> list_built_in::Builder {
             list_built_in::Builder {
                 client: self.0.clone(),
@@ -1531,6 +1554,7 @@ pub mod policy_definitions {
                 top: None,
             }
         }
+        #[doc = "Retrieve policy definitions in a management group"]
         pub fn list_by_management_group(&self, management_group_id: impl Into<String>) -> list_by_management_group::Builder {
             list_by_management_group::Builder {
                 client: self.0.clone(),
@@ -2342,6 +2366,7 @@ pub mod policy_set_definitions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves a policy set definition."]
         pub fn get(&self, policy_set_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2349,6 +2374,7 @@ pub mod policy_set_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a policy set definition."]
         pub fn create_or_update(
             &self,
             policy_set_definition_name: impl Into<String>,
@@ -2362,6 +2388,7 @@ pub mod policy_set_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a policy set definition."]
         pub fn delete(&self, policy_set_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -2369,12 +2396,14 @@ pub mod policy_set_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves a built in policy set definition."]
         pub fn get_built_in(&self, policy_set_definition_name: impl Into<String>) -> get_built_in::Builder {
             get_built_in::Builder {
                 client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
             }
         }
+        #[doc = "Retrieves the policy set definitions for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2383,6 +2412,7 @@ pub mod policy_set_definitions {
                 top: None,
             }
         }
+        #[doc = "Retrieves built-in policy set definitions."]
         pub fn list_built_in(&self) -> list_built_in::Builder {
             list_built_in::Builder {
                 client: self.0.clone(),
@@ -2390,6 +2420,7 @@ pub mod policy_set_definitions {
                 top: None,
             }
         }
+        #[doc = "Retrieves a policy set definition."]
         pub fn get_at_management_group(
             &self,
             policy_set_definition_name: impl Into<String>,
@@ -2401,6 +2432,7 @@ pub mod policy_set_definitions {
                 management_group_id: management_group_id.into(),
             }
         }
+        #[doc = "Creates or updates a policy set definition."]
         pub fn create_or_update_at_management_group(
             &self,
             policy_set_definition_name: impl Into<String>,
@@ -2414,6 +2446,7 @@ pub mod policy_set_definitions {
                 management_group_id: management_group_id.into(),
             }
         }
+        #[doc = "Deletes a policy set definition."]
         pub fn delete_at_management_group(
             &self,
             policy_set_definition_name: impl Into<String>,
@@ -2425,6 +2458,7 @@ pub mod policy_set_definitions {
                 management_group_id: management_group_id.into(),
             }
         }
+        #[doc = "Retrieves all policy set definitions in management group."]
         pub fn list_by_management_group(&self, management_group_id: impl Into<String>) -> list_by_management_group::Builder {
             list_by_management_group::Builder {
                 client: self.0.clone(),
@@ -3258,6 +3292,7 @@ pub mod policy_exemptions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves a policy exemption."]
         pub fn get(&self, scope: impl Into<String>, policy_exemption_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -3265,6 +3300,7 @@ pub mod policy_exemptions {
                 policy_exemption_name: policy_exemption_name.into(),
             }
         }
+        #[doc = "Creates or updates a policy exemption."]
         pub fn create_or_update(
             &self,
             scope: impl Into<String>,
@@ -3278,6 +3314,7 @@ pub mod policy_exemptions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a policy exemption."]
         pub fn delete(&self, scope: impl Into<String>, policy_exemption_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -3285,6 +3322,7 @@ pub mod policy_exemptions {
                 policy_exemption_name: policy_exemption_name.into(),
             }
         }
+        #[doc = "Retrieves all policy exemptions that apply to a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3292,6 +3330,7 @@ pub mod policy_exemptions {
                 filter: None,
             }
         }
+        #[doc = "Retrieves all policy exemptions that apply to a resource group."]
         pub fn list_for_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3304,6 +3343,7 @@ pub mod policy_exemptions {
                 filter: None,
             }
         }
+        #[doc = "Retrieves all policy exemptions that apply to a resource."]
         pub fn list_for_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3324,6 +3364,7 @@ pub mod policy_exemptions {
                 filter: None,
             }
         }
+        #[doc = "Retrieves all policy exemptions that apply to a management group."]
         pub fn list_for_management_group(&self, management_group_id: impl Into<String>) -> list_for_management_group::Builder {
             list_for_management_group::Builder {
                 client: self.0.clone(),

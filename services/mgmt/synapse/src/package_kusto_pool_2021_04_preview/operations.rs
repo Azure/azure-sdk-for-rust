@@ -225,6 +225,7 @@ pub mod kusto_pools {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Kusto pools"]
         pub fn list_by_workspace(
             &self,
             resource_group_name: impl Into<String>,

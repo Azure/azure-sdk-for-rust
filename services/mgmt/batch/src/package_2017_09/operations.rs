@@ -270,6 +270,7 @@ pub mod batch_account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the account keys for the specified Batch account."]
         pub fn get_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -2198,6 +2199,7 @@ pub mod certificate {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Cancels a failed deletion of a certificate from the specified account."]
         pub fn cancel_deletion(
             &self,
             resource_group_name: impl Into<String>,
@@ -2845,6 +2847,7 @@ pub mod pool {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stops an ongoing resize operation on the pool."]
         pub fn stop_resize(
             &self,
             resource_group_name: impl Into<String>,

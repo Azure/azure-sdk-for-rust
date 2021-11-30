@@ -239,6 +239,7 @@ pub mod edge_modules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all existing edge module resources."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -253,6 +254,7 @@ pub mod edge_modules {
                 top: None,
             }
         }
+        #[doc = "Retrieves an existing edge module resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -268,6 +270,7 @@ pub mod edge_modules {
                 edge_module_name: edge_module_name.into(),
             }
         }
+        #[doc = "Creates a new edge module or updates an existing one."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -285,6 +288,7 @@ pub mod edge_modules {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing edge module resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -300,6 +304,7 @@ pub mod edge_modules {
                 edge_module_name: edge_module_name.into(),
             }
         }
+        #[doc = "Creates a new provisioning token."]
         pub fn list_provisioning_token(
             &self,
             subscription_id: impl Into<String>,
@@ -737,6 +742,7 @@ pub mod pipeline_topologies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves a list of pipeline topologies."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -752,6 +758,7 @@ pub mod pipeline_topologies {
                 top: None,
             }
         }
+        #[doc = "Retrieves a specific pipeline topology by name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -767,6 +774,7 @@ pub mod pipeline_topologies {
                 pipeline_topology_name: pipeline_topology_name.into(),
             }
         }
+        #[doc = "Creates or updates a pipeline topology."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -784,6 +792,7 @@ pub mod pipeline_topologies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an existing pipeline topology."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -801,6 +810,7 @@ pub mod pipeline_topologies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a pipeline topology."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1249,6 +1259,7 @@ pub mod live_pipelines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves a list of live pipelines."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1264,6 +1275,7 @@ pub mod live_pipelines {
                 top: None,
             }
         }
+        #[doc = "Retrieves a specific live pipeline by name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1279,6 +1291,7 @@ pub mod live_pipelines {
                 live_pipeline_name: live_pipeline_name.into(),
             }
         }
+        #[doc = "Creates or updates a live pipeline."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1296,6 +1309,7 @@ pub mod live_pipelines {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an existing live pipeline."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1313,6 +1327,7 @@ pub mod live_pipelines {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a live pipeline."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1328,6 +1343,7 @@ pub mod live_pipelines {
                 live_pipeline_name: live_pipeline_name.into(),
             }
         }
+        #[doc = "Activates a live pipeline."]
         pub fn activate(
             &self,
             subscription_id: impl Into<String>,
@@ -1343,6 +1359,7 @@ pub mod live_pipelines {
                 live_pipeline_name: live_pipeline_name.into(),
             }
         }
+        #[doc = "Deactivates a live pipeline."]
         pub fn deactivate(
             &self,
             subscription_id: impl Into<String>,
@@ -1951,6 +1968,7 @@ pub mod pipeline_jobs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves a list of pipeline jobs."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1966,6 +1984,7 @@ pub mod pipeline_jobs {
                 top: None,
             }
         }
+        #[doc = "Gets a specific pipeline job by name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1981,6 +2000,7 @@ pub mod pipeline_jobs {
                 pipeline_job_name: pipeline_job_name.into(),
             }
         }
+        #[doc = "Creates or updates a pipeline job."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1998,6 +2018,7 @@ pub mod pipeline_jobs {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an existing pipeline job."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2015,6 +2036,7 @@ pub mod pipeline_jobs {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a pipeline job."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2030,6 +2052,7 @@ pub mod pipeline_jobs {
                 pipeline_job_name: pipeline_job_name.into(),
             }
         }
+        #[doc = "Cancels a pipeline job."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -2557,6 +2580,7 @@ pub mod live_pipeline_operation_statuses {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the operation status"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2655,6 +2679,7 @@ pub mod pipeline_job_operation_statuses {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the operation statuses."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2753,6 +2778,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2830,6 +2856,7 @@ pub mod video_analyzers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Video Analyzer accounts"]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2837,6 +2864,7 @@ pub mod video_analyzers {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get a Video Analyzer account"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2850,6 +2878,7 @@ pub mod video_analyzers {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Create or update a Video Analyzer account"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2865,6 +2894,7 @@ pub mod video_analyzers {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update a Video Analyzer account"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2880,6 +2910,7 @@ pub mod video_analyzers {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a Video Analyzer account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2893,6 +2924,7 @@ pub mod video_analyzers {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "List Video Analyzer accounts"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -3377,6 +3409,7 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of group IDs."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3390,6 +3423,7 @@ pub mod private_link_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get group ID."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3569,6 +3603,7 @@ pub mod private_endpoint_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all private endpoint connections."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3582,6 +3617,7 @@ pub mod private_endpoint_connections {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3597,6 +3633,7 @@ pub mod private_endpoint_connections {
                 name: name.into(),
             }
         }
+        #[doc = "Update private endpoint connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3614,6 +3651,7 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3954,6 +3992,7 @@ pub mod operation_statuses {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get operation status."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4055,6 +4094,7 @@ pub mod operation_results {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get operation result."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4157,6 +4197,7 @@ pub mod video_analyzer_operation_statuses {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get operation status."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4255,6 +4296,7 @@ pub mod video_analyzer_operation_results {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get operation result."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4357,6 +4399,7 @@ pub mod locations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check Name Availability"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -4455,6 +4498,7 @@ pub mod videos {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all existing video resources."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4469,6 +4513,7 @@ pub mod videos {
                 top: None,
             }
         }
+        #[doc = "Retrieves an existing video resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4484,6 +4529,7 @@ pub mod videos {
                 video_name: video_name.into(),
             }
         }
+        #[doc = "Creates a new video resource or updates an existing one."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4501,6 +4547,7 @@ pub mod videos {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates individual properties of an existing video resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4518,6 +4565,7 @@ pub mod videos {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing video resource and its underlying data."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4533,6 +4581,7 @@ pub mod videos {
                 video_name: video_name.into(),
             }
         }
+        #[doc = "Generates a streaming token which can be used for accessing content from video content URLs."]
         pub fn list_content_token(
             &self,
             subscription_id: impl Into<String>,
@@ -5051,6 +5100,7 @@ pub mod access_policies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all existing access policy resources."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5065,6 +5115,7 @@ pub mod access_policies {
                 top: None,
             }
         }
+        #[doc = "Retrieves an existing access policy resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5080,6 +5131,7 @@ pub mod access_policies {
                 access_policy_name: access_policy_name.into(),
             }
         }
+        #[doc = "Creates a new access policy resource or updates an existing one."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5097,6 +5149,7 @@ pub mod access_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates individual properties of an existing access policy resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -5114,6 +5167,7 @@ pub mod access_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing access policy resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

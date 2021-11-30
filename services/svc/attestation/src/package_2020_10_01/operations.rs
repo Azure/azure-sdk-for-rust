@@ -117,12 +117,14 @@ pub mod policy {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the current policy for an attestation type."]
         pub fn get(&self, attestation_type: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 attestation_type: attestation_type.into(),
             }
         }
+        #[doc = "Sets the policy for a given attestation type."]
         pub fn set(&self, attestation_type: impl Into<String>, new_attestation_policy: impl Into<models::JsonWebToken>) -> set::Builder {
             set::Builder {
                 client: self.0.clone(),
@@ -130,6 +132,7 @@ pub mod policy {
                 new_attestation_policy: new_attestation_policy.into(),
             }
         }
+        #[doc = "Resets the attestation policy for the specified tenant and reverts to the default policy."]
         pub fn reset(&self, attestation_type: impl Into<String>, policy_jws: impl Into<models::JsonWebToken>) -> reset::Builder {
             reset::Builder {
                 client: self.0.clone(),
@@ -354,15 +357,18 @@ pub mod policy_certificates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the set of certificates used to express policy for the current tenant."]
         pub fn get(&self) -> get::Builder {
             get::Builder { client: self.0.clone() }
         }
+        #[doc = "Adds a new attestation policy certificate to the set of policy management certificates."]
         pub fn add(&self, policy_certificate_to_add: impl Into<models::JsonWebToken>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
                 policy_certificate_to_add: policy_certificate_to_add.into(),
             }
         }
+        #[doc = "Removes the specified policy management certificate. Note that the final policy management certificate cannot be removed."]
         pub fn remove(&self, policy_certificate_to_remove: impl Into<models::JsonWebToken>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -589,18 +595,21 @@ pub mod attestation {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Attest to an SGX enclave."]
         pub fn attest_open_enclave(&self, request: impl Into<models::AttestOpenEnclaveRequest>) -> attest_open_enclave::Builder {
             attest_open_enclave::Builder {
                 client: self.0.clone(),
                 request: request.into(),
             }
         }
+        #[doc = "Attest to an SGX enclave."]
         pub fn attest_sgx_enclave(&self, request: impl Into<models::AttestSgxEnclaveRequest>) -> attest_sgx_enclave::Builder {
             attest_sgx_enclave::Builder {
                 client: self.0.clone(),
                 request: request.into(),
             }
         }
+        #[doc = "Attest a Virtualization-based Security (VBS) enclave."]
         pub fn attest_tpm(&self, request: impl Into<models::TpmAttestationRequest>) -> attest_tpm::Builder {
             attest_tpm::Builder {
                 client: self.0.clone(),
@@ -823,6 +832,7 @@ pub mod signing_certificates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the attestation signing keys in use by the attestation service"]
         pub fn get(&self) -> get::Builder {
             get::Builder { client: self.0.clone() }
         }
@@ -899,6 +909,7 @@ pub mod metadata_configuration {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the OpenID Configuration data for the Azure Attestation Service"]
         pub fn get(&self) -> get::Builder {
             get::Builder { client: self.0.clone() }
         }

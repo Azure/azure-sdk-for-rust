@@ -102,12 +102,14 @@ pub mod custom_locations {
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets a list of Custom Locations in a subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of Custom Locations in the specified subscription and resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -119,6 +121,7 @@ pub mod custom_locations {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a Custom Location."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -132,6 +135,7 @@ pub mod custom_locations {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Creates or updates a Custom Location."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -147,6 +151,7 @@ pub mod custom_locations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a Custom Location."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -162,6 +167,7 @@ pub mod custom_locations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a Custom Location."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -175,6 +181,7 @@ pub mod custom_locations {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets the list of Enabled Resource Types."]
         pub fn list_enabled_resource_types(
             &self,
             subscription_id: impl Into<String>,

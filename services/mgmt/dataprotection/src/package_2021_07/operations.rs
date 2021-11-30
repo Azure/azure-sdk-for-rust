@@ -309,6 +309,7 @@ pub mod backup_vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "API to check for resource name availability"]
         pub fn check_name_availability(
             &self,
             resource_group_name: impl Into<String>,
@@ -891,6 +892,7 @@ pub mod operation_result {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the operation status for a resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -993,6 +995,7 @@ pub mod operation_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the operation status for a resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1195,6 +1198,7 @@ pub mod data_protection {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Validates if a feature is supported"]
         pub fn check_feature_support(
             &self,
             subscription_id: impl Into<String>,
@@ -1383,6 +1387,7 @@ pub mod backup_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a backup policy belonging to a backup vault"]
         pub fn get(
             &self,
             vault_name: impl Into<String>,
@@ -1398,6 +1403,7 @@ pub mod backup_policies {
                 backup_policy_name: backup_policy_name.into(),
             }
         }
+        #[doc = "Creates or Updates a backup policy belonging to a backup vault"]
         pub fn create_or_update(
             &self,
             vault_name: impl Into<String>,
@@ -1415,6 +1421,7 @@ pub mod backup_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a backup policy belonging to a backup vault"]
         pub fn delete(
             &self,
             vault_name: impl Into<String>,
@@ -3337,12 +3344,14 @@ pub mod resource_guards {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns ResourceGuards collection belonging to a subscription."]
         pub fn get_resources_in_subscription(&self, subscription_id: impl Into<String>) -> get_resources_in_subscription::Builder {
             get_resources_in_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns ResourceGuards collection belonging to a ResourceGroup."]
         pub fn get_resources_in_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3354,6 +3363,7 @@ pub mod resource_guards {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Returns a ResourceGuard belonging to a resource group."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3367,6 +3377,7 @@ pub mod resource_guards {
                 resource_guards_name: resource_guards_name.into(),
             }
         }
+        #[doc = "Creates or updates a ResourceGuard resource belonging to a resource group."]
         pub fn put(
             &self,
             resource_group_name: impl Into<String>,
@@ -3382,6 +3393,7 @@ pub mod resource_guards {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a ResourceGuard resource belonging to a resource group. For example, updating tags for a resource."]
         pub fn patch(
             &self,
             resource_group_name: impl Into<String>,
@@ -3397,6 +3409,7 @@ pub mod resource_guards {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a ResourceGuard resource from the resource group."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3410,6 +3423,7 @@ pub mod resource_guards {
                 resource_guards_name: resource_guards_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_disable_soft_delete_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -3423,6 +3437,7 @@ pub mod resource_guards {
                 resource_guards_name: resource_guards_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_delete_resource_guard_proxy_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -3436,6 +3451,7 @@ pub mod resource_guards {
                 resource_guards_name: resource_guards_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_backup_security_pin_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -3449,6 +3465,7 @@ pub mod resource_guards {
                 resource_guards_name: resource_guards_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_delete_protected_item_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -3462,6 +3479,7 @@ pub mod resource_guards {
                 resource_guards_name: resource_guards_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_update_protection_policy_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -3475,6 +3493,7 @@ pub mod resource_guards {
                 resource_guards_name: resource_guards_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_update_protected_item_requests_objects(
             &self,
             resource_group_name: impl Into<String>,
@@ -3488,6 +3507,7 @@ pub mod resource_guards {
                 resource_guards_name: resource_guards_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_default_disable_soft_delete_requests_object(
             &self,
             resource_group_name: impl Into<String>,
@@ -3503,6 +3523,7 @@ pub mod resource_guards {
                 request_name: request_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_default_delete_resource_guard_proxy_requests_object(
             &self,
             resource_group_name: impl Into<String>,
@@ -3518,6 +3539,7 @@ pub mod resource_guards {
                 request_name: request_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_default_backup_security_pin_requests_object(
             &self,
             resource_group_name: impl Into<String>,
@@ -3533,6 +3555,7 @@ pub mod resource_guards {
                 request_name: request_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_default_delete_protected_item_requests_object(
             &self,
             resource_group_name: impl Into<String>,
@@ -3548,6 +3571,7 @@ pub mod resource_guards {
                 request_name: request_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_default_update_protection_policy_requests_object(
             &self,
             resource_group_name: impl Into<String>,
@@ -3563,6 +3587,7 @@ pub mod resource_guards {
                 request_name: request_name.into(),
             }
         }
+        #[doc = "Returns collection of operation request objects for a critical operation protected by the given ResourceGuard resource."]
         pub fn get_default_update_protected_item_requests_object(
             &self,
             resource_group_name: impl Into<String>,

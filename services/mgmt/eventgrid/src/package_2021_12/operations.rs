@@ -241,6 +241,7 @@ pub mod domains {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a domain."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -254,6 +255,7 @@ pub mod domains {
                 domain_name: domain_name.into(),
             }
         }
+        #[doc = "Create or update a domain."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -269,6 +271,7 @@ pub mod domains {
                 domain_info: domain_info.into(),
             }
         }
+        #[doc = "Update a domain."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -284,6 +287,7 @@ pub mod domains {
                 domain_update_parameters: domain_update_parameters.into(),
             }
         }
+        #[doc = "Delete a domain."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -297,6 +301,7 @@ pub mod domains {
                 domain_name: domain_name.into(),
             }
         }
+        #[doc = "List domains under an Azure subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -305,6 +310,7 @@ pub mod domains {
                 top: None,
             }
         }
+        #[doc = "List domains under a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -318,6 +324,7 @@ pub mod domains {
                 top: None,
             }
         }
+        #[doc = "List keys for a domain."]
         pub fn list_shared_access_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -331,6 +338,7 @@ pub mod domains {
                 domain_name: domain_name.into(),
             }
         }
+        #[doc = "Regenerate key for a domain."]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -922,6 +930,7 @@ pub mod domain_topics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a domain topic."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -937,6 +946,7 @@ pub mod domain_topics {
                 domain_topic_name: domain_topic_name.into(),
             }
         }
+        #[doc = "Create or update a domain topic."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -952,6 +962,7 @@ pub mod domain_topics {
                 domain_topic_name: domain_topic_name.into(),
             }
         }
+        #[doc = "Delete a domain topic."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -967,6 +978,7 @@ pub mod domain_topics {
                 domain_topic_name: domain_topic_name.into(),
             }
         }
+        #[doc = "List domain topics."]
         pub fn list_by_domain(
             &self,
             subscription_id: impl Into<String>,
@@ -1277,6 +1289,7 @@ pub mod event_subscriptions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get an event subscription."]
         pub fn get(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1284,6 +1297,7 @@ pub mod event_subscriptions {
                 event_subscription_name: event_subscription_name.into(),
             }
         }
+        #[doc = "Create or update an event subscription."]
         pub fn create_or_update(
             &self,
             scope: impl Into<String>,
@@ -1297,6 +1311,7 @@ pub mod event_subscriptions {
                 event_subscription_info: event_subscription_info.into(),
             }
         }
+        #[doc = "Update an event subscription."]
         pub fn update(
             &self,
             scope: impl Into<String>,
@@ -1310,6 +1325,7 @@ pub mod event_subscriptions {
                 event_subscription_update_parameters: event_subscription_update_parameters.into(),
             }
         }
+        #[doc = "Delete an event subscription."]
         pub fn delete(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1317,6 +1333,7 @@ pub mod event_subscriptions {
                 event_subscription_name: event_subscription_name.into(),
             }
         }
+        #[doc = "Get full URL of an event subscription."]
         pub fn get_full_url(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> get_full_url::Builder {
             get_full_url::Builder {
                 client: self.0.clone(),
@@ -1324,6 +1341,7 @@ pub mod event_subscriptions {
                 event_subscription_name: event_subscription_name.into(),
             }
         }
+        #[doc = "Get an aggregated list of all global event subscriptions under an Azure subscription."]
         pub fn list_global_by_subscription(&self, subscription_id: impl Into<String>) -> list_global_by_subscription::Builder {
             list_global_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1332,6 +1350,7 @@ pub mod event_subscriptions {
                 top: None,
             }
         }
+        #[doc = "List all global event subscriptions for a topic type."]
         pub fn list_global_by_subscription_for_topic_type(
             &self,
             subscription_id: impl Into<String>,
@@ -1345,6 +1364,7 @@ pub mod event_subscriptions {
                 top: None,
             }
         }
+        #[doc = "List all global event subscriptions under an Azure subscription and resource group."]
         pub fn list_global_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1358,6 +1378,7 @@ pub mod event_subscriptions {
                 top: None,
             }
         }
+        #[doc = "List all global event subscriptions under a resource group for a topic type."]
         pub fn list_global_by_resource_group_for_topic_type(
             &self,
             subscription_id: impl Into<String>,
@@ -1373,6 +1394,7 @@ pub mod event_subscriptions {
                 top: None,
             }
         }
+        #[doc = "List all regional event subscriptions under an Azure subscription."]
         pub fn list_regional_by_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -1386,6 +1408,7 @@ pub mod event_subscriptions {
                 top: None,
             }
         }
+        #[doc = "List all regional event subscriptions under an Azure subscription and resource group."]
         pub fn list_regional_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1401,6 +1424,7 @@ pub mod event_subscriptions {
                 top: None,
             }
         }
+        #[doc = "List all regional event subscriptions under an Azure subscription for a topic type."]
         pub fn list_regional_by_subscription_for_topic_type(
             &self,
             subscription_id: impl Into<String>,
@@ -1416,6 +1440,7 @@ pub mod event_subscriptions {
                 top: None,
             }
         }
+        #[doc = "List all regional event subscriptions under an Azure subscription and resource group for a topic type."]
         pub fn list_regional_by_resource_group_for_topic_type(
             &self,
             subscription_id: impl Into<String>,
@@ -1433,6 +1458,7 @@ pub mod event_subscriptions {
                 top: None,
             }
         }
+        #[doc = "List all event subscriptions for a specific topic."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -1452,6 +1478,7 @@ pub mod event_subscriptions {
                 top: None,
             }
         }
+        #[doc = "List all event subscriptions for a specific domain topic."]
         pub fn list_by_domain_topic(
             &self,
             subscription_id: impl Into<String>,
@@ -1469,6 +1496,7 @@ pub mod event_subscriptions {
                 top: None,
             }
         }
+        #[doc = "Get delivery attributes for an event subscription."]
         pub fn get_delivery_attributes(
             &self,
             scope: impl Into<String>,
@@ -2712,6 +2740,7 @@ pub mod system_topic_event_subscriptions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get an event subscription of a system topic."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2727,6 +2756,7 @@ pub mod system_topic_event_subscriptions {
                 event_subscription_name: event_subscription_name.into(),
             }
         }
+        #[doc = "Create or update an event subscription for a system topic."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2744,6 +2774,7 @@ pub mod system_topic_event_subscriptions {
                 event_subscription_info: event_subscription_info.into(),
             }
         }
+        #[doc = "Update event subscription of a system topic."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2761,6 +2792,7 @@ pub mod system_topic_event_subscriptions {
                 event_subscription_update_parameters: event_subscription_update_parameters.into(),
             }
         }
+        #[doc = "Delete an event subscription of a system topic."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2776,6 +2808,7 @@ pub mod system_topic_event_subscriptions {
                 event_subscription_name: event_subscription_name.into(),
             }
         }
+        #[doc = "Get full URL of an event subscription of a system topic"]
         pub fn get_full_url(
             &self,
             subscription_id: impl Into<String>,
@@ -2791,6 +2824,7 @@ pub mod system_topic_event_subscriptions {
                 event_subscription_name: event_subscription_name.into(),
             }
         }
+        #[doc = "List event subscriptions of a system topic."]
         pub fn list_by_system_topic(
             &self,
             subscription_id: impl Into<String>,
@@ -2806,6 +2840,7 @@ pub mod system_topic_event_subscriptions {
                 top: None,
             }
         }
+        #[doc = "Get delivery attributes for an event subscription."]
         pub fn get_delivery_attributes(
             &self,
             subscription_id: impl Into<String>,
@@ -3316,6 +3351,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List available operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -3382,6 +3418,7 @@ pub mod topics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a topic."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3395,6 +3432,7 @@ pub mod topics {
                 topic_name: topic_name.into(),
             }
         }
+        #[doc = "Create a topic."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3410,6 +3448,7 @@ pub mod topics {
                 topic_info: topic_info.into(),
             }
         }
+        #[doc = "Update a topic."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3425,6 +3464,7 @@ pub mod topics {
                 topic_update_parameters: topic_update_parameters.into(),
             }
         }
+        #[doc = "Delete a topic."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3438,6 +3478,7 @@ pub mod topics {
                 topic_name: topic_name.into(),
             }
         }
+        #[doc = "List topics under an Azure subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -3446,6 +3487,7 @@ pub mod topics {
                 top: None,
             }
         }
+        #[doc = "List topics under a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3459,6 +3501,7 @@ pub mod topics {
                 top: None,
             }
         }
+        #[doc = "List keys for a topic."]
         pub fn list_shared_access_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -3472,6 +3515,7 @@ pub mod topics {
                 topic_name: topic_name.into(),
             }
         }
+        #[doc = "Regenerate key for a topic."]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -3487,6 +3531,7 @@ pub mod topics {
                 regenerate_key_request: regenerate_key_request.into(),
             }
         }
+        #[doc = "List topic event types."]
         pub fn list_event_types(
             &self,
             subscription_id: impl Into<String>,
@@ -4148,6 +4193,7 @@ pub mod private_endpoint_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4165,6 +4211,7 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update a specific private endpoint connection."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4184,6 +4231,7 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection: private_endpoint_connection.into(),
             }
         }
+        #[doc = "Delete a specific private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4201,6 +4249,7 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Lists all private endpoint connections under a resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -4534,6 +4583,7 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a private link resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4551,6 +4601,7 @@ pub mod private_link_resources {
                 private_link_resource_name: private_link_resource_name.into(),
             }
         }
+        #[doc = "List private link resources under specific topic or domain."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -4730,6 +4781,7 @@ pub mod system_topics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a system topic."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4743,6 +4795,7 @@ pub mod system_topics {
                 system_topic_name: system_topic_name.into(),
             }
         }
+        #[doc = "Create a system topic."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4758,6 +4811,7 @@ pub mod system_topics {
                 system_topic_info: system_topic_info.into(),
             }
         }
+        #[doc = "Update a system topic."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4773,6 +4827,7 @@ pub mod system_topics {
                 system_topic_update_parameters: system_topic_update_parameters.into(),
             }
         }
+        #[doc = "Delete a system topic."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4786,6 +4841,7 @@ pub mod system_topics {
                 system_topic_name: system_topic_name.into(),
             }
         }
+        #[doc = "List system topics under an Azure subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -4794,6 +4850,7 @@ pub mod system_topics {
                 top: None,
             }
         }
+        #[doc = "List system topics under a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -5264,6 +5321,7 @@ pub mod extension_topics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get properties of an extension topic."]
         pub fn get(&self, scope: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -5338,15 +5396,18 @@ pub mod topic_types {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List topic types."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Get a topic type."]
         pub fn get(&self, topic_type_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 topic_type_name: topic_type_name.into(),
             }
         }
+        #[doc = "List event types."]
         pub fn list_event_types(&self, topic_type_name: impl Into<String>) -> list_event_types::Builder {
             list_event_types::Builder {
                 client: self.0.clone(),

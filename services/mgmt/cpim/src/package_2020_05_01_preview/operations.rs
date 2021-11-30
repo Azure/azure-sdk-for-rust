@@ -177,6 +177,7 @@ pub mod guest_usages {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a Guest Usages resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -190,6 +191,7 @@ pub mod guest_usages {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Creates a Guest Usages resource"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -204,6 +206,7 @@ pub mod guest_usages {
                 resource: None,
             }
         }
+        #[doc = "Updates a Guest Usages resource"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -218,6 +221,7 @@ pub mod guest_usages {
                 resource_patch: None,
             }
         }
+        #[doc = "Deletes a Guest Usages resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -231,12 +235,14 @@ pub mod guest_usages {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets Guest Usages resources under a subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets Guest Usages resources under resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,

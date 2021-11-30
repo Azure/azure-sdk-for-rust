@@ -217,6 +217,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all the supported operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -369,6 +370,7 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Downloads the updates on a Data Box Edge/Data Box Gateway device."]
         pub fn download_updates(
             &self,
             device_name: impl Into<String>,
@@ -395,6 +397,7 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Installs the updates on the Data Box Edge/Data Box Gateway device."]
         pub fn install_updates(
             &self,
             device_name: impl Into<String>,
@@ -421,6 +424,7 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Scans for updates on a Data Box Edge/Data Box Gateway device."]
         pub fn scan_for_updates(
             &self,
             device_name: impl Into<String>,
@@ -449,6 +453,7 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets information about the availability of updates based on the last scan of the device. It also gets information about any ongoing download or install jobs on the device."]
         pub fn get_update_summary(
             &self,
             device_name: impl Into<String>,
@@ -1587,6 +1592,7 @@ pub mod alerts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets an alert by name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -2155,6 +2161,7 @@ pub mod jobs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of a specified job on a Data Box Edge/Data Box Gateway device."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -2351,6 +2358,7 @@ pub mod operations_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of a specified job on a Data Box Edge/Data Box Gateway device."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -2451,6 +2459,7 @@ pub mod orders {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the orders related to a Data Box Edge/Data Box Gateway device."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -2464,6 +2473,7 @@ pub mod orders {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a specific order by name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -2477,6 +2487,7 @@ pub mod orders {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates or updates an order."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -2492,6 +2503,7 @@ pub mod orders {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Deletes the order related to the device."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -3221,6 +3233,7 @@ pub mod shares {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the shares in a Data Box Edge/Data Box Gateway device."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -3234,6 +3247,7 @@ pub mod shares {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a share by name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -3249,6 +3263,7 @@ pub mod shares {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates a new share or updates an existing share on the device."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -3281,6 +3296,7 @@ pub mod shares {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Refreshes the share metadata with the data from the cloud."]
         pub fn refresh(
             &self,
             device_name: impl Into<String>,
@@ -3708,6 +3724,7 @@ pub mod storage_account_credentials {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the storage account credentials in a Data Box Edge/Data Box Gateway device."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,

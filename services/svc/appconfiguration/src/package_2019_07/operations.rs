@@ -105,6 +105,7 @@ pub enum Error {
     CheckRevisions(#[from] check_revisions::Error),
 }
 impl Client {
+    #[doc = "Gets a list of keys."]
     pub fn get_keys(&self) -> get_keys::Builder {
         get_keys::Builder {
             client: self.clone(),
@@ -114,6 +115,7 @@ impl Client {
             accept_datetime: None,
         }
     }
+    #[doc = "Requests the headers and status of the given resource."]
     pub fn check_keys(&self) -> check_keys::Builder {
         check_keys::Builder {
             client: self.clone(),
@@ -123,6 +125,7 @@ impl Client {
             accept_datetime: None,
         }
     }
+    #[doc = "Gets a list of key-values."]
     pub fn get_key_values(&self) -> get_key_values::Builder {
         get_key_values::Builder {
             client: self.clone(),
@@ -134,6 +137,7 @@ impl Client {
             select: Vec::new(),
         }
     }
+    #[doc = "Requests the headers and status of the given resource."]
     pub fn check_key_values(&self) -> check_key_values::Builder {
         check_key_values::Builder {
             client: self.clone(),
@@ -145,6 +149,7 @@ impl Client {
             select: Vec::new(),
         }
     }
+    #[doc = "Gets a single key-value."]
     pub fn get_key_value(&self, key: impl Into<String>) -> get_key_value::Builder {
         get_key_value::Builder {
             client: self.clone(),
@@ -157,6 +162,7 @@ impl Client {
             select: Vec::new(),
         }
     }
+    #[doc = "Creates a key-value."]
     pub fn put_key_value(&self, key: impl Into<String>) -> put_key_value::Builder {
         put_key_value::Builder {
             client: self.clone(),
@@ -168,6 +174,7 @@ impl Client {
             if_none_match: None,
         }
     }
+    #[doc = "Deletes a key-value."]
     pub fn delete_key_value(&self, key: impl Into<String>) -> delete_key_value::Builder {
         delete_key_value::Builder {
             client: self.clone(),
@@ -177,6 +184,7 @@ impl Client {
             if_match: None,
         }
     }
+    #[doc = "Requests the headers and status of the given resource."]
     pub fn check_key_value(&self, key: impl Into<String>) -> check_key_value::Builder {
         check_key_value::Builder {
             client: self.clone(),
@@ -189,6 +197,7 @@ impl Client {
             select: Vec::new(),
         }
     }
+    #[doc = "Gets a list of labels."]
     pub fn get_labels(&self) -> get_labels::Builder {
         get_labels::Builder {
             client: self.clone(),
@@ -199,6 +208,7 @@ impl Client {
             select: Vec::new(),
         }
     }
+    #[doc = "Requests the headers and status of the given resource."]
     pub fn check_labels(&self) -> check_labels::Builder {
         check_labels::Builder {
             client: self.clone(),
@@ -209,6 +219,7 @@ impl Client {
             select: Vec::new(),
         }
     }
+    #[doc = "Locks a key-value."]
     pub fn put_lock(&self, key: impl Into<String>) -> put_lock::Builder {
         put_lock::Builder {
             client: self.clone(),
@@ -219,6 +230,7 @@ impl Client {
             if_none_match: None,
         }
     }
+    #[doc = "Unlocks a key-value."]
     pub fn delete_lock(&self, key: impl Into<String>) -> delete_lock::Builder {
         delete_lock::Builder {
             client: self.clone(),
@@ -229,6 +241,7 @@ impl Client {
             if_none_match: None,
         }
     }
+    #[doc = "Gets a list of key-value revisions."]
     pub fn get_revisions(&self) -> get_revisions::Builder {
         get_revisions::Builder {
             client: self.clone(),
@@ -240,6 +253,7 @@ impl Client {
             select: Vec::new(),
         }
     }
+    #[doc = "Requests the headers and status of the given resource."]
     pub fn check_revisions(&self) -> check_revisions::Builder {
         check_revisions::Builder {
             client: self.clone(),

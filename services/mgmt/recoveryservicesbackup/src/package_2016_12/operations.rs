@@ -643,6 +643,7 @@ pub mod protection_containers {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Inquires all the protectable items under the given container."]
         pub fn inquire(
             &self,
             vault_name: impl Into<String>,

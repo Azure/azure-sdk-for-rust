@@ -186,12 +186,14 @@ pub mod sap_monitors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of SAP monitors in the specified subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets properties of a SAP monitor."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -205,6 +207,7 @@ pub mod sap_monitors {
                 sap_monitor_name: sap_monitor_name.into(),
             }
         }
+        #[doc = "Creates a SAP monitor."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -220,6 +223,7 @@ pub mod sap_monitors {
                 sap_monitor_parameter: sap_monitor_parameter.into(),
             }
         }
+        #[doc = "Patches the Tags field of a SAP monitor."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -235,6 +239,7 @@ pub mod sap_monitors {
                 tags_parameter: tags_parameter.into(),
             }
         }
+        #[doc = "Deletes a SAP monitor."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -653,6 +658,7 @@ pub mod provider_instances {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of provider instances in the specified SAP monitor."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -666,6 +672,7 @@ pub mod provider_instances {
                 sap_monitor_name: sap_monitor_name.into(),
             }
         }
+        #[doc = "Gets properties of a provider instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -681,6 +688,7 @@ pub mod provider_instances {
                 provider_instance_name: provider_instance_name.into(),
             }
         }
+        #[doc = "Creates a provider instance."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -698,6 +706,7 @@ pub mod provider_instances {
                 provider_instance_parameter: provider_instance_parameter.into(),
             }
         }
+        #[doc = "Deletes a provider instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

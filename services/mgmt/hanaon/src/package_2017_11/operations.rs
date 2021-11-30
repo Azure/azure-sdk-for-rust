@@ -183,12 +183,14 @@ pub mod hana_instances {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of SAP HANA instances in the specified subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of SAP HANA instances in the specified subscription and the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -200,6 +202,7 @@ pub mod hana_instances {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets properties of a SAP HANA instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -213,6 +216,7 @@ pub mod hana_instances {
                 hana_instance_name: hana_instance_name.into(),
             }
         }
+        #[doc = "Creates a SAP HANA instance."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -228,6 +232,7 @@ pub mod hana_instances {
                 hana_instance_parameter: hana_instance_parameter.into(),
             }
         }
+        #[doc = "Patches the Tags field of a SAP HANA instance."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -243,6 +248,7 @@ pub mod hana_instances {
                 tags_parameter: tags_parameter.into(),
             }
         }
+        #[doc = "Deletes a SAP HANA instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

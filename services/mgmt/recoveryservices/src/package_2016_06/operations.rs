@@ -421,6 +421,7 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the list of private link resources that need to be created for Backup and SiteRecovery"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -434,6 +435,7 @@ pub mod private_link_resources {
                 vault_name: vault_name.into(),
             }
         }
+        #[doc = "Returns a specified private link resource that need to be created for Backup and SiteRecovery"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -601,6 +603,7 @@ pub mod recovery_services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "API to check for resource name availability.\r\nA name is available if no other resource exists that has the same SubscriptionId, Resource Name and Type\r\nor if one or more such resources exist, each of these must be GC'd and their time of deletion be more than 24 Hours Ago"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,

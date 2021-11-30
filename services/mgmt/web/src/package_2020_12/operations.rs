@@ -1423,12 +1423,14 @@ pub mod app_service_certificate_orders {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all certificate orders in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Validate information for a certificate order."]
         pub fn validate_purchase_information(
             &self,
             app_service_certificate_order: impl Into<models::AppServiceCertificateOrder>,
@@ -1440,6 +1442,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get certificate orders in a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1451,6 +1454,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a certificate order."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1464,6 +1468,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a certificate purchase order."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1479,6 +1484,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a certificate purchase order."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1494,6 +1500,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete an existing certificate order."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1507,6 +1514,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all certificates associated with a certificate order."]
         pub fn list_certificates(
             &self,
             resource_group_name: impl Into<String>,
@@ -1520,6 +1528,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the certificate associated with a certificate order."]
         pub fn get_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -1535,6 +1544,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a certificate and associates with key vault secret."]
         pub fn create_or_update_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -1552,6 +1562,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a certificate and associates with key vault secret."]
         pub fn update_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -1569,6 +1580,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the certificate associated with a certificate order."]
         pub fn delete_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -1584,6 +1596,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reissue an existing certificate order."]
         pub fn reissue(
             &self,
             resource_group_name: impl Into<String>,
@@ -1599,6 +1612,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Renew an existing certificate order."]
         pub fn renew(
             &self,
             resource_group_name: impl Into<String>,
@@ -1614,6 +1628,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resend certificate email."]
         pub fn resend_email(
             &self,
             resource_group_name: impl Into<String>,
@@ -1627,6 +1642,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Verify domain ownership for this certificate order."]
         pub fn resend_request_emails(
             &self,
             resource_group_name: impl Into<String>,
@@ -1642,6 +1658,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Verify domain ownership for this certificate order."]
         pub fn retrieve_site_seal(
             &self,
             resource_group_name: impl Into<String>,
@@ -1657,6 +1674,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Verify domain ownership for this certificate order."]
         pub fn verify_domain_ownership(
             &self,
             resource_group_name: impl Into<String>,
@@ -1670,6 +1688,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve the list of certificate actions."]
         pub fn retrieve_certificate_actions(
             &self,
             resource_group_name: impl Into<String>,
@@ -1683,6 +1702,7 @@ pub mod app_service_certificate_orders {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve email history."]
         pub fn retrieve_certificate_email_history(
             &self,
             resource_group_name: impl Into<String>,
@@ -3220,6 +3240,7 @@ pub mod certificate_orders_diagnostics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Microsoft.CertificateRegistration to get the list of detectors for this RP."]
         pub fn list_app_service_certificate_order_detector_response(
             &self,
             resource_group_name: impl Into<String>,
@@ -3233,6 +3254,7 @@ pub mod certificate_orders_diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Microsoft.CertificateRegistration call to get a detector response from App Lens."]
         pub fn get_app_service_certificate_order_detector_response(
             &self,
             resource_group_name: impl Into<String>,
@@ -3432,6 +3454,7 @@ pub mod certificate_registration_provider {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
@@ -3509,6 +3532,7 @@ pub mod domains {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check if a domain is available for registration."]
         pub fn check_availability(
             &self,
             identifier: impl Into<models::NameIdentifier>,
@@ -3520,18 +3544,21 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all domains in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generate a single sign-on request for the domain management portal."]
         pub fn get_control_center_sso_request(&self, subscription_id: impl Into<String>) -> get_control_center_sso_request::Builder {
             get_control_center_sso_request::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get domain name recommendations based on keywords."]
         pub fn list_recommendations(
             &self,
             parameters: impl Into<models::DomainRecommendationSearchParameters>,
@@ -3543,6 +3570,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all domains in a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -3554,6 +3582,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a domain."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3567,6 +3596,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a domain."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3582,6 +3612,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a domain."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3597,6 +3628,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a domain."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3611,6 +3643,7 @@ pub mod domains {
                 force_hard_delete_domain: None,
             }
         }
+        #[doc = "Lists domain ownership identifiers."]
         pub fn list_ownership_identifiers(
             &self,
             resource_group_name: impl Into<String>,
@@ -3624,6 +3657,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get ownership identifier for domain"]
         pub fn get_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -3639,6 +3673,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates an ownership identifier for a domain or updates identifier details for an existing identifier"]
         pub fn create_or_update_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -3656,6 +3691,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates an ownership identifier for a domain or updates identifier details for an existing identifier"]
         pub fn update_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -3673,6 +3709,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete ownership identifier for domain"]
         pub fn delete_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -3688,6 +3725,7 @@ pub mod domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Renew a domain."]
         pub fn renew(
             &self,
             resource_group_name: impl Into<String>,
@@ -4874,12 +4912,14 @@ pub mod top_level_domains {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all top-level domains supported for registration."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get details of a top-level domain."]
         pub fn get(&self, name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -4887,6 +4927,7 @@ pub mod top_level_domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all legal agreements that user needs to accept before purchasing a domain."]
         pub fn list_agreements(
             &self,
             name: impl Into<String>,
@@ -5133,6 +5174,7 @@ pub mod domain_registration_provider {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
@@ -5210,6 +5252,7 @@ pub mod certificates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all certificates for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -5217,6 +5260,7 @@ pub mod certificates {
                 filter: None,
             }
         }
+        #[doc = "Get all certificates in a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -5228,6 +5272,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a certificate."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5241,6 +5286,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a certificate."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5256,6 +5302,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a certificate."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5271,6 +5318,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a certificate."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5759,12 +5807,14 @@ pub mod deleted_web_apps {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all deleted apps for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all deleted apps for a subscription at location"]
         pub fn list_by_location(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list_by_location::Builder {
             list_by_location::Builder {
                 client: self.0.clone(),
@@ -5772,6 +5822,7 @@ pub mod deleted_web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get deleted app for a subscription at location."]
         pub fn get_deleted_web_app_by_location(
             &self,
             location: impl Into<String>,
@@ -6016,6 +6067,7 @@ pub mod diagnostics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Hosting Environment Detector Responses"]
         pub fn list_hosting_environment_detector_responses(
             &self,
             resource_group_name: impl Into<String>,
@@ -6029,6 +6081,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Hosting Environment Detector Response"]
         pub fn get_hosting_environment_detector_response(
             &self,
             resource_group_name: impl Into<String>,
@@ -6047,6 +6100,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "List Site Detector Responses"]
         pub fn list_site_detector_responses(
             &self,
             resource_group_name: impl Into<String>,
@@ -6060,6 +6114,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get site detector response"]
         pub fn get_site_detector_response(
             &self,
             resource_group_name: impl Into<String>,
@@ -6078,6 +6133,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "Get Diagnostics Categories"]
         pub fn list_site_diagnostic_categories(
             &self,
             resource_group_name: impl Into<String>,
@@ -6091,6 +6147,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Diagnostics Category"]
         pub fn get_site_diagnostic_category(
             &self,
             resource_group_name: impl Into<String>,
@@ -6106,6 +6163,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Site Analyses"]
         pub fn list_site_analyses(
             &self,
             resource_group_name: impl Into<String>,
@@ -6121,6 +6179,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Site Analysis"]
         pub fn get_site_analysis(
             &self,
             resource_group_name: impl Into<String>,
@@ -6138,6 +6197,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Execute Analysis"]
         pub fn execute_site_analysis(
             &self,
             resource_group_name: impl Into<String>,
@@ -6158,6 +6218,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "Get Detectors"]
         pub fn list_site_detectors(
             &self,
             resource_group_name: impl Into<String>,
@@ -6173,6 +6234,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Detector"]
         pub fn get_site_detector(
             &self,
             resource_group_name: impl Into<String>,
@@ -6190,6 +6252,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Execute Detector"]
         pub fn execute_site_detector(
             &self,
             resource_group_name: impl Into<String>,
@@ -6210,6 +6273,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "List Site Detector Responses"]
         pub fn list_site_detector_responses_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -6225,6 +6289,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get site detector response"]
         pub fn get_site_detector_response_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -6245,6 +6310,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "Get Diagnostics Categories"]
         pub fn list_site_diagnostic_categories_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -6260,6 +6326,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Diagnostics Category"]
         pub fn get_site_diagnostic_category_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -6277,6 +6344,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Site Analyses"]
         pub fn list_site_analyses_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -6294,6 +6362,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Site Analysis"]
         pub fn get_site_analysis_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -6313,6 +6382,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Execute Analysis"]
         pub fn execute_site_analysis_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -6335,6 +6405,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "Get Detectors"]
         pub fn list_site_detectors_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -6352,6 +6423,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Detector"]
         pub fn get_site_detector_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -6371,6 +6443,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Execute Detector"]
         pub fn execute_site_detector_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -8339,6 +8412,7 @@ pub mod global {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get deleted app for a subscription."]
         pub fn get_deleted_web_app(
             &self,
             deleted_site_id: impl Into<String>,
@@ -8350,6 +8424,7 @@ pub mod global {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all deleted apps for a subscription."]
         pub fn get_deleted_web_app_snapshots(
             &self,
             deleted_site_id: impl Into<String>,
@@ -8361,6 +8436,7 @@ pub mod global {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an operation in a subscription and given region"]
         pub fn get_subscription_operation_with_async_response(
             &self,
             location: impl Into<String>,
@@ -8602,18 +8678,21 @@ pub mod provider {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get available application frameworks and their versions"]
         pub fn get_available_stacks(&self) -> get_available_stacks::Builder {
             get_available_stacks::Builder {
                 client: self.0.clone(),
                 os_type_selected: None,
             }
         }
+        #[doc = "Get available Function app frameworks and their versions"]
         pub fn get_function_app_stacks(&self) -> get_function_app_stacks::Builder {
             get_function_app_stacks::Builder {
                 client: self.0.clone(),
                 stack_os_type: None,
             }
         }
+        #[doc = "Get available Function app frameworks and their versions for location"]
         pub fn get_function_app_stacks_for_location(&self, location: impl Into<String>) -> get_function_app_stacks_for_location::Builder {
             get_function_app_stacks_for_location::Builder {
                 client: self.0.clone(),
@@ -8621,6 +8700,7 @@ pub mod provider {
                 stack_os_type: None,
             }
         }
+        #[doc = "Get available Web app frameworks and their versions for location"]
         pub fn get_web_app_stacks_for_location(&self, location: impl Into<String>) -> get_web_app_stacks_for_location::Builder {
             get_web_app_stacks_for_location::Builder {
                 client: self.0.clone(),
@@ -8628,15 +8708,18 @@ pub mod provider {
                 stack_os_type: None,
             }
         }
+        #[doc = "Gets all available operations for the Microsoft.Web resource provider. Also exposes resource metric definitions"]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
+        #[doc = "Get available Web app frameworks and their versions"]
         pub fn get_web_app_stacks(&self) -> get_web_app_stacks::Builder {
             get_web_app_stacks::Builder {
                 client: self.0.clone(),
                 stack_os_type: None,
             }
         }
+        #[doc = "Get available application frameworks and their versions"]
         pub fn get_available_stacks_on_prem(&self, subscription_id: impl Into<String>) -> get_available_stacks_on_prem::Builder {
             get_available_stacks_on_prem::Builder {
                 client: self.0.clone(),
@@ -9197,6 +9280,7 @@ pub mod recommendations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all recommendations for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -9205,12 +9289,14 @@ pub mod recommendations {
                 filter: None,
             }
         }
+        #[doc = "Reset all recommendation opt-out settings for a subscription."]
         pub fn reset_all_filters(&self, subscription_id: impl Into<String>) -> reset_all_filters::Builder {
             reset_all_filters::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Disables the specified rule so it will not apply to a subscription in the future."]
         pub fn disable_recommendation_for_subscription(
             &self,
             name: impl Into<String>,
@@ -9222,6 +9308,7 @@ pub mod recommendations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get past recommendations for an app, optionally specified by the time range."]
         pub fn list_history_for_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -9237,6 +9324,7 @@ pub mod recommendations {
                 filter: None,
             }
         }
+        #[doc = "Get all recommendations for a hosting environment."]
         pub fn list_recommended_rules_for_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -9252,6 +9340,7 @@ pub mod recommendations {
                 filter: None,
             }
         }
+        #[doc = "Disable all recommendations for an app."]
         pub fn disable_all_for_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -9267,6 +9356,7 @@ pub mod recommendations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reset all recommendation opt-out settings for an app."]
         pub fn reset_all_filters_for_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -9282,6 +9372,7 @@ pub mod recommendations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a recommendation rule for an app."]
         pub fn get_rule_details_by_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -9299,6 +9390,7 @@ pub mod recommendations {
                 recommendation_id: None,
             }
         }
+        #[doc = "Disables the specific rule for a web site permanently."]
         pub fn disable_recommendation_for_hosting_environment(
             &self,
             resource_group_name: impl Into<String>,
@@ -9316,6 +9408,7 @@ pub mod recommendations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get past recommendations for an app, optionally specified by the time range."]
         pub fn list_history_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -9331,6 +9424,7 @@ pub mod recommendations {
                 filter: None,
             }
         }
+        #[doc = "Get all recommendations for an app."]
         pub fn list_recommended_rules_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -9346,6 +9440,7 @@ pub mod recommendations {
                 filter: None,
             }
         }
+        #[doc = "Disable all recommendations for an app."]
         pub fn disable_all_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -9359,6 +9454,7 @@ pub mod recommendations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reset all recommendation opt-out settings for an app."]
         pub fn reset_all_filters_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -9372,6 +9468,7 @@ pub mod recommendations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a recommendation rule for an app."]
         pub fn get_rule_details_by_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -9389,6 +9486,7 @@ pub mod recommendations {
                 recommendation_id: None,
             }
         }
+        #[doc = "Disables the specific rule for a web site permanently."]
         pub fn disable_recommendation_for_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -10649,6 +10747,7 @@ pub mod recommendations {
     }
 }
 impl Client {
+    #[doc = "Exchange code for GitHub access token for AppService CLI"]
     pub fn generate_github_access_token_for_appservice_cli_async(
         &self,
         request: impl Into<models::AppserviceGithubTokenRequest>,
@@ -10658,24 +10757,29 @@ impl Client {
             request: request.into(),
         }
     }
+    #[doc = "Gets publishing user"]
     pub fn get_publishing_user(&self) -> get_publishing_user::Builder {
         get_publishing_user::Builder { client: self.clone() }
     }
+    #[doc = "Updates publishing user"]
     pub fn update_publishing_user(&self, user_details: impl Into<models::User>) -> update_publishing_user::Builder {
         update_publishing_user::Builder {
             client: self.clone(),
             user_details: user_details.into(),
         }
     }
+    #[doc = "Gets the source controls available for Azure websites."]
     pub fn list_source_controls(&self) -> list_source_controls::Builder {
         list_source_controls::Builder { client: self.clone() }
     }
+    #[doc = "Gets source control token"]
     pub fn get_source_control(&self, source_control_type: impl Into<String>) -> get_source_control::Builder {
         get_source_control::Builder {
             client: self.clone(),
             source_control_type: source_control_type.into(),
         }
     }
+    #[doc = "Updates source control token"]
     pub fn update_source_control(
         &self,
         source_control_type: impl Into<String>,
@@ -10687,6 +10791,7 @@ impl Client {
             request_message: request_message.into(),
         }
     }
+    #[doc = "Gets a list of meters for a given location."]
     pub fn list_billing_meters(&self, subscription_id: impl Into<String>) -> list_billing_meters::Builder {
         list_billing_meters::Builder {
             client: self.clone(),
@@ -10695,6 +10800,7 @@ impl Client {
             os_type: None,
         }
     }
+    #[doc = "Check if a resource name is available."]
     pub fn check_name_availability(
         &self,
         request: impl Into<models::ResourceNameAvailabilityRequest>,
@@ -10706,6 +10812,7 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Gets list of available geo regions plus ministamps"]
     pub fn get_subscription_deployment_locations(
         &self,
         subscription_id: impl Into<String>,
@@ -10715,6 +10822,7 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Get a list of available geographical regions."]
     pub fn list_geo_regions(&self, subscription_id: impl Into<String>) -> list_geo_regions::Builder {
         list_geo_regions::Builder {
             client: self.clone(),
@@ -10725,6 +10833,7 @@ impl Client {
             linux_dynamic_workers_enabled: None,
         }
     }
+    #[doc = "List all apps that are assigned to a hostname."]
     pub fn list_site_identifiers_assigned_to_host_name(
         &self,
         name_identifier: impl Into<models::NameIdentifier>,
@@ -10736,18 +10845,21 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "List all premier add-on offers."]
     pub fn list_premier_add_on_offers(&self, subscription_id: impl Into<String>) -> list_premier_add_on_offers::Builder {
         list_premier_add_on_offers::Builder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "List all SKUs."]
     pub fn list_skus(&self, subscription_id: impl Into<String>) -> list_skus::Builder {
         list_skus::Builder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Verifies if this VNET is compatible with an App Service Environment by analyzing the Network Security Group rules."]
     pub fn verify_hosting_environment_vnet(
         &self,
         parameters: impl Into<models::VnetParameters>,
@@ -10759,6 +10871,7 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Move resources between resource groups."]
     pub fn move_(
         &self,
         resource_group_name: impl Into<String>,
@@ -10772,6 +10885,7 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Validate if a resource can be created."]
     pub fn validate(
         &self,
         resource_group_name: impl Into<String>,
@@ -10785,6 +10899,7 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Validate whether a resource can be moved."]
     pub fn validate_move(
         &self,
         resource_group_name: impl Into<String>,
@@ -12092,12 +12207,14 @@ pub mod web_apps {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all apps for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all web, mobile, and API apps in the specified resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -12110,6 +12227,7 @@ pub mod web_apps {
                 include_slots: None,
             }
         }
+        #[doc = "Gets the details of a web, mobile, or API app."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -12123,6 +12241,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -12138,6 +12257,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -12153,6 +12273,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a web, mobile, or API app, or one of the deployment slots."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -12168,6 +12289,7 @@ pub mod web_apps {
                 delete_empty_server_farm: None,
             }
         }
+        #[doc = "Analyze a custom hostname."]
         pub fn analyze_custom_hostname(
             &self,
             resource_group_name: impl Into<String>,
@@ -12182,6 +12304,7 @@ pub mod web_apps {
                 host_name: None,
             }
         }
+        #[doc = "Applies the configuration settings from the target slot onto the current slot."]
         pub fn apply_slot_config_to_production(
             &self,
             resource_group_name: impl Into<String>,
@@ -12197,6 +12320,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a backup of an app."]
         pub fn backup(
             &self,
             resource_group_name: impl Into<String>,
@@ -12212,6 +12336,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets existing backups of an app."]
         pub fn list_backups(
             &self,
             resource_group_name: impl Into<String>,
@@ -12225,6 +12350,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a backup of an app by its ID."]
         pub fn get_backup_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -12240,6 +12366,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a backup of an app by its ID."]
         pub fn delete_backup(
             &self,
             resource_group_name: impl Into<String>,
@@ -12255,6 +12382,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets status of a web app backup that may be in progress, including secrets associated with the backup, such as the Azure Storage SAS URL. Also can be used to update the SAS URL for the backup if a new URL is passed in the request body."]
         pub fn list_backup_status_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -12272,6 +12400,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restores a specific backup to another app (or deployment slot, if specified)."]
         pub fn restore(
             &self,
             resource_group_name: impl Into<String>,
@@ -12289,6 +12418,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns whether Scm basic auth is allowed and whether Ftp is allowed for a given site."]
         pub fn get_basic_publishing_credentials_policies(
             &self,
             resource_group_name: impl Into<String>,
@@ -12302,6 +12432,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns whether FTP is allowed on the site or not."]
         pub fn get_ftp_allowed(
             &self,
             resource_group_name: impl Into<String>,
@@ -12315,6 +12446,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates whether FTP is allowed on the site or not."]
         pub fn update_ftp_allowed(
             &self,
             resource_group_name: impl Into<String>,
@@ -12330,6 +12462,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns whether Scm basic auth is allowed on the site or not."]
         pub fn get_scm_allowed(
             &self,
             resource_group_name: impl Into<String>,
@@ -12343,6 +12476,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates whether user publishing credentials are allowed on the site or not."]
         pub fn update_scm_allowed(
             &self,
             resource_group_name: impl Into<String>,
@@ -12358,6 +12492,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the configurations of an app"]
         pub fn list_configurations(
             &self,
             resource_group_name: impl Into<String>,
@@ -12371,6 +12506,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Replaces the application settings of an app."]
         pub fn update_application_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -12386,6 +12522,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the application settings of an app."]
         pub fn list_application_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -12399,6 +12536,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the Authentication / Authorization settings associated with web app."]
         pub fn update_auth_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -12414,6 +12552,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Authentication/Authorization settings of an app."]
         pub fn get_auth_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -12427,6 +12566,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates site's Authentication / Authorization settings for apps via the V2 format"]
         pub fn update_auth_settings_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -12442,6 +12582,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets site's Authentication / Authorization settings for apps via the V2 format"]
         pub fn get_auth_settings_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -12455,6 +12596,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the Azure storage account configurations of an app."]
         pub fn update_azure_storage_accounts(
             &self,
             resource_group_name: impl Into<String>,
@@ -12470,6 +12612,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Azure storage account configurations of an app."]
         pub fn list_azure_storage_accounts(
             &self,
             resource_group_name: impl Into<String>,
@@ -12483,6 +12626,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the backup configuration of an app."]
         pub fn update_backup_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -12498,6 +12642,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the backup configuration of an app."]
         pub fn delete_backup_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -12511,6 +12656,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the backup configuration of an app."]
         pub fn get_backup_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -12524,6 +12670,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the config reference app settings and status of an app"]
         pub fn get_app_settings_key_vault_references(
             &self,
             resource_group_name: impl Into<String>,
@@ -12537,6 +12684,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the config reference and status of an app"]
         pub fn get_app_setting_key_vault_reference(
             &self,
             resource_group_name: impl Into<String>,
@@ -12552,6 +12700,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the config reference app settings and status of an app"]
         pub fn get_site_connection_string_key_vault_references(
             &self,
             resource_group_name: impl Into<String>,
@@ -12565,6 +12714,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the config reference and status of an app"]
         pub fn get_site_connection_string_key_vault_reference(
             &self,
             resource_group_name: impl Into<String>,
@@ -12580,6 +12730,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Replaces the connection strings of an app."]
         pub fn update_connection_strings(
             &self,
             resource_group_name: impl Into<String>,
@@ -12595,6 +12746,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the connection strings of an app."]
         pub fn list_connection_strings(
             &self,
             resource_group_name: impl Into<String>,
@@ -12608,6 +12760,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the logging configuration of an app."]
         pub fn get_diagnostic_logs_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -12621,6 +12774,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the logging configuration of an app."]
         pub fn update_diagnostic_logs_config(
             &self,
             resource_group_name: impl Into<String>,
@@ -12636,6 +12790,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Replaces the metadata of an app."]
         pub fn update_metadata(
             &self,
             resource_group_name: impl Into<String>,
@@ -12651,6 +12806,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the metadata of an app."]
         pub fn list_metadata(
             &self,
             resource_group_name: impl Into<String>,
@@ -12664,6 +12820,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Git/FTP publishing credentials of an app."]
         pub fn list_publishing_credentials(
             &self,
             resource_group_name: impl Into<String>,
@@ -12677,6 +12834,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the Push settings associated with web app."]
         pub fn update_site_push_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -12692,6 +12850,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Push settings associated with web app."]
         pub fn list_site_push_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -12705,6 +12864,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the names of app settings and connection strings that stick to the slot (not swapped)."]
         pub fn list_slot_configuration_names(
             &self,
             resource_group_name: impl Into<String>,
@@ -12718,6 +12878,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the names of application settings and connection string that remain with the slot during swap operation."]
         pub fn update_slot_configuration_names(
             &self,
             resource_group_name: impl Into<String>,
@@ -12733,6 +12894,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the configuration of an app, such as platform version and bitness, default documents, virtual applications, Always On, etc."]
         pub fn get_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -12746,6 +12908,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the configuration of an app."]
         pub fn create_or_update_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -12761,6 +12924,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the configuration of an app."]
         pub fn update_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -12776,6 +12940,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of web app configuration snapshots identifiers. Each element of the list contains a timestamp and the ID of the snapshot."]
         pub fn list_configuration_snapshot_info(
             &self,
             resource_group_name: impl Into<String>,
@@ -12789,6 +12954,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a snapshot of the configuration of an app at a previous point in time."]
         pub fn get_configuration_snapshot(
             &self,
             resource_group_name: impl Into<String>,
@@ -12804,6 +12970,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reverts the configuration of an app to a previous snapshot."]
         pub fn recover_site_configuration_snapshot(
             &self,
             resource_group_name: impl Into<String>,
@@ -12819,6 +12986,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the last lines of docker logs for the given site"]
         pub fn get_web_site_container_logs(
             &self,
             resource_group_name: impl Into<String>,
@@ -12832,6 +13000,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the ZIP archived docker log files for the given site"]
         pub fn get_container_logs_zip(
             &self,
             resource_group_name: impl Into<String>,
@@ -12845,6 +13014,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List continuous web jobs for an app, or a deployment slot."]
         pub fn list_continuous_web_jobs(
             &self,
             resource_group_name: impl Into<String>,
@@ -12858,6 +13028,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a continuous web job by its ID for an app, or a deployment slot."]
         pub fn get_continuous_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -12873,6 +13044,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a continuous web job by its ID for an app, or a deployment slot."]
         pub fn delete_continuous_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -12888,6 +13060,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Start a continuous web job for an app, or a deployment slot."]
         pub fn start_continuous_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -12903,6 +13076,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stop a continuous web job for an app, or a deployment slot."]
         pub fn stop_continuous_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -12918,6 +13092,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List deployments for an app, or a deployment slot."]
         pub fn list_deployments(
             &self,
             resource_group_name: impl Into<String>,
@@ -12931,6 +13106,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a deployment by its ID for an app, or a deployment slot."]
         pub fn get_deployment(
             &self,
             resource_group_name: impl Into<String>,
@@ -12946,6 +13122,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a deployment for an app, or a deployment slot."]
         pub fn create_deployment(
             &self,
             resource_group_name: impl Into<String>,
@@ -12963,6 +13140,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a deployment by its ID for an app, or a deployment slot."]
         pub fn delete_deployment(
             &self,
             resource_group_name: impl Into<String>,
@@ -12978,6 +13156,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List deployment log for specific deployment for an app, or a deployment slot."]
         pub fn list_deployment_log(
             &self,
             resource_group_name: impl Into<String>,
@@ -12993,6 +13172,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Discovers an existing app backup that can be restored from a blob in Azure storage. Use this to get information about the databases stored in a backup."]
         pub fn discover_backup(
             &self,
             resource_group_name: impl Into<String>,
@@ -13008,6 +13188,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists ownership identifiers for domain associated with web app."]
         pub fn list_domain_ownership_identifiers(
             &self,
             resource_group_name: impl Into<String>,
@@ -13021,6 +13202,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get domain ownership identifier for web app."]
         pub fn get_domain_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -13036,6 +13218,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
         pub fn create_or_update_domain_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -13053,6 +13236,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
         pub fn update_domain_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -13070,6 +13254,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a domain ownership identifier for a web app."]
         pub fn delete_domain_ownership_identifier(
             &self,
             resource_group_name: impl Into<String>,
@@ -13085,6 +13270,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the status of the last MSDeploy operation."]
         pub fn get_ms_deploy_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -13098,6 +13284,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Invoke the MSDeploy web app extension."]
         pub fn create_ms_deploy_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -13113,6 +13300,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
         pub fn get_ms_deploy_log(
             &self,
             resource_group_name: impl Into<String>,
@@ -13126,6 +13314,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the functions for a web site, or a deployment slot."]
         pub fn list_functions(
             &self,
             resource_group_name: impl Into<String>,
@@ -13139,6 +13328,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Fetch a short lived token that can be exchanged for a master key."]
         pub fn get_functions_admin_token(
             &self,
             resource_group_name: impl Into<String>,
@@ -13152,6 +13342,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get function information by its ID for web site, or a deployment slot."]
         pub fn get_function(
             &self,
             resource_group_name: impl Into<String>,
@@ -13167,6 +13358,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create function for web site, or a deployment slot."]
         pub fn create_function(
             &self,
             resource_group_name: impl Into<String>,
@@ -13184,6 +13376,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a function for web site, or a deployment slot."]
         pub fn delete_function(
             &self,
             resource_group_name: impl Into<String>,
@@ -13199,6 +13392,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Add or update a function secret."]
         pub fn create_or_update_function_secret(
             &self,
             resource_group_name: impl Into<String>,
@@ -13218,6 +13412,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a function secret."]
         pub fn delete_function_secret(
             &self,
             resource_group_name: impl Into<String>,
@@ -13235,6 +13430,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get function keys for a function in a web site, or a deployment slot."]
         pub fn list_function_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -13250,6 +13446,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get function secrets for a function in a web site, or a deployment slot."]
         pub fn list_function_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -13265,6 +13462,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get host secrets for a function app."]
         pub fn list_host_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -13278,6 +13476,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "This is to allow calling via powershell and ARM template."]
         pub fn list_sync_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -13291,6 +13490,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Syncs function trigger metadata to the management database"]
         pub fn sync_functions(
             &self,
             resource_group_name: impl Into<String>,
@@ -13304,6 +13504,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Add or update a host level secret."]
         pub fn create_or_update_host_secret(
             &self,
             resource_group_name: impl Into<String>,
@@ -13323,6 +13524,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a host level secret."]
         pub fn delete_host_secret(
             &self,
             resource_group_name: impl Into<String>,
@@ -13340,6 +13542,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get hostname bindings for an app or a deployment slot."]
         pub fn list_host_name_bindings(
             &self,
             resource_group_name: impl Into<String>,
@@ -13353,6 +13556,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the named hostname binding for an app (or deployment slot, if specified)."]
         pub fn get_host_name_binding(
             &self,
             resource_group_name: impl Into<String>,
@@ -13368,6 +13572,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a hostname binding for an app."]
         pub fn create_or_update_host_name_binding(
             &self,
             resource_group_name: impl Into<String>,
@@ -13385,6 +13590,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a hostname binding for an app."]
         pub fn delete_host_name_binding(
             &self,
             resource_group_name: impl Into<String>,
@@ -13400,6 +13606,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves a specific Service Bus Hybrid Connection used by this Web App."]
         pub fn get_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -13417,6 +13624,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
         pub fn create_or_update_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -13436,6 +13644,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
         pub fn update_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -13455,6 +13664,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Removes a Hybrid Connection from this site."]
         pub fn delete_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -13472,6 +13682,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves all Service Bus Hybrid Connections used by this Web App."]
         pub fn list_hybrid_connections(
             &self,
             resource_group_name: impl Into<String>,
@@ -13485,6 +13696,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets hybrid connections configured for an app (or deployment slot, if specified)."]
         pub fn list_relay_service_connections(
             &self,
             resource_group_name: impl Into<String>,
@@ -13498,6 +13710,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a hybrid connection configuration by its name."]
         pub fn get_relay_service_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -13513,6 +13726,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
         pub fn create_or_update_relay_service_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -13530,6 +13744,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
         pub fn update_relay_service_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -13547,6 +13762,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a relay service connection by its name."]
         pub fn delete_relay_service_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -13562,6 +13778,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all scale-out instances of an app."]
         pub fn list_instance_identifiers(
             &self,
             resource_group_name: impl Into<String>,
@@ -13575,6 +13792,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all scale-out instances of an app."]
         pub fn get_instance_info(
             &self,
             resource_group_name: impl Into<String>,
@@ -13590,6 +13808,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the status of the last MSDeploy operation."]
         pub fn get_instance_ms_deploy_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -13605,6 +13824,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Invoke the MSDeploy web app extension."]
         pub fn create_instance_ms_deploy_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -13622,6 +13842,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
         pub fn get_instance_ms_deploy_log(
             &self,
             resource_group_name: impl Into<String>,
@@ -13637,6 +13858,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
         pub fn list_instance_processes(
             &self,
             resource_group_name: impl Into<String>,
@@ -13652,6 +13874,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
         pub fn get_instance_process(
             &self,
             resource_group_name: impl Into<String>,
@@ -13669,6 +13892,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
         pub fn delete_instance_process(
             &self,
             resource_group_name: impl Into<String>,
@@ -13686,6 +13910,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
         pub fn get_instance_process_dump(
             &self,
             resource_group_name: impl Into<String>,
@@ -13703,6 +13928,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
         pub fn list_instance_process_modules(
             &self,
             resource_group_name: impl Into<String>,
@@ -13720,6 +13946,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
         pub fn get_instance_process_module(
             &self,
             resource_group_name: impl Into<String>,
@@ -13739,6 +13966,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
         pub fn list_instance_process_threads(
             &self,
             resource_group_name: impl Into<String>,
@@ -13756,6 +13984,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Shows whether an app can be cloned to another resource group or subscription."]
         pub fn is_cloneable(
             &self,
             resource_group_name: impl Into<String>,
@@ -13769,6 +13998,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets existing backups of an app."]
         pub fn list_site_backups(
             &self,
             resource_group_name: impl Into<String>,
@@ -13782,6 +14012,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "This is to allow calling via powershell and ARM template."]
         pub fn list_sync_function_triggers(
             &self,
             resource_group_name: impl Into<String>,
@@ -13795,6 +14026,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restores a web app."]
         pub fn migrate_storage(
             &self,
             subscription_name: impl Into<String>,
@@ -13812,6 +14044,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Migrates a local (in-app) MySql database to a remote MySql database."]
         pub fn migrate_my_sql(
             &self,
             resource_group_name: impl Into<String>,
@@ -13827,6 +14060,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the status of MySql in app migration, if one is active, and whether or not MySql in app is enabled"]
         pub fn get_migrate_my_sql_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -13840,6 +14074,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a Swift Virtual Network connection."]
         pub fn get_swift_virtual_network_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -13853,6 +14088,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Integrates this Web App with a Virtual Network. This requires that 1) \"swiftSupported\" is true when doing a GET against this resource, and 2) that the target Subnet has already been delegated, and is not\r\nin use by another App Service Plan other than the one this App is in."]
         pub fn create_or_update_swift_virtual_network_connection_with_check(
             &self,
             resource_group_name: impl Into<String>,
@@ -13868,6 +14104,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a Swift Virtual Network connection from an app (or deployment slot)."]
         pub fn delete_swift_virtual_network(
             &self,
             resource_group_name: impl Into<String>,
@@ -13881,6 +14118,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network features used by the app (or deployment slot, if specified)."]
         pub fn list_network_features(
             &self,
             resource_group_name: impl Into<String>,
@@ -13896,6 +14134,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
         pub fn get_network_trace_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -13911,6 +14150,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Start capturing network packets for the site (To be deprecated)."]
         pub fn start_web_site_network_trace(
             &self,
             resource_group_name: impl Into<String>,
@@ -13927,6 +14167,7 @@ pub mod web_apps {
                 sas_url: None,
             }
         }
+        #[doc = "Start capturing network packets for the site."]
         pub fn start_web_site_network_trace_operation(
             &self,
             resource_group_name: impl Into<String>,
@@ -13943,6 +14184,7 @@ pub mod web_apps {
                 sas_url: None,
             }
         }
+        #[doc = "Stop ongoing capturing network packets for the site."]
         pub fn stop_web_site_network_trace(
             &self,
             resource_group_name: impl Into<String>,
@@ -13956,6 +14198,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
         pub fn get_network_traces(
             &self,
             resource_group_name: impl Into<String>,
@@ -13971,6 +14214,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
         pub fn get_network_trace_operation_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -13986,6 +14230,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
         pub fn get_network_traces_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -14001,6 +14246,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generates a new publishing password for an app (or deployment slot, if specified)."]
         pub fn generate_new_site_publishing_password(
             &self,
             resource_group_name: impl Into<String>,
@@ -14014,6 +14260,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets perfmon counters for web app."]
         pub fn list_perf_mon_counters(
             &self,
             resource_group_name: impl Into<String>,
@@ -14028,6 +14275,7 @@ pub mod web_apps {
                 filter: None,
             }
         }
+        #[doc = "Gets web app's event logs."]
         pub fn get_site_php_error_log_flag(
             &self,
             resource_group_name: impl Into<String>,
@@ -14041,6 +14289,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the premier add-ons of an app."]
         pub fn list_premier_add_ons(
             &self,
             resource_group_name: impl Into<String>,
@@ -14054,6 +14303,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a named add-on of an app."]
         pub fn get_premier_add_on(
             &self,
             resource_group_name: impl Into<String>,
@@ -14069,6 +14319,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a named add-on of an app."]
         pub fn add_premier_add_on(
             &self,
             resource_group_name: impl Into<String>,
@@ -14086,6 +14337,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a named add-on of an app."]
         pub fn update_premier_add_on(
             &self,
             resource_group_name: impl Into<String>,
@@ -14103,6 +14355,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a premier add-on from an app."]
         pub fn delete_premier_add_on(
             &self,
             resource_group_name: impl Into<String>,
@@ -14118,6 +14371,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets data around private site access enablement and authorized Virtual Networks that can access the site."]
         pub fn get_private_access(
             &self,
             resource_group_name: impl Into<String>,
@@ -14131,6 +14385,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sets data around private site access enablement and authorized Virtual Networks that can access the site."]
         pub fn put_private_access_vnet(
             &self,
             resource_group_name: impl Into<String>,
@@ -14146,6 +14401,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the list of private endpoint connections associated with a site"]
         pub fn get_private_endpoint_connection_list(
             &self,
             resource_group_name: impl Into<String>,
@@ -14159,6 +14415,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a private endpoint connection"]
         pub fn get_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -14174,6 +14431,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Approves or rejects a private endpoint connection"]
         pub fn approve_or_reject_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -14191,6 +14449,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection"]
         pub fn delete_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -14206,6 +14465,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the private link resources"]
         pub fn get_private_link_resources(
             &self,
             resource_group_name: impl Into<String>,
@@ -14219,6 +14479,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
         pub fn list_processes(
             &self,
             resource_group_name: impl Into<String>,
@@ -14232,6 +14493,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
         pub fn get_process(
             &self,
             resource_group_name: impl Into<String>,
@@ -14247,6 +14509,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
         pub fn delete_process(
             &self,
             resource_group_name: impl Into<String>,
@@ -14262,6 +14525,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
         pub fn get_process_dump(
             &self,
             resource_group_name: impl Into<String>,
@@ -14277,6 +14541,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
         pub fn list_process_modules(
             &self,
             resource_group_name: impl Into<String>,
@@ -14292,6 +14557,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
         pub fn get_process_module(
             &self,
             resource_group_name: impl Into<String>,
@@ -14309,6 +14575,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
         pub fn list_process_threads(
             &self,
             resource_group_name: impl Into<String>,
@@ -14324,6 +14591,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get public certificates for an app or a deployment slot."]
         pub fn list_public_certificates(
             &self,
             resource_group_name: impl Into<String>,
@@ -14337,6 +14605,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the named public certificate for an app (or deployment slot, if specified)."]
         pub fn get_public_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -14352,6 +14621,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a hostname binding for an app."]
         pub fn create_or_update_public_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -14369,6 +14639,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a hostname binding for an app."]
         pub fn delete_public_certificate(
             &self,
             resource_group_name: impl Into<String>,
@@ -14384,6 +14655,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the publishing profile for an app (or deployment slot, if specified)."]
         pub fn list_publishing_profile_xml_with_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -14399,6 +14671,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resets the configuration settings of the current slot if they were previously modified by calling the API with POST."]
         pub fn reset_production_slot_config(
             &self,
             resource_group_name: impl Into<String>,
@@ -14412,6 +14685,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restarts an app (or deployment slot, if specified)."]
         pub fn restart(
             &self,
             resource_group_name: impl Into<String>,
@@ -14427,6 +14701,7 @@ pub mod web_apps {
                 synchronous: None,
             }
         }
+        #[doc = "Restores an app from a backup blob in Azure Storage."]
         pub fn restore_from_backup_blob(
             &self,
             resource_group_name: impl Into<String>,
@@ -14442,6 +14717,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restores a deleted web app to this web app."]
         pub fn restore_from_deleted_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -14457,6 +14733,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restores a web app from a snapshot."]
         pub fn restore_snapshot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14472,6 +14749,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get list of siteextensions for a web site, or a deployment slot."]
         pub fn list_site_extensions(
             &self,
             resource_group_name: impl Into<String>,
@@ -14485,6 +14763,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get site extension information by its ID for a web site, or a deployment slot."]
         pub fn get_site_extension(
             &self,
             resource_group_name: impl Into<String>,
@@ -14500,6 +14779,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Install site extension on a web site, or a deployment slot."]
         pub fn install_site_extension(
             &self,
             resource_group_name: impl Into<String>,
@@ -14515,6 +14795,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Remove a site extension from a web site, or a deployment slot."]
         pub fn delete_site_extension(
             &self,
             resource_group_name: impl Into<String>,
@@ -14530,6 +14811,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an app's deployment slots."]
         pub fn list_slots(
             &self,
             resource_group_name: impl Into<String>,
@@ -14543,6 +14825,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the details of a web, mobile, or API app."]
         pub fn get_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14558,6 +14841,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
         pub fn create_or_update_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14575,6 +14859,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new web, mobile, or API app in an existing resource group, or updates an existing app."]
         pub fn update_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14592,6 +14877,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a web, mobile, or API app, or one of the deployment slots."]
         pub fn delete_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14609,6 +14895,7 @@ pub mod web_apps {
                 delete_empty_server_farm: None,
             }
         }
+        #[doc = "Analyze a custom hostname."]
         pub fn analyze_custom_hostname_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14625,6 +14912,7 @@ pub mod web_apps {
                 host_name: None,
             }
         }
+        #[doc = "Applies the configuration settings from the target slot onto the current slot."]
         pub fn apply_slot_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14642,6 +14930,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a backup of an app."]
         pub fn backup_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14659,6 +14948,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets existing backups of an app."]
         pub fn list_backups_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14674,6 +14964,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a backup of an app by its ID."]
         pub fn get_backup_status_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14691,6 +14982,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a backup of an app by its ID."]
         pub fn delete_backup_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14708,6 +15000,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets status of a web app backup that may be in progress, including secrets associated with the backup, such as the Azure Storage SAS URL. Also can be used to update the SAS URL for the backup if a new URL is passed in the request body."]
         pub fn list_backup_status_secrets_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14727,6 +15020,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restores a specific backup to another app (or deployment slot, if specified)."]
         pub fn restore_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14746,6 +15040,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns whether Scm basic auth is allowed and whether Ftp is allowed for a given site."]
         pub fn get_basic_publishing_credentials_policies_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14761,6 +15056,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns whether FTP is allowed on the site or not."]
         pub fn get_ftp_allowed_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14776,6 +15072,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates whether FTP is allowed on the site or not."]
         pub fn update_ftp_allowed_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14793,6 +15090,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns whether Scm basic auth is allowed on the site or not."]
         pub fn get_scm_allowed_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14808,6 +15106,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates whether user publishing credentials are allowed on the site or not."]
         pub fn update_scm_allowed_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14825,6 +15124,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the configurations of an app"]
         pub fn list_configurations_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14840,6 +15140,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Replaces the application settings of an app."]
         pub fn update_application_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14857,6 +15158,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the application settings of an app."]
         pub fn list_application_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14872,6 +15174,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the Authentication / Authorization settings associated with web app."]
         pub fn update_auth_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14889,6 +15192,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Authentication/Authorization settings of an app."]
         pub fn get_auth_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14904,6 +15208,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates site's Authentication / Authorization settings for apps via the V2 format"]
         pub fn update_auth_settings_v2_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14921,6 +15226,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets site's Authentication / Authorization settings for apps via the V2 format"]
         pub fn get_auth_settings_v2_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14936,6 +15242,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the Azure storage account configurations of an app."]
         pub fn update_azure_storage_accounts_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14953,6 +15260,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Azure storage account configurations of an app."]
         pub fn list_azure_storage_accounts_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14968,6 +15276,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the backup configuration of an app."]
         pub fn update_backup_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -14985,6 +15294,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the backup configuration of an app."]
         pub fn delete_backup_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15000,6 +15310,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the backup configuration of an app."]
         pub fn get_backup_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15015,6 +15326,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the config reference app settings and status of an app"]
         pub fn get_app_settings_key_vault_references_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15030,6 +15342,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the config reference and status of an app"]
         pub fn get_app_setting_key_vault_reference_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15047,6 +15360,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the config reference app settings and status of an app"]
         pub fn get_site_connection_string_key_vault_references_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15062,6 +15376,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the config reference and status of an app"]
         pub fn get_site_connection_string_key_vault_reference_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15079,6 +15394,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Replaces the connection strings of an app."]
         pub fn update_connection_strings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15096,6 +15412,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the connection strings of an app."]
         pub fn list_connection_strings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15111,6 +15428,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the logging configuration of an app."]
         pub fn get_diagnostic_logs_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15126,6 +15444,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the logging configuration of an app."]
         pub fn update_diagnostic_logs_config_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15143,6 +15462,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Replaces the metadata of an app."]
         pub fn update_metadata_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15160,6 +15480,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the metadata of an app."]
         pub fn list_metadata_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15175,6 +15496,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Git/FTP publishing credentials of an app."]
         pub fn list_publishing_credentials_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15190,6 +15512,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the Push settings associated with web app."]
         pub fn update_site_push_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15207,6 +15530,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the Push settings associated with web app."]
         pub fn list_site_push_settings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15222,6 +15546,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the configuration of an app, such as platform version and bitness, default documents, virtual applications, Always On, etc."]
         pub fn get_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15237,6 +15562,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the configuration of an app."]
         pub fn create_or_update_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15254,6 +15580,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the configuration of an app."]
         pub fn update_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15271,6 +15598,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of web app configuration snapshots identifiers. Each element of the list contains a timestamp and the ID of the snapshot."]
         pub fn list_configuration_snapshot_info_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15286,6 +15614,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a snapshot of the configuration of an app at a previous point in time."]
         pub fn get_configuration_snapshot_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15303,6 +15632,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reverts the configuration of an app to a previous snapshot."]
         pub fn recover_site_configuration_snapshot_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15320,6 +15650,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the last lines of docker logs for the given site"]
         pub fn get_web_site_container_logs_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15335,6 +15666,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the ZIP archived docker log files for the given site"]
         pub fn get_container_logs_zip_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15350,6 +15682,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List continuous web jobs for an app, or a deployment slot."]
         pub fn list_continuous_web_jobs_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15365,6 +15698,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a continuous web job by its ID for an app, or a deployment slot."]
         pub fn get_continuous_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15382,6 +15716,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a continuous web job by its ID for an app, or a deployment slot."]
         pub fn delete_continuous_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15399,6 +15734,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Start a continuous web job for an app, or a deployment slot."]
         pub fn start_continuous_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15416,6 +15752,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stop a continuous web job for an app, or a deployment slot."]
         pub fn stop_continuous_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15433,6 +15770,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List deployments for an app, or a deployment slot."]
         pub fn list_deployments_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15448,6 +15786,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a deployment by its ID for an app, or a deployment slot."]
         pub fn get_deployment_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15465,6 +15804,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a deployment for an app, or a deployment slot."]
         pub fn create_deployment_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15484,6 +15824,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a deployment by its ID for an app, or a deployment slot."]
         pub fn delete_deployment_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15501,6 +15842,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List deployment log for specific deployment for an app, or a deployment slot."]
         pub fn list_deployment_log_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15518,6 +15860,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Discovers an existing app backup that can be restored from a blob in Azure storage. Use this to get information about the databases stored in a backup."]
         pub fn discover_backup_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15535,6 +15878,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists ownership identifiers for domain associated with web app."]
         pub fn list_domain_ownership_identifiers_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15550,6 +15894,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get domain ownership identifier for web app."]
         pub fn get_domain_ownership_identifier_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15567,6 +15912,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
         pub fn create_or_update_domain_ownership_identifier_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15586,6 +15932,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a domain ownership identifier for web app, or updates an existing ownership identifier."]
         pub fn update_domain_ownership_identifier_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15605,6 +15952,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a domain ownership identifier for a web app."]
         pub fn delete_domain_ownership_identifier_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15622,6 +15970,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the status of the last MSDeploy operation."]
         pub fn get_ms_deploy_status_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15637,6 +15986,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Invoke the MSDeploy web app extension."]
         pub fn create_ms_deploy_operation_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15654,6 +16004,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
         pub fn get_ms_deploy_log_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15669,6 +16020,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the functions for a web site, or a deployment slot."]
         pub fn list_instance_functions_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15684,6 +16036,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Fetch a short lived token that can be exchanged for a master key."]
         pub fn get_functions_admin_token_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15699,6 +16052,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get function information by its ID for web site, or a deployment slot."]
         pub fn get_instance_function_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15716,6 +16070,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create function for web site, or a deployment slot."]
         pub fn create_instance_function_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15735,6 +16090,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a function for web site, or a deployment slot."]
         pub fn delete_instance_function_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15752,6 +16108,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Add or update a function secret."]
         pub fn create_or_update_function_secret_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15773,6 +16130,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a function secret."]
         pub fn delete_function_secret_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15792,6 +16150,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get function keys for a function in a web site, or a deployment slot."]
         pub fn list_function_keys_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15809,6 +16168,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get function secrets for a function in a web site, or a deployment slot."]
         pub fn list_function_secrets_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15826,6 +16186,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get host secrets for a function app."]
         pub fn list_host_keys_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15841,6 +16202,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "This is to allow calling via powershell and ARM template."]
         pub fn list_sync_status_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15856,6 +16218,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Syncs function trigger metadata to the management database"]
         pub fn sync_functions_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15871,6 +16234,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Add or update a host level secret."]
         pub fn create_or_update_host_secret_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15892,6 +16256,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a host level secret."]
         pub fn delete_host_secret_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15911,6 +16276,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get hostname bindings for an app or a deployment slot."]
         pub fn list_host_name_bindings_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15926,6 +16292,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the named hostname binding for an app (or deployment slot, if specified)."]
         pub fn get_host_name_binding_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15943,6 +16310,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a hostname binding for an app."]
         pub fn create_or_update_host_name_binding_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15962,6 +16330,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a hostname binding for an app."]
         pub fn delete_host_name_binding_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15979,6 +16348,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves a specific Service Bus Hybrid Connection used by this Web App."]
         pub fn get_hybrid_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -15998,6 +16368,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
         pub fn create_or_update_hybrid_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16019,6 +16390,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new Hybrid Connection using a Service Bus relay."]
         pub fn update_hybrid_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16040,6 +16412,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Removes a Hybrid Connection from this site."]
         pub fn delete_hybrid_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16059,6 +16432,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves all Service Bus Hybrid Connections used by this Web App."]
         pub fn list_hybrid_connections_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16074,6 +16448,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets hybrid connections configured for an app (or deployment slot, if specified)."]
         pub fn list_relay_service_connections_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16089,6 +16464,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a hybrid connection configuration by its name."]
         pub fn get_relay_service_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16106,6 +16482,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
         pub fn create_or_update_relay_service_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16125,6 +16502,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new hybrid connection configuration (PUT), or updates an existing one (PATCH)."]
         pub fn update_relay_service_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16144,6 +16522,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a relay service connection by its name."]
         pub fn delete_relay_service_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16161,6 +16540,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all scale-out instances of an app."]
         pub fn list_instance_identifiers_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16176,6 +16556,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all scale-out instances of an app."]
         pub fn get_instance_info_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16193,6 +16574,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the status of the last MSDeploy operation."]
         pub fn get_instance_ms_deploy_status_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16210,6 +16592,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Invoke the MSDeploy web app extension."]
         pub fn create_instance_ms_deploy_operation_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16229,6 +16612,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the MSDeploy Log for the last MSDeploy operation."]
         pub fn get_instance_ms_deploy_log_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16246,6 +16630,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
         pub fn list_instance_processes_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16263,6 +16648,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
         pub fn get_instance_process_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16282,6 +16668,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
         pub fn delete_instance_process_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16301,6 +16688,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
         pub fn get_instance_process_dump_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16320,6 +16708,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
         pub fn list_instance_process_modules_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16339,6 +16728,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
         pub fn get_instance_process_module_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16360,6 +16750,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
         pub fn list_instance_process_threads_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16379,6 +16770,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Shows whether an app can be cloned to another resource group or subscription."]
         pub fn is_cloneable_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16394,6 +16786,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets existing backups of an app."]
         pub fn list_site_backups_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16409,6 +16802,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "This is to allow calling via powershell and ARM template."]
         pub fn list_sync_function_triggers_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16424,6 +16818,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the status of MySql in app migration, if one is active, and whether or not MySql in app is enabled"]
         pub fn get_migrate_my_sql_status_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16439,6 +16834,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a Swift Virtual Network connection."]
         pub fn get_swift_virtual_network_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16454,6 +16850,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a Swift Virtual Network connection from an app (or deployment slot)."]
         pub fn delete_swift_virtual_network_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16469,6 +16866,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network features used by the app (or deployment slot, if specified)."]
         pub fn list_network_features_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16486,6 +16884,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
         pub fn get_network_trace_operation_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16503,6 +16902,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Start capturing network packets for the site (To be deprecated)."]
         pub fn start_web_site_network_trace_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16521,6 +16921,7 @@ pub mod web_apps {
                 sas_url: None,
             }
         }
+        #[doc = "Start capturing network packets for the site."]
         pub fn start_web_site_network_trace_operation_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16539,6 +16940,7 @@ pub mod web_apps {
                 sas_url: None,
             }
         }
+        #[doc = "Stop ongoing capturing network packets for the site."]
         pub fn stop_web_site_network_trace_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16554,6 +16956,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
         pub fn get_network_traces_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16571,6 +16974,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
         pub fn get_network_trace_operation_slot_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -16588,6 +16992,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a named operation for a network trace capturing (or deployment slot, if specified)."]
         pub fn get_network_traces_slot_v2(
             &self,
             resource_group_name: impl Into<String>,
@@ -16605,6 +17010,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generates a new publishing password for an app (or deployment slot, if specified)."]
         pub fn generate_new_site_publishing_password_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16620,6 +17026,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets perfmon counters for web app."]
         pub fn list_perf_mon_counters_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16636,6 +17043,7 @@ pub mod web_apps {
                 filter: None,
             }
         }
+        #[doc = "Gets web app's event logs."]
         pub fn get_site_php_error_log_flag_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16651,6 +17059,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the premier add-ons of an app."]
         pub fn list_premier_add_ons_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16666,6 +17075,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a named add-on of an app."]
         pub fn get_premier_add_on_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16683,6 +17093,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a named add-on of an app."]
         pub fn add_premier_add_on_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16702,6 +17113,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a named add-on of an app."]
         pub fn update_premier_add_on_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16721,6 +17133,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a premier add-on from an app."]
         pub fn delete_premier_add_on_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16738,6 +17151,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets data around private site access enablement and authorized Virtual Networks that can access the site."]
         pub fn get_private_access_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16753,6 +17167,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sets data around private site access enablement and authorized Virtual Networks that can access the site."]
         pub fn put_private_access_vnet_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16770,6 +17185,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the list of private endpoint connections associated with a site"]
         pub fn get_private_endpoint_connection_list_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16785,6 +17201,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a private endpoint connection"]
         pub fn get_private_endpoint_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16802,6 +17219,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Approves or rejects a private endpoint connection"]
         pub fn approve_or_reject_private_endpoint_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16821,6 +17239,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection"]
         pub fn delete_private_endpoint_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16838,6 +17257,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the private link resources"]
         pub fn get_private_link_resources_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16853,6 +17273,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get list of processes for a web site, or a deployment slot, or for a specific scaled-out instance in a web site."]
         pub fn list_processes_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16868,6 +17289,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
         pub fn get_process_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16885,6 +17307,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Terminate a process by its ID for a web site, or a deployment slot, or specific scaled-out instance in a web site."]
         pub fn delete_process_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16902,6 +17325,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a memory dump of a process by its ID for a specific scaled-out instance in a web site."]
         pub fn get_process_dump_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16919,6 +17343,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List module information for a process by its ID for a specific scaled-out instance in a web site."]
         pub fn list_process_modules_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16936,6 +17361,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get process information by its ID for a specific scaled-out instance in a web site."]
         pub fn get_process_module_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16955,6 +17381,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the threads in a process by its ID for a specific scaled-out instance in a web site."]
         pub fn list_process_threads_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16972,6 +17399,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get public certificates for an app or a deployment slot."]
         pub fn list_public_certificates_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -16987,6 +17415,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the named public certificate for an app (or deployment slot, if specified)."]
         pub fn get_public_certificate_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17004,6 +17433,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a hostname binding for an app."]
         pub fn create_or_update_public_certificate_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17023,6 +17453,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a hostname binding for an app."]
         pub fn delete_public_certificate_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17040,6 +17471,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the publishing profile for an app (or deployment slot, if specified)."]
         pub fn list_publishing_profile_xml_with_secrets_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17057,6 +17489,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resets the configuration settings of the current slot if they were previously modified by calling the API with POST."]
         pub fn reset_slot_configuration_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17072,6 +17505,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restarts an app (or deployment slot, if specified)."]
         pub fn restart_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17089,6 +17523,7 @@ pub mod web_apps {
                 synchronous: None,
             }
         }
+        #[doc = "Restores an app from a backup blob in Azure Storage."]
         pub fn restore_from_backup_blob_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17106,6 +17541,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restores a deleted web app to this web app."]
         pub fn restore_from_deleted_app_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17123,6 +17559,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restores a web app from a snapshot."]
         pub fn restore_snapshot_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17140,6 +17577,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get list of siteextensions for a web site, or a deployment slot."]
         pub fn list_site_extensions_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17155,6 +17593,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get site extension information by its ID for a web site, or a deployment slot."]
         pub fn get_site_extension_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17172,6 +17611,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Install site extension on a web site, or a deployment slot."]
         pub fn install_site_extension_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17189,6 +17629,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Remove a site extension from a web site, or a deployment slot."]
         pub fn delete_site_extension_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17206,6 +17647,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the difference in configuration settings between two web app slots."]
         pub fn list_slot_differences_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17223,6 +17665,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Swaps two deployment slots of an app."]
         pub fn swap_slot_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17240,6 +17683,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all Snapshots to the user."]
         pub fn list_snapshots_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17255,6 +17699,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all Snapshots to the user from DRSecondary endpoint."]
         pub fn list_snapshots_from_dr_secondary_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17270,6 +17715,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the source control configuration of an app."]
         pub fn get_source_control_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17285,6 +17731,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the source control configuration of an app."]
         pub fn create_or_update_source_control_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17302,6 +17749,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the source control configuration of an app."]
         pub fn update_source_control_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17319,6 +17767,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the source control configuration of an app."]
         pub fn delete_source_control_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17335,6 +17784,7 @@ pub mod web_apps {
                 additional_flags: None,
             }
         }
+        #[doc = "Starts an app (or deployment slot, if specified)."]
         pub fn start_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17350,6 +17800,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Start capturing network packets for the site."]
         pub fn start_network_trace_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17368,6 +17819,7 @@ pub mod web_apps {
                 sas_url: None,
             }
         }
+        #[doc = "Stops an app (or deployment slot, if specified)."]
         pub fn stop_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17383,6 +17835,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stop ongoing capturing network packets for the site."]
         pub fn stop_network_trace_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17398,6 +17851,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sync web app repository."]
         pub fn sync_repository_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17413,6 +17867,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Syncs function trigger metadata to the management database"]
         pub fn sync_function_triggers_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17428,6 +17883,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List triggered web jobs for an app, or a deployment slot."]
         pub fn list_triggered_web_jobs_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17443,6 +17899,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a triggered web job by its ID for an app, or a deployment slot."]
         pub fn get_triggered_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17460,6 +17917,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a triggered web job by its ID for an app, or a deployment slot."]
         pub fn delete_triggered_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17477,6 +17935,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List a triggered web job's history for an app, or a deployment slot."]
         pub fn list_triggered_web_job_history_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17494,6 +17953,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a triggered web job's history by its ID for an app, , or a deployment slot."]
         pub fn get_triggered_web_job_history_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17513,6 +17973,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Run a triggered web job for an app, or a deployment slot."]
         pub fn run_triggered_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17530,6 +17991,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the quota usage information of an app (or deployment slot, if specified)."]
         pub fn list_usages_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17546,6 +18008,7 @@ pub mod web_apps {
                 filter: None,
             }
         }
+        #[doc = "Gets the virtual networks the app (or deployment slot) is connected to."]
         pub fn list_vnet_connections_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17561,6 +18024,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a virtual network the app (or deployment slot) is connected to by name."]
         pub fn get_vnet_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17578,6 +18042,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
         pub fn create_or_update_vnet_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17597,6 +18062,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
         pub fn update_vnet_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17616,6 +18082,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a connection from an app (or deployment slot to a named virtual network."]
         pub fn delete_vnet_connection_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17633,6 +18100,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an app's Virtual Network gateway."]
         pub fn get_vnet_connection_gateway_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17652,6 +18120,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
         pub fn create_or_update_vnet_connection_gateway_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17673,6 +18142,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
         pub fn update_vnet_connection_gateway_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17694,6 +18164,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List webjobs for an app, or a deployment slot."]
         pub fn list_web_jobs_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17709,6 +18180,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get webjob information for an app, or a deployment slot."]
         pub fn get_web_job_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -17726,6 +18198,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the difference in configuration settings between two web app slots."]
         pub fn list_slot_differences_from_production(
             &self,
             resource_group_name: impl Into<String>,
@@ -17741,6 +18214,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Swaps two deployment slots of an app."]
         pub fn swap_slot_with_production(
             &self,
             resource_group_name: impl Into<String>,
@@ -17756,6 +18230,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all Snapshots to the user."]
         pub fn list_snapshots(
             &self,
             resource_group_name: impl Into<String>,
@@ -17769,6 +18244,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all Snapshots to the user from DRSecondary endpoint."]
         pub fn list_snapshots_from_dr_secondary(
             &self,
             resource_group_name: impl Into<String>,
@@ -17782,6 +18258,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the source control configuration of an app."]
         pub fn get_source_control(
             &self,
             resource_group_name: impl Into<String>,
@@ -17795,6 +18272,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the source control configuration of an app."]
         pub fn create_or_update_source_control(
             &self,
             resource_group_name: impl Into<String>,
@@ -17810,6 +18288,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the source control configuration of an app."]
         pub fn update_source_control(
             &self,
             resource_group_name: impl Into<String>,
@@ -17825,6 +18304,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the source control configuration of an app."]
         pub fn delete_source_control(
             &self,
             resource_group_name: impl Into<String>,
@@ -17839,6 +18319,7 @@ pub mod web_apps {
                 additional_flags: None,
             }
         }
+        #[doc = "Starts an app (or deployment slot, if specified)."]
         pub fn start(
             &self,
             resource_group_name: impl Into<String>,
@@ -17852,6 +18333,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Start capturing network packets for the site."]
         pub fn start_network_trace(
             &self,
             resource_group_name: impl Into<String>,
@@ -17868,6 +18350,7 @@ pub mod web_apps {
                 sas_url: None,
             }
         }
+        #[doc = "Stops an app (or deployment slot, if specified)."]
         pub fn stop(
             &self,
             resource_group_name: impl Into<String>,
@@ -17881,6 +18364,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stop ongoing capturing network packets for the site."]
         pub fn stop_network_trace(
             &self,
             resource_group_name: impl Into<String>,
@@ -17894,6 +18378,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sync web app repository."]
         pub fn sync_repository(
             &self,
             resource_group_name: impl Into<String>,
@@ -17907,6 +18392,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Syncs function trigger metadata to the management database"]
         pub fn sync_function_triggers(
             &self,
             resource_group_name: impl Into<String>,
@@ -17920,6 +18406,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List triggered web jobs for an app, or a deployment slot."]
         pub fn list_triggered_web_jobs(
             &self,
             resource_group_name: impl Into<String>,
@@ -17933,6 +18420,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a triggered web job by its ID for an app, or a deployment slot."]
         pub fn get_triggered_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -17948,6 +18436,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a triggered web job by its ID for an app, or a deployment slot."]
         pub fn delete_triggered_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -17963,6 +18452,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List a triggered web job's history for an app, or a deployment slot."]
         pub fn list_triggered_web_job_history(
             &self,
             resource_group_name: impl Into<String>,
@@ -17978,6 +18468,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a triggered web job's history by its ID for an app, , or a deployment slot."]
         pub fn get_triggered_web_job_history(
             &self,
             resource_group_name: impl Into<String>,
@@ -17995,6 +18486,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Run a triggered web job for an app, or a deployment slot."]
         pub fn run_triggered_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -18010,6 +18502,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the quota usage information of an app (or deployment slot, if specified)."]
         pub fn list_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -18024,6 +18517,7 @@ pub mod web_apps {
                 filter: None,
             }
         }
+        #[doc = "Gets the virtual networks the app (or deployment slot) is connected to."]
         pub fn list_vnet_connections(
             &self,
             resource_group_name: impl Into<String>,
@@ -18037,6 +18531,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a virtual network the app (or deployment slot) is connected to by name."]
         pub fn get_vnet_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -18052,6 +18547,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
         pub fn create_or_update_vnet_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -18069,6 +18565,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds a Virtual Network connection to an app or slot (PUT) or updates the connection properties (PATCH)."]
         pub fn update_vnet_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -18086,6 +18583,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a connection from an app (or deployment slot to a named virtual network."]
         pub fn delete_vnet_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -18101,6 +18599,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an app's Virtual Network gateway."]
         pub fn get_vnet_connection_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -18118,6 +18617,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
         pub fn create_or_update_vnet_connection_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -18137,6 +18637,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds a gateway to a connected Virtual Network (PUT) or updates it (PATCH)."]
         pub fn update_vnet_connection_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -18156,6 +18657,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List webjobs for an app, or a deployment slot."]
         pub fn list_web_jobs(
             &self,
             resource_group_name: impl Into<String>,
@@ -18169,6 +18671,7 @@ pub mod web_apps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get webjob information for an app, or a deployment slot."]
         pub fn get_web_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -49826,6 +50329,7 @@ pub mod static_sites {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Generates a preview workflow file for the static site"]
         pub fn preview_workflow(
             &self,
             location: impl Into<String>,
@@ -49839,12 +50343,14 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all Static Sites for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all static sites in the specified resource group."]
         pub fn get_static_sites_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -49856,6 +50362,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the details of a static site."]
         pub fn get_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -49869,6 +50376,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new static site in an existing resource group, or updates an existing static site."]
         pub fn create_or_update_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -49884,6 +50392,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new static site in an existing resource group, or updates an existing static site."]
         pub fn update_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -49899,6 +50408,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a static site."]
         pub fn delete_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -49912,6 +50422,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the list of users of a static site."]
         pub fn list_static_site_users(
             &self,
             resource_group_name: impl Into<String>,
@@ -49927,6 +50438,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a user entry with the listed roles"]
         pub fn update_static_site_user(
             &self,
             resource_group_name: impl Into<String>,
@@ -49946,6 +50458,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the user entry from the static site."]
         pub fn delete_static_site_user(
             &self,
             resource_group_name: impl Into<String>,
@@ -49963,6 +50476,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all static site builds for a particular static site."]
         pub fn get_static_site_builds(
             &self,
             resource_group_name: impl Into<String>,
@@ -49976,6 +50490,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the details of a static site build."]
         pub fn get_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -49991,6 +50506,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a static site build."]
         pub fn delete_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -50006,6 +50522,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the app settings of a static site build."]
         pub fn create_or_update_static_site_build_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -50023,6 +50540,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the function app settings of a static site build."]
         pub fn create_or_update_static_site_build_function_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -50040,6 +50558,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the functions of a particular static site build."]
         pub fn list_static_site_build_functions(
             &self,
             resource_group_name: impl Into<String>,
@@ -50055,6 +50574,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the application settings of a static site build."]
         pub fn list_static_site_build_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -50070,6 +50590,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the application settings of a static site build."]
         pub fn list_static_site_build_function_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -50085,6 +50606,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the details of the user provided function apps registered with a static site build"]
         pub fn get_user_provided_function_apps_for_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -50100,6 +50622,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the details of the user provided function app registered with a static site build"]
         pub fn get_user_provided_function_app_for_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -50117,6 +50640,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Register a user provided function app with a static site build"]
         pub fn register_user_provided_function_app_with_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -50137,6 +50661,7 @@ pub mod static_sites {
                 is_forced: None,
             }
         }
+        #[doc = "Detach the user provided function app from the static site build"]
         pub fn detach_user_provided_function_app_from_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -50154,6 +50679,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deploys zipped content to a specific environment of a static site."]
         pub fn create_zip_deployment_for_static_site_build(
             &self,
             resource_group_name: impl Into<String>,
@@ -50171,6 +50697,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the app settings of a static site."]
         pub fn create_or_update_static_site_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -50186,6 +50713,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the function app settings of a static site."]
         pub fn create_or_update_static_site_function_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -50201,6 +50729,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates an invitation link for a user with the role"]
         pub fn create_user_roles_invitation_link(
             &self,
             resource_group_name: impl Into<String>,
@@ -50216,6 +50745,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all static site custom domains for a particular static site."]
         pub fn list_static_site_custom_domains(
             &self,
             resource_group_name: impl Into<String>,
@@ -50229,6 +50759,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an existing custom domain for a particular static site."]
         pub fn get_static_site_custom_domain(
             &self,
             resource_group_name: impl Into<String>,
@@ -50244,6 +50775,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new static site custom domain in an existing resource group and static site."]
         pub fn create_or_update_static_site_custom_domain(
             &self,
             resource_group_name: impl Into<String>,
@@ -50261,6 +50793,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a custom domain."]
         pub fn delete_static_site_custom_domain(
             &self,
             resource_group_name: impl Into<String>,
@@ -50276,6 +50809,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Validates a particular custom domain can be added to a static site."]
         pub fn validate_custom_domain_can_be_added_to_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -50293,6 +50827,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Detaches a static site."]
         pub fn detach_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -50306,6 +50841,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the functions of a static site."]
         pub fn list_static_site_functions(
             &self,
             resource_group_name: impl Into<String>,
@@ -50319,6 +50855,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the application settings of a static site."]
         pub fn list_static_site_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -50332,6 +50869,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the roles configured for the static site."]
         pub fn list_static_site_configured_roles(
             &self,
             resource_group_name: impl Into<String>,
@@ -50345,6 +50883,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the application settings of a static site."]
         pub fn list_static_site_function_app_settings(
             &self,
             resource_group_name: impl Into<String>,
@@ -50358,6 +50897,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the secrets for an existing static site."]
         pub fn list_static_site_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -50371,6 +50911,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the list of private endpoint connections associated with a static site"]
         pub fn get_private_endpoint_connection_list(
             &self,
             resource_group_name: impl Into<String>,
@@ -50384,6 +50925,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a private endpoint connection"]
         pub fn get_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -50399,6 +50941,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Approves or rejects a private endpoint connection"]
         pub fn approve_or_reject_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -50416,6 +50959,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection"]
         pub fn delete_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -50431,6 +50975,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the private link resources"]
         pub fn get_private_link_resources(
             &self,
             resource_group_name: impl Into<String>,
@@ -50444,6 +50989,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resets the api key for an existing static site."]
         pub fn reset_static_site_api_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -50459,6 +51005,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the details of the user provided function apps registered with a static site"]
         pub fn get_user_provided_function_apps_for_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -50472,6 +51019,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the details of the user provided function app registered with a static site"]
         pub fn get_user_provided_function_app_for_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -50487,6 +51035,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Register a user provided function app with a static site"]
         pub fn register_user_provided_function_app_with_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -50505,6 +51054,7 @@ pub mod static_sites {
                 is_forced: None,
             }
         }
+        #[doc = "Detach the user provided function app from the static site"]
         pub fn detach_user_provided_function_app_from_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -50520,6 +51070,7 @@ pub mod static_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deploys zipped content to a static site."]
         pub fn create_zip_deployment_for_static_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -54446,12 +54997,14 @@ pub mod app_service_environments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all App Service Environments for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all App Service Environments in a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -54463,6 +55016,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the properties of an App Service Environment."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -54476,6 +55030,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update an App Service Environment."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -54491,6 +55046,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update an App Service Environment."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -54506,6 +55062,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete an App Service Environment."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -54520,6 +55077,7 @@ pub mod app_service_environments {
                 force_delete: None,
             }
         }
+        #[doc = "Get the used, available, and total worker capacity an App Service Environment."]
         pub fn list_capacities(
             &self,
             resource_group_name: impl Into<String>,
@@ -54533,6 +55091,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get IP addresses assigned to an App Service Environment."]
         pub fn get_vip_info(
             &self,
             resource_group_name: impl Into<String>,
@@ -54546,6 +55105,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Move an App Service Environment to a different VNET."]
         pub fn change_vnet(
             &self,
             resource_group_name: impl Into<String>,
@@ -54561,6 +55121,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get networking configuration of an App Service Environment"]
         pub fn get_ase_v3_networking_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -54574,6 +55135,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update networking configuration of an App Service Environment"]
         pub fn update_ase_networking_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -54589,6 +55151,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get diagnostic information for an App Service Environment."]
         pub fn list_diagnostics(
             &self,
             resource_group_name: impl Into<String>,
@@ -54602,6 +55165,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a diagnostics item for an App Service Environment."]
         pub fn get_diagnostics_item(
             &self,
             resource_group_name: impl Into<String>,
@@ -54617,6 +55181,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the network endpoints of all inbound dependencies of an App Service Environment."]
         pub fn get_inbound_network_dependencies_endpoints(
             &self,
             resource_group_name: impl Into<String>,
@@ -54630,6 +55195,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all multi-role pools."]
         pub fn list_multi_role_pools(
             &self,
             resource_group_name: impl Into<String>,
@@ -54643,6 +55209,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get properties of a multi-role pool."]
         pub fn get_multi_role_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -54656,6 +55223,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a multi-role pool."]
         pub fn create_or_update_multi_role_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -54671,6 +55239,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a multi-role pool."]
         pub fn update_multi_role_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -54686,6 +55255,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metric definitions for a specific instance of a multi-role pool of an App Service Environment."]
         pub fn list_multi_role_pool_instance_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -54701,6 +55271,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metric definitions for a multi-role pool of an App Service Environment."]
         pub fn list_multi_role_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -54714,6 +55285,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get available SKUs for scaling a multi-role pool."]
         pub fn list_multi_role_pool_skus(
             &self,
             resource_group_name: impl Into<String>,
@@ -54727,6 +55299,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get usage metrics for a multi-role pool of an App Service Environment."]
         pub fn list_multi_role_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -54740,6 +55313,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all currently running operations on the App Service Environment."]
         pub fn list_operations(
             &self,
             resource_group_name: impl Into<String>,
@@ -54753,6 +55327,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the network endpoints of all outbound dependencies of an App Service Environment."]
         pub fn get_outbound_network_dependencies_endpoints(
             &self,
             resource_group_name: impl Into<String>,
@@ -54766,6 +55341,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the list of private endpoints associated with a hosting environment"]
         pub fn get_private_endpoint_connection_list(
             &self,
             resource_group_name: impl Into<String>,
@@ -54779,6 +55355,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a private endpoint connection"]
         pub fn get_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -54794,6 +55371,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Approves or rejects a private endpoint connection"]
         pub fn approve_or_reject_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -54811,6 +55389,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection"]
         pub fn delete_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -54826,6 +55405,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the private link resources"]
         pub fn get_private_link_resources(
             &self,
             resource_group_name: impl Into<String>,
@@ -54839,6 +55419,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reboot all machines in an App Service Environment."]
         pub fn reboot(
             &self,
             resource_group_name: impl Into<String>,
@@ -54852,6 +55433,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resume an App Service Environment."]
         pub fn resume(
             &self,
             resource_group_name: impl Into<String>,
@@ -54865,6 +55447,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all App Service plans in an App Service Environment."]
         pub fn list_app_service_plans(
             &self,
             resource_group_name: impl Into<String>,
@@ -54878,6 +55461,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all apps in an App Service Environment."]
         pub fn list_web_apps(
             &self,
             resource_group_name: impl Into<String>,
@@ -54892,6 +55476,7 @@ pub mod app_service_environments {
                 properties_to_include: None,
             }
         }
+        #[doc = "Suspend an App Service Environment."]
         pub fn suspend(
             &self,
             resource_group_name: impl Into<String>,
@@ -54905,6 +55490,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get global usage metrics of an App Service Environment."]
         pub fn list_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -54919,6 +55505,7 @@ pub mod app_service_environments {
                 filter: None,
             }
         }
+        #[doc = "Get all worker pools of an App Service Environment."]
         pub fn list_worker_pools(
             &self,
             resource_group_name: impl Into<String>,
@@ -54932,6 +55519,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get properties of a worker pool."]
         pub fn get_worker_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -54947,6 +55535,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a worker pool."]
         pub fn create_or_update_worker_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -54964,6 +55553,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a worker pool."]
         pub fn update_worker_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -54981,6 +55571,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metric definitions for a specific instance of a worker pool of an App Service Environment."]
         pub fn list_worker_pool_instance_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -54998,6 +55589,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metric definitions for a worker pool of an App Service Environment."]
         pub fn list_web_worker_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -55013,6 +55605,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get available SKUs for scaling a worker pool."]
         pub fn list_worker_pool_skus(
             &self,
             resource_group_name: impl Into<String>,
@@ -55028,6 +55621,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get usage metrics for a worker pool of an App Service Environment."]
         pub fn list_web_worker_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -58530,6 +59124,7 @@ pub mod app_service_plans {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all App Service plans for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -58537,6 +59132,7 @@ pub mod app_service_plans {
                 detailed: None,
             }
         }
+        #[doc = "Get all App Service plans in a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -58548,6 +59144,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get an App Service plan."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -58561,6 +59158,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an App Service Plan."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -58576,6 +59174,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an App Service Plan."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -58591,6 +59190,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete an App Service plan."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -58604,6 +59204,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all capabilities of an App Service plan."]
         pub fn list_capabilities(
             &self,
             resource_group_name: impl Into<String>,
@@ -58617,6 +59218,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a Hybrid Connection in use in an App Service plan."]
         pub fn get_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -58634,6 +59236,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a Hybrid Connection in use in an App Service plan."]
         pub fn delete_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -58651,6 +59254,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the send key name and value of a Hybrid Connection."]
         pub fn list_hybrid_connection_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -58668,6 +59272,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all apps that use a Hybrid Connection in an App Service Plan."]
         pub fn list_web_apps_by_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -58685,6 +59290,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the maximum number of Hybrid Connections allowed in an App Service plan."]
         pub fn get_hybrid_connection_plan_limit(
             &self,
             resource_group_name: impl Into<String>,
@@ -58698,6 +59304,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve all Hybrid Connections in use in an App Service plan."]
         pub fn list_hybrid_connections(
             &self,
             resource_group_name: impl Into<String>,
@@ -58711,6 +59318,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restart all apps in an App Service plan."]
         pub fn restart_web_apps(
             &self,
             resource_group_name: impl Into<String>,
@@ -58725,6 +59333,7 @@ pub mod app_service_plans {
                 soft_restart: None,
             }
         }
+        #[doc = "Get all apps associated with an App Service plan."]
         pub fn list_web_apps(
             &self,
             resource_group_name: impl Into<String>,
@@ -58741,6 +59350,7 @@ pub mod app_service_plans {
                 top: None,
             }
         }
+        #[doc = "Gets all selectable SKUs for a given App Service Plan"]
         pub fn get_server_farm_skus(
             &self,
             resource_group_name: impl Into<String>,
@@ -58754,6 +59364,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets server farm usage information"]
         pub fn list_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -58768,6 +59379,7 @@ pub mod app_service_plans {
                 filter: None,
             }
         }
+        #[doc = "Get all Virtual Networks associated with an App Service plan."]
         pub fn list_vnets(
             &self,
             resource_group_name: impl Into<String>,
@@ -58781,6 +59393,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a Virtual Network associated with an App Service plan."]
         pub fn get_vnet_from_server_farm(
             &self,
             resource_group_name: impl Into<String>,
@@ -58796,6 +59409,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a Virtual Network gateway."]
         pub fn get_vnet_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -58813,6 +59427,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a Virtual Network gateway."]
         pub fn update_vnet_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -58832,6 +59447,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all routes that are associated with a Virtual Network in an App Service plan."]
         pub fn list_routes_for_vnet(
             &self,
             resource_group_name: impl Into<String>,
@@ -58847,6 +59463,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a Virtual Network route in an App Service plan."]
         pub fn get_route_for_vnet(
             &self,
             resource_group_name: impl Into<String>,
@@ -58864,6 +59481,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a Virtual Network route in an App Service plan."]
         pub fn create_or_update_vnet_route(
             &self,
             resource_group_name: impl Into<String>,
@@ -58883,6 +59501,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a Virtual Network route in an App Service plan."]
         pub fn update_vnet_route(
             &self,
             resource_group_name: impl Into<String>,
@@ -58902,6 +59521,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a Virtual Network route in an App Service plan."]
         pub fn delete_vnet_route(
             &self,
             resource_group_name: impl Into<String>,
@@ -58919,6 +59539,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reboot a worker machine in an App Service plan."]
         pub fn reboot_worker(
             &self,
             resource_group_name: impl Into<String>,
@@ -61075,12 +61696,14 @@ pub mod resource_health_metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all ResourceHealthMetadata for all sites in the subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all ResourceHealthMetadata for all sites in the resource group in the subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -61092,6 +61715,7 @@ pub mod resource_health_metadata {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site as a collection"]
         pub fn list_by_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -61105,6 +61729,7 @@ pub mod resource_health_metadata {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site"]
         pub fn get_by_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -61118,6 +61743,7 @@ pub mod resource_health_metadata {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site as a collection"]
         pub fn list_by_site_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -61133,6 +61759,7 @@ pub mod resource_health_metadata {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site"]
         pub fn get_by_site_slot(
             &self,
             resource_group_name: impl Into<String>,

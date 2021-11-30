@@ -100,6 +100,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves a list of available API operations under this Resource Provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -179,6 +180,7 @@ pub mod ledger {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves information about a Confidential Ledger resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -192,6 +194,7 @@ pub mod ledger {
                 ledger_name: ledger_name.into(),
             }
         }
+        #[doc = "Creates a  Confidential Ledger."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -207,6 +210,7 @@ pub mod ledger {
                 confidential_ledger: confidential_ledger.into(),
             }
         }
+        #[doc = "Update Confidential Ledger properties"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -222,6 +226,7 @@ pub mod ledger {
                 confidential_ledger: confidential_ledger.into(),
             }
         }
+        #[doc = "Deletes a Confidential Ledger resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -235,6 +240,7 @@ pub mod ledger {
                 ledger_name: ledger_name.into(),
             }
         }
+        #[doc = "Retrieves information about all Confidential Ledger resources under the given subscription and resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -247,6 +253,7 @@ pub mod ledger {
                 filter: None,
             }
         }
+        #[doc = "Retrieves information about all Confidential Ledger resources under the given subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),

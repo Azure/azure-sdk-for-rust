@@ -107,6 +107,7 @@ pub mod container_host_mappings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns container host mapping object for a container host resource ID if an associated controller exists."]
         pub fn get_container_host_mapping(
             &self,
             container_host_mapping: impl Into<models::ContainerHostMapping>,
@@ -213,6 +214,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists operations for the resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -287,6 +289,7 @@ pub mod controllers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an Azure Dev Spaces Controller."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -300,6 +303,7 @@ pub mod controllers {
                 name: name.into(),
             }
         }
+        #[doc = "Creates an Azure Dev Spaces Controller."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -315,6 +319,7 @@ pub mod controllers {
                 controller: controller.into(),
             }
         }
+        #[doc = "Updates an Azure Dev Spaces Controller."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -330,6 +335,7 @@ pub mod controllers {
                 controller_update_parameters: controller_update_parameters.into(),
             }
         }
+        #[doc = "Deletes an Azure Dev Spaces Controller."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -343,6 +349,7 @@ pub mod controllers {
                 name: name.into(),
             }
         }
+        #[doc = "Lists the Azure Dev Spaces Controllers in a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -354,12 +361,14 @@ pub mod controllers {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists the Azure Dev Spaces Controllers in a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists connection details for an Azure Dev Spaces Controller."]
         pub fn list_connection_details(
             &self,
             subscription_id: impl Into<String>,

@@ -377,6 +377,7 @@ pub mod tenants {
     }
 }
 impl Client {
+    #[doc = "Checks resource name validity"]
     pub fn check_resource_name(&self) -> check_resource_name::Builder {
         check_resource_name::Builder {
             client: self.clone(),

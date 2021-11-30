@@ -122,6 +122,7 @@ pub mod health_api {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get service health status."]
         pub fn get_service_status(&self) -> get_service_status::Builder {
             get_service_status::Builder { client: self.0.clone() }
         }
@@ -183,6 +184,7 @@ pub mod web_pub_sub {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Generate token for the client to connect Azure Web PubSub service."]
         pub fn generate_client_token(&self, hub: impl Into<String>) -> generate_client_token::Builder {
             generate_client_token::Builder {
                 client: self.0.clone(),
@@ -192,6 +194,7 @@ pub mod web_pub_sub {
                 minutes_to_expire: None,
             }
         }
+        #[doc = "Broadcast content inside request body to all the connected client connections."]
         pub fn send_to_all(&self, hub: impl Into<String>, message: impl Into<String>) -> send_to_all::Builder {
             send_to_all::Builder {
                 client: self.0.clone(),
@@ -200,6 +203,7 @@ pub mod web_pub_sub {
                 excluded: Vec::new(),
             }
         }
+        #[doc = "Close the client connection."]
         pub fn close_connection(&self, hub: impl Into<String>, connection_id: impl Into<String>) -> close_connection::Builder {
             close_connection::Builder {
                 client: self.0.clone(),
@@ -208,6 +212,7 @@ pub mod web_pub_sub {
                 reason: None,
             }
         }
+        #[doc = "Check if the connection with the given connectionId exists."]
         pub fn connection_exists(&self, hub: impl Into<String>, connection_id: impl Into<String>) -> connection_exists::Builder {
             connection_exists::Builder {
                 client: self.0.clone(),
@@ -215,6 +220,7 @@ pub mod web_pub_sub {
                 connection_id: connection_id.into(),
             }
         }
+        #[doc = "Send content inside request body to the specific connection."]
         pub fn send_to_connection(
             &self,
             hub: impl Into<String>,
@@ -228,6 +234,7 @@ pub mod web_pub_sub {
                 message: message.into(),
             }
         }
+        #[doc = "Check if there are any client connections inside the given group"]
         pub fn group_exists(&self, hub: impl Into<String>, group: impl Into<String>) -> group_exists::Builder {
             group_exists::Builder {
                 client: self.0.clone(),
@@ -235,6 +242,7 @@ pub mod web_pub_sub {
                 group: group.into(),
             }
         }
+        #[doc = "Send content inside request body to a group of connections."]
         pub fn send_to_group(
             &self,
             hub: impl Into<String>,
@@ -249,6 +257,7 @@ pub mod web_pub_sub {
                 excluded: Vec::new(),
             }
         }
+        #[doc = "Add a connection to the target group."]
         pub fn add_connection_to_group(
             &self,
             hub: impl Into<String>,
@@ -262,6 +271,7 @@ pub mod web_pub_sub {
                 connection_id: connection_id.into(),
             }
         }
+        #[doc = "Remove a connection from the target group."]
         pub fn remove_connection_from_group(
             &self,
             hub: impl Into<String>,
@@ -275,6 +285,7 @@ pub mod web_pub_sub {
                 connection_id: connection_id.into(),
             }
         }
+        #[doc = "Check if there are any client connections connected for the given user."]
         pub fn user_exists(&self, hub: impl Into<String>, user_id: impl Into<String>) -> user_exists::Builder {
             user_exists::Builder {
                 client: self.0.clone(),
@@ -282,6 +293,7 @@ pub mod web_pub_sub {
                 user_id: user_id.into(),
             }
         }
+        #[doc = "Send content inside request body to the specific user."]
         pub fn send_to_user(
             &self,
             hub: impl Into<String>,
@@ -295,6 +307,7 @@ pub mod web_pub_sub {
                 message: message.into(),
             }
         }
+        #[doc = "Add a user to the target group."]
         pub fn add_user_to_group(
             &self,
             hub: impl Into<String>,
@@ -308,6 +321,7 @@ pub mod web_pub_sub {
                 user_id: user_id.into(),
             }
         }
+        #[doc = "Remove a user from the target group."]
         pub fn remove_user_from_group(
             &self,
             hub: impl Into<String>,
@@ -321,6 +335,7 @@ pub mod web_pub_sub {
                 user_id: user_id.into(),
             }
         }
+        #[doc = "Remove a user from all groups."]
         pub fn remove_user_from_all_groups(
             &self,
             hub: impl Into<String>,
@@ -332,6 +347,7 @@ pub mod web_pub_sub {
                 user_id: user_id.into(),
             }
         }
+        #[doc = "Grant permission to the connection."]
         pub fn grant_permission(
             &self,
             hub: impl Into<String>,
@@ -346,6 +362,7 @@ pub mod web_pub_sub {
                 target_name: None,
             }
         }
+        #[doc = "Revoke permission for the connection."]
         pub fn revoke_permission(
             &self,
             hub: impl Into<String>,
@@ -360,6 +377,7 @@ pub mod web_pub_sub {
                 target_name: None,
             }
         }
+        #[doc = "Check if a connection has permission to the specified action."]
         pub fn check_permission(
             &self,
             hub: impl Into<String>,

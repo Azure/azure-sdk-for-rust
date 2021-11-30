@@ -897,6 +897,7 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List private link Power BI resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -910,6 +911,7 @@ pub mod private_link_resources {
                 azure_resource_name: azure_resource_name.into(),
             }
         }
+        #[doc = "Get a private link resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1076,6 +1078,7 @@ pub mod private_endpoint_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private endpoint connections under a resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -1089,6 +1092,7 @@ pub mod private_endpoint_connections {
                 azure_resource_name: azure_resource_name.into(),
             }
         }
+        #[doc = "Get a specific private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1104,6 +1108,7 @@ pub mod private_endpoint_connections {
                 private_endpoint_name: private_endpoint_name.into(),
             }
         }
+        #[doc = "Update a specific private endpoint connection."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1121,6 +1126,7 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection: private_endpoint_connection.into(),
             }
         }
+        #[doc = "Asynchronous API to delete a private endpoint connection for Power BI by private endpoint name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

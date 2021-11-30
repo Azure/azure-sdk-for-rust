@@ -136,6 +136,7 @@ pub mod subscriptions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all available geo-locations."]
         pub fn list_locations(&self, subscription_id: impl Into<String>) -> list_locations::Builder {
             list_locations::Builder {
                 client: self.0.clone(),

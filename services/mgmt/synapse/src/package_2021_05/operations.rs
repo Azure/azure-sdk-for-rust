@@ -633,6 +633,7 @@ pub mod big_data_pools {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Big Data pool"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -648,6 +649,7 @@ pub mod big_data_pools {
                 big_data_pool_name: big_data_pool_name.into(),
             }
         }
+        #[doc = "Create a Big Data pool."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -666,6 +668,7 @@ pub mod big_data_pools {
                 force: None,
             }
         }
+        #[doc = "Update a Big Data pool."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -683,6 +686,7 @@ pub mod big_data_pools {
                 big_data_pool_patch_info: big_data_pool_patch_info.into(),
             }
         }
+        #[doc = "Delete a Big Data pool."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -698,6 +702,7 @@ pub mod big_data_pools {
                 big_data_pool_name: big_data_pool_name.into(),
             }
         }
+        #[doc = "List the Big Data pools in a workspace."]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -2310,6 +2315,7 @@ pub mod workspace_managed_identity_sql_control_settings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Managed Identity Sql Control Settings"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2323,6 +2329,7 @@ pub mod workspace_managed_identity_sql_control_settings {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update Managed Identity Sql Control Settings"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2689,6 +2696,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check name availability"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -2700,9 +2708,11 @@ pub mod operations {
                 request: request.into(),
             }
         }
+        #[doc = "All operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Get operation result"]
         pub fn get_location_header_result(
             &self,
             subscription_id: impl Into<String>,
@@ -2718,6 +2728,7 @@ pub mod operations {
                 operation_id: operation_id.into(),
             }
         }
+        #[doc = "Get operation status"]
         pub fn get_azure_async_header_result(
             &self,
             subscription_id: impl Into<String>,
@@ -3552,6 +3563,7 @@ pub mod integration_runtimes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get integration runtime"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3568,6 +3580,7 @@ pub mod integration_runtimes {
                 if_none_match: None,
             }
         }
+        #[doc = "Create integration runtime"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3586,6 +3599,7 @@ pub mod integration_runtimes {
                 if_match: None,
             }
         }
+        #[doc = "Update integration runtime"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3603,6 +3617,7 @@ pub mod integration_runtimes {
                 update_integration_runtime_request: update_integration_runtime_request.into(),
             }
         }
+        #[doc = "Delete integration runtime"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3618,6 +3633,7 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Upgrade integration runtime"]
         pub fn upgrade(
             &self,
             subscription_id: impl Into<String>,
@@ -3633,6 +3649,7 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "List integration runtimes"]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -3646,6 +3663,7 @@ pub mod integration_runtimes {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Start integration runtime"]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -3661,6 +3679,7 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Stop integration runtime"]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -3676,6 +3695,7 @@ pub mod integration_runtimes {
                 integration_runtime_name: integration_runtime_name.into(),
             }
         }
+        #[doc = "Gets list of outbound network dependencies for a given Azure-SSIS integration runtime."]
         pub fn list_outbound_network_dependencies_endpoints(
             &self,
             subscription_id: impl Into<String>,
@@ -4625,6 +4645,7 @@ pub mod integration_runtime_node_ip_address {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get integration runtime node IP address"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4724,6 +4745,7 @@ pub mod integration_runtime_object_metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get integration runtime object metadata"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4740,6 +4762,7 @@ pub mod integration_runtime_object_metadata {
                 get_metadata_request: None,
             }
         }
+        #[doc = "Refresh integration runtime object metadata"]
         pub fn refresh(
             &self,
             subscription_id: impl Into<String>,
@@ -4924,6 +4947,7 @@ pub mod integration_runtime_nodes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get integration runtime node"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4941,6 +4965,7 @@ pub mod integration_runtime_nodes {
                 node_name: node_name.into(),
             }
         }
+        #[doc = "Create integration runtime node"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4960,6 +4985,7 @@ pub mod integration_runtime_nodes {
                 update_integration_runtime_node_request: update_integration_runtime_node_request.into(),
             }
         }
+        #[doc = "Delete integration runtime node"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5233,6 +5259,7 @@ pub mod integration_runtime_credentials {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Sync integration runtime credentials"]
         pub fn sync(
             &self,
             subscription_id: impl Into<String>,
@@ -5322,6 +5349,7 @@ pub mod integration_runtime_connection_infos {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get integration runtime connection info"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5418,6 +5446,7 @@ pub mod integration_runtime_auth_keys {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Regenerate integration runtime authentication key"]
         pub fn regenerate(
             &self,
             subscription_id: impl Into<String>,
@@ -5435,6 +5464,7 @@ pub mod integration_runtime_auth_keys {
                 regenerate_key_parameters: regenerate_key_parameters.into(),
             }
         }
+        #[doc = "List integration runtime authentication keys"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5607,6 +5637,7 @@ pub mod integration_runtime_monitoring_data {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get integration runtime monitoring data"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5703,6 +5734,7 @@ pub mod integration_runtime_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get integration runtime status"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6194,6 +6226,7 @@ pub mod library {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get library by name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6294,6 +6327,7 @@ pub mod libraries {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the libraries in a workspace."]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -6793,6 +6827,7 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Private Link Resources"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6806,6 +6841,7 @@ pub mod private_link_resources {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Get Private Link Resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6985,6 +7021,7 @@ pub mod private_link_hub_private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Private Link Resources"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6998,6 +7035,7 @@ pub mod private_link_hub_private_link_resources {
                 private_link_hub_name: private_link_hub_name.into(),
             }
         }
+        #[doc = "Get Private Link Hub Private Link Resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7936,6 +7974,7 @@ pub mod sql_pools {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get SQL pool"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7951,6 +7990,7 @@ pub mod sql_pools {
                 sql_pool_name: sql_pool_name.into(),
             }
         }
+        #[doc = "Create SQL pool"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -7968,6 +8008,7 @@ pub mod sql_pools {
                 sql_pool_info: sql_pool_info.into(),
             }
         }
+        #[doc = "Update SQL pool"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -7985,6 +8026,7 @@ pub mod sql_pools {
                 sql_pool_info: sql_pool_info.into(),
             }
         }
+        #[doc = "Delete SQL pool"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -8000,6 +8042,7 @@ pub mod sql_pools {
                 sql_pool_name: sql_pool_name.into(),
             }
         }
+        #[doc = "List SQL pools"]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -8013,6 +8056,7 @@ pub mod sql_pools {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Pause SQL pool"]
         pub fn pause(
             &self,
             subscription_id: impl Into<String>,
@@ -8028,6 +8072,7 @@ pub mod sql_pools {
                 sql_pool_name: sql_pool_name.into(),
             }
         }
+        #[doc = "Resume SQL pool"]
         pub fn resume(
             &self,
             subscription_id: impl Into<String>,
@@ -8043,6 +8088,7 @@ pub mod sql_pools {
                 sql_pool_name: sql_pool_name.into(),
             }
         }
+        #[doc = "Rename a SQL pool"]
         pub fn rename(
             &self,
             subscription_id: impl Into<String>,
@@ -8728,6 +8774,7 @@ pub mod sql_pool_metadata_sync_configs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get SQL pool metadata sync config"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -8743,6 +8790,7 @@ pub mod sql_pool_metadata_sync_configs {
                 sql_pool_name: sql_pool_name.into(),
             }
         }
+        #[doc = "Set SQL pool metadata sync config"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -8932,6 +8980,7 @@ pub mod sql_pool_operation_results {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get SQL pool operation status"]
         pub fn get_location_header_result(
             &self,
             subscription_id: impl Into<String>,
@@ -9047,6 +9096,7 @@ pub mod sql_pool_geo_backup_policies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List SQL pool geo backup policies"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -9062,6 +9112,7 @@ pub mod sql_pool_geo_backup_policies {
                 sql_pool_name: sql_pool_name.into(),
             }
         }
+        #[doc = "Get a SQL pool geo backup policy"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -9358,6 +9409,7 @@ pub mod sql_pool_data_warehouse_user_activities {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get SQL pool user activities"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -9445,6 +9497,7 @@ pub mod sql_pool_restore_points {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get SQL pool backup"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -9820,6 +9873,7 @@ pub mod sql_pool_replication_links {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get SQL pool replication links"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -9835,6 +9889,7 @@ pub mod sql_pool_replication_links {
                 sql_pool_name: sql_pool_name.into(),
             }
         }
+        #[doc = "Get SQL pool replication link by name"]
         pub fn get_by_name(
             &self,
             subscription_id: impl Into<String>,
@@ -10018,6 +10073,7 @@ pub mod sql_pool_maintenance_windows {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a SQL pool's Maintenance Windows."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -10035,6 +10091,7 @@ pub mod sql_pool_maintenance_windows {
                 maintenance_window_name: maintenance_window_name.into(),
             }
         }
+        #[doc = "Creates or updates a Sql pool's maintenance windows settings."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -10196,6 +10253,7 @@ pub mod sql_pool_maintenance_window_options {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "SQL pool's available maintenance windows."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -10284,6 +10342,7 @@ pub mod sql_pool_transparent_data_encryptions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a SQL pool's transparent data encryption configuration"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -10301,6 +10360,7 @@ pub mod sql_pool_transparent_data_encryptions {
                 transparent_data_encryption_name: transparent_data_encryption_name.into(),
             }
         }
+        #[doc = "Creates or updates a Sql pool's transparent data encryption configuration"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -10320,6 +10380,7 @@ pub mod sql_pool_transparent_data_encryptions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "SQL pool's transparent data encryption configurations"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -10563,6 +10624,7 @@ pub mod sql_pool_blob_auditing_policies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a SQL pool's blob auditing policy"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -10580,6 +10642,7 @@ pub mod sql_pool_blob_auditing_policies {
                 blob_auditing_policy_name: blob_auditing_policy_name.into(),
             }
         }
+        #[doc = "Creates or updates a SQL pool's blob auditing policy"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -10843,6 +10906,7 @@ pub mod sql_pool_operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of operations performed on the SQL pool"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -10935,6 +10999,7 @@ pub mod sql_pool_usages {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets SQL pool usages"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -11035,6 +11100,7 @@ pub mod sql_pool_sensitivity_labels {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets SQL pool sensitivity labels"]
         pub fn list_current(
             &self,
             subscription_id: impl Into<String>,
@@ -11068,6 +11134,7 @@ pub mod sql_pool_sensitivity_labels {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets sensitivity labels of a given SQL pool"]
         pub fn list_recommended(
             &self,
             subscription_id: impl Into<String>,
@@ -11849,6 +11916,7 @@ pub mod sql_pool_schemas {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets schemas of a given SQL pool"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -12034,6 +12102,7 @@ pub mod sql_pool_tables {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets tables of a given schema in a SQL pool"]
         pub fn list_by_schema(
             &self,
             subscription_id: impl Into<String>,
@@ -12227,6 +12296,7 @@ pub mod sql_pool_table_columns {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets columns in a given table in a SQL pool"]
         pub fn list_by_table_name(
             &self,
             subscription_id: impl Into<String>,
@@ -12324,6 +12394,7 @@ pub mod sql_pool_connection_policies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a Sql pool's connection policy, which is used with table auditing"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -12428,6 +12499,7 @@ pub mod sql_pool_vulnerability_assessments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the vulnerability assessment policies associated with a SQL pool"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -12443,6 +12515,7 @@ pub mod sql_pool_vulnerability_assessments {
                 sql_pool_name: sql_pool_name.into(),
             }
         }
+        #[doc = "Gets the Sql pool's vulnerability assessment"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -12460,6 +12533,7 @@ pub mod sql_pool_vulnerability_assessments {
                 vulnerability_assessment_name: vulnerability_assessment_name.into(),
             }
         }
+        #[doc = "Creates or updates the Sql pool vulnerability assessment"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -12479,6 +12553,7 @@ pub mod sql_pool_vulnerability_assessments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Removes the database's vulnerability assessment"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -12768,6 +12843,7 @@ pub mod sql_pool_vulnerability_assessment_scans {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the vulnerability assessment scans of a SQL pool"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -13118,6 +13194,7 @@ pub mod sql_pool_security_alert_policies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Sql pool's security alert policies"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -13133,6 +13210,7 @@ pub mod sql_pool_security_alert_policies {
                 sql_pool_name: sql_pool_name.into(),
             }
         }
+        #[doc = "Get a Sql pool's security alert policy"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -13150,6 +13228,7 @@ pub mod sql_pool_security_alert_policies {
                 security_alert_policy_name: security_alert_policy_name.into(),
             }
         }
+        #[doc = "Create or update a Sql pool's security alert policy"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -14494,6 +14573,7 @@ pub mod sql_pool_workload_group {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Sql pool's workload group"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -14511,6 +14591,7 @@ pub mod sql_pool_workload_group {
                 workload_group_name: workload_group_name.into(),
             }
         }
+        #[doc = "Create Or Update workload group"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -14530,6 +14611,7 @@ pub mod sql_pool_workload_group {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Remove workload group"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -14547,6 +14629,7 @@ pub mod sql_pool_workload_group {
                 workload_group_name: workload_group_name.into(),
             }
         }
+        #[doc = "Sql pool's workload groups"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -14864,6 +14947,7 @@ pub mod sql_pool_workload_classifier {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get workload classifier"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -14883,6 +14967,7 @@ pub mod sql_pool_workload_classifier {
                 workload_classifier_name: workload_classifier_name.into(),
             }
         }
+        #[doc = "Create Or Update workload classifier"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -14904,6 +14989,7 @@ pub mod sql_pool_workload_classifier {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Remove workload classifier"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -14923,6 +15009,7 @@ pub mod sql_pool_workload_classifier {
                 workload_classifier_name: workload_classifier_name.into(),
             }
         }
+        #[doc = "Sql pool's workload classifier"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -15217,6 +15304,7 @@ pub mod workspace_managed_sql_server_blob_auditing_policies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get server's blob auditing policy."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -15232,6 +15320,7 @@ pub mod workspace_managed_sql_server_blob_auditing_policies {
                 blob_auditing_policy_name: blob_auditing_policy_name.into(),
             }
         }
+        #[doc = "Create or Update server's blob auditing policy."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -15249,6 +15338,7 @@ pub mod workspace_managed_sql_server_blob_auditing_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "List workspace server's blob auditing policies."]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -15480,6 +15570,7 @@ pub mod workspace_managed_sql_server_extended_blob_auditing_policies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get server's extended blob auditing policy."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -15495,6 +15586,7 @@ pub mod workspace_managed_sql_server_extended_blob_auditing_policies {
                 blob_auditing_policy_name: blob_auditing_policy_name.into(),
             }
         }
+        #[doc = "Create or Update server's extended blob auditing policy."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -15512,6 +15604,7 @@ pub mod workspace_managed_sql_server_extended_blob_auditing_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "List server's extended blob auditing policies."]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -15746,6 +15839,7 @@ pub mod workspace_managed_sql_server_security_alert_policy {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get server's security alert policy."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -15761,6 +15855,7 @@ pub mod workspace_managed_sql_server_security_alert_policy {
                 security_alert_policy_name: security_alert_policy_name.into(),
             }
         }
+        #[doc = "Create or Update server's threat detection policy."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -15778,6 +15873,7 @@ pub mod workspace_managed_sql_server_security_alert_policy {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Get server's threat detection policies."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -16009,6 +16105,7 @@ pub mod workspace_managed_sql_server_vulnerability_assessments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get server's vulnerability assessment."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -16024,6 +16121,7 @@ pub mod workspace_managed_sql_server_vulnerability_assessments {
                 vulnerability_assessment_name: vulnerability_assessment_name.into(),
             }
         }
+        #[doc = "Create or Update server's vulnerability assessment."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -16041,6 +16139,7 @@ pub mod workspace_managed_sql_server_vulnerability_assessments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Remove server's vulnerability assessment."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -16056,6 +16155,7 @@ pub mod workspace_managed_sql_server_vulnerability_assessments {
                 vulnerability_assessment_name: vulnerability_assessment_name.into(),
             }
         }
+        #[doc = "Lists the vulnerability assessment policies associated with a server."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -16364,6 +16464,7 @@ pub mod workspace_managed_sql_server_encryption_protector {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get workspace server's encryption protector."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -16379,6 +16480,7 @@ pub mod workspace_managed_sql_server_encryption_protector {
                 encryption_protector_name: encryption_protector_name.into(),
             }
         }
+        #[doc = "Updates workspace server's encryption protector."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -16396,6 +16498,7 @@ pub mod workspace_managed_sql_server_encryption_protector {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Get list of encryption protectors for the server."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -16409,6 +16512,7 @@ pub mod workspace_managed_sql_server_encryption_protector {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Revalidates server's existing encryption protector."]
         pub fn revalidate(
             &self,
             subscription_id: impl Into<String>,
@@ -16734,6 +16838,7 @@ pub mod workspace_managed_sql_server_usages {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of usages metric for the server."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -16819,6 +16924,7 @@ pub mod workspace_managed_sql_server_recoverable_sql_pools {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of recoverable sql pools for the server."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -16832,6 +16938,7 @@ pub mod workspace_managed_sql_server_recoverable_sql_pools {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Get recoverable sql pools for the server."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,

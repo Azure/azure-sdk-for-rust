@@ -3784,6 +3784,7 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates tags on private endpoint connection."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,

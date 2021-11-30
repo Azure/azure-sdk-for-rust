@@ -1,10 +1,11 @@
 use crate::{
     codegen::{
-        add_option, create_generated_by_header, enum_values_as_strings, get_schema_array_items, get_type_name_for_schema,
-        get_type_name_for_schema_ref, is_basic_type, is_local_enum, is_local_struct, is_vec, Error,
+        add_option, create_generated_by_header, enum_values_as_strings, is_basic_type, is_local_enum, is_local_struct, is_vec,
+        type_name_gen, Error,
     },
     identifier::{CamelCaseIdent, SnakeCaseIdent},
-    spec, CodeGen, PropertyName, ResolvedSchema,
+    spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref},
+    CodeGen, PropertyName, ResolvedSchema, Spec,
 };
 use autorust_openapi::{DataType, Reference, SchemaCommon};
 use indexmap::IndexMap;
@@ -18,6 +19,33 @@ use std::{
 
 fn is_array(schema: &SchemaCommon) -> bool {
     matches!(schema.type_, Some(DataType::Array))
+}
+
+fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, ResolvedSchema>, Error> {
+    let mut all_schemas: IndexMap<RefKey, ResolvedSchema> = IndexMap::new();
+
+    // all definitions from input_files
+    for (doc_file, doc) in spec.input_docs() {
+        let schemas = spec.resolve_schema_map(doc_file, &doc.definitions).map_err(Error::Spec)?;
+        for (name, schema) in schemas {
+            all_schemas.insert(
+                RefKey {
+                    file_path: doc_file.to_owned(),
+                    name,
+                },
+                schema,
+            );
+        }
+    }
+
+    // any referenced schemas from other files
+    for (doc_file, api) in spec.input_docs() {
+        for reference in openapi::get_api_schema_references(doc_file, api) {
+            add_schema_refs(spec, &mut all_schemas, doc_file, reference)?;
+        }
+    }
+
+    Ok(all_schemas)
 }
 
 pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
@@ -37,31 +65,8 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
         });
     }
 
-    let mut all_schemas: IndexMap<RefKey, ResolvedSchema> = IndexMap::new();
-
-    // all definitions from input_files
-    for (doc_file, doc) in cg.spec.input_docs() {
-        let schemas = cg.spec.resolve_schema_map(doc_file, &doc.definitions).map_err(Error::Spec)?;
-        for (name, schema) in schemas {
-            all_schemas.insert(
-                RefKey {
-                    file_path: doc_file.to_owned(),
-                    name,
-                },
-                schema,
-            );
-        }
-    }
-
-    // any referenced schemas from other files
-    for (doc_file, api) in cg.spec.input_docs() {
-        for reference in openapi::get_api_schema_references(doc_file, api) {
-            add_schema_refs(cg, &mut all_schemas, doc_file, reference)?;
-        }
-    }
-
     let mut schema_names = IndexMap::new();
-    for (ref_key, schema) in &all_schemas {
+    for (ref_key, schema) in &all_schemas(&cg.spec)? {
         let doc_file = &ref_key.file_path;
         let schema_name = &ref_key.name;
         if let Some(_first_doc_file) = schema_names.insert(schema_name, doc_file) {
@@ -89,24 +94,24 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
 
 fn create_basic_type_alias(property_name: &str, property: &ResolvedSchema) -> Result<(TokenStream, TokenStream), Error> {
     let id = property_name.to_camel_case_ident().map_err(Error::StructName)?;
-    let value = get_type_name_for_schema(&property.schema.common)?.to_token_stream(false, false)?;
+    let value = type_name_gen(&get_type_name_for_schema(&property.schema.common)?, false, false)?;
     Ok((id, value))
 }
 
 // For create_models. Recursively adds schema refs.
 fn add_schema_refs(
-    cg: &CodeGen,
+    spec: &Spec,
     schemas: &mut IndexMap<RefKey, ResolvedSchema>,
     doc_file: &Path,
     schema_ref: Reference,
 ) -> Result<(), Error> {
-    let schema = cg.spec.resolve_schema_ref(doc_file, schema_ref)?;
+    let schema = spec.resolve_schema_ref(doc_file, schema_ref)?;
     if let Some(ref_key) = schema.ref_key.clone() {
-        if !schemas.contains_key(&ref_key) && !cg.spec.is_input_file(&ref_key.file_path) {
+        if !schemas.contains_key(&ref_key) && !spec.is_input_file(&ref_key.file_path) {
             let refs = get_schema_schema_references(&schema.schema);
             schemas.insert(ref_key.clone(), schema);
             for reference in refs {
-                add_schema_refs(cg, schemas, &ref_key.file_path, reference)?;
+                add_schema_refs(spec, schemas, &ref_key.file_path, reference)?;
             }
         }
     }
@@ -161,7 +166,7 @@ fn create_enum(
 fn create_vec_alias(alias_name: &str, schema: &ResolvedSchema) -> Result<TokenStream, Error> {
     let items = get_schema_array_items(&schema.schema.common)?;
     let typ = &alias_name.to_camel_case_ident().map_err(Error::VecAliasName)?;
-    let items_typ = get_type_name_for_schema_ref(items)?.to_token_stream(false, false)?;
+    let items_typ = type_name_gen(&get_type_name_for_schema_ref(items)?, false, false)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
@@ -175,7 +180,7 @@ fn create_struct(cg: &CodeGen, doc_file: &Path, struct_name: &str, schema: &Reso
     let required: HashSet<&str> = schema.schema.required.iter().map(String::as_str).collect();
 
     for schema in &schema.schema.all_of {
-        let type_name = get_type_name_for_schema_ref(schema)?.to_token_stream(false, false)?;
+        let type_name = type_name_gen(&get_type_name_for_schema_ref(schema)?, false, false)?;
         let field_name = type_name.to_string().to_snake_case_ident().map_err(Error::StructFieldName)?;
         props.extend(quote! {
             #[serde(flatten)]
@@ -289,7 +294,7 @@ fn create_struct_field_type(
                 Ok((tp_name, tps))
             } else {
                 Ok((
-                    get_type_name_for_schema(&property.schema.common)?.to_token_stream(false, false)?,
+                    type_name_gen(&get_type_name_for_schema(&property.schema.common)?, false, false)?,
                     Vec::new(),
                 ))
             }

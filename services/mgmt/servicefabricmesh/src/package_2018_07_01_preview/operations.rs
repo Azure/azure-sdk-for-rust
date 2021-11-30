@@ -143,6 +143,7 @@ pub mod application {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the application resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -156,6 +157,7 @@ pub mod application {
                 application_name: application_name.into(),
             }
         }
+        #[doc = "Creates or updates an application resource."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -171,6 +173,7 @@ pub mod application {
                 application_resource_description: application_resource_description.into(),
             }
         }
+        #[doc = "Deletes the application resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -184,6 +187,7 @@ pub mod application {
                 application_name: application_name.into(),
             }
         }
+        #[doc = "Gets all the application resources in a given resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -195,6 +199,7 @@ pub mod application {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets all the application resources in a given subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -606,6 +611,7 @@ pub mod service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets services of a given application."]
         pub fn list_by_application_name(
             &self,
             subscription_id: impl Into<String>,
@@ -619,6 +625,7 @@ pub mod service {
                 application_name: application_name.into(),
             }
         }
+        #[doc = "Gets the properties of the service."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -788,6 +795,7 @@ pub mod replica {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets replicas of a given service."]
         pub fn list_by_service_name(
             &self,
             subscription_id: impl Into<String>,
@@ -803,6 +811,7 @@ pub mod replica {
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Gets a specific replica of a given service."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -968,6 +977,7 @@ pub mod code_package {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the logs for the container."]
         pub fn get_container_log(
             &self,
             subscription_id: impl Into<String>,
@@ -1076,6 +1086,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1153,6 +1164,7 @@ pub mod network {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the network resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1166,6 +1178,7 @@ pub mod network {
                 network_name: network_name.into(),
             }
         }
+        #[doc = "Creates or updates a network resource."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1181,6 +1194,7 @@ pub mod network {
                 network_resource_description: network_resource_description.into(),
             }
         }
+        #[doc = "Deletes the network resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1194,6 +1208,7 @@ pub mod network {
                 network_name: network_name.into(),
             }
         }
+        #[doc = "Gets all the network resources in a given resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1205,6 +1220,7 @@ pub mod network {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets all the network resources in a given subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1616,6 +1632,7 @@ pub mod volume {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the volume resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1629,6 +1646,7 @@ pub mod volume {
                 volume_name: volume_name.into(),
             }
         }
+        #[doc = "Creates or updates a volume resource."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1644,6 +1662,7 @@ pub mod volume {
                 volume_resource_description: volume_resource_description.into(),
             }
         }
+        #[doc = "Deletes the volume resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1657,6 +1676,7 @@ pub mod volume {
                 volume_name: volume_name.into(),
             }
         }
+        #[doc = "Gets all the volume resources in a given resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1668,6 +1688,7 @@ pub mod volume {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets all the volume resources in a given subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),

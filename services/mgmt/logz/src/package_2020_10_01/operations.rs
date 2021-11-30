@@ -165,6 +165,7 @@ pub mod monitors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the resources currently being monitored by the Logz monitor resource."]
         pub fn list_monitored_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -178,12 +179,14 @@ pub mod monitors {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "List all monitors under the specified subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all monitors under the specified resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -195,6 +198,7 @@ pub mod monitors {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the properties of a specific monitor resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -208,6 +212,7 @@ pub mod monitors {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Create a monitor resource. This create operation can take upto 10 minutes to complete."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -222,6 +227,7 @@ pub mod monitors {
                 body: None,
             }
         }
+        #[doc = "Update a monitor resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -236,6 +242,7 @@ pub mod monitors {
                 body: None,
             }
         }
+        #[doc = "Delete a monitor resource. This delete operation can take upto 10 minutes to complete."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -249,6 +256,7 @@ pub mod monitors {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "List the user's roles configured on Logz.io side for the account corresponding to the monitor resource."]
         pub fn list_user_roles(
             &self,
             subscription_id: impl Into<String>,
@@ -930,6 +938,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all operations provided by Microsoft.Logz."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1006,6 +1015,7 @@ pub mod tag_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the tag rules for a given monitor resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1019,6 +1029,7 @@ pub mod tag_rules {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Get a tag rule set for a given monitor resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1034,6 +1045,7 @@ pub mod tag_rules {
                 rule_set_name: rule_set_name.into(),
             }
         }
+        #[doc = "Create or update a tag rule set for a given monitor resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1050,6 +1062,7 @@ pub mod tag_rules {
                 body: None,
             }
         }
+        #[doc = "Delete a tag rule set for a given monitor resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1400,6 +1413,7 @@ pub mod single_sign_on {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the single sign-on configurations for a given monitor resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1413,6 +1427,7 @@ pub mod single_sign_on {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Gets the Logz single sign-on resource for the given Monitor."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1428,6 +1443,7 @@ pub mod single_sign_on {
                 configuration_name: configuration_name.into(),
             }
         }
+        #[doc = "Configures single-sign-on for this resource. This operation can take upto 10 minutes to complete."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1708,6 +1724,7 @@ pub mod sub_account {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the sub account under a given monitor resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1721,6 +1738,7 @@ pub mod sub_account {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Get a sub account under a given monitor resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1736,6 +1754,7 @@ pub mod sub_account {
                 sub_account_name: sub_account_name.into(),
             }
         }
+        #[doc = "Create sub account under a given monitor resource. This create operation can take upto 10 minutes to complete."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1752,6 +1771,7 @@ pub mod sub_account {
                 body: None,
             }
         }
+        #[doc = "Update a monitor resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1768,6 +1788,7 @@ pub mod sub_account {
                 body: None,
             }
         }
+        #[doc = "Delete a sub account resource. This delete operation can take upto 10 minutes to complete."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1783,6 +1804,7 @@ pub mod sub_account {
                 sub_account_name: sub_account_name.into(),
             }
         }
+        #[doc = "List the resources currently being monitored by the Logz sub account resource."]
         pub fn list_monitored_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -1798,6 +1820,7 @@ pub mod sub_account {
                 sub_account_name: sub_account_name.into(),
             }
         }
+        #[doc = "Returns the payload that needs to be passed as a request for installing Logz.io agent on a VM."]
         pub fn vm_host_payload(
             &self,
             subscription_id: impl Into<String>,
@@ -1813,6 +1836,7 @@ pub mod sub_account {
                 sub_account_name: sub_account_name.into(),
             }
         }
+        #[doc = "Sending request to update the collection when Logz.io agent has been installed on a VM for a given monitor."]
         pub fn list_vm_host_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1829,6 +1853,7 @@ pub mod sub_account {
                 body: None,
             }
         }
+        #[doc = "List the compute resources currently being monitored by the Logz sub account resource."]
         pub fn list_vm_hosts(
             &self,
             subscription_id: impl Into<String>,
@@ -2610,6 +2635,7 @@ pub mod sub_account_tag_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the tag rules for a given sub account resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2625,6 +2651,7 @@ pub mod sub_account_tag_rules {
                 sub_account_name: sub_account_name.into(),
             }
         }
+        #[doc = "Get a tag rule set for a given monitor resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2642,6 +2669,7 @@ pub mod sub_account_tag_rules {
                 rule_set_name: rule_set_name.into(),
             }
         }
+        #[doc = "Create or update a tag rule set for a given sub account resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2660,6 +2688,7 @@ pub mod sub_account_tag_rules {
                 body: None,
             }
         }
+        #[doc = "Delete a tag rule set for a given monitor resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3020,6 +3049,7 @@ pub mod monitor {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the payload that needs to be passed in the request body for installing Logz.io agent on a VM."]
         pub fn vm_host_payload(
             &self,
             subscription_id: impl Into<String>,
@@ -3033,6 +3063,7 @@ pub mod monitor {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Sending request to update the collection when Logz.io agent has been installed on a VM for a given monitor."]
         pub fn list_vm_host_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3047,6 +3078,7 @@ pub mod monitor {
                 body: None,
             }
         }
+        #[doc = "List the compute resources currently being monitored by the Logz main account resource."]
         pub fn list_vm_hosts(
             &self,
             subscription_id: impl Into<String>,

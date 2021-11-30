@@ -104,6 +104,7 @@ pub mod fluid_relay_operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all operations provided by Microsoft.FluidRelay."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -181,6 +182,7 @@ pub mod fluid_relay_servers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a Fluid Relay server."]
         pub fn get(&self, subscription_id: impl Into<String>, resource_group: impl Into<String>, name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -189,6 +191,7 @@ pub mod fluid_relay_servers {
                 name: name.into(),
             }
         }
+        #[doc = "Create or Update a Fluid Relay server."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -204,6 +207,7 @@ pub mod fluid_relay_servers {
                 resource: resource.into(),
             }
         }
+        #[doc = "Update a Fluid Relay server."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -219,6 +223,7 @@ pub mod fluid_relay_servers {
                 resource: resource.into(),
             }
         }
+        #[doc = "Delete a Fluid Relay server."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -232,6 +237,7 @@ pub mod fluid_relay_servers {
                 name: name.into(),
             }
         }
+        #[doc = "Regenerate the primary or secondary key for this server."]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -247,6 +253,7 @@ pub mod fluid_relay_servers {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Regenerate the primary or secondary key for this server."]
         pub fn get_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -260,12 +267,14 @@ pub mod fluid_relay_servers {
                 name: name.into(),
             }
         }
+        #[doc = "List all Fluid Relay servers in a subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all Fluid Relay servers in a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,

@@ -147,6 +147,7 @@ pub mod database_instances {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of database instances in the migrate project."]
         pub fn enumerate_database_instances(
             &self,
             subscription_id: impl Into<String>,
@@ -163,6 +164,7 @@ pub mod database_instances {
                 accept_language: None,
             }
         }
+        #[doc = "Gets a database instance in the migrate project."]
         pub fn get_database_instance(
             &self,
             subscription_id: impl Into<String>,
@@ -365,6 +367,7 @@ pub mod databases {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of databases in the migrate project."]
         pub fn enumerate_databases(
             &self,
             subscription_id: impl Into<String>,
@@ -381,6 +384,7 @@ pub mod databases {
                 accept_language: None,
             }
         }
+        #[doc = "Gets a database in the migrate project."]
         pub fn get_database(
             &self,
             subscription_id: impl Into<String>,
@@ -581,6 +585,7 @@ pub mod events {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of events in the migrate project."]
         pub fn enumerate_events(
             &self,
             subscription_id: impl Into<String>,
@@ -597,6 +602,7 @@ pub mod events {
                 accept_language: None,
             }
         }
+        #[doc = "Gets an event in the migrate project."]
         pub fn get_event(
             &self,
             subscription_id: impl Into<String>,
@@ -612,6 +618,7 @@ pub mod events {
                 event_name: event_name.into(),
             }
         }
+        #[doc = "Delete the migrate event"]
         pub fn delete_event(
             &self,
             subscription_id: impl Into<String>,
@@ -872,6 +879,7 @@ pub mod machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of machines in the migrate project."]
         pub fn enumerate_machines(
             &self,
             subscription_id: impl Into<String>,
@@ -887,6 +895,7 @@ pub mod machines {
                 page_size: None,
             }
         }
+        #[doc = "Gets a machine in the migrate project."]
         pub fn get_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -1070,6 +1079,7 @@ pub mod migrate_projects {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get a migrate project."]
         pub fn get_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1083,6 +1093,7 @@ pub mod migrate_projects {
                 migrate_project_name: migrate_project_name.into(),
             }
         }
+        #[doc = "Method to create or update a migrate project."]
         pub fn put_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1099,6 +1110,7 @@ pub mod migrate_projects {
                 accept_language: None,
             }
         }
+        #[doc = "Update migrate project."]
         pub fn patch_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1115,6 +1127,7 @@ pub mod migrate_projects {
                 accept_language: None,
             }
         }
+        #[doc = "Delete the migrate project"]
         pub fn delete_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1129,6 +1142,7 @@ pub mod migrate_projects {
                 accept_language: None,
             }
         }
+        #[doc = "Registers a tool with the migrate project."]
         pub fn register_tool(
             &self,
             subscription_id: impl Into<String>,
@@ -1145,6 +1159,7 @@ pub mod migrate_projects {
                 accept_language: None,
             }
         }
+        #[doc = "Refresh the summary of the migrate project."]
         pub fn refresh_migrate_project_summary(
             &self,
             subscription_id: impl Into<String>,
@@ -1644,6 +1659,7 @@ pub mod solutions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a solution in the migrate project."]
         pub fn get_solution(
             &self,
             subscription_id: impl Into<String>,
@@ -1659,6 +1675,7 @@ pub mod solutions {
                 solution_name: solution_name.into(),
             }
         }
+        #[doc = "Creates a solution in the migrate project."]
         pub fn put_solution(
             &self,
             subscription_id: impl Into<String>,
@@ -1676,6 +1693,7 @@ pub mod solutions {
                 solution_input: solution_input.into(),
             }
         }
+        #[doc = "Update solution."]
         pub fn patch_solution(
             &self,
             subscription_id: impl Into<String>,
@@ -1693,6 +1711,7 @@ pub mod solutions {
                 solution_input: solution_input.into(),
             }
         }
+        #[doc = "Delete the solution"]
         pub fn delete_solution(
             &self,
             subscription_id: impl Into<String>,
@@ -1709,6 +1728,7 @@ pub mod solutions {
                 accept_language: None,
             }
         }
+        #[doc = "Gets the list of solutions in the migrate project."]
         pub fn enumerate_solutions(
             &self,
             subscription_id: impl Into<String>,
@@ -1722,6 +1742,7 @@ pub mod solutions {
                 migrate_project_name: migrate_project_name.into(),
             }
         }
+        #[doc = "Gets the config for the solution in the migrate project."]
         pub fn get_config(
             &self,
             subscription_id: impl Into<String>,
@@ -1737,6 +1758,7 @@ pub mod solutions {
                 solution_name: solution_name.into(),
             }
         }
+        #[doc = "Cleanup the solution data in the migrate project."]
         pub fn cleanup_solution_data(
             &self,
             subscription_id: impl Into<String>,
@@ -2289,6 +2311,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of operations supported in the API."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

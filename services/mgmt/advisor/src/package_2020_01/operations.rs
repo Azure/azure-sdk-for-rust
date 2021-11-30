@@ -125,12 +125,14 @@ pub mod recommendation_metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the metadata entity."]
         pub fn get(&self, name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Gets the list of metadata entities."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -285,12 +287,14 @@ pub mod configurations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve Azure Advisor configurations."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create/Overwrite Azure Advisor configuration."]
         pub fn create_in_subscription(
             &self,
             config_contract: impl Into<models::ConfigData>,
@@ -304,6 +308,7 @@ pub mod configurations {
                 configuration_name: configuration_name.into(),
             }
         }
+        #[doc = "Retrieve Azure Advisor configurations."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -315,6 +320,7 @@ pub mod configurations {
                 resource_group: resource_group.into(),
             }
         }
+        #[doc = "Create/Overwrite Azure Advisor configuration."]
         pub fn create_in_resource_group(
             &self,
             config_contract: impl Into<models::ConfigData>,

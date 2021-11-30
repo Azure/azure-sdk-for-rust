@@ -79,6 +79,7 @@ pub enum Error {
     GetToken(#[from] get_token::Error),
 }
 impl Client {
+    #[doc = "Gets an access token to be used with Mixed Reality services."]
     pub fn get_token(&self, account_id: impl Into<String>) -> get_token::Builder {
         get_token::Builder {
             client: self.clone(),

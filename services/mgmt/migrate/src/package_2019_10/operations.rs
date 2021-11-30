@@ -208,12 +208,14 @@ pub mod projects {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all projects."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all projects."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -221,6 +223,7 @@ pub mod projects {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the specified project."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -234,6 +237,7 @@ pub mod projects {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Create or update project."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -248,6 +252,7 @@ pub mod projects {
                 project: None,
             }
         }
+        #[doc = "Update project."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -262,6 +267,7 @@ pub mod projects {
                 project: None,
             }
         }
+        #[doc = "Delete the project"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -275,6 +281,7 @@ pub mod projects {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Get all available options for the properties of an assessment on a project."]
         pub fn assessment_options(
             &self,
             subscription_id: impl Into<String>,
@@ -290,6 +297,7 @@ pub mod projects {
                 assessment_options_name: assessment_options_name.into(),
             }
         }
+        #[doc = "Gets list of all available options for the properties of an assessment on a project."]
         pub fn assessment_options_list(
             &self,
             subscription_id: impl Into<String>,
@@ -955,6 +963,7 @@ pub mod machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all machines in the project"]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -968,6 +977,7 @@ pub mod machines {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Get a specific machine."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1145,6 +1155,7 @@ pub mod groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all groups"]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1158,6 +1169,7 @@ pub mod groups {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Get a specific group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1173,6 +1185,7 @@ pub mod groups {
                 group_name: group_name.into(),
             }
         }
+        #[doc = "Create a new group with specified settings."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1189,6 +1202,7 @@ pub mod groups {
                 group: None,
             }
         }
+        #[doc = "Delete the group"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1204,6 +1218,7 @@ pub mod groups {
                 group_name: group_name.into(),
             }
         }
+        #[doc = "Update machines in group."]
         pub fn update_machines(
             &self,
             subscription_id: impl Into<String>,
@@ -1651,6 +1666,7 @@ pub mod assessments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all assessments created for the specified group."]
         pub fn list_by_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1666,6 +1682,7 @@ pub mod assessments {
                 group_name: group_name.into(),
             }
         }
+        #[doc = "Get all assessments created in the project."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1679,6 +1696,7 @@ pub mod assessments {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Get an assessment."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1696,6 +1714,7 @@ pub mod assessments {
                 assessment_name: assessment_name.into(),
             }
         }
+        #[doc = "Create or Update assessment."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1714,6 +1733,7 @@ pub mod assessments {
                 assessment: None,
             }
         }
+        #[doc = "Deletes an assessment from the project."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1731,6 +1751,7 @@ pub mod assessments {
                 assessment_name: assessment_name.into(),
             }
         }
+        #[doc = "Get download URL for the assessment report."]
         pub fn get_report_download_url(
             &self,
             subscription_id: impl Into<String>,
@@ -2249,6 +2270,7 @@ pub mod assessed_machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get assessed machines for assessment."]
         pub fn list_by_assessment(
             &self,
             subscription_id: impl Into<String>,
@@ -2266,6 +2288,7 @@ pub mod assessed_machines {
                 assessment_name: assessment_name.into(),
             }
         }
+        #[doc = "Get an assessed machine."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2438,6 +2461,7 @@ pub mod hyper_v_collectors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of Hyper-V collector."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -2451,6 +2475,7 @@ pub mod hyper_v_collectors {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Get a Hyper-V collector."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2466,6 +2491,7 @@ pub mod hyper_v_collectors {
                 hyper_v_collector_name: hyper_v_collector_name.into(),
             }
         }
+        #[doc = "Create or Update Hyper-V collector."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2482,6 +2508,7 @@ pub mod hyper_v_collectors {
                 collector_body: None,
             }
         }
+        #[doc = "Deletes Hyper-V collector from the project."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2839,6 +2866,7 @@ pub mod server_collectors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of Server collector."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -2852,6 +2880,7 @@ pub mod server_collectors {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Get a Server collector."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2867,6 +2896,7 @@ pub mod server_collectors {
                 server_collector_name: server_collector_name.into(),
             }
         }
+        #[doc = "Create or Update Server collector."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2883,6 +2913,7 @@ pub mod server_collectors {
                 collector_body: None,
             }
         }
+        #[doc = "Deletes Server collector from the project."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3240,6 +3271,7 @@ pub mod v_mware_collectors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of VMware collector."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -3253,6 +3285,7 @@ pub mod v_mware_collectors {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Get a VMware collector."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3268,6 +3301,7 @@ pub mod v_mware_collectors {
                 vm_ware_collector_name: vm_ware_collector_name.into(),
             }
         }
+        #[doc = "Create or Update VMware collector."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3284,6 +3318,7 @@ pub mod v_mware_collectors {
                 collector_body: None,
             }
         }
+        #[doc = "Deletes VMware collector from the project."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3641,6 +3676,7 @@ pub mod import_collectors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of Import collector."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -3654,6 +3690,7 @@ pub mod import_collectors {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Get a Import collector."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3669,6 +3706,7 @@ pub mod import_collectors {
                 import_collector_name: import_collector_name.into(),
             }
         }
+        #[doc = "Create or Update Import collector."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3685,6 +3723,7 @@ pub mod import_collectors {
                 collector_body: None,
             }
         }
+        #[doc = "Deletes Import collector from the project."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4042,6 +4081,7 @@ pub mod private_endpoint_connection {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all private endpoint connections"]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -4055,6 +4095,7 @@ pub mod private_endpoint_connection {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Get a private endpoint connection in the project."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4070,6 +4111,7 @@ pub mod private_endpoint_connection {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update a private endpoint connection in the project."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4086,6 +4128,7 @@ pub mod private_endpoint_connection {
                 private_endpoint_connection_body: None,
             }
         }
+        #[doc = "Delete the private endpoint connection"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4421,6 +4464,7 @@ pub mod private_link_resource {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific private Link Resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4436,6 +4480,7 @@ pub mod private_link_resource {
                 private_link_resource_name: private_link_resource_name.into(),
             }
         }
+        #[doc = "Get all private link resources"]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -4613,6 +4658,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of operations supported in the API."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

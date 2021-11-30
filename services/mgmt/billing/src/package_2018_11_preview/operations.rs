@@ -5354,6 +5354,7 @@ pub mod recipient_transfers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Accepts the transfer with given transfer Id."]
         pub fn accept(&self, transfer_name: impl Into<String>, body: impl Into<models::AcceptTransferRequest>) -> accept::Builder {
             accept::Builder {
                 client: self.0.clone(),
@@ -5361,18 +5362,21 @@ pub mod recipient_transfers {
                 body: body.into(),
             }
         }
+        #[doc = "Declines the transfer with given transfer Id."]
         pub fn decline(&self, transfer_name: impl Into<String>) -> decline::Builder {
             decline::Builder {
                 client: self.0.clone(),
                 transfer_name: transfer_name.into(),
             }
         }
+        #[doc = "Gets the transfer with given transfer Id."]
         pub fn get(&self, transfer_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 transfer_name: transfer_name.into(),
             }
         }
+        #[doc = "Lists the transfers received by caller."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

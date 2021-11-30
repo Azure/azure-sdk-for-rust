@@ -205,6 +205,7 @@ pub mod management_locks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a management lock at the resource group level."]
         pub fn create_or_update_at_resource_group_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -220,6 +221,7 @@ pub mod management_locks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a management lock at the resource group level."]
         pub fn delete_at_resource_group_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -281,6 +283,7 @@ pub mod management_locks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a management lock at the resource level or any level below the resource."]
         pub fn create_or_update_at_resource_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -304,6 +307,7 @@ pub mod management_locks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the management lock of a resource or any level below the resource."]
         pub fn delete_at_resource_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -336,6 +340,7 @@ pub mod management_locks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a management lock at the subscription level."]
         pub fn create_or_update_at_subscription_level(
             &self,
             lock_name: impl Into<String>,
@@ -349,6 +354,7 @@ pub mod management_locks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the management lock at the subscription level."]
         pub fn delete_at_subscription_level(
             &self,
             lock_name: impl Into<String>,

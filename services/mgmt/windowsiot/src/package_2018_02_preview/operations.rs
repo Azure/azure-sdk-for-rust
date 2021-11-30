@@ -192,6 +192,7 @@ pub mod services {
                 device_name: device_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of a Windows IoT Device Service."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -208,6 +209,7 @@ pub mod services {
                 if_match: None,
             }
         }
+        #[doc = "Updates the metadata of a Windows IoT Device Service."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,

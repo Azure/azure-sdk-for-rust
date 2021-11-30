@@ -170,6 +170,7 @@ pub mod adc_catalogs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List catalogs in Resource Group (GET Resources)"]
         pub fn listt_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -181,6 +182,7 @@ pub mod adc_catalogs {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get Azure Data Catalog service (GET Resources)"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -194,6 +196,7 @@ pub mod adc_catalogs {
                 catalog_name: catalog_name.into(),
             }
         }
+        #[doc = "Create or Update Azure Data Catalog service (PUT Resource)"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -209,6 +212,7 @@ pub mod adc_catalogs {
                 properties: properties.into(),
             }
         }
+        #[doc = "Update Azure Data Catalog Service (PATCH Resource)"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -224,6 +228,7 @@ pub mod adc_catalogs {
                 properties: properties.into(),
             }
         }
+        #[doc = "Delete Azure Data Catalog Service (DELETE Resource)"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

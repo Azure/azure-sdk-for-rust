@@ -211,6 +211,7 @@ pub enum Error {
     DeleteSasDefinition(#[from] delete_sas_definition::Error),
 }
 impl Client {
+    #[doc = "Creates a new key, stores it, then returns key parameters and attributes to the client."]
     pub fn create_key(&self, key_name: impl Into<String>, parameters: impl Into<models::KeyCreateParameters>) -> create_key::Builder {
         create_key::Builder {
             client: self.clone(),
@@ -218,6 +219,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Imports an externally created key, stores it, and returns key parameters and attributes to the client."]
     pub fn import_key(&self, key_name: impl Into<String>, parameters: impl Into<models::KeyImportParameters>) -> import_key::Builder {
         import_key::Builder {
             client: self.clone(),
@@ -225,12 +227,14 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Deletes a key of any type from storage in Azure Key Vault."]
     pub fn delete_key(&self, key_name: impl Into<String>) -> delete_key::Builder {
         delete_key::Builder {
             client: self.clone(),
             key_name: key_name.into(),
         }
     }
+    #[doc = "Gets the public part of a stored key."]
     pub fn get_key(&self, key_name: impl Into<String>, key_version: impl Into<String>) -> get_key::Builder {
         get_key::Builder {
             client: self.clone(),
@@ -238,6 +242,7 @@ impl Client {
             key_version: key_version.into(),
         }
     }
+    #[doc = "The update key operation changes specified attributes of a stored key and can be applied to any key type and key version stored in Azure Key Vault."]
     pub fn update_key(
         &self,
         key_name: impl Into<String>,
@@ -251,6 +256,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Retrieves a list of individual key versions with the same key name."]
     pub fn get_key_versions(&self, key_name: impl Into<String>) -> get_key_versions::Builder {
         get_key_versions::Builder {
             client: self.clone(),
@@ -258,24 +264,28 @@ impl Client {
             maxresults: None,
         }
     }
+    #[doc = "List keys in the specified vault."]
     pub fn get_keys(&self) -> get_keys::Builder {
         get_keys::Builder {
             client: self.clone(),
             maxresults: None,
         }
     }
+    #[doc = "Requests that a backup of the specified key be downloaded to the client."]
     pub fn backup_key(&self, key_name: impl Into<String>) -> backup_key::Builder {
         backup_key::Builder {
             client: self.clone(),
             key_name: key_name.into(),
         }
     }
+    #[doc = "Restores a backed up key to a vault."]
     pub fn restore_key(&self, parameters: impl Into<models::KeyRestoreParameters>) -> restore_key::Builder {
         restore_key::Builder {
             client: self.clone(),
             parameters: parameters.into(),
         }
     }
+    #[doc = "Encrypts an arbitrary sequence of bytes using an encryption key that is stored in a key vault."]
     pub fn encrypt(
         &self,
         key_name: impl Into<String>,
@@ -289,6 +299,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Decrypts a single block of encrypted data."]
     pub fn decrypt(
         &self,
         key_name: impl Into<String>,
@@ -302,6 +313,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Creates a signature from a digest using the specified key."]
     pub fn sign(
         &self,
         key_name: impl Into<String>,
@@ -315,6 +327,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Verifies a signature using a specified key."]
     pub fn verify(
         &self,
         key_name: impl Into<String>,
@@ -328,6 +341,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Wraps a symmetric key using a specified key."]
     pub fn wrap_key(
         &self,
         key_name: impl Into<String>,
@@ -341,6 +355,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Unwraps a symmetric key using the specified key that was initially used for wrapping that key."]
     pub fn unwrap_key(
         &self,
         key_name: impl Into<String>,
@@ -354,30 +369,35 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Lists the deleted keys in the specified vault."]
     pub fn get_deleted_keys(&self) -> get_deleted_keys::Builder {
         get_deleted_keys::Builder {
             client: self.clone(),
             maxresults: None,
         }
     }
+    #[doc = "Gets the public part of a deleted key."]
     pub fn get_deleted_key(&self, key_name: impl Into<String>) -> get_deleted_key::Builder {
         get_deleted_key::Builder {
             client: self.clone(),
             key_name: key_name.into(),
         }
     }
+    #[doc = "Permanently deletes the specified key."]
     pub fn purge_deleted_key(&self, key_name: impl Into<String>) -> purge_deleted_key::Builder {
         purge_deleted_key::Builder {
             client: self.clone(),
             key_name: key_name.into(),
         }
     }
+    #[doc = "Recovers the deleted key to its latest version."]
     pub fn recover_deleted_key(&self, key_name: impl Into<String>) -> recover_deleted_key::Builder {
         recover_deleted_key::Builder {
             client: self.clone(),
             key_name: key_name.into(),
         }
     }
+    #[doc = "Sets a secret in a specified key vault."]
     pub fn set_secret(&self, secret_name: impl Into<String>, parameters: impl Into<models::SecretSetParameters>) -> set_secret::Builder {
         set_secret::Builder {
             client: self.clone(),
@@ -385,12 +405,14 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Deletes a secret from a specified key vault."]
     pub fn delete_secret(&self, secret_name: impl Into<String>) -> delete_secret::Builder {
         delete_secret::Builder {
             client: self.clone(),
             secret_name: secret_name.into(),
         }
     }
+    #[doc = "Get a specified secret from a given key vault."]
     pub fn get_secret(&self, secret_name: impl Into<String>, secret_version: impl Into<String>) -> get_secret::Builder {
         get_secret::Builder {
             client: self.clone(),
@@ -398,6 +420,7 @@ impl Client {
             secret_version: secret_version.into(),
         }
     }
+    #[doc = "Updates the attributes associated with a specified secret in a given key vault."]
     pub fn update_secret(
         &self,
         secret_name: impl Into<String>,
@@ -411,12 +434,14 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "List secrets in a specified key vault."]
     pub fn get_secrets(&self) -> get_secrets::Builder {
         get_secrets::Builder {
             client: self.clone(),
             maxresults: None,
         }
     }
+    #[doc = "List all versions of the specified secret."]
     pub fn get_secret_versions(&self, secret_name: impl Into<String>) -> get_secret_versions::Builder {
         get_secret_versions::Builder {
             client: self.clone(),
@@ -424,78 +449,92 @@ impl Client {
             maxresults: None,
         }
     }
+    #[doc = "Lists deleted secrets for the specified vault."]
     pub fn get_deleted_secrets(&self) -> get_deleted_secrets::Builder {
         get_deleted_secrets::Builder {
             client: self.clone(),
             maxresults: None,
         }
     }
+    #[doc = "Gets the specified deleted secret."]
     pub fn get_deleted_secret(&self, secret_name: impl Into<String>) -> get_deleted_secret::Builder {
         get_deleted_secret::Builder {
             client: self.clone(),
             secret_name: secret_name.into(),
         }
     }
+    #[doc = "Permanently deletes the specified secret."]
     pub fn purge_deleted_secret(&self, secret_name: impl Into<String>) -> purge_deleted_secret::Builder {
         purge_deleted_secret::Builder {
             client: self.clone(),
             secret_name: secret_name.into(),
         }
     }
+    #[doc = "Recovers the deleted secret to the latest version."]
     pub fn recover_deleted_secret(&self, secret_name: impl Into<String>) -> recover_deleted_secret::Builder {
         recover_deleted_secret::Builder {
             client: self.clone(),
             secret_name: secret_name.into(),
         }
     }
+    #[doc = "Backs up the specified secret."]
     pub fn backup_secret(&self, secret_name: impl Into<String>) -> backup_secret::Builder {
         backup_secret::Builder {
             client: self.clone(),
             secret_name: secret_name.into(),
         }
     }
+    #[doc = "Restores a backed up secret to a vault."]
     pub fn restore_secret(&self, parameters: impl Into<models::SecretRestoreParameters>) -> restore_secret::Builder {
         restore_secret::Builder {
             client: self.clone(),
             parameters: parameters.into(),
         }
     }
+    #[doc = "List certificates in a specified key vault"]
     pub fn get_certificates(&self) -> get_certificates::Builder {
         get_certificates::Builder {
             client: self.clone(),
             maxresults: None,
         }
     }
+    #[doc = "Deletes a certificate from a specified key vault."]
     pub fn delete_certificate(&self, certificate_name: impl Into<String>) -> delete_certificate::Builder {
         delete_certificate::Builder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
+    #[doc = "Lists the certificate contacts for a specified key vault."]
     pub fn get_certificate_contacts(&self) -> get_certificate_contacts::Builder {
         get_certificate_contacts::Builder { client: self.clone() }
     }
+    #[doc = "Sets the certificate contacts for the specified key vault."]
     pub fn set_certificate_contacts(&self, contacts: impl Into<models::Contacts>) -> set_certificate_contacts::Builder {
         set_certificate_contacts::Builder {
             client: self.clone(),
             contacts: contacts.into(),
         }
     }
+    #[doc = "Deletes the certificate contacts for a specified key vault."]
     pub fn delete_certificate_contacts(&self) -> delete_certificate_contacts::Builder {
         delete_certificate_contacts::Builder { client: self.clone() }
     }
+    #[doc = "List certificate issuers for a specified key vault."]
     pub fn get_certificate_issuers(&self) -> get_certificate_issuers::Builder {
         get_certificate_issuers::Builder {
             client: self.clone(),
             maxresults: None,
         }
     }
+    #[doc = "Lists the specified certificate issuer."]
     pub fn get_certificate_issuer(&self, issuer_name: impl Into<String>) -> get_certificate_issuer::Builder {
         get_certificate_issuer::Builder {
             client: self.clone(),
             issuer_name: issuer_name.into(),
         }
     }
+    #[doc = "Sets the specified certificate issuer."]
     pub fn set_certificate_issuer(
         &self,
         issuer_name: impl Into<String>,
@@ -507,6 +546,7 @@ impl Client {
             parameter: parameter.into(),
         }
     }
+    #[doc = "Updates the specified certificate issuer."]
     pub fn update_certificate_issuer(
         &self,
         issuer_name: impl Into<String>,
@@ -518,12 +558,14 @@ impl Client {
             parameter: parameter.into(),
         }
     }
+    #[doc = "Deletes the specified certificate issuer."]
     pub fn delete_certificate_issuer(&self, issuer_name: impl Into<String>) -> delete_certificate_issuer::Builder {
         delete_certificate_issuer::Builder {
             client: self.clone(),
             issuer_name: issuer_name.into(),
         }
     }
+    #[doc = "Creates a new certificate."]
     pub fn create_certificate(
         &self,
         certificate_name: impl Into<String>,
@@ -535,6 +577,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Imports a certificate into a specified key vault."]
     pub fn import_certificate(
         &self,
         certificate_name: impl Into<String>,
@@ -546,6 +589,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "List the versions of a certificate."]
     pub fn get_certificate_versions(&self, certificate_name: impl Into<String>) -> get_certificate_versions::Builder {
         get_certificate_versions::Builder {
             client: self.clone(),
@@ -553,12 +597,14 @@ impl Client {
             maxresults: None,
         }
     }
+    #[doc = "Lists the policy for a certificate."]
     pub fn get_certificate_policy(&self, certificate_name: impl Into<String>) -> get_certificate_policy::Builder {
         get_certificate_policy::Builder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
+    #[doc = "Updates the policy for a certificate."]
     pub fn update_certificate_policy(
         &self,
         certificate_name: impl Into<String>,
@@ -570,6 +616,7 @@ impl Client {
             certificate_policy: certificate_policy.into(),
         }
     }
+    #[doc = "Gets information about a certificate."]
     pub fn get_certificate(&self, certificate_name: impl Into<String>, certificate_version: impl Into<String>) -> get_certificate::Builder {
         get_certificate::Builder {
             client: self.clone(),
@@ -577,6 +624,7 @@ impl Client {
             certificate_version: certificate_version.into(),
         }
     }
+    #[doc = "Updates the specified attributes associated with the given certificate."]
     pub fn update_certificate(
         &self,
         certificate_name: impl Into<String>,
@@ -590,12 +638,14 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Gets the creation operation of a certificate."]
     pub fn get_certificate_operation(&self, certificate_name: impl Into<String>) -> get_certificate_operation::Builder {
         get_certificate_operation::Builder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
+    #[doc = "Updates a certificate operation."]
     pub fn update_certificate_operation(
         &self,
         certificate_name: impl Into<String>,
@@ -607,12 +657,14 @@ impl Client {
             certificate_operation: certificate_operation.into(),
         }
     }
+    #[doc = "Deletes the creation operation for a specific certificate."]
     pub fn delete_certificate_operation(&self, certificate_name: impl Into<String>) -> delete_certificate_operation::Builder {
         delete_certificate_operation::Builder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
+    #[doc = "Merges a certificate or a certificate chain with a key pair existing on the server."]
     pub fn merge_certificate(
         &self,
         certificate_name: impl Into<String>,
@@ -624,24 +676,28 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Lists the deleted certificates in the specified vault currently available for recovery."]
     pub fn get_deleted_certificates(&self) -> get_deleted_certificates::Builder {
         get_deleted_certificates::Builder {
             client: self.clone(),
             maxresults: None,
         }
     }
+    #[doc = "Retrieves information about the specified deleted certificate."]
     pub fn get_deleted_certificate(&self, certificate_name: impl Into<String>) -> get_deleted_certificate::Builder {
         get_deleted_certificate::Builder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
+    #[doc = "Permanently deletes the specified deleted certificate."]
     pub fn purge_deleted_certificate(&self, certificate_name: impl Into<String>) -> purge_deleted_certificate::Builder {
         purge_deleted_certificate::Builder {
             client: self.clone(),
             certificate_name: certificate_name.into(),
         }
     }
+    #[doc = "Recovers the deleted certificate back to its current version under /certificates."]
     pub fn recover_deleted_certificate(&self, certificate_name: impl Into<String>) -> recover_deleted_certificate::Builder {
         recover_deleted_certificate::Builder {
             client: self.clone(),

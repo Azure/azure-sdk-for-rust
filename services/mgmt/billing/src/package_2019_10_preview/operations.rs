@@ -7879,6 +7879,7 @@ pub mod recipient_transfers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Accepts a transfer request."]
         pub fn accept(&self, transfer_name: impl Into<String>, parameters: impl Into<models::AcceptTransferRequest>) -> accept::Builder {
             accept::Builder {
                 client: self.0.clone(),
@@ -7886,6 +7887,7 @@ pub mod recipient_transfers {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Validates if a subscription or a reservation can be transferred. Use this operation to validate your subscriptions or reservation before using the accept transfer operation."]
         pub fn validate(
             &self,
             transfer_name: impl Into<String>,
@@ -7897,18 +7899,21 @@ pub mod recipient_transfers {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Declines a transfer request."]
         pub fn decline(&self, transfer_name: impl Into<String>) -> decline::Builder {
             decline::Builder {
                 client: self.0.clone(),
                 transfer_name: transfer_name.into(),
             }
         }
+        #[doc = "Gets a transfer request by ID. The caller must be the recipient of the transfer request."]
         pub fn get(&self, transfer_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 transfer_name: transfer_name.into(),
             }
         }
+        #[doc = "Lists the transfer requests received by the caller."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

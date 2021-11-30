@@ -94,6 +94,7 @@ pub mod query {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Execute an Analytics query"]
         pub fn get(&self, workspace_id: impl Into<String>, query: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -102,6 +103,7 @@ pub mod query {
                 timespan: None,
             }
         }
+        #[doc = "Execute an Analytics query"]
         pub fn execute(&self, workspace_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::Builder {
             execute::Builder {
                 client: self.0.clone(),
@@ -264,12 +266,14 @@ pub mod metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets metadata information"]
         pub fn get(&self, workspace_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 workspace_id: workspace_id.into(),
             }
         }
+        #[doc = "Gets metadata information"]
         pub fn post(&self, workspace_id: impl Into<String>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),
