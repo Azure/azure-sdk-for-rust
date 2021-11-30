@@ -222,12 +222,14 @@ pub mod sql_managed_instances {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List sqlManagedInstance resources in the subscription"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List sqlManagedInstance resources in the resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -779,12 +781,14 @@ pub mod sql_server_instances {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List sqlServerInstance resources in the subscription"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List sqlServerInstance resources in the resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1336,12 +1340,14 @@ pub mod postgres_instances {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List postgres Instance resources in the subscription"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List postgres Instance resources in the resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1893,12 +1899,14 @@ pub mod data_controllers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List dataController resources in the subscription"]
         pub fn list_in_subscription(&self, subscription_id: impl Into<String>) -> list_in_subscription::Builder {
             list_in_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List dataController resources in the resource group"]
         pub fn list_in_group(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list_in_group::Builder {
             list_in_group::Builder {
                 client: self.0.clone(),

@@ -141,6 +141,7 @@ pub mod action_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all action rule in a given subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -157,6 +158,7 @@ pub mod action_rules {
                 name: None,
             }
         }
+        #[doc = "Get all action rules created in a resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -178,6 +180,7 @@ pub mod action_rules {
                 name: None,
             }
         }
+        #[doc = "Get action rule by name"]
         pub fn get_by_name(
             &self,
             subscription_id: impl Into<String>,
@@ -191,6 +194,7 @@ pub mod action_rules {
                 action_rule_name: action_rule_name.into(),
             }
         }
+        #[doc = "Create/update an action rule"]
         pub fn create_update(
             &self,
             subscription_id: impl Into<String>,
@@ -206,6 +210,7 @@ pub mod action_rules {
                 action_rule: action_rule.into(),
             }
         }
+        #[doc = "Patch action rule"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -221,6 +226,7 @@ pub mod action_rules {
                 action_rule_patch: action_rule_patch.into(),
             }
         }
+        #[doc = "Delete action rule"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -966,6 +972,7 @@ pub mod alerts {
                 custom_time_range: None,
             }
         }
+        #[doc = "Get a specific alert."]
         pub fn get_by_id(&self, subscription_id: impl Into<String>, alert_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -1692,6 +1699,7 @@ pub mod smart_groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all Smart Groups within a specified subscription"]
         pub fn get_all(&self, subscription_id: impl Into<String>) -> get_all::Builder {
             get_all::Builder {
                 client: self.0.clone(),
@@ -1709,6 +1717,7 @@ pub mod smart_groups {
                 sort_order: None,
             }
         }
+        #[doc = "Get information related to a specific Smart Group."]
         pub fn get_by_id(&self, subscription_id: impl Into<String>, smart_group_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),

@@ -188,12 +188,14 @@ pub mod network_experiment_profiles {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of Network Experiment Profiles under a subscription"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of Network Experiment Profiles within a resource group under a subscription"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -205,6 +207,7 @@ pub mod network_experiment_profiles {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets an NetworkExperiment Profile by ProfileName"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -218,6 +221,7 @@ pub mod network_experiment_profiles {
                 profile_name: profile_name.into(),
             }
         }
+        #[doc = "Creates an NetworkExperiment Profile"]
         pub fn create_or_update(
             &self,
             profile_name: impl Into<String>,
@@ -233,6 +237,7 @@ pub mod network_experiment_profiles {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an NetworkExperimentProfiles by NetworkExperimentProfile name"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -248,6 +253,7 @@ pub mod network_experiment_profiles {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an NetworkExperiment Profile by ProfileName"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -759,6 +765,7 @@ pub mod preconfigured_endpoints {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of Preconfigured Endpoints"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -849,6 +856,7 @@ pub mod experiments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of Experiments"]
         pub fn list_by_profile(
             &self,
             subscription_id: impl Into<String>,
@@ -862,6 +870,7 @@ pub mod experiments {
                 profile_name: profile_name.into(),
             }
         }
+        #[doc = "Gets an Experiment by ExperimentName"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -877,6 +886,7 @@ pub mod experiments {
                 experiment_name: experiment_name.into(),
             }
         }
+        #[doc = "Creates or updates an Experiment"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -894,6 +904,7 @@ pub mod experiments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an Experiment by Experiment id"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -911,6 +922,7 @@ pub mod experiments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an Experiment"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1361,6 +1373,7 @@ pub mod reports {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a Latency Scorecard for a given Experiment"]
         pub fn get_latency_scorecards(
             &self,
             subscription_id: impl Into<String>,
@@ -1380,6 +1393,7 @@ pub mod reports {
                 country: None,
             }
         }
+        #[doc = "Gets a Timeseries for a given Experiment"]
         pub fn get_timeseries(
             &self,
             subscription_id: impl Into<String>,

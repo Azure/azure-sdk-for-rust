@@ -85,6 +85,7 @@ pub mod container_services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of supported orchestrators in the specified subscription."]
         pub fn list_orchestrators(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_orchestrators::Builder {
             list_orchestrators::Builder {
                 client: self.0.clone(),

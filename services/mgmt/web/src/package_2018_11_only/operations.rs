@@ -95,12 +95,14 @@ pub mod certificates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all certificates for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all certificates in a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -112,6 +114,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a certificate."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -125,6 +128,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a certificate."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -140,6 +144,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a certificate."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -155,6 +160,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a certificate."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,

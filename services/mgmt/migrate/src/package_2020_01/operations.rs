@@ -204,6 +204,7 @@ pub mod hyper_v_cluster {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get a Hyper-V cluster."]
         pub fn get_cluster(
             &self,
             subscription_id: impl Into<String>,
@@ -219,6 +220,7 @@ pub mod hyper_v_cluster {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Method to create or update a cluster in site."]
         pub fn put_cluster(
             &self,
             subscription_id: impl Into<String>,
@@ -236,6 +238,7 @@ pub mod hyper_v_cluster {
                 body: body.into(),
             }
         }
+        #[doc = "Method to get all clusters in a site."]
         pub fn get_all_clusters_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -481,6 +484,7 @@ pub mod hyper_v_host {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get a Hyper-V host."]
         pub fn get_host(
             &self,
             subscription_id: impl Into<String>,
@@ -496,6 +500,7 @@ pub mod hyper_v_host {
                 host_name: host_name.into(),
             }
         }
+        #[doc = "Method to create or update a host in site."]
         pub fn put_host(
             &self,
             subscription_id: impl Into<String>,
@@ -513,6 +518,7 @@ pub mod hyper_v_host {
                 body: body.into(),
             }
         }
+        #[doc = "Method to get all hosts in a site."]
         pub fn get_all_hosts_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -758,6 +764,7 @@ pub mod hyper_v_jobs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get job."]
         pub fn get_job(
             &self,
             subscription_id: impl Into<String>,
@@ -773,6 +780,7 @@ pub mod hyper_v_jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Method to get all jobs in a site."]
         pub fn get_all_jobs_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -938,6 +946,7 @@ pub mod hyper_v_machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get machine."]
         pub fn get_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -953,6 +962,7 @@ pub mod hyper_v_machines {
                 machine_name: machine_name.into(),
             }
         }
+        #[doc = "Method to get machine."]
         pub fn get_all_machines_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1155,6 +1165,7 @@ pub mod hyper_v_operations_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get operation status."]
         pub fn get_operation_status(
             &self,
             subscription_id: impl Into<String>,
@@ -1250,6 +1261,7 @@ pub mod hyper_v_run_as_accounts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get run as account."]
         pub fn get_run_as_account(
             &self,
             subscription_id: impl Into<String>,
@@ -1265,6 +1277,7 @@ pub mod hyper_v_run_as_accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Method to get run as accounts."]
         pub fn get_all_run_as_accounts_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1432,6 +1445,7 @@ pub mod hyper_v_sites {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get a site."]
         pub fn get_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1445,6 +1459,7 @@ pub mod hyper_v_sites {
                 site_name: site_name.into(),
             }
         }
+        #[doc = "Method to create or update a site."]
         pub fn put_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1460,6 +1475,7 @@ pub mod hyper_v_sites {
                 body: body.into(),
             }
         }
+        #[doc = "Method to patch an existing site."]
         pub fn patch_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1475,6 +1491,7 @@ pub mod hyper_v_sites {
                 body: body.into(),
             }
         }
+        #[doc = "Method to delete a site."]
         pub fn delete_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1488,6 +1505,7 @@ pub mod hyper_v_sites {
                 site_name: site_name.into(),
             }
         }
+        #[doc = "Method to refresh a site."]
         pub fn refresh_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1501,6 +1519,7 @@ pub mod hyper_v_sites {
                 site_name: site_name.into(),
             }
         }
+        #[doc = "Method to get site health summary."]
         pub fn get_site_health_summary(
             &self,
             subscription_id: impl Into<String>,
@@ -1514,6 +1533,7 @@ pub mod hyper_v_sites {
                 site_name: site_name.into(),
             }
         }
+        #[doc = "Method to get site usage."]
         pub fn get_site_usage(
             &self,
             subscription_id: impl Into<String>,
@@ -2064,6 +2084,7 @@ pub mod jobs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get job."]
         pub fn get_job(
             &self,
             subscription_id: impl Into<String>,
@@ -2079,6 +2100,7 @@ pub mod jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Method to get all jobs in a site."]
         pub fn get_all_jobs_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2244,6 +2266,7 @@ pub mod machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get machine."]
         pub fn get_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -2259,6 +2282,7 @@ pub mod machines {
                 machine_name: machine_name.into(),
             }
         }
+        #[doc = "Method to get machine."]
         pub fn get_all_machines_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2276,6 +2300,7 @@ pub mod machines {
                 total_record_count: None,
             }
         }
+        #[doc = "Method to stop a machine."]
         pub fn stop_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -2291,6 +2316,7 @@ pub mod machines {
                 machine_name: machine_name.into(),
             }
         }
+        #[doc = "Method to start a machine."]
         pub fn start_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -2631,6 +2657,7 @@ pub mod run_as_accounts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get run as account."]
         pub fn get_run_as_account(
             &self,
             subscription_id: impl Into<String>,
@@ -2646,6 +2673,7 @@ pub mod run_as_accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Method to get run as accounts."]
         pub fn get_all_run_as_accounts_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2813,6 +2841,7 @@ pub mod sites {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get a site."]
         pub fn get_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2826,6 +2855,7 @@ pub mod sites {
                 site_name: site_name.into(),
             }
         }
+        #[doc = "Method to create or update a site."]
         pub fn put_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2841,6 +2871,7 @@ pub mod sites {
                 body: body.into(),
             }
         }
+        #[doc = "Method to update an existing site."]
         pub fn patch_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2856,6 +2887,7 @@ pub mod sites {
                 body: body.into(),
             }
         }
+        #[doc = "Method to delete a site."]
         pub fn delete_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2869,6 +2901,7 @@ pub mod sites {
                 site_name: site_name.into(),
             }
         }
+        #[doc = "Method to refresh a site."]
         pub fn refresh_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2882,6 +2915,7 @@ pub mod sites {
                 site_name: site_name.into(),
             }
         }
+        #[doc = "Method to get site health summary."]
         pub fn get_site_health_summary(
             &self,
             subscription_id: impl Into<String>,
@@ -2895,6 +2929,7 @@ pub mod sites {
                 site_name: site_name.into(),
             }
         }
+        #[doc = "Method to get site usage/summary."]
         pub fn get_site_usage(
             &self,
             subscription_id: impl Into<String>,
@@ -3445,6 +3480,7 @@ pub mod v_center {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get a vCenter."]
         pub fn get_v_center(
             &self,
             subscription_id: impl Into<String>,
@@ -3460,6 +3496,7 @@ pub mod v_center {
                 vcenter_name: vcenter_name.into(),
             }
         }
+        #[doc = "Method to create or update a vCenter in site."]
         pub fn put_v_center(
             &self,
             subscription_id: impl Into<String>,
@@ -3477,6 +3514,7 @@ pub mod v_center {
                 body: body.into(),
             }
         }
+        #[doc = "Method to delete vCenter in site."]
         pub fn delete_v_center(
             &self,
             subscription_id: impl Into<String>,
@@ -3492,6 +3530,7 @@ pub mod v_center {
                 vcenter_name: vcenter_name.into(),
             }
         }
+        #[doc = "Method to get all vCenters in a site."]
         pub fn get_all_v_centers_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -3812,6 +3851,7 @@ pub mod v_mware_operations_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Method to get operation status."]
         pub fn get_operation_status(
             &self,
             subscription_id: impl Into<String>,
@@ -3907,6 +3947,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of operations supported in the API."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

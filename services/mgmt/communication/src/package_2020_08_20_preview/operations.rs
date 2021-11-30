@@ -113,6 +113,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -190,6 +191,7 @@ pub mod communication_service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check Name Availability"]
         pub fn check_name_availability(&self, subscription_id: impl Into<String>) -> check_name_availability::Builder {
             check_name_availability::Builder {
                 client: self.0.clone(),
@@ -197,6 +199,7 @@ pub mod communication_service {
                 name_availability_parameters: None,
             }
         }
+        #[doc = "Link Notification Hub"]
         pub fn link_notification_hub(
             &self,
             subscription_id: impl Into<String>,
@@ -211,12 +214,14 @@ pub mod communication_service {
                 link_notification_hub_parameters: None,
             }
         }
+        #[doc = "List By Subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List By Resource Group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -228,6 +233,7 @@ pub mod communication_service {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -241,6 +247,7 @@ pub mod communication_service {
                 communication_service_name: communication_service_name.into(),
             }
         }
+        #[doc = "Create Or Update"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -255,6 +262,7 @@ pub mod communication_service {
                 parameters: None,
             }
         }
+        #[doc = "Update"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -269,6 +277,7 @@ pub mod communication_service {
                 parameters: None,
             }
         }
+        #[doc = "Delete"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -282,6 +291,7 @@ pub mod communication_service {
                 communication_service_name: communication_service_name.into(),
             }
         }
+        #[doc = "List Keys"]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -295,6 +305,7 @@ pub mod communication_service {
                 communication_service_name: communication_service_name.into(),
             }
         }
+        #[doc = "Regenerate Key"]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -1159,6 +1170,7 @@ pub mod operation_statuses {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Operation Status"]
         pub fn get(&self, location: impl Into<String>, operation_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

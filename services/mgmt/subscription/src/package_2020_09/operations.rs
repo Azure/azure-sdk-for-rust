@@ -119,6 +119,7 @@ pub mod subscriptions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all available geo-locations."]
         pub fn list_locations(&self, subscription_id: impl Into<String>) -> list_locations::Builder {
             list_locations::Builder {
                 client: self.0.clone(),

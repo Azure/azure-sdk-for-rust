@@ -95,12 +95,14 @@ pub mod container_services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of container services in the specified subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the properties of the specified container service."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -114,6 +116,7 @@ pub mod container_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a container service."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -129,6 +132,7 @@ pub mod container_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified container service."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -142,6 +146,7 @@ pub mod container_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of container services in the specified resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -153,6 +158,7 @@ pub mod container_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of supported orchestrators in the specified subscription."]
         pub fn list_orchestrators(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_orchestrators::Builder {
             list_orchestrators::Builder {
                 client: self.0.clone(),

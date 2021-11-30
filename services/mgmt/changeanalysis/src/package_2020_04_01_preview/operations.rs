@@ -96,6 +96,7 @@ pub mod configuration_profile {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the configuration profile for the Microsoft.ChangeAnalysis resource provider. The profile name should be always set to 'default'."]
         pub fn get(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -103,6 +104,7 @@ pub mod configuration_profile {
                 profile_name: profile_name.into(),
             }
         }
+        #[doc = "Updates configuration profile for for the Microsoft.ChangeAnalysis resource provider. The profile name should be always set to 'default'."]
         pub fn create(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -111,6 +113,7 @@ pub mod configuration_profile {
                 body: None,
             }
         }
+        #[doc = "Updates a configuration profile with the specified parameters. The profile name should be always set to 'default'"]
         pub fn update(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -119,6 +122,7 @@ pub mod configuration_profile {
                 body: None,
             }
         }
+        #[doc = "Deletes existing configuration profile. The profile name should be always set to 'default'"]
         pub fn delete(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -459,6 +463,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the supported operations by the Microsoft.ChangeAnalysis resource provider along with their descriptions."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

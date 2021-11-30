@@ -102,6 +102,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available RP operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -179,12 +180,14 @@ pub mod open_shift_clusters {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists OpenShift clusters in the specified subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists OpenShift clusters in the specified subscription and resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -196,6 +199,7 @@ pub mod open_shift_clusters {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a OpenShift cluster with the specified subscription, resource group and resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -209,6 +213,7 @@ pub mod open_shift_clusters {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Creates or updates a OpenShift cluster with the specified subscription, resource group and resource name."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -224,6 +229,7 @@ pub mod open_shift_clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Creates or updates a OpenShift cluster with the specified subscription, resource group and resource name."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -239,6 +245,7 @@ pub mod open_shift_clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a OpenShift cluster with the specified subscription, resource group and resource name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -252,6 +259,7 @@ pub mod open_shift_clusters {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Lists credentials of an OpenShift cluster with the specified subscription, resource group and resource name."]
         pub fn list_credentials(
             &self,
             subscription_id: impl Into<String>,

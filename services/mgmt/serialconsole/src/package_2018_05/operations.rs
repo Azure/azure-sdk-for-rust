@@ -103,6 +103,7 @@ impl Client {
     pub fn list_operations(&self) -> list_operations::Builder {
         list_operations::Builder { client: self.clone() }
     }
+    #[doc = "Get the disabled status for a subscription"]
     pub fn get_console_status(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> get_console_status::Builder {
         get_console_status::Builder {
             client: self.clone(),
@@ -110,6 +111,7 @@ impl Client {
             default: default.into(),
         }
     }
+    #[doc = "Disable Serial Console for a subscription"]
     pub fn disable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> disable_console::Builder {
         disable_console::Builder {
             client: self.clone(),
@@ -117,6 +119,7 @@ impl Client {
             default: default.into(),
         }
     }
+    #[doc = "Enable Serial Console for a subscription"]
     pub fn enable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> enable_console::Builder {
         enable_console::Builder {
             client: self.clone(),

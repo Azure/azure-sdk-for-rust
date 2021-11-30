@@ -96,6 +96,7 @@ pub mod schema_groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of schema groups."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -173,12 +174,14 @@ pub mod schema {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a registered schema by its unique ID reference."]
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
                 id: id.into(),
             }
         }
+        #[doc = "Get list schema versions."]
         pub fn get_versions(&self, group_name: impl Into<String>, schema_name: impl Into<String>) -> get_versions::Builder {
             get_versions::Builder {
                 client: self.0.clone(),
@@ -186,6 +189,7 @@ pub mod schema {
                 schema_name: schema_name.into(),
             }
         }
+        #[doc = "Get ID for existing schema."]
         pub fn query_id_by_content(
             &self,
             group_name: impl Into<String>,
@@ -199,6 +203,7 @@ pub mod schema {
                 schema_content: schema_content.into(),
             }
         }
+        #[doc = "Register new schema"]
         pub fn register(
             &self,
             group_name: impl Into<String>,

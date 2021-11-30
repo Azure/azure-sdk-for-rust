@@ -292,6 +292,7 @@ pub mod account_filters {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Account Filters"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -305,6 +306,7 @@ pub mod account_filters {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get an Account Filter."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -320,6 +322,7 @@ pub mod account_filters {
                 filter_name: filter_name.into(),
             }
         }
+        #[doc = "Create or update an Account Filter"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -337,6 +340,7 @@ pub mod account_filters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update an Account Filter"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -354,6 +358,7 @@ pub mod account_filters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete an Account Filter."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -787,6 +792,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -864,6 +870,7 @@ pub mod mediaservices {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Media Services accounts"]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -871,6 +878,7 @@ pub mod mediaservices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get a Media Services account"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -884,6 +892,7 @@ pub mod mediaservices {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Create or update a Media Services account"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -899,6 +908,7 @@ pub mod mediaservices {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update a Media Services account"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -914,6 +924,7 @@ pub mod mediaservices {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a Media Services account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -927,6 +938,7 @@ pub mod mediaservices {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Synchronizes Storage Account Keys"]
         pub fn sync_storage_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -942,6 +954,7 @@ pub mod mediaservices {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "List the media edge policies associated with the Media Services account."]
         pub fn list_edge_policies(
             &self,
             subscription_id: impl Into<String>,
@@ -957,6 +970,7 @@ pub mod mediaservices {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "List Media Services accounts"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1594,6 +1608,7 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of group IDs."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1607,6 +1622,7 @@ pub mod private_link_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get group ID."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1786,6 +1802,7 @@ pub mod private_endpoint_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all private endpoint connections."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1799,6 +1816,7 @@ pub mod private_endpoint_connections {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1814,6 +1832,7 @@ pub mod private_endpoint_connections {
                 name: name.into(),
             }
         }
+        #[doc = "Update private endpoint connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1831,6 +1850,7 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2165,6 +2185,7 @@ pub mod locations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check Name Availability"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -2263,6 +2284,7 @@ pub mod assets {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Assets"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2279,6 +2301,7 @@ pub mod assets {
                 orderby: None,
             }
         }
+        #[doc = "Get an Asset"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2294,6 +2317,7 @@ pub mod assets {
                 asset_name: asset_name.into(),
             }
         }
+        #[doc = "Create or update an Asset"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2311,6 +2335,7 @@ pub mod assets {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update an Asset"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2328,6 +2353,7 @@ pub mod assets {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete an Asset."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2343,6 +2369,7 @@ pub mod assets {
                 asset_name: asset_name.into(),
             }
         }
+        #[doc = "List the Asset URLs"]
         pub fn list_container_sas(
             &self,
             subscription_id: impl Into<String>,
@@ -2360,6 +2387,7 @@ pub mod assets {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets the Asset storage key"]
         pub fn get_encryption_key(
             &self,
             subscription_id: impl Into<String>,
@@ -2375,6 +2403,7 @@ pub mod assets {
                 asset_name: asset_name.into(),
             }
         }
+        #[doc = "List Streaming Locators"]
         pub fn list_streaming_locators(
             &self,
             subscription_id: impl Into<String>,
@@ -3077,6 +3106,7 @@ pub mod asset_filters {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Asset Filters"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3092,6 +3122,7 @@ pub mod asset_filters {
                 asset_name: asset_name.into(),
             }
         }
+        #[doc = "Get an Asset Filter."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3109,6 +3140,7 @@ pub mod asset_filters {
                 filter_name: filter_name.into(),
             }
         }
+        #[doc = "Create or update an Asset Filter"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3128,6 +3160,7 @@ pub mod asset_filters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update an Asset Filter"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3147,6 +3180,7 @@ pub mod asset_filters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete an Asset Filter."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3592,6 +3626,7 @@ pub mod content_key_policies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Content Key Policies"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3608,6 +3643,7 @@ pub mod content_key_policies {
                 orderby: None,
             }
         }
+        #[doc = "Get a Content Key Policy"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3623,6 +3659,7 @@ pub mod content_key_policies {
                 content_key_policy_name: content_key_policy_name.into(),
             }
         }
+        #[doc = "Create or update an Content Key Policy"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3640,6 +3677,7 @@ pub mod content_key_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update a Content Key Policy"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3657,6 +3695,7 @@ pub mod content_key_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a Content Key Policy"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3672,6 +3711,7 @@ pub mod content_key_policies {
                 content_key_policy_name: content_key_policy_name.into(),
             }
         }
+        #[doc = "Get a Content Key Policy with secrets"]
         pub fn get_policy_properties_with_secrets(
             &self,
             subscription_id: impl Into<String>,
@@ -4209,6 +4249,7 @@ pub mod transforms {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Transforms"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4224,6 +4265,7 @@ pub mod transforms {
                 orderby: None,
             }
         }
+        #[doc = "Get Transform"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4239,6 +4281,7 @@ pub mod transforms {
                 transform_name: transform_name.into(),
             }
         }
+        #[doc = "Create or Update Transform"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4256,6 +4299,7 @@ pub mod transforms {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update Transform"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4273,6 +4317,7 @@ pub mod transforms {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete Transform"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4722,6 +4767,7 @@ pub mod jobs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Jobs"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4739,6 +4785,7 @@ pub mod jobs {
                 orderby: None,
             }
         }
+        #[doc = "Get Job"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4756,6 +4803,7 @@ pub mod jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Create Job"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -4775,6 +4823,7 @@ pub mod jobs {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update Job"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4794,6 +4843,7 @@ pub mod jobs {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete Job"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4811,6 +4861,7 @@ pub mod jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Cancel Job"]
         pub fn cancel_job(
             &self,
             subscription_id: impl Into<String>,
@@ -5338,6 +5389,7 @@ pub mod streaming_policies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Streaming Policies"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5354,6 +5406,7 @@ pub mod streaming_policies {
                 orderby: None,
             }
         }
+        #[doc = "Get a Streaming Policy"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5369,6 +5422,7 @@ pub mod streaming_policies {
                 streaming_policy_name: streaming_policy_name.into(),
             }
         }
+        #[doc = "Create a Streaming Policy"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -5386,6 +5440,7 @@ pub mod streaming_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a Streaming Policy"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5751,6 +5806,7 @@ pub mod streaming_locators {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Streaming Locators"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5767,6 +5823,7 @@ pub mod streaming_locators {
                 orderby: None,
             }
         }
+        #[doc = "Get a Streaming Locator"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5782,6 +5839,7 @@ pub mod streaming_locators {
                 streaming_locator_name: streaming_locator_name.into(),
             }
         }
+        #[doc = "Create a Streaming Locator"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -5799,6 +5857,7 @@ pub mod streaming_locators {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a Streaming Locator"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5814,6 +5873,7 @@ pub mod streaming_locators {
                 streaming_locator_name: streaming_locator_name.into(),
             }
         }
+        #[doc = "List Content Keys"]
         pub fn list_content_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -5829,6 +5889,7 @@ pub mod streaming_locators {
                 streaming_locator_name: streaming_locator_name.into(),
             }
         }
+        #[doc = "List Paths"]
         pub fn list_paths(
             &self,
             subscription_id: impl Into<String>,
@@ -6349,6 +6410,7 @@ pub mod live_events {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List live events"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6362,6 +6424,7 @@ pub mod live_events {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get Live Event"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6377,6 +6440,7 @@ pub mod live_events {
                 live_event_name: live_event_name.into(),
             }
         }
+        #[doc = "Create Live Event"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -6412,6 +6476,7 @@ pub mod live_events {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete Live Event"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6427,6 +6492,7 @@ pub mod live_events {
                 live_event_name: live_event_name.into(),
             }
         }
+        #[doc = "Allocate resources for a live event"]
         pub fn allocate(
             &self,
             subscription_id: impl Into<String>,
@@ -6442,6 +6508,7 @@ pub mod live_events {
                 live_event_name: live_event_name.into(),
             }
         }
+        #[doc = "Start Live Event"]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -6457,6 +6524,7 @@ pub mod live_events {
                 live_event_name: live_event_name.into(),
             }
         }
+        #[doc = "Stop Live Event"]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -6474,6 +6542,7 @@ pub mod live_events {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Reset Live Event"]
         pub fn reset(
             &self,
             subscription_id: impl Into<String>,
@@ -7253,6 +7322,7 @@ pub mod live_outputs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Live Outputs"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7268,6 +7338,7 @@ pub mod live_outputs {
                 live_event_name: live_event_name.into(),
             }
         }
+        #[doc = "Get Live Output"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7285,6 +7356,7 @@ pub mod live_outputs {
                 live_output_name: live_output_name.into(),
             }
         }
+        #[doc = "Create Live Output"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -7304,6 +7376,7 @@ pub mod live_outputs {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete Live Output"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7668,6 +7741,7 @@ pub mod streaming_endpoints {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List StreamingEndpoints"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7681,6 +7755,7 @@ pub mod streaming_endpoints {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get StreamingEndpoint"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7696,6 +7771,7 @@ pub mod streaming_endpoints {
                 streaming_endpoint_name: streaming_endpoint_name.into(),
             }
         }
+        #[doc = "Create StreamingEndpoint"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -7714,6 +7790,7 @@ pub mod streaming_endpoints {
                 auto_start: None,
             }
         }
+        #[doc = "Update StreamingEndpoint"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -7731,6 +7808,7 @@ pub mod streaming_endpoints {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete StreamingEndpoint"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7746,6 +7824,7 @@ pub mod streaming_endpoints {
                 streaming_endpoint_name: streaming_endpoint_name.into(),
             }
         }
+        #[doc = "Start StreamingEndpoint"]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -7761,6 +7840,7 @@ pub mod streaming_endpoints {
                 streaming_endpoint_name: streaming_endpoint_name.into(),
             }
         }
+        #[doc = "Stop StreamingEndpoint"]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -7776,6 +7856,7 @@ pub mod streaming_endpoints {
                 streaming_endpoint_name: streaming_endpoint_name.into(),
             }
         }
+        #[doc = "Scale StreamingEndpoint"]
         pub fn scale(
             &self,
             subscription_id: impl Into<String>,

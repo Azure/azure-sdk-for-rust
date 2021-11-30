@@ -97,6 +97,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the supported operations by the Microsoft.ChangeAnalysis resource provider along with their descriptions."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -187,6 +188,7 @@ pub mod resource_changes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the changes of a resource within the specified time range. Customer data will be masked if the user doesn't have access."]
         pub fn list(&self, resource_id: impl Into<String>, start_time: impl Into<String>, end_time: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -290,6 +292,7 @@ pub mod changes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the changes of a resource group within the specified time range. Customer data will always be masked."]
         pub fn list_changes_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -306,6 +309,7 @@ pub mod changes {
                 skip_token: None,
             }
         }
+        #[doc = "List the changes of a subscription within the specified time range. Customer data will always be masked."]
         pub fn list_changes_by_subscription(
             &self,
             subscription_id: impl Into<String>,

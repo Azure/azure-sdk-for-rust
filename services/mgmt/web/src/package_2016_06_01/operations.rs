@@ -147,12 +147,14 @@ pub mod connection_gateways {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the connection gateways"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all of the connection gateways"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -164,6 +166,7 @@ pub mod connection_gateways {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a specific gateway"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -177,6 +180,7 @@ pub mod connection_gateways {
                 connection_gateway_name: connection_gateway_name.into(),
             }
         }
+        #[doc = "Replaces a specific gateway"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -192,6 +196,7 @@ pub mod connection_gateways {
                 connection_gateway: connection_gateway.into(),
             }
         }
+        #[doc = "Updates a specific gateway"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -207,6 +212,7 @@ pub mod connection_gateways {
                 connection_gateway: connection_gateway.into(),
             }
         }
+        #[doc = "Deletes a specific gateway"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -678,6 +684,7 @@ pub mod connection_gateway_installations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of installed gateways that the user is an admin of"]
         pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -685,6 +692,7 @@ pub mod connection_gateway_installations {
                 location: location.into(),
             }
         }
+        #[doc = "Gets an installed gateway that the user is an admin of"]
         pub fn get(&self, subscription_id: impl Into<String>, location: impl Into<String>, gateway_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -847,6 +855,7 @@ pub mod custom_apis {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List of custom APIs"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -855,6 +864,7 @@ pub mod custom_apis {
                 skiptoken: None,
             }
         }
+        #[doc = "List of custom APIs"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -868,6 +878,7 @@ pub mod custom_apis {
                 skiptoken: None,
             }
         }
+        #[doc = "Get a custom API"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -881,6 +892,7 @@ pub mod custom_apis {
                 api_name: api_name.into(),
             }
         }
+        #[doc = "Replaces an existing custom API"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -896,6 +908,7 @@ pub mod custom_apis {
                 custom_api: custom_api.into(),
             }
         }
+        #[doc = "Update an existing custom API"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -911,6 +924,7 @@ pub mod custom_apis {
                 custom_api: custom_api.into(),
             }
         }
+        #[doc = "Delete a custom API"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -924,6 +938,7 @@ pub mod custom_apis {
                 api_name: api_name.into(),
             }
         }
+        #[doc = "Moves the custom API"]
         pub fn move_(
             &self,
             subscription_id: impl Into<String>,
@@ -939,6 +954,7 @@ pub mod custom_apis {
                 custom_api_reference: custom_api_reference.into(),
             }
         }
+        #[doc = "Lists WSDL interfaces"]
         pub fn list_wsdl_interfaces(
             &self,
             subscription_id: impl Into<String>,
@@ -952,6 +968,7 @@ pub mod custom_apis {
                 wsdl_definition: wsdl_definition.into(),
             }
         }
+        #[doc = "Returns API definition from WSDL"]
         pub fn extract_api_definition_from_wsdl(
             &self,
             subscription_id: impl Into<String>,
@@ -1651,6 +1668,7 @@ pub mod managed_apis {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists managed APIs"]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1658,6 +1676,7 @@ pub mod managed_apis {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets managed API"]
         pub fn get(&self, subscription_id: impl Into<String>, location: impl Into<String>, api_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1816,6 +1835,7 @@ pub mod connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all connections"]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1825,6 +1845,7 @@ pub mod connections {
                 filter: None,
             }
         }
+        #[doc = "Get a connection"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1838,6 +1859,7 @@ pub mod connections {
                 connection_name: connection_name.into(),
             }
         }
+        #[doc = "Replace an existing connection"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1853,6 +1875,7 @@ pub mod connections {
                 connection: connection.into(),
             }
         }
+        #[doc = "Update an existing connection"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1868,6 +1891,7 @@ pub mod connections {
                 connection: connection.into(),
             }
         }
+        #[doc = "Delete an existing connection"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1881,6 +1905,7 @@ pub mod connections {
                 connection_name: connection_name.into(),
             }
         }
+        #[doc = "Lists consent links for a connection"]
         pub fn list_consent_links(
             &self,
             subscription_id: impl Into<String>,
@@ -1896,6 +1921,7 @@ pub mod connections {
                 list_consent_link: list_consent_link.into(),
             }
         }
+        #[doc = "Confirms the consent code for a connection"]
         pub fn confirm_consent_code(
             &self,
             subscription_id: impl Into<String>,

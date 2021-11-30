@@ -195,12 +195,14 @@ pub mod domain_services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Domain Services in Subscription"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List Domain Services in Resource Group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -212,6 +214,7 @@ pub mod domain_services {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get Domain Service"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -225,6 +228,7 @@ pub mod domain_services {
                 domain_service_name: domain_service_name.into(),
             }
         }
+        #[doc = "Create or Update Domain Service (PUT Resource)"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -240,6 +244,7 @@ pub mod domain_services {
                 domain_service: domain_service.into(),
             }
         }
+        #[doc = "Update Domain Service (PATCH Resource)"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -255,6 +260,7 @@ pub mod domain_services {
                 domain_service: domain_service.into(),
             }
         }
+        #[doc = "Delete Domain Service (DELETE Resource)"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -841,6 +847,7 @@ pub mod ou_container {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List of OuContainers in DomainService instance"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -854,6 +861,7 @@ pub mod ou_container {
                 domain_service_name: domain_service_name.into(),
             }
         }
+        #[doc = "Get particular OuContainer in DomainService instance"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -869,6 +877,7 @@ pub mod ou_container {
                 ou_container_name: ou_container_name.into(),
             }
         }
+        #[doc = "Create OuContainer"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -886,6 +895,7 @@ pub mod ou_container {
                 container_account: container_account.into(),
             }
         }
+        #[doc = "Update OuContainer (PATCH Resource)"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -903,6 +913,7 @@ pub mod ou_container {
                 container_account: container_account.into(),
             }
         }
+        #[doc = "Delete OuContainer"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

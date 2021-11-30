@@ -102,12 +102,14 @@ pub mod appliances {
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets a list of Appliances in a subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of Appliances in the specified subscription and resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -119,6 +121,7 @@ pub mod appliances {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets an Appliance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -132,6 +135,7 @@ pub mod appliances {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Creates or updates an Appliance."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -147,6 +151,7 @@ pub mod appliances {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an Appliance."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -162,6 +167,7 @@ pub mod appliances {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an Appliance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -175,6 +181,7 @@ pub mod appliances {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Returns the cluster user credential."]
         pub fn list_cluster_user_credential(
             &self,
             subscription_id: impl Into<String>,

@@ -127,6 +127,7 @@ pub mod service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List FileSystems"]
         pub fn list_file_systems(&self, resource: impl Into<String>, x_ms_version: impl Into<String>) -> list_file_systems::Builder {
             list_file_systems::Builder {
                 client: self.0.clone(),
@@ -257,6 +258,7 @@ pub mod file_system {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Create FileSystem"]
         pub fn create(
             &self,
             filesystem: impl Into<String>,
@@ -273,6 +275,7 @@ pub mod file_system {
                 x_ms_properties: None,
             }
         }
+        #[doc = "Set FileSystem Properties"]
         pub fn set_properties(
             &self,
             filesystem: impl Into<String>,
@@ -291,6 +294,7 @@ pub mod file_system {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Delete FileSystem"]
         pub fn delete(
             &self,
             filesystem: impl Into<String>,
@@ -308,6 +312,7 @@ pub mod file_system {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Get FileSystem Properties."]
         pub fn get_properties(
             &self,
             filesystem: impl Into<String>,
@@ -323,6 +328,7 @@ pub mod file_system {
                 timeout: None,
             }
         }
+        #[doc = "List Paths"]
         pub fn list_paths(
             &self,
             filesystem: impl Into<String>,
@@ -1024,6 +1030,7 @@ pub mod path {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Read File"]
         pub fn read(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> read::Builder {
             read::Builder {
                 client: self.0.clone(),
@@ -1041,6 +1048,7 @@ pub mod path {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Lease Path"]
         pub fn lease(
             &self,
             filesystem: impl Into<String>,
@@ -1066,6 +1074,7 @@ pub mod path {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Create File | Create Directory | Rename File | Rename Directory"]
         pub fn create(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -1098,6 +1107,7 @@ pub mod path {
                 x_ms_source_if_unmodified_since: None,
             }
         }
+        #[doc = "Append Data | Flush Data | Set Properties | Set Access Control"]
         pub fn update(
             &self,
             filesystem: impl Into<String>,
@@ -1142,6 +1152,7 @@ pub mod path {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Delete File | Delete Directory"]
         pub fn delete(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1159,6 +1170,7 @@ pub mod path {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Get Properties | Get Status | Get Access Control List"]
         pub fn get_properties(
             &self,
             filesystem: impl Into<String>,

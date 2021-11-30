@@ -124,6 +124,7 @@ pub mod accounts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the EngagementFabric account"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -137,6 +138,7 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Create or Update the EngagementFabric account"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -152,6 +154,7 @@ pub mod accounts {
                 account: account.into(),
             }
         }
+        #[doc = "Update EngagementFabric account"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -167,6 +170,7 @@ pub mod accounts {
                 account_patch: account_patch.into(),
             }
         }
+        #[doc = "Delete the EngagementFabric account"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -180,12 +184,14 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "List the EngagementFabric accounts in given subscription"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List EngagementFabric accounts in given resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -197,6 +203,7 @@ pub mod accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List keys of the EngagementFabric account"]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -210,6 +217,7 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Regenerate key of the EngagementFabric account"]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -225,6 +233,7 @@ pub mod accounts {
                 parameter: parameter.into(),
             }
         }
+        #[doc = "List available EngagementFabric channel types and functions"]
         pub fn list_channel_types(
             &self,
             subscription_id: impl Into<String>,
@@ -942,6 +951,7 @@ pub mod channels {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the EngagementFabric channel"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -957,6 +967,7 @@ pub mod channels {
                 channel_name: channel_name.into(),
             }
         }
+        #[doc = "Create or Update the EngagementFabric channel"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -974,6 +985,7 @@ pub mod channels {
                 channel: channel.into(),
             }
         }
+        #[doc = "Delete the EngagementFabric channel"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -989,6 +1001,7 @@ pub mod channels {
                 channel_name: channel_name.into(),
             }
         }
+        #[doc = "List the EngagementFabric channels"]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -1322,6 +1335,7 @@ pub mod channels {
     }
 }
 impl Client {
+    #[doc = "Check availability of EngagementFabric resource"]
     pub fn check_name_availability(
         &self,
         subscription_id: impl Into<String>,
@@ -1417,6 +1431,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List operation of EngagementFabric resources"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1494,6 +1509,7 @@ pub mod sk_us {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List available SKUs of EngagementFabric resource"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

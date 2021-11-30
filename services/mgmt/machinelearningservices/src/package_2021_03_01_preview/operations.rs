@@ -3816,6 +3816,7 @@ pub mod batch_endpoints {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists Batch inference endpoint in the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3831,6 +3832,7 @@ pub mod batch_endpoints {
                 skip: None,
             }
         }
+        #[doc = "Gets a batch inference endpoint by name."]
         pub fn get(
             &self,
             endpoint_name: impl Into<String>,
@@ -3846,6 +3848,7 @@ pub mod batch_endpoints {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Creates a batch inference endpoint."]
         pub fn create_or_update(
             &self,
             endpoint_name: impl Into<String>,
@@ -3863,6 +3866,7 @@ pub mod batch_endpoints {
                 body: body.into(),
             }
         }
+        #[doc = "Update a batch inference endpoint."]
         pub fn update(
             &self,
             endpoint_name: impl Into<String>,
@@ -3880,6 +3884,7 @@ pub mod batch_endpoints {
                 body: body.into(),
             }
         }
+        #[doc = "Delete Batch Inference Endpoint."]
         pub fn delete(
             &self,
             endpoint_name: impl Into<String>,
@@ -3895,6 +3900,7 @@ pub mod batch_endpoints {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Lists batch Inference Endpoint keys."]
         pub fn list_keys(
             &self,
             endpoint_name: impl Into<String>,
@@ -4421,6 +4427,7 @@ pub mod batch_deployments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists Batch inference deployments in the workspace."]
         pub fn list(
             &self,
             endpoint_name: impl Into<String>,
@@ -4439,6 +4446,7 @@ pub mod batch_deployments {
                 skip: None,
             }
         }
+        #[doc = "Gets a batch inference deployment by id."]
         pub fn get(
             &self,
             endpoint_name: impl Into<String>,
@@ -4456,6 +4464,7 @@ pub mod batch_deployments {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Creates/updates a batch inference deployment."]
         pub fn create_or_update(
             &self,
             endpoint_name: impl Into<String>,
@@ -4475,6 +4484,7 @@ pub mod batch_deployments {
                 body: body.into(),
             }
         }
+        #[doc = "Update a batch inference deployment."]
         pub fn update(
             &self,
             endpoint_name: impl Into<String>,
@@ -4494,6 +4504,7 @@ pub mod batch_deployments {
                 body: body.into(),
             }
         }
+        #[doc = "Delete Batch Inference deployment."]
         pub fn delete(
             &self,
             endpoint_name: impl Into<String>,
@@ -4928,6 +4939,7 @@ pub mod code_containers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List containers."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4942,6 +4954,7 @@ pub mod code_containers {
                 skip: None,
             }
         }
+        #[doc = "Get container."]
         pub fn get(
             &self,
             name: impl Into<String>,
@@ -4957,6 +4970,7 @@ pub mod code_containers {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update container."]
         pub fn create_or_update(
             &self,
             name: impl Into<String>,
@@ -4974,6 +4988,7 @@ pub mod code_containers {
                 body: body.into(),
             }
         }
+        #[doc = "Delete container."]
         pub fn delete(
             &self,
             name: impl Into<String>,
@@ -5334,6 +5349,7 @@ pub mod code_versions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List versions."]
         pub fn list(
             &self,
             name: impl Into<String>,
@@ -5352,6 +5368,7 @@ pub mod code_versions {
                 skip: None,
             }
         }
+        #[doc = "Get version."]
         pub fn get(
             &self,
             name: impl Into<String>,
@@ -5369,6 +5386,7 @@ pub mod code_versions {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update version."]
         pub fn create_or_update(
             &self,
             name: impl Into<String>,
@@ -5388,6 +5406,7 @@ pub mod code_versions {
                 body: body.into(),
             }
         }
+        #[doc = "Delete version."]
         pub fn delete(
             &self,
             name: impl Into<String>,
@@ -5750,6 +5769,7 @@ pub mod data_containers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List containers."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5764,6 +5784,7 @@ pub mod data_containers {
                 skip: None,
             }
         }
+        #[doc = "Get container."]
         pub fn get(
             &self,
             name: impl Into<String>,
@@ -5779,6 +5800,7 @@ pub mod data_containers {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update container."]
         pub fn create_or_update(
             &self,
             name: impl Into<String>,
@@ -5796,6 +5818,7 @@ pub mod data_containers {
                 body: body.into(),
             }
         }
+        #[doc = "Delete container."]
         pub fn delete(
             &self,
             name: impl Into<String>,
@@ -6156,6 +6179,7 @@ pub mod data_versions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List data versions."]
         pub fn list(
             &self,
             name: impl Into<String>,
@@ -6175,6 +6199,7 @@ pub mod data_versions {
                 tags: None,
             }
         }
+        #[doc = "Get version."]
         pub fn get(
             &self,
             name: impl Into<String>,
@@ -6192,6 +6217,7 @@ pub mod data_versions {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update version."]
         pub fn create_or_update(
             &self,
             name: impl Into<String>,
@@ -6211,6 +6237,7 @@ pub mod data_versions {
                 body: body.into(),
             }
         }
+        #[doc = "Delete version."]
         pub fn delete(
             &self,
             name: impl Into<String>,
@@ -6581,6 +6608,7 @@ pub mod datastores {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List datastores."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6601,6 +6629,7 @@ pub mod datastores {
                 order_by_asc: None,
             }
         }
+        #[doc = "Get datastore."]
         pub fn get(
             &self,
             name: impl Into<String>,
@@ -6616,6 +6645,7 @@ pub mod datastores {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update datastore."]
         pub fn create_or_update(
             &self,
             name: impl Into<String>,
@@ -6634,6 +6664,7 @@ pub mod datastores {
                 skip_validation: None,
             }
         }
+        #[doc = "Delete datastore."]
         pub fn delete(
             &self,
             name: impl Into<String>,
@@ -6649,6 +6680,7 @@ pub mod datastores {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Get datastore secrets."]
         pub fn list_secrets(
             &self,
             name: impl Into<String>,
@@ -7137,6 +7169,7 @@ pub mod environment_containers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List containers."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7151,6 +7184,7 @@ pub mod environment_containers {
                 skip: None,
             }
         }
+        #[doc = "Get container."]
         pub fn get(
             &self,
             name: impl Into<String>,
@@ -7166,6 +7200,7 @@ pub mod environment_containers {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update container."]
         pub fn create_or_update(
             &self,
             name: impl Into<String>,
@@ -7183,6 +7218,7 @@ pub mod environment_containers {
                 body: body.into(),
             }
         }
+        #[doc = "Delete container."]
         pub fn delete(
             &self,
             name: impl Into<String>,
@@ -7545,6 +7581,7 @@ pub mod environment_specification_versions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List versions."]
         pub fn list(
             &self,
             name: impl Into<String>,
@@ -7563,6 +7600,7 @@ pub mod environment_specification_versions {
                 skip: None,
             }
         }
+        #[doc = "Get version."]
         pub fn get(
             &self,
             name: impl Into<String>,
@@ -7580,6 +7618,7 @@ pub mod environment_specification_versions {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Creates or updates an EnvironmentSpecificationVersion."]
         pub fn create_or_update(
             &self,
             name: impl Into<String>,
@@ -7599,6 +7638,7 @@ pub mod environment_specification_versions {
                 body: body.into(),
             }
         }
+        #[doc = "Delete version."]
         pub fn delete(
             &self,
             name: impl Into<String>,
@@ -7959,6 +7999,7 @@ pub mod jobs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists Jobs in the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7976,6 +8017,7 @@ pub mod jobs {
                 tag: None,
             }
         }
+        #[doc = "Gets a Job by name/id."]
         pub fn get(
             &self,
             id: impl Into<String>,
@@ -7991,6 +8033,7 @@ pub mod jobs {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Creates and executes a Job."]
         pub fn create_or_update(
             &self,
             id: impl Into<String>,
@@ -8008,6 +8051,7 @@ pub mod jobs {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a Job (asynchronous)."]
         pub fn delete(
             &self,
             id: impl Into<String>,
@@ -8023,6 +8067,7 @@ pub mod jobs {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Cancels a Job."]
         pub fn cancel(
             &self,
             id: impl Into<String>,
@@ -8483,6 +8528,7 @@ pub mod labeling_jobs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists labeling jobs in the workspace."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -8498,6 +8544,7 @@ pub mod labeling_jobs {
                 count: None,
             }
         }
+        #[doc = "Gets a labeling job by name/id."]
         pub fn get(
             &self,
             id: impl Into<String>,
@@ -8515,6 +8562,7 @@ pub mod labeling_jobs {
                 include_label_categories: None,
             }
         }
+        #[doc = "Creates or updates a labeling job (asynchronous)."]
         pub fn create_or_update(
             &self,
             id: impl Into<String>,
@@ -8532,6 +8580,7 @@ pub mod labeling_jobs {
                 body: body.into(),
             }
         }
+        #[doc = "Delete a labeling job."]
         pub fn delete(
             &self,
             id: impl Into<String>,
@@ -8547,6 +8596,7 @@ pub mod labeling_jobs {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Export labels from a labeling job (asynchronous)."]
         pub fn export_labels(
             &self,
             id: impl Into<String>,
@@ -8564,6 +8614,7 @@ pub mod labeling_jobs {
                 body: body.into(),
             }
         }
+        #[doc = "Pause a labeling job."]
         pub fn pause(
             &self,
             id: impl Into<String>,
@@ -8579,6 +8630,7 @@ pub mod labeling_jobs {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Resume a labeling job (asynchronous)."]
         pub fn resume(
             &self,
             id: impl Into<String>,
@@ -9187,6 +9239,7 @@ pub mod model_containers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List model containers."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -9202,6 +9255,7 @@ pub mod model_containers {
                 count: None,
             }
         }
+        #[doc = "Get container."]
         pub fn get(
             &self,
             name: impl Into<String>,
@@ -9217,6 +9271,7 @@ pub mod model_containers {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update container."]
         pub fn create_or_update(
             &self,
             name: impl Into<String>,
@@ -9234,6 +9289,7 @@ pub mod model_containers {
                 body: body.into(),
             }
         }
+        #[doc = "Delete container."]
         pub fn delete(
             &self,
             name: impl Into<String>,
@@ -9602,6 +9658,7 @@ pub mod model_versions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List model versions."]
         pub fn list(
             &self,
             name: impl Into<String>,
@@ -9625,6 +9682,7 @@ pub mod model_versions {
                 properties: None,
             }
         }
+        #[doc = "Get version."]
         pub fn get(
             &self,
             name: impl Into<String>,
@@ -9642,6 +9700,7 @@ pub mod model_versions {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update version."]
         pub fn create_or_update(
             &self,
             name: impl Into<String>,
@@ -9661,6 +9720,7 @@ pub mod model_versions {
                 body: body.into(),
             }
         }
+        #[doc = "Delete version."]
         pub fn delete(
             &self,
             name: impl Into<String>,
@@ -10056,6 +10116,7 @@ pub mod online_endpoints {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Online Endpoints."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -10076,6 +10137,7 @@ pub mod online_endpoints {
                 order_by: None,
             }
         }
+        #[doc = "Get Online Endpoint."]
         pub fn get(
             &self,
             endpoint_name: impl Into<String>,
@@ -10091,6 +10153,7 @@ pub mod online_endpoints {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update Online Endpoint (asynchronous)."]
         pub fn create_or_update(
             &self,
             endpoint_name: impl Into<String>,
@@ -10108,6 +10171,7 @@ pub mod online_endpoints {
                 body: body.into(),
             }
         }
+        #[doc = "Update Online Endpoint (asynchronous)."]
         pub fn update(
             &self,
             endpoint_name: impl Into<String>,
@@ -10125,6 +10189,7 @@ pub mod online_endpoints {
                 body: body.into(),
             }
         }
+        #[doc = "Delete Online Endpoint (asynchronous)."]
         pub fn delete(
             &self,
             endpoint_name: impl Into<String>,
@@ -10140,6 +10205,7 @@ pub mod online_endpoints {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "List EndpointAuthKeys for an Endpoint using Key-based authentication."]
         pub fn list_keys(
             &self,
             endpoint_name: impl Into<String>,
@@ -10155,6 +10221,7 @@ pub mod online_endpoints {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Regenerate EndpointAuthKeys for an Endpoint using Key-based authentication (asynchronous)."]
         pub fn regenerate_keys(
             &self,
             endpoint_name: impl Into<String>,
@@ -10172,6 +10239,7 @@ pub mod online_endpoints {
                 body: body.into(),
             }
         }
+        #[doc = "Retrieve a valid AAD token for an Endpoint using AMLToken-based authentication."]
         pub fn get_token(
             &self,
             endpoint_name: impl Into<String>,
@@ -10864,6 +10932,7 @@ pub mod online_deployments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Inference Endpoint Deployments."]
         pub fn list(
             &self,
             endpoint_name: impl Into<String>,
@@ -10882,6 +10951,7 @@ pub mod online_deployments {
                 skip: None,
             }
         }
+        #[doc = "Get Inference Deployment Deployment."]
         pub fn get(
             &self,
             endpoint_name: impl Into<String>,
@@ -10899,6 +10969,7 @@ pub mod online_deployments {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update Inference Endpoint Deployment (asynchronous)."]
         pub fn create_or_update(
             &self,
             endpoint_name: impl Into<String>,
@@ -10918,6 +10989,7 @@ pub mod online_deployments {
                 body: body.into(),
             }
         }
+        #[doc = "Update Online Deployment (asynchronous)."]
         pub fn update(
             &self,
             endpoint_name: impl Into<String>,
@@ -10937,6 +11009,7 @@ pub mod online_deployments {
                 body: body.into(),
             }
         }
+        #[doc = "Delete Inference Endpoint Deployment (asynchronous)."]
         pub fn delete(
             &self,
             endpoint_name: impl Into<String>,
@@ -10954,6 +11027,7 @@ pub mod online_deployments {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Polls an Endpoint operation."]
         pub fn get_logs(
             &self,
             endpoint_name: impl Into<String>,

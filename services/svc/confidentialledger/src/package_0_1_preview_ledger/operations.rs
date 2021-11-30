@@ -107,15 +107,19 @@ pub mod confidential_ledger {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the constitution used for governance."]
         pub fn get_constitution(&self) -> get_constitution::Builder {
             get_constitution::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets the consortium members."]
         pub fn get_consortium_members(&self) -> get_consortium_members::Builder {
             get_consortium_members::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets quotes for all nodes of the Confidential Ledger."]
         pub fn get_enclave_quotes(&self) -> get_enclave_quotes::Builder {
             get_enclave_quotes::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets ledger entries from a sub-ledger corresponding to a range."]
         pub fn get_ledger_entries(&self) -> get_ledger_entries::Builder {
             get_ledger_entries::Builder {
                 client: self.0.clone(),
@@ -124,6 +128,7 @@ pub mod confidential_ledger {
                 to_transaction_id: None,
             }
         }
+        #[doc = "Writes a ledger entry."]
         pub fn post_ledger_entry(&self) -> post_ledger_entry::Builder {
             post_ledger_entry::Builder {
                 client: self.0.clone(),
@@ -131,6 +136,7 @@ pub mod confidential_ledger {
                 entry: None,
             }
         }
+        #[doc = "Gets the ledger entry at the specified transaction id. A sub-ledger id may optionally be specified to indicate the sub-ledger from which to fetch the value."]
         pub fn get_ledger_entry(&self, transaction_id: impl Into<String>) -> get_ledger_entry::Builder {
             get_ledger_entry::Builder {
                 client: self.0.clone(),
@@ -138,30 +144,35 @@ pub mod confidential_ledger {
                 sub_ledger_id: None,
             }
         }
+        #[doc = "Gets a receipt certifying ledger contents at a particular transaction id."]
         pub fn get_receipt(&self, transaction_id: impl Into<String>) -> get_receipt::Builder {
             get_receipt::Builder {
                 client: self.0.clone(),
                 transaction_id: transaction_id.into(),
             }
         }
+        #[doc = "Gets the status of an entry identified by a transaction id."]
         pub fn get_transaction_status(&self, transaction_id: impl Into<String>) -> get_transaction_status::Builder {
             get_transaction_status::Builder {
                 client: self.0.clone(),
                 transaction_id: transaction_id.into(),
             }
         }
+        #[doc = "Gets the current value available in the ledger."]
         pub fn get_current_ledger_entry(&self) -> get_current_ledger_entry::Builder {
             get_current_ledger_entry::Builder {
                 client: self.0.clone(),
                 sub_ledger_id: None,
             }
         }
+        #[doc = "Gets a user."]
         pub fn get_user(&self, user_id: impl Into<String>) -> get_user::Builder {
             get_user::Builder {
                 client: self.0.clone(),
                 user_id: user_id.into(),
             }
         }
+        #[doc = "Adds a user or updates a user's fields."]
         pub fn create_or_update_user(
             &self,
             user_id: impl Into<String>,
@@ -173,6 +184,7 @@ pub mod confidential_ledger {
                 user_details: user_details.into(),
             }
         }
+        #[doc = "Deletes a user from the Confidential Ledger."]
         pub fn delete_user(&self, user_id: impl Into<String>) -> delete_user::Builder {
             delete_user::Builder {
                 client: self.0.clone(),

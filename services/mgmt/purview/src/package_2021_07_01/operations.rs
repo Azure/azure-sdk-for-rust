@@ -133,6 +133,7 @@ pub mod accounts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the accounts resources by resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -145,6 +146,7 @@ pub mod accounts {
                 skip_token: None,
             }
         }
+        #[doc = "Gets the accounts resources by subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -152,6 +154,7 @@ pub mod accounts {
                 skip_token: None,
             }
         }
+        #[doc = "Gets the account resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -165,6 +168,7 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Create or update an account resource"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -180,6 +184,7 @@ pub mod accounts {
                 account: account.into(),
             }
         }
+        #[doc = "Patches the account resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -195,6 +200,7 @@ pub mod accounts {
                 account_update_parameters: account_update_parameters.into(),
             }
         }
+        #[doc = "Deletes the account resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -208,6 +214,7 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Lists the keys asynchronous."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -221,6 +228,7 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Add the administrator for root collection."]
         pub fn add_root_collection_admin(
             &self,
             subscription_id: impl Into<String>,
@@ -236,6 +244,7 @@ pub mod accounts {
                 collection_admin_update: collection_admin_update.into(),
             }
         }
+        #[doc = "Checks the account name availability."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -983,6 +992,7 @@ pub mod default_accounts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the default account information set for the scope."]
         pub fn get(&self, scope_tenant_id: impl Into<String>, scope_type: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -991,12 +1001,14 @@ pub mod default_accounts {
                 scope: None,
             }
         }
+        #[doc = "Sets the default account for the scope."]
         pub fn set(&self, default_account_payload: impl Into<models::DefaultAccountPayload>) -> set::Builder {
             set::Builder {
                 client: self.0.clone(),
                 default_account_payload: default_account_payload.into(),
             }
         }
+        #[doc = "Removes the default account from the scope."]
         pub fn remove(&self, scope_tenant_id: impl Into<String>, scope_type: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -1247,6 +1259,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1324,6 +1337,7 @@ pub mod private_endpoint_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets private endpoint connections."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -1338,6 +1352,7 @@ pub mod private_endpoint_connections {
                 skip_token: None,
             }
         }
+        #[doc = "Gets private endpoint connection information."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1353,6 +1368,7 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Approves/Rejects private endpoint connection request."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1370,6 +1386,7 @@ pub mod private_endpoint_connections {
                 request: request.into(),
             }
         }
+        #[doc = "Deletes private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1731,6 +1748,7 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of privately linkable resources for an account."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -1744,6 +1762,7 @@ pub mod private_link_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Gets a privately linkable resources for an account with given group identifier."]
         pub fn get_by_group_id(
             &self,
             subscription_id: impl Into<String>,

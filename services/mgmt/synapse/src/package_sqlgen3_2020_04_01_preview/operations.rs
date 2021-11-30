@@ -119,9 +119,11 @@ pub mod sql_v3_operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "All operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Get operation result"]
         pub fn get_location_header_result(
             &self,
             subscription_id: impl Into<String>,
@@ -137,6 +139,7 @@ pub mod sql_v3_operations {
                 operation_id: operation_id.into(),
             }
         }
+        #[doc = "Get operation status"]
         pub fn get_azure_async_header_result(
             &self,
             subscription_id: impl Into<String>,

@@ -156,12 +156,14 @@ pub mod profiles {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the CDN profiles within an Azure subscription."]
         pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
             list_by_subscription_id::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the CDN profiles within a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -173,6 +175,7 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a CDN profile with the specified parameters."]
         pub fn get(
             &self,
             profile_name: impl Into<String>,
@@ -186,6 +189,7 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new CDN profile with the specified parameters."]
         pub fn create(
             &self,
             profile_name: impl Into<String>,
@@ -201,6 +205,7 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing CDN profile with the specified parameters."]
         pub fn update(
             &self,
             profile_name: impl Into<String>,
@@ -216,6 +221,7 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing CDN profile with the specified parameters. Deleting a profile will result in the deletion of all subresources including endpoints, origins and custom domains."]
         pub fn delete_if_exists(
             &self,
             profile_name: impl Into<String>,
@@ -229,6 +235,7 @@ pub mod profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generates a dynamic SSO URI used to sign in to the CDN Supplemental Portal used for advanced management tasks, such as Country Filtering, Advanced HTTP Reports, and Real-time Stats and Alerts. The SSO URI changes approximately every 10 minutes."]
         pub fn generate_sso_uri(
             &self,
             profile_name: impl Into<String>,
@@ -816,6 +823,7 @@ pub mod endpoints {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists existing CDN endpoints within a profile."]
         pub fn list_by_profile(
             &self,
             profile_name: impl Into<String>,
@@ -829,6 +837,7 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an existing CDN endpoint with the specified parameters."]
         pub fn get(
             &self,
             endpoint_name: impl Into<String>,
@@ -844,6 +853,7 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new CDN endpoint with the specified parameters."]
         pub fn create(
             &self,
             endpoint_name: impl Into<String>,
@@ -861,6 +871,7 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing CDN endpoint with the specified parameters. Only tags and OriginHostHeader can be updated after creating an endpoint. To update origins, use the Update Origin operation. To update custom domains, use the Update Custom Domain operation."]
         pub fn update(
             &self,
             endpoint_name: impl Into<String>,
@@ -878,6 +889,7 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing CDN endpoint with the specified parameters."]
         pub fn delete_if_exists(
             &self,
             endpoint_name: impl Into<String>,
@@ -893,6 +905,7 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Starts an existing stopped CDN endpoint."]
         pub fn start(
             &self,
             endpoint_name: impl Into<String>,
@@ -908,6 +921,7 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stops an existing running CDN endpoint."]
         pub fn stop(
             &self,
             endpoint_name: impl Into<String>,
@@ -923,6 +937,7 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Forcibly purges CDN endpoint content."]
         pub fn purge_content(
             &self,
             endpoint_name: impl Into<String>,
@@ -940,6 +955,7 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Forcibly pre-loads CDN endpoint content."]
         pub fn load_content(
             &self,
             endpoint_name: impl Into<String>,
@@ -957,6 +973,7 @@ pub mod endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Validates a custom domain mapping to ensure it maps to the correct CNAME in DNS."]
         pub fn validate_custom_domain(
             &self,
             endpoint_name: impl Into<String>,
@@ -1802,6 +1819,7 @@ pub mod origins {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the existing CDN origins within an endpoint."]
         pub fn list_by_endpoint(
             &self,
             endpoint_name: impl Into<String>,
@@ -1817,6 +1835,7 @@ pub mod origins {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an existing CDN origin within an endpoint."]
         pub fn get(
             &self,
             origin_name: impl Into<String>,
@@ -1834,6 +1853,7 @@ pub mod origins {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new CDN origin within an endpoint."]
         pub fn create(
             &self,
             origin_name: impl Into<String>,
@@ -1853,6 +1873,7 @@ pub mod origins {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing CDN origin within an endpoint."]
         pub fn update(
             &self,
             origin_name: impl Into<String>,
@@ -1872,6 +1893,7 @@ pub mod origins {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing CDN origin within an endpoint."]
         pub fn delete_if_exists(
             &self,
             origin_name: impl Into<String>,
@@ -2337,6 +2359,7 @@ pub mod custom_domains {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the existing CDN custom domains within an endpoint."]
         pub fn list_by_endpoint(
             &self,
             endpoint_name: impl Into<String>,
@@ -2352,6 +2375,7 @@ pub mod custom_domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an existing CDN custom domain within an endpoint."]
         pub fn get(
             &self,
             custom_domain_name: impl Into<String>,
@@ -2369,6 +2393,7 @@ pub mod custom_domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new CDN custom domain within an endpoint."]
         pub fn create(
             &self,
             custom_domain_name: impl Into<String>,
@@ -2388,6 +2413,7 @@ pub mod custom_domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing CDN custom domain within an endpoint."]
         pub fn update(
             &self,
             custom_domain_name: impl Into<String>,
@@ -2407,6 +2433,7 @@ pub mod custom_domains {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing CDN custom domain within an endpoint."]
         pub fn delete_if_exists(
             &self,
             custom_domain_name: impl Into<String>,
@@ -2859,6 +2886,7 @@ pub mod name_availability {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the availability of a resource name without creating the resource. This is needed for resources where name is globally unique, such as a CDN endpoint."]
         pub fn check_name_availability(
             &self,
             check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
@@ -2946,6 +2974,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available CDN REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

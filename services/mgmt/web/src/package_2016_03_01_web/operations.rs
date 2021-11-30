@@ -227,12 +227,14 @@ pub mod certificates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all certificates for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all certificates in a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -244,6 +246,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a certificate."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -257,6 +260,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a certificate."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -272,6 +276,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a certificate."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -287,6 +292,7 @@ pub mod certificates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a certificate."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -737,6 +743,7 @@ pub mod deleted_web_apps {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all deleted apps for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -817,6 +824,7 @@ pub mod diagnostics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Hosting Environment Detector Responses"]
         pub fn list_hosting_environment_detector_responses(
             &self,
             resource_group_name: impl Into<String>,
@@ -830,6 +838,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Hosting Environment Detector Response"]
         pub fn get_hosting_environment_detector_response(
             &self,
             resource_group_name: impl Into<String>,
@@ -848,6 +857,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "List Site Detector Responses"]
         pub fn list_site_detector_responses(
             &self,
             resource_group_name: impl Into<String>,
@@ -861,6 +871,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get site detector response"]
         pub fn get_site_detector_response(
             &self,
             resource_group_name: impl Into<String>,
@@ -879,6 +890,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "Get Diagnostics Categories"]
         pub fn list_site_diagnostic_categories(
             &self,
             resource_group_name: impl Into<String>,
@@ -892,6 +904,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Diagnostics Category"]
         pub fn get_site_diagnostic_category(
             &self,
             resource_group_name: impl Into<String>,
@@ -907,6 +920,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Site Analyses"]
         pub fn list_site_analyses(
             &self,
             resource_group_name: impl Into<String>,
@@ -922,6 +936,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Site Analysis"]
         pub fn get_site_analysis(
             &self,
             resource_group_name: impl Into<String>,
@@ -939,6 +954,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Execute Analysis"]
         pub fn execute_site_analysis(
             &self,
             resource_group_name: impl Into<String>,
@@ -959,6 +975,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "Get Detectors"]
         pub fn list_site_detectors(
             &self,
             resource_group_name: impl Into<String>,
@@ -974,6 +991,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Detector"]
         pub fn get_site_detector(
             &self,
             resource_group_name: impl Into<String>,
@@ -991,6 +1009,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Execute Detector"]
         pub fn execute_site_detector(
             &self,
             resource_group_name: impl Into<String>,
@@ -1011,6 +1030,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "List Site Detector Responses"]
         pub fn list_site_detector_responses_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -1026,6 +1046,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get site detector response"]
         pub fn get_site_detector_response_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -1046,6 +1067,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "Get Diagnostics Categories"]
         pub fn list_site_diagnostic_categories_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -1061,6 +1083,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Diagnostics Category"]
         pub fn get_site_diagnostic_category_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -1078,6 +1101,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Site Analyses"]
         pub fn list_site_analyses_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -1095,6 +1119,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Site Analysis"]
         pub fn get_site_analysis_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -1114,6 +1139,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Execute Analysis"]
         pub fn execute_site_analysis_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -1136,6 +1162,7 @@ pub mod diagnostics {
                 time_grain: None,
             }
         }
+        #[doc = "Get Detectors"]
         pub fn list_site_detectors_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -1153,6 +1180,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get Detector"]
         pub fn get_site_detector_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -1172,6 +1200,7 @@ pub mod diagnostics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Execute Detector"]
         pub fn execute_site_detector_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -3034,15 +3063,18 @@ pub mod provider {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get available application frameworks and their versions"]
         pub fn get_available_stacks(&self) -> get_available_stacks::Builder {
             get_available_stacks::Builder {
                 client: self.0.clone(),
                 os_type_selected: None,
             }
         }
+        #[doc = "Gets all available operations for the Microsoft.Web resource provider. Also exposes resource metric definitions"]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
+        #[doc = "Get available application frameworks and their versions"]
         pub fn get_available_stacks_on_prem(&self, subscription_id: impl Into<String>) -> get_available_stacks_on_prem::Builder {
             get_available_stacks_on_prem::Builder {
                 client: self.0.clone(),
@@ -3270,6 +3302,7 @@ pub mod recommendations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all recommendations for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3278,12 +3311,14 @@ pub mod recommendations {
                 filter: None,
             }
         }
+        #[doc = "Reset all recommendation opt-out settings for a subscription."]
         pub fn reset_all_filters(&self, subscription_id: impl Into<String>) -> reset_all_filters::Builder {
             reset_all_filters::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Disables the specified rule so it will not apply to a subscription in the future."]
         pub fn disable_recommendation_for_subscription(
             &self,
             name: impl Into<String>,
@@ -3295,6 +3330,7 @@ pub mod recommendations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get past recommendations for an app, optionally specified by the time range."]
         pub fn list_history_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -3309,6 +3345,7 @@ pub mod recommendations {
                 filter: None,
             }
         }
+        #[doc = "Get all recommendations for an app."]
         pub fn list_recommended_rules_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -3324,6 +3361,7 @@ pub mod recommendations {
                 filter: None,
             }
         }
+        #[doc = "Disable all recommendations for an app."]
         pub fn disable_all_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -3337,6 +3375,7 @@ pub mod recommendations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reset all recommendation opt-out settings for an app."]
         pub fn reset_all_filters_for_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -3350,6 +3389,7 @@ pub mod recommendations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a recommendation rule for an app."]
         pub fn get_rule_details_by_web_app(
             &self,
             resource_group_name: impl Into<String>,
@@ -3367,6 +3407,7 @@ pub mod recommendations {
                 recommendation_id: None,
             }
         }
+        #[doc = "Disables the specific rule for a web site permanently."]
         pub fn disable_recommendation_for_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -4066,12 +4107,14 @@ pub mod resource_health_metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all ResourceHealthMetadata for all sites in the subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all ResourceHealthMetadata for all sites in the resource group in the subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -4083,6 +4126,7 @@ pub mod resource_health_metadata {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site as a collection"]
         pub fn list_by_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -4096,6 +4140,7 @@ pub mod resource_health_metadata {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site"]
         pub fn get_by_site(
             &self,
             resource_group_name: impl Into<String>,
@@ -4109,6 +4154,7 @@ pub mod resource_health_metadata {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site as a collection"]
         pub fn list_by_site_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -4124,6 +4170,7 @@ pub mod resource_health_metadata {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the category of ResourceHealthMetadata to use for the given site"]
         pub fn get_by_site_slot(
             &self,
             resource_group_name: impl Into<String>,
@@ -4610,24 +4657,29 @@ pub mod resource_health_metadata {
     }
 }
 impl Client {
+    #[doc = "Gets publishing user"]
     pub fn get_publishing_user(&self) -> get_publishing_user::Builder {
         get_publishing_user::Builder { client: self.clone() }
     }
+    #[doc = "Updates publishing user"]
     pub fn update_publishing_user(&self, user_details: impl Into<models::User>) -> update_publishing_user::Builder {
         update_publishing_user::Builder {
             client: self.clone(),
             user_details: user_details.into(),
         }
     }
+    #[doc = "Gets the source controls available for Azure websites."]
     pub fn list_source_controls(&self) -> list_source_controls::Builder {
         list_source_controls::Builder { client: self.clone() }
     }
+    #[doc = "Gets source control token"]
     pub fn get_source_control(&self, source_control_type: impl Into<String>) -> get_source_control::Builder {
         get_source_control::Builder {
             client: self.clone(),
             source_control_type: source_control_type.into(),
         }
     }
+    #[doc = "Updates source control token"]
     pub fn update_source_control(
         &self,
         source_control_type: impl Into<String>,
@@ -4639,6 +4691,7 @@ impl Client {
             request_message: request_message.into(),
         }
     }
+    #[doc = "Check if a resource name is available."]
     pub fn check_name_availability(
         &self,
         request: impl Into<models::ResourceNameAvailabilityRequest>,
@@ -4650,6 +4703,7 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Gets list of available geo regions plus ministamps"]
     pub fn get_subscription_deployment_locations(
         &self,
         subscription_id: impl Into<String>,
@@ -4659,6 +4713,7 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Get a list of available geographical regions."]
     pub fn list_geo_regions(&self, subscription_id: impl Into<String>) -> list_geo_regions::Builder {
         list_geo_regions::Builder {
             client: self.clone(),
@@ -4667,6 +4722,7 @@ impl Client {
             linux_workers_enabled: None,
         }
     }
+    #[doc = "List all apps that are assigned to a hostname."]
     pub fn list_site_identifiers_assigned_to_host_name(
         &self,
         name_identifier: impl Into<models::NameIdentifier>,
@@ -4678,18 +4734,21 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "List all premier add-on offers."]
     pub fn list_premier_add_on_offers(&self, subscription_id: impl Into<String>) -> list_premier_add_on_offers::Builder {
         list_premier_add_on_offers::Builder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "List all SKUs."]
     pub fn list_skus(&self, subscription_id: impl Into<String>) -> list_skus::Builder {
         list_skus::Builder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Verifies if this VNET is compatible with an App Service Environment by analyzing the Network Security Group rules."]
     pub fn verify_hosting_environment_vnet(
         &self,
         parameters: impl Into<models::VnetParameters>,
@@ -4701,6 +4760,7 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Move resources between resource groups."]
     pub fn move_(
         &self,
         resource_group_name: impl Into<String>,
@@ -4714,6 +4774,7 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Validate if a resource can be created."]
     pub fn validate(
         &self,
         resource_group_name: impl Into<String>,
@@ -4727,6 +4788,7 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Validate whether a resource can be moved."]
     pub fn validate_move(
         &self,
         resource_group_name: impl Into<String>,
@@ -5779,6 +5841,7 @@ pub mod billing_meters {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of meters for a given location."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

@@ -1133,6 +1133,7 @@ pub mod private_endpoint {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the operation status for a private endpoint connection."]
         pub fn get_operation_status(
             &self,
             vault_name: impl Into<String>,
@@ -2031,6 +2032,7 @@ pub mod recovery_points {
                 recovery_point_id: recovery_point_id.into(),
             }
         }
+        #[doc = "Returns the Access token for communication between BMS and Protection service"]
         pub fn get_access_token(
             &self,
             vault_name: impl Into<String>,
@@ -4112,6 +4114,7 @@ pub mod protection_containers {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Inquires all the protectable items under the given container."]
         pub fn inquire(
             &self,
             vault_name: impl Into<String>,
@@ -5797,6 +5800,7 @@ pub mod aad_properties {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the AAD properties from target region BCM stamp."]
         pub fn get(&self, azure_region: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -5894,6 +5898,7 @@ pub mod cross_region_restore {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Restores the specified backed up data in a different region as compared to where the data is backed up."]
         pub fn trigger(
             &self,
             azure_region: impl Into<String>,
@@ -5991,6 +5996,7 @@ pub mod backup_crr_job_details {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get CRR job details from target region."]
         pub fn get(
             &self,
             azure_region: impl Into<String>,
@@ -6087,6 +6093,7 @@ pub mod backup_crr_jobs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of CRR jobs from the target region."]
         pub fn list(
             &self,
             azure_region: impl Into<String>,
@@ -6881,6 +6888,7 @@ pub mod protection_intent {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "It will validate followings\r\n1. Vault capacity\r\n2. VM is already protected\r\n3. Any VM related configuration passed in properties."]
         pub fn validate(
             &self,
             azure_region: impl Into<String>,
@@ -7228,6 +7236,7 @@ pub mod backup_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the container backup status"]
         pub fn get(
             &self,
             azure_region: impl Into<String>,
@@ -7319,6 +7328,7 @@ pub mod feature_support {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "It will validate if given feature with resource properties is supported in service"]
         pub fn validate(
             &self,
             azure_region: impl Into<String>,

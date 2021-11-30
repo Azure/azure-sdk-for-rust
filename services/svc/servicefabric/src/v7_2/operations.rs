@@ -584,12 +584,14 @@ pub enum Error {
     MeshGateway_List(#[from] mesh_gateway::list::Error),
 }
 impl Client {
+    #[doc = "Get the Service Fabric cluster manifest."]
     pub fn get_cluster_manifest(&self) -> get_cluster_manifest::Builder {
         get_cluster_manifest::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Gets the health of a Service Fabric cluster."]
     pub fn get_cluster_health(&self) -> get_cluster_health::Builder {
         get_cluster_health::Builder {
             client: self.clone(),
@@ -601,6 +603,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of a Service Fabric cluster using the specified policy."]
     pub fn get_cluster_health_using_policy(&self) -> get_cluster_health_using_policy::Builder {
         get_cluster_health_using_policy::Builder {
             client: self.clone(),
@@ -613,12 +616,14 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of a Service Fabric cluster using health chunks."]
     pub fn get_cluster_health_chunk(&self) -> get_cluster_health_chunk::Builder {
         get_cluster_health_chunk::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Gets the health of a Service Fabric cluster using health chunks."]
     pub fn get_cluster_health_chunk_using_policy_and_advanced_filters(
         &self,
     ) -> get_cluster_health_chunk_using_policy_and_advanced_filters::Builder {
@@ -628,6 +633,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Sends a health report on the Service Fabric cluster."]
     pub fn report_cluster_health(&self, health_information: impl Into<models::HealthInformation>) -> report_cluster_health::Builder {
         report_cluster_health::Builder {
             client: self.clone(),
@@ -636,6 +642,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets a list of fabric code versions that are provisioned in a Service Fabric cluster."]
     pub fn get_provisioned_fabric_code_version_info_list(&self) -> get_provisioned_fabric_code_version_info_list::Builder {
         get_provisioned_fabric_code_version_info_list::Builder {
             client: self.clone(),
@@ -643,6 +650,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets a list of fabric config versions that are provisioned in a Service Fabric cluster."]
     pub fn get_provisioned_fabric_config_version_info_list(&self) -> get_provisioned_fabric_config_version_info_list::Builder {
         get_provisioned_fabric_config_version_info_list::Builder {
             client: self.clone(),
@@ -650,12 +658,14 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the progress of the current cluster upgrade."]
     pub fn get_cluster_upgrade_progress(&self) -> get_cluster_upgrade_progress::Builder {
         get_cluster_upgrade_progress::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Get the Service Fabric standalone cluster configuration."]
     pub fn get_cluster_configuration(&self, configuration_api_version: impl Into<String>) -> get_cluster_configuration::Builder {
         get_cluster_configuration::Builder {
             client: self.clone(),
@@ -663,18 +673,21 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Get the cluster configuration upgrade status of a Service Fabric standalone cluster."]
     pub fn get_cluster_configuration_upgrade_status(&self) -> get_cluster_configuration_upgrade_status::Builder {
         get_cluster_configuration_upgrade_status::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Get the service state of Service Fabric Upgrade Orchestration Service."]
     pub fn get_upgrade_orchestration_service_state(&self) -> get_upgrade_orchestration_service_state::Builder {
         get_upgrade_orchestration_service_state::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Update the service state of Service Fabric Upgrade Orchestration Service."]
     pub fn set_upgrade_orchestration_service_state(
         &self,
         upgrade_orchestration_service_state: impl Into<models::UpgradeOrchestrationServiceState>,
@@ -685,6 +698,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Provision the code or configuration packages of a Service Fabric cluster."]
     pub fn provision_cluster(
         &self,
         provision_fabric_description: impl Into<models::ProvisionFabricDescription>,
@@ -695,6 +709,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Unprovision the code or configuration packages of a Service Fabric cluster."]
     pub fn unprovision_cluster(
         &self,
         unprovision_fabric_description: impl Into<models::UnprovisionFabricDescription>,
@@ -705,12 +720,14 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Roll back the upgrade of a Service Fabric cluster."]
     pub fn rollback_cluster_upgrade(&self) -> rollback_cluster_upgrade::Builder {
         rollback_cluster_upgrade::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Make the cluster upgrade move on to the next upgrade domain."]
     pub fn resume_cluster_upgrade(
         &self,
         resume_cluster_upgrade_description: impl Into<models::ResumeClusterUpgradeDescription>,
@@ -721,6 +738,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Start upgrading the code or configuration version of a Service Fabric cluster."]
     pub fn start_cluster_upgrade(
         &self,
         start_cluster_upgrade_description: impl Into<models::StartClusterUpgradeDescription>,
@@ -731,6 +749,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Start upgrading the configuration of a Service Fabric standalone cluster."]
     pub fn start_cluster_configuration_upgrade(
         &self,
         cluster_configuration_upgrade_description: impl Into<models::ClusterConfigurationUpgradeDescription>,
@@ -741,6 +760,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Update the upgrade parameters of a Service Fabric cluster upgrade."]
     pub fn update_cluster_upgrade(
         &self,
         update_cluster_upgrade_description: impl Into<models::UpdateClusterUpgradeDescription>,
@@ -751,24 +771,28 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the Azure Active Directory metadata used for secured connection to cluster."]
     pub fn get_aad_metadata(&self) -> get_aad_metadata::Builder {
         get_aad_metadata::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Get the current Service Fabric cluster version."]
     pub fn get_cluster_version(&self) -> get_cluster_version::Builder {
         get_cluster_version::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Gets the load of a Service Fabric cluster."]
     pub fn get_cluster_load(&self) -> get_cluster_load::Builder {
         get_cluster_load::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Changes the verbosity of service placement health reporting."]
     pub fn toggle_verbose_service_placement_health_reporting(
         &self,
         enabled: bool,
@@ -779,6 +803,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of nodes in the Service Fabric cluster."]
     pub fn get_node_info_list(&self) -> get_node_info_list::Builder {
         get_node_info_list::Builder {
             client: self.clone(),
@@ -788,6 +813,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the information about a specific node in the Service Fabric cluster."]
     pub fn get_node_info(&self, node_name: impl Into<String>) -> get_node_info::Builder {
         get_node_info::Builder {
             client: self.clone(),
@@ -795,6 +821,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of a Service Fabric node."]
     pub fn get_node_health(&self, node_name: impl Into<String>) -> get_node_health::Builder {
         get_node_health::Builder {
             client: self.clone(),
@@ -803,6 +830,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of a Service Fabric node, by using the specified health policy."]
     pub fn get_node_health_using_policy(&self, node_name: impl Into<String>) -> get_node_health_using_policy::Builder {
         get_node_health_using_policy::Builder {
             client: self.clone(),
@@ -812,6 +840,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Sends a health report on the Service Fabric node."]
     pub fn report_node_health(
         &self,
         node_name: impl Into<String>,
@@ -825,6 +854,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the load information of a Service Fabric node."]
     pub fn get_node_load_info(&self, node_name: impl Into<String>) -> get_node_load_info::Builder {
         get_node_load_info::Builder {
             client: self.clone(),
@@ -832,6 +862,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Deactivate a Service Fabric cluster node with the specified deactivation intent."]
     pub fn disable_node(
         &self,
         node_name: impl Into<String>,
@@ -844,6 +875,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Activate a Service Fabric cluster node that is currently deactivated."]
     pub fn enable_node(&self, node_name: impl Into<String>) -> enable_node::Builder {
         enable_node::Builder {
             client: self.clone(),
@@ -851,6 +883,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Notifies Service Fabric that the persisted state on a node has been permanently removed or lost."]
     pub fn remove_node_state(&self, node_name: impl Into<String>) -> remove_node_state::Builder {
         remove_node_state::Builder {
             client: self.clone(),
@@ -858,6 +891,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Restarts a Service Fabric cluster node."]
     pub fn restart_node(
         &self,
         node_name: impl Into<String>,
@@ -870,6 +904,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Removes configuration overrides on the specified node."]
     pub fn remove_configuration_overrides(&self, node_name: impl Into<String>) -> remove_configuration_overrides::Builder {
         remove_configuration_overrides::Builder {
             client: self.clone(),
@@ -877,6 +912,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of configuration overrides on the specified node."]
     pub fn get_configuration_overrides(&self, node_name: impl Into<String>) -> get_configuration_overrides::Builder {
         get_configuration_overrides::Builder {
             client: self.clone(),
@@ -884,6 +920,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Adds the list of configuration overrides on the specified node."]
     pub fn add_configuration_parameter_overrides(
         &self,
         node_name: impl Into<String>,
@@ -897,6 +934,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of application types in the Service Fabric cluster."]
     pub fn get_application_type_info_list(&self) -> get_application_type_info_list::Builder {
         get_application_type_info_list::Builder {
             client: self.clone(),
@@ -907,6 +945,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of application types in the Service Fabric cluster matching exactly the specified name."]
     pub fn get_application_type_info_list_by_name(
         &self,
         application_type_name: impl Into<String>,
@@ -921,6 +960,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Provisions or registers a Service Fabric application type with the cluster using the '.sfpkg' package in the external store or using the application package in the image store."]
     pub fn provision_application_type(
         &self,
         provision_application_type_description_base_required_body_param: impl Into<models::ProvisionApplicationTypeDescriptionBase>,
@@ -932,6 +972,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Removes or unregisters a Service Fabric application type from the cluster."]
     pub fn unprovision_application_type(
         &self,
         application_type_name: impl Into<String>,
@@ -944,6 +985,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list containing the information about service types that are supported by a provisioned application type in a Service Fabric cluster."]
     pub fn get_service_type_info_list(
         &self,
         application_type_name: impl Into<String>,
@@ -956,6 +998,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the information about a specific service type that is supported by a provisioned application type in a Service Fabric cluster."]
     pub fn get_service_type_info_by_name(
         &self,
         application_type_name: impl Into<String>,
@@ -970,6 +1013,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the manifest describing a service type."]
     pub fn get_service_manifest(
         &self,
         application_type_name: impl Into<String>,
@@ -984,6 +1028,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list containing the information about service types from the applications deployed on a node in a Service Fabric cluster."]
     pub fn get_deployed_service_type_info_list(
         &self,
         node_name: impl Into<String>,
@@ -997,6 +1042,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the information about a specified service type of the application deployed on a node in a Service Fabric cluster."]
     pub fn get_deployed_service_type_info_by_name(
         &self,
         node_name: impl Into<String>,
@@ -1012,6 +1058,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Creates a Service Fabric application."]
     pub fn create_application(&self, application_description: impl Into<models::ApplicationDescription>) -> create_application::Builder {
         create_application::Builder {
             client: self.clone(),
@@ -1019,6 +1066,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Deletes an existing Service Fabric application."]
     pub fn delete_application(&self, application_id: impl Into<String>) -> delete_application::Builder {
         delete_application::Builder {
             client: self.clone(),
@@ -1027,6 +1075,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets load information about a Service Fabric application."]
     pub fn get_application_load_info(&self, application_id: impl Into<String>) -> get_application_load_info::Builder {
         get_application_load_info::Builder {
             client: self.clone(),
@@ -1034,6 +1083,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of applications created in the Service Fabric cluster that match the specified filters."]
     pub fn get_application_info_list(&self) -> get_application_info_list::Builder {
         get_application_info_list::Builder {
             client: self.clone(),
@@ -1045,6 +1095,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets information about a Service Fabric application."]
     pub fn get_application_info(&self, application_id: impl Into<String>) -> get_application_info::Builder {
         get_application_info::Builder {
             client: self.clone(),
@@ -1053,6 +1104,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of the service fabric application."]
     pub fn get_application_health(&self, application_id: impl Into<String>) -> get_application_health::Builder {
         get_application_health::Builder {
             client: self.clone(),
@@ -1064,6 +1116,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of a Service Fabric application using the specified policy."]
     pub fn get_application_health_using_policy(&self, application_id: impl Into<String>) -> get_application_health_using_policy::Builder {
         get_application_health_using_policy::Builder {
             client: self.clone(),
@@ -1076,6 +1129,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Sends a health report on the Service Fabric application."]
     pub fn report_application_health(
         &self,
         application_id: impl Into<String>,
@@ -1089,6 +1143,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Starts upgrading an application in the Service Fabric cluster."]
     pub fn start_application_upgrade(
         &self,
         application_id: impl Into<String>,
@@ -1101,6 +1156,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets details for the latest upgrade performed on this application."]
     pub fn get_application_upgrade(&self, application_id: impl Into<String>) -> get_application_upgrade::Builder {
         get_application_upgrade::Builder {
             client: self.clone(),
@@ -1108,6 +1164,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Updates an ongoing application upgrade in the Service Fabric cluster."]
     pub fn update_application_upgrade(
         &self,
         application_id: impl Into<String>,
@@ -1120,6 +1177,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Resumes upgrading an application in the Service Fabric cluster."]
     pub fn resume_application_upgrade(
         &self,
         application_id: impl Into<String>,
@@ -1132,6 +1190,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Starts rolling back the currently on-going upgrade of an application in the Service Fabric cluster."]
     pub fn rollback_application_upgrade(&self, application_id: impl Into<String>) -> rollback_application_upgrade::Builder {
         rollback_application_upgrade::Builder {
             client: self.clone(),
@@ -1139,6 +1198,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of applications deployed on a Service Fabric node."]
     pub fn get_deployed_application_info_list(&self, node_name: impl Into<String>) -> get_deployed_application_info_list::Builder {
         get_deployed_application_info_list::Builder {
             client: self.clone(),
@@ -1149,6 +1209,7 @@ impl Client {
             max_results: None,
         }
     }
+    #[doc = "Gets the information about an application deployed on a Service Fabric node."]
     pub fn get_deployed_application_info(
         &self,
         node_name: impl Into<String>,
@@ -1162,6 +1223,7 @@ impl Client {
             include_health_state: None,
         }
     }
+    #[doc = "Gets the information about health of an application deployed on a Service Fabric node."]
     pub fn get_deployed_application_health(
         &self,
         node_name: impl Into<String>,
@@ -1177,6 +1239,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the information about health of an application deployed on a Service Fabric node. using the specified policy."]
     pub fn get_deployed_application_health_using_policy(
         &self,
         node_name: impl Into<String>,
@@ -1193,6 +1256,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Sends a health report on the Service Fabric application deployed on a Service Fabric node."]
     pub fn report_deployed_application_health(
         &self,
         node_name: impl Into<String>,
@@ -1208,6 +1272,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the manifest describing an application type."]
     pub fn get_application_manifest(
         &self,
         application_type_name: impl Into<String>,
@@ -1220,6 +1285,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the information about all services belonging to the application specified by the application ID."]
     pub fn get_service_info_list(&self, application_id: impl Into<String>) -> get_service_info_list::Builder {
         get_service_info_list::Builder {
             client: self.clone(),
@@ -1229,6 +1295,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the information about the specific service belonging to the Service Fabric application."]
     pub fn get_service_info(&self, application_id: impl Into<String>, service_id: impl Into<String>) -> get_service_info::Builder {
         get_service_info::Builder {
             client: self.clone(),
@@ -1237,6 +1304,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the name of the Service Fabric application for a service."]
     pub fn get_application_name_info(&self, service_id: impl Into<String>) -> get_application_name_info::Builder {
         get_application_name_info::Builder {
             client: self.clone(),
@@ -1244,6 +1312,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Creates the specified Service Fabric service."]
     pub fn create_service(
         &self,
         application_id: impl Into<String>,
@@ -1256,6 +1325,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Creates a Service Fabric service from the service template."]
     pub fn create_service_from_template(
         &self,
         application_id: impl Into<String>,
@@ -1268,6 +1338,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Deletes an existing Service Fabric service."]
     pub fn delete_service(&self, service_id: impl Into<String>) -> delete_service::Builder {
         delete_service::Builder {
             client: self.clone(),
@@ -1276,6 +1347,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Updates a Service Fabric service using the specified update description."]
     pub fn update_service(
         &self,
         service_id: impl Into<String>,
@@ -1288,6 +1360,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the description of an existing Service Fabric service."]
     pub fn get_service_description(&self, service_id: impl Into<String>) -> get_service_description::Builder {
         get_service_description::Builder {
             client: self.clone(),
@@ -1295,6 +1368,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of the specified Service Fabric service."]
     pub fn get_service_health(&self, service_id: impl Into<String>) -> get_service_health::Builder {
         get_service_health::Builder {
             client: self.clone(),
@@ -1305,6 +1379,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of the specified Service Fabric service, by using the specified health policy."]
     pub fn get_service_health_using_policy(&self, service_id: impl Into<String>) -> get_service_health_using_policy::Builder {
         get_service_health_using_policy::Builder {
             client: self.clone(),
@@ -1316,6 +1391,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Sends a health report on the Service Fabric service."]
     pub fn report_service_health(
         &self,
         service_id: impl Into<String>,
@@ -1329,6 +1405,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Resolve a Service Fabric partition."]
     pub fn resolve_service(&self, service_id: impl Into<String>) -> resolve_service::Builder {
         resolve_service::Builder {
             client: self.clone(),
@@ -1339,6 +1416,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the information about unplaced replica of the service."]
     pub fn get_unplaced_replica_information(&self, service_id: impl Into<String>) -> get_unplaced_replica_information::Builder {
         get_unplaced_replica_information::Builder {
             client: self.clone(),
@@ -1348,6 +1426,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of partitions of a Service Fabric service."]
     pub fn get_partition_info_list(&self, service_id: impl Into<String>) -> get_partition_info_list::Builder {
         get_partition_info_list::Builder {
             client: self.clone(),
@@ -1356,6 +1435,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the information about a Service Fabric partition."]
     pub fn get_partition_info(&self, partition_id: impl Into<String>) -> get_partition_info::Builder {
         get_partition_info::Builder {
             client: self.clone(),
@@ -1363,6 +1443,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the name of the Service Fabric service for a partition."]
     pub fn get_service_name_info(&self, partition_id: impl Into<String>) -> get_service_name_info::Builder {
         get_service_name_info::Builder {
             client: self.clone(),
@@ -1370,6 +1451,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of the specified Service Fabric partition."]
     pub fn get_partition_health(&self, partition_id: impl Into<String>) -> get_partition_health::Builder {
         get_partition_health::Builder {
             client: self.clone(),
@@ -1380,6 +1462,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of the specified Service Fabric partition, by using the specified health policy."]
     pub fn get_partition_health_using_policy(&self, partition_id: impl Into<String>) -> get_partition_health_using_policy::Builder {
         get_partition_health_using_policy::Builder {
             client: self.clone(),
@@ -1391,6 +1474,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Sends a health report on the Service Fabric partition."]
     pub fn report_partition_health(
         &self,
         partition_id: impl Into<String>,
@@ -1404,6 +1488,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the load information of the specified Service Fabric partition."]
     pub fn get_partition_load_information(&self, partition_id: impl Into<String>) -> get_partition_load_information::Builder {
         get_partition_load_information::Builder {
             client: self.clone(),
@@ -1411,6 +1496,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Resets the current load of a Service Fabric partition."]
     pub fn reset_partition_load(&self, partition_id: impl Into<String>) -> reset_partition_load::Builder {
         reset_partition_load::Builder {
             client: self.clone(),
@@ -1418,6 +1504,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover a specific partition that is currently stuck in quorum loss."]
     pub fn recover_partition(&self, partition_id: impl Into<String>) -> recover_partition::Builder {
         recover_partition::Builder {
             client: self.clone(),
@@ -1425,6 +1512,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover the specified service that is currently stuck in quorum loss."]
     pub fn recover_service_partitions(&self, service_id: impl Into<String>) -> recover_service_partitions::Builder {
         recover_service_partitions::Builder {
             client: self.clone(),
@@ -1432,18 +1520,21 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover the system services that are currently stuck in quorum loss."]
     pub fn recover_system_partitions(&self) -> recover_system_partitions::Builder {
         recover_system_partitions::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover any services (including system services) which are currently stuck in quorum loss."]
     pub fn recover_all_partitions(&self) -> recover_all_partitions::Builder {
         recover_all_partitions::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Moves the primary replica of a partition of a stateful service."]
     pub fn move_primary_replica(&self, partition_id: impl Into<String>) -> move_primary_replica::Builder {
         move_primary_replica::Builder {
             client: self.clone(),
@@ -1453,6 +1544,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Moves the secondary replica of a partition of a stateful service."]
     pub fn move_secondary_replica(
         &self,
         partition_id: impl Into<String>,
@@ -1467,6 +1559,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Update the loads of provided partitions for specific metrics."]
     pub fn update_partition_load(
         &self,
         partition_metric_load_description_list: impl Into<models::PartitionMetricLoadDescriptionList>,
@@ -1479,12 +1572,14 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Creates a new repair task."]
     pub fn create_repair_task(&self, repair_task: impl Into<models::RepairTask>) -> create_repair_task::Builder {
         create_repair_task::Builder {
             client: self.clone(),
             repair_task: repair_task.into(),
         }
     }
+    #[doc = "Requests the cancellation of the given repair task."]
     pub fn cancel_repair_task(
         &self,
         repair_task_cancel_description: impl Into<models::RepairTaskCancelDescription>,
@@ -1494,6 +1589,7 @@ impl Client {
             repair_task_cancel_description: repair_task_cancel_description.into(),
         }
     }
+    #[doc = "Deletes a completed repair task."]
     pub fn delete_repair_task(
         &self,
         repair_task_delete_description: impl Into<models::RepairTaskDeleteDescription>,
@@ -1503,6 +1599,7 @@ impl Client {
             repair_task_delete_description: repair_task_delete_description.into(),
         }
     }
+    #[doc = "Gets a list of repair tasks matching the given filters."]
     pub fn get_repair_task_list(&self) -> get_repair_task_list::Builder {
         get_repair_task_list::Builder {
             client: self.clone(),
@@ -1511,6 +1608,7 @@ impl Client {
             executor_filter: None,
         }
     }
+    #[doc = "Forces the approval of the given repair task."]
     pub fn force_approve_repair_task(
         &self,
         repair_task_approve_description: impl Into<models::RepairTaskApproveDescription>,
@@ -1520,6 +1618,7 @@ impl Client {
             repair_task_approve_description: repair_task_approve_description.into(),
         }
     }
+    #[doc = "Updates the health policy of the given repair task."]
     pub fn update_repair_task_health_policy(
         &self,
         repair_task_update_health_policy_description: impl Into<models::RepairTaskUpdateHealthPolicyDescription>,
@@ -1529,12 +1628,14 @@ impl Client {
             repair_task_update_health_policy_description: repair_task_update_health_policy_description.into(),
         }
     }
+    #[doc = "Updates the execution state of a repair task."]
     pub fn update_repair_execution_state(&self, repair_task: impl Into<models::RepairTask>) -> update_repair_execution_state::Builder {
         update_repair_execution_state::Builder {
             client: self.clone(),
             repair_task: repair_task.into(),
         }
     }
+    #[doc = "Gets the information about replicas of a Service Fabric service partition."]
     pub fn get_replica_info_list(&self, partition_id: impl Into<String>) -> get_replica_info_list::Builder {
         get_replica_info_list::Builder {
             client: self.clone(),
@@ -1543,6 +1644,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the information about a replica of a Service Fabric partition."]
     pub fn get_replica_info(&self, partition_id: impl Into<String>, replica_id: impl Into<String>) -> get_replica_info::Builder {
         get_replica_info::Builder {
             client: self.clone(),
@@ -1551,6 +1653,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of a Service Fabric stateful service replica or stateless service instance."]
     pub fn get_replica_health(&self, partition_id: impl Into<String>, replica_id: impl Into<String>) -> get_replica_health::Builder {
         get_replica_health::Builder {
             client: self.clone(),
@@ -1560,6 +1663,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the health of a Service Fabric stateful service replica or stateless service instance using the specified policy."]
     pub fn get_replica_health_using_policy(
         &self,
         partition_id: impl Into<String>,
@@ -1574,6 +1678,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Sends a health report on the Service Fabric replica."]
     pub fn report_replica_health(
         &self,
         partition_id: impl Into<String>,
@@ -1591,6 +1696,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of replicas deployed on a Service Fabric node."]
     pub fn get_deployed_service_replica_info_list(
         &self,
         node_name: impl Into<String>,
@@ -1605,6 +1711,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the details of replica deployed on a Service Fabric node."]
     pub fn get_deployed_service_replica_detail_info(
         &self,
         node_name: impl Into<String>,
@@ -1619,6 +1726,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the details of replica deployed on a Service Fabric node."]
     pub fn get_deployed_service_replica_detail_info_by_partition_id(
         &self,
         node_name: impl Into<String>,
@@ -1631,6 +1739,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Restarts a service replica of a persisted service running on a node."]
     pub fn restart_replica(
         &self,
         node_name: impl Into<String>,
@@ -1645,6 +1754,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Removes a service replica running on a node."]
     pub fn remove_replica(
         &self,
         node_name: impl Into<String>,
@@ -1660,6 +1770,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of service packages deployed on a Service Fabric node."]
     pub fn get_deployed_service_package_info_list(
         &self,
         node_name: impl Into<String>,
@@ -1672,6 +1783,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of service packages deployed on a Service Fabric node matching exactly the specified name."]
     pub fn get_deployed_service_package_info_list_by_name(
         &self,
         node_name: impl Into<String>,
@@ -1686,6 +1798,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the information about health of a service package for a specific application deployed for a Service Fabric node and application."]
     pub fn get_deployed_service_package_health(
         &self,
         node_name: impl Into<String>,
@@ -1701,6 +1814,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the information about health of service package for a specific application deployed on a Service Fabric node using the specified policy."]
     pub fn get_deployed_service_package_health_using_policy(
         &self,
         node_name: impl Into<String>,
@@ -1717,6 +1831,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Sends a health report on the Service Fabric deployed service package."]
     pub fn report_deployed_service_package_health(
         &self,
         node_name: impl Into<String>,
@@ -1734,6 +1849,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Downloads all of the code packages associated with specified service manifest on the specified node."]
     pub fn deploy_service_package_to_node(
         &self,
         node_name: impl Into<String>,
@@ -1746,6 +1862,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of code packages deployed on a Service Fabric node."]
     pub fn get_deployed_code_package_info_list(
         &self,
         node_name: impl Into<String>,
@@ -1760,6 +1877,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Restarts a code package deployed on a Service Fabric node in a cluster."]
     pub fn restart_deployed_code_package(
         &self,
         node_name: impl Into<String>,
@@ -1774,6 +1892,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the container logs for container deployed on a Service Fabric node."]
     pub fn get_container_logs_deployed_on_node(
         &self,
         node_name: impl Into<String>,
@@ -1792,6 +1911,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Invoke container API on a container deployed on a Service Fabric node."]
     pub fn invoke_container_api(
         &self,
         node_name: impl Into<String>,
@@ -1812,6 +1932,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Creates a Service Fabric compose deployment."]
     pub fn create_compose_deployment(
         &self,
         create_compose_deployment_description: impl Into<models::CreateComposeDeploymentDescription>,
@@ -1822,6 +1943,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets information about a Service Fabric compose deployment."]
     pub fn get_compose_deployment_status(&self, deployment_name: impl Into<String>) -> get_compose_deployment_status::Builder {
         get_compose_deployment_status::Builder {
             client: self.clone(),
@@ -1829,6 +1951,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of compose deployments created in the Service Fabric cluster."]
     pub fn get_compose_deployment_status_list(&self) -> get_compose_deployment_status_list::Builder {
         get_compose_deployment_status_list::Builder {
             client: self.clone(),
@@ -1837,6 +1960,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets details for the latest upgrade performed on this Service Fabric compose deployment."]
     pub fn get_compose_deployment_upgrade_progress(
         &self,
         deployment_name: impl Into<String>,
@@ -1847,6 +1971,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Deletes an existing Service Fabric compose deployment from cluster."]
     pub fn remove_compose_deployment(&self, deployment_name: impl Into<String>) -> remove_compose_deployment::Builder {
         remove_compose_deployment::Builder {
             client: self.clone(),
@@ -1854,6 +1979,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Starts upgrading a compose deployment in the Service Fabric cluster."]
     pub fn start_compose_deployment_upgrade(
         &self,
         deployment_name: impl Into<String>,
@@ -1866,6 +1992,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Starts rolling back a compose deployment upgrade in the Service Fabric cluster."]
     pub fn start_rollback_compose_deployment_upgrade(
         &self,
         deployment_name: impl Into<String>,
@@ -1876,12 +2003,14 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Get the status of Chaos."]
     pub fn get_chaos(&self) -> get_chaos::Builder {
         get_chaos::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Starts Chaos in the cluster."]
     pub fn start_chaos(&self, chaos_parameters: impl Into<models::ChaosParameters>) -> start_chaos::Builder {
         start_chaos::Builder {
             client: self.clone(),
@@ -1889,12 +2018,14 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Stops Chaos if it is running in the cluster and put the Chaos Schedule in a stopped state."]
     pub fn stop_chaos(&self) -> stop_chaos::Builder {
         stop_chaos::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Gets the next segment of the Chaos events based on the continuation token or the time range."]
     pub fn get_chaos_events(&self) -> get_chaos_events::Builder {
         get_chaos_events::Builder {
             client: self.clone(),
@@ -1905,12 +2036,14 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Get the Chaos Schedule defining when and how to run Chaos."]
     pub fn get_chaos_schedule(&self) -> get_chaos_schedule::Builder {
         get_chaos_schedule::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Set the schedule used by Chaos."]
     pub fn post_chaos_schedule(&self, chaos_schedule: impl Into<models::ChaosScheduleDescription>) -> post_chaos_schedule::Builder {
         post_chaos_schedule::Builder {
             client: self.clone(),
@@ -1918,6 +2051,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the image store content information."]
     pub fn get_image_store_content(&self, content_path: impl Into<String>) -> get_image_store_content::Builder {
         get_image_store_content::Builder {
             client: self.clone(),
@@ -1925,6 +2059,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Uploads contents of the file to the image store."]
     pub fn upload_file(&self, content_path: impl Into<String>) -> upload_file::Builder {
         upload_file::Builder {
             client: self.clone(),
@@ -1932,6 +2067,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Deletes existing image store content."]
     pub fn delete_image_store_content(&self, content_path: impl Into<String>) -> delete_image_store_content::Builder {
         delete_image_store_content::Builder {
             client: self.clone(),
@@ -1939,12 +2075,14 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the content information at the root of the image store."]
     pub fn get_image_store_root_content(&self) -> get_image_store_root_content::Builder {
         get_image_store_root_content::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Copies image store content internally"]
     pub fn copy_image_store_content(
         &self,
         image_store_copy_description: impl Into<models::ImageStoreCopyDescription>,
@@ -1955,6 +2093,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Cancels an image store upload session."]
     pub fn delete_image_store_upload_session(&self, session_id: impl Into<String>) -> delete_image_store_upload_session::Builder {
         delete_image_store_upload_session::Builder {
             client: self.clone(),
@@ -1962,6 +2101,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Commit an image store upload session."]
     pub fn commit_image_store_upload_session(&self, session_id: impl Into<String>) -> commit_image_store_upload_session::Builder {
         commit_image_store_upload_session::Builder {
             client: self.clone(),
@@ -1969,6 +2109,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Get the image store upload session by ID."]
     pub fn get_image_store_upload_session_by_id(&self, session_id: impl Into<String>) -> get_image_store_upload_session_by_id::Builder {
         get_image_store_upload_session_by_id::Builder {
             client: self.clone(),
@@ -1976,6 +2117,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Get the image store upload session by relative path."]
     pub fn get_image_store_upload_session_by_path(
         &self,
         content_path: impl Into<String>,
@@ -1986,6 +2128,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Uploads a file chunk to the image store relative path."]
     pub fn upload_file_chunk(
         &self,
         content_path: impl Into<String>,
@@ -2000,12 +2143,14 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Get the folder size at the root of the image store."]
     pub fn get_image_store_root_folder_size(&self) -> get_image_store_root_folder_size::Builder {
         get_image_store_root_folder_size::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Get the size of a folder in image store"]
     pub fn get_image_store_folder_size(&self, content_path: impl Into<String>) -> get_image_store_folder_size::Builder {
         get_image_store_folder_size::Builder {
             client: self.clone(),
@@ -2013,12 +2158,14 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the overall ImageStore information"]
     pub fn get_image_store_info(&self) -> get_image_store_info::Builder {
         get_image_store_info::Builder {
             client: self.clone(),
             timeout: None,
         }
     }
+    #[doc = "Invokes an administrative command on the given Infrastructure Service instance."]
     pub fn invoke_infrastructure_command(&self, command: impl Into<String>) -> invoke_infrastructure_command::Builder {
         invoke_infrastructure_command::Builder {
             client: self.clone(),
@@ -2027,6 +2174,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Invokes a read-only query on the given infrastructure service instance."]
     pub fn invoke_infrastructure_query(&self, command: impl Into<String>) -> invoke_infrastructure_query::Builder {
         invoke_infrastructure_query::Builder {
             client: self.clone(),
@@ -2035,6 +2183,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "This API will induce data loss for the specified partition. It will trigger a call to the OnDataLossAsync API of the partition."]
     pub fn start_data_loss(
         &self,
         service_id: impl Into<String>,
@@ -2051,6 +2200,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the progress of a partition data loss operation started using the StartDataLoss API."]
     pub fn get_data_loss_progress(
         &self,
         service_id: impl Into<String>,
@@ -2065,6 +2215,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Induces quorum loss for a given stateful service partition."]
     pub fn start_quorum_loss(
         &self,
         service_id: impl Into<String>,
@@ -2083,6 +2234,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the progress of a quorum loss operation on a partition started using the StartQuorumLoss API."]
     pub fn get_quorum_loss_progress(
         &self,
         service_id: impl Into<String>,
@@ -2097,6 +2249,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "This API will restart some or all replicas or instances of the specified partition."]
     pub fn start_partition_restart(
         &self,
         service_id: impl Into<String>,
@@ -2113,6 +2266,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the progress of a PartitionRestart operation started using StartPartitionRestart."]
     pub fn get_partition_restart_progress(
         &self,
         service_id: impl Into<String>,
@@ -2127,6 +2281,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Starts or stops a cluster node."]
     pub fn start_node_transition(
         &self,
         node_name: impl Into<String>,
@@ -2145,6 +2300,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the progress of an operation started using StartNodeTransition."]
     pub fn get_node_transition_progress(
         &self,
         node_name: impl Into<String>,
@@ -2157,6 +2313,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets a list of user-induced fault operations filtered by provided input."]
     pub fn get_fault_operation_list(&self, type_filter: i64, state_filter: i64) -> get_fault_operation_list::Builder {
         get_fault_operation_list::Builder {
             client: self.clone(),
@@ -2165,6 +2322,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Cancels a user-induced fault operation."]
     pub fn cancel_operation(&self, operation_id: impl Into<String>, force: bool) -> cancel_operation::Builder {
         cancel_operation::Builder {
             client: self.clone(),
@@ -2173,6 +2331,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Creates a backup policy."]
     pub fn create_backup_policy(
         &self,
         backup_policy_description: impl Into<models::BackupPolicyDescription>,
@@ -2183,6 +2342,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Deletes the backup policy."]
     pub fn delete_backup_policy(&self, backup_policy_name: impl Into<String>) -> delete_backup_policy::Builder {
         delete_backup_policy::Builder {
             client: self.clone(),
@@ -2190,6 +2350,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets all the backup policies configured."]
     pub fn get_backup_policy_list(&self) -> get_backup_policy_list::Builder {
         get_backup_policy_list::Builder {
             client: self.clone(),
@@ -2198,6 +2359,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets a particular backup policy by name."]
     pub fn get_backup_policy_by_name(&self, backup_policy_name: impl Into<String>) -> get_backup_policy_by_name::Builder {
         get_backup_policy_by_name::Builder {
             client: self.clone(),
@@ -2205,6 +2367,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of backup entities that are associated with this policy."]
     pub fn get_all_entities_backed_up_by_policy(
         &self,
         backup_policy_name: impl Into<String>,
@@ -2217,6 +2380,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Updates the backup policy."]
     pub fn update_backup_policy(
         &self,
         backup_policy_description: impl Into<models::BackupPolicyDescription>,
@@ -2229,6 +2393,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Enables periodic backup of stateful partitions under this Service Fabric application."]
     pub fn enable_application_backup(
         &self,
         application_id: impl Into<String>,
@@ -2241,6 +2406,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Disables periodic backup of Service Fabric application."]
     pub fn disable_application_backup(&self, application_id: impl Into<String>) -> disable_application_backup::Builder {
         disable_application_backup::Builder {
             client: self.clone(),
@@ -2249,6 +2415,7 @@ impl Client {
             disable_backup_description: None,
         }
     }
+    #[doc = "Gets the Service Fabric application backup configuration information."]
     pub fn get_application_backup_configuration_info(
         &self,
         application_id: impl Into<String>,
@@ -2261,6 +2428,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of backups available for every partition in this application."]
     pub fn get_application_backup_list(&self, application_id: impl Into<String>) -> get_application_backup_list::Builder {
         get_application_backup_list::Builder {
             client: self.clone(),
@@ -2273,6 +2441,7 @@ impl Client {
             max_results: None,
         }
     }
+    #[doc = "Suspends periodic backup for the specified Service Fabric application."]
     pub fn suspend_application_backup(&self, application_id: impl Into<String>) -> suspend_application_backup::Builder {
         suspend_application_backup::Builder {
             client: self.clone(),
@@ -2280,6 +2449,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Resumes periodic backup of a Service Fabric application which was previously suspended."]
     pub fn resume_application_backup(&self, application_id: impl Into<String>) -> resume_application_backup::Builder {
         resume_application_backup::Builder {
             client: self.clone(),
@@ -2287,6 +2457,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Enables periodic backup of stateful partitions under this Service Fabric service."]
     pub fn enable_service_backup(
         &self,
         service_id: impl Into<String>,
@@ -2299,6 +2470,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Disables periodic backup of Service Fabric service which was previously enabled."]
     pub fn disable_service_backup(&self, service_id: impl Into<String>) -> disable_service_backup::Builder {
         disable_service_backup::Builder {
             client: self.clone(),
@@ -2307,6 +2479,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the Service Fabric service backup configuration information."]
     pub fn get_service_backup_configuration_info(&self, service_id: impl Into<String>) -> get_service_backup_configuration_info::Builder {
         get_service_backup_configuration_info::Builder {
             client: self.clone(),
@@ -2316,6 +2489,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of backups available for every partition in this service."]
     pub fn get_service_backup_list(&self, service_id: impl Into<String>) -> get_service_backup_list::Builder {
         get_service_backup_list::Builder {
             client: self.clone(),
@@ -2328,6 +2502,7 @@ impl Client {
             max_results: None,
         }
     }
+    #[doc = "Suspends periodic backup for the specified Service Fabric service."]
     pub fn suspend_service_backup(&self, service_id: impl Into<String>) -> suspend_service_backup::Builder {
         suspend_service_backup::Builder {
             client: self.clone(),
@@ -2335,6 +2510,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Resumes periodic backup of a Service Fabric service which was previously suspended."]
     pub fn resume_service_backup(&self, service_id: impl Into<String>) -> resume_service_backup::Builder {
         resume_service_backup::Builder {
             client: self.clone(),
@@ -2342,6 +2518,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Enables periodic backup of the stateful persisted partition."]
     pub fn enable_partition_backup(
         &self,
         partition_id: impl Into<String>,
@@ -2354,6 +2531,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Disables periodic backup of Service Fabric partition which was previously enabled."]
     pub fn disable_partition_backup(&self, partition_id: impl Into<String>) -> disable_partition_backup::Builder {
         disable_partition_backup::Builder {
             client: self.clone(),
@@ -2362,6 +2540,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the partition backup configuration information"]
     pub fn get_partition_backup_configuration_info(
         &self,
         partition_id: impl Into<String>,
@@ -2372,6 +2551,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of backups available for the specified partition."]
     pub fn get_partition_backup_list(&self, partition_id: impl Into<String>) -> get_partition_backup_list::Builder {
         get_partition_backup_list::Builder {
             client: self.clone(),
@@ -2382,6 +2562,7 @@ impl Client {
             end_date_time_filter: None,
         }
     }
+    #[doc = "Suspends periodic backup for the specified partition."]
     pub fn suspend_partition_backup(&self, partition_id: impl Into<String>) -> suspend_partition_backup::Builder {
         suspend_partition_backup::Builder {
             client: self.clone(),
@@ -2389,6 +2570,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Resumes periodic backup of partition which was previously suspended."]
     pub fn resume_partition_backup(&self, partition_id: impl Into<String>) -> resume_partition_backup::Builder {
         resume_partition_backup::Builder {
             client: self.clone(),
@@ -2396,6 +2578,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Triggers backup of the partition's state."]
     pub fn backup_partition(&self, partition_id: impl Into<String>) -> backup_partition::Builder {
         backup_partition::Builder {
             client: self.clone(),
@@ -2405,6 +2588,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets details for the latest backup triggered for this partition."]
     pub fn get_partition_backup_progress(&self, partition_id: impl Into<String>) -> get_partition_backup_progress::Builder {
         get_partition_backup_progress::Builder {
             client: self.clone(),
@@ -2412,6 +2596,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Triggers restore of the state of the partition using the specified restore partition description."]
     pub fn restore_partition(
         &self,
         partition_id: impl Into<String>,
@@ -2425,6 +2610,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets details for the latest restore operation triggered for this partition."]
     pub fn get_partition_restore_progress(&self, partition_id: impl Into<String>) -> get_partition_restore_progress::Builder {
         get_partition_restore_progress::Builder {
             client: self.clone(),
@@ -2432,6 +2618,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the list of backups available for the specified backed up entity at the specified backup location."]
     pub fn get_backups_from_backup_location(
         &self,
         get_backup_by_storage_query_description: impl Into<models::GetBackupByStorageQueryDescription>,
@@ -2444,6 +2631,7 @@ impl Client {
             max_results: None,
         }
     }
+    #[doc = "Creates a Service Fabric name."]
     pub fn create_name(&self, name_description: impl Into<models::NameDescription>) -> create_name::Builder {
         create_name::Builder {
             client: self.clone(),
@@ -2451,6 +2639,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Returns whether the Service Fabric name exists."]
     pub fn get_name_exists_info(&self, name_id: impl Into<String>) -> get_name_exists_info::Builder {
         get_name_exists_info::Builder {
             client: self.clone(),
@@ -2458,6 +2647,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Deletes a Service Fabric name."]
     pub fn delete_name(&self, name_id: impl Into<String>) -> delete_name::Builder {
         delete_name::Builder {
             client: self.clone(),
@@ -2465,6 +2655,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Enumerates all the Service Fabric names under a given name."]
     pub fn get_sub_name_info_list(&self, name_id: impl Into<String>) -> get_sub_name_info_list::Builder {
         get_sub_name_info_list::Builder {
             client: self.clone(),
@@ -2474,6 +2665,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets information on all Service Fabric properties under a given name."]
     pub fn get_property_info_list(&self, name_id: impl Into<String>) -> get_property_info_list::Builder {
         get_property_info_list::Builder {
             client: self.clone(),
@@ -2483,6 +2675,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets the specified Service Fabric property."]
     pub fn get_property_info(&self, name_id: impl Into<String>, property_name: impl Into<String>) -> get_property_info::Builder {
         get_property_info::Builder {
             client: self.clone(),
@@ -2491,6 +2684,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Creates or updates a Service Fabric property."]
     pub fn put_property(
         &self,
         name_id: impl Into<String>,
@@ -2503,6 +2697,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Deletes the specified Service Fabric property."]
     pub fn delete_property(&self, name_id: impl Into<String>, property_name: impl Into<String>) -> delete_property::Builder {
         delete_property::Builder {
             client: self.clone(),
@@ -2511,6 +2706,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Submits a property batch."]
     pub fn submit_property_batch(
         &self,
         name_id: impl Into<String>,
@@ -2523,6 +2719,7 @@ impl Client {
             timeout: None,
         }
     }
+    #[doc = "Gets all Cluster-related events."]
     pub fn get_cluster_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2538,6 +2735,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets all Containers-related events."]
     pub fn get_containers_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2553,6 +2751,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets a Node-related events."]
     pub fn get_node_event_list(
         &self,
         node_name: impl Into<String>,
@@ -2570,6 +2769,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets all Nodes-related Events."]
     pub fn get_nodes_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2585,6 +2785,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets an Application-related events."]
     pub fn get_application_event_list(
         &self,
         application_id: impl Into<String>,
@@ -2602,6 +2803,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets all Applications-related events."]
     pub fn get_applications_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2617,6 +2819,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets a Service-related events."]
     pub fn get_service_event_list(
         &self,
         service_id: impl Into<String>,
@@ -2634,6 +2837,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets all Services-related events."]
     pub fn get_services_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2649,6 +2853,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets a Partition-related events."]
     pub fn get_partition_event_list(
         &self,
         partition_id: impl Into<String>,
@@ -2666,6 +2871,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets all Partitions-related events."]
     pub fn get_partitions_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2681,6 +2887,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets a Partition Replica-related events."]
     pub fn get_partition_replica_event_list(
         &self,
         partition_id: impl Into<String>,
@@ -2700,6 +2907,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets all Replicas-related events for a Partition."]
     pub fn get_partition_replicas_event_list(
         &self,
         partition_id: impl Into<String>,
@@ -2717,6 +2925,7 @@ impl Client {
             skip_correlation_lookup: None,
         }
     }
+    #[doc = "Gets all correlated events for a given event."]
     pub fn get_correlated_event_list(&self, event_instance_id: impl Into<String>) -> get_correlated_event_list::Builder {
         get_correlated_event_list::Builder {
             client: self.clone(),
@@ -20682,12 +20891,14 @@ pub mod mesh_secret {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Secret resource with the given name."]
         pub fn get(&self, secret_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
             }
         }
+        #[doc = "Creates or updates a Secret resource."]
         pub fn create_or_update(
             &self,
             secret_resource_name: impl Into<String>,
@@ -20699,12 +20910,14 @@ pub mod mesh_secret {
                 secret_resource_description: secret_resource_description.into(),
             }
         }
+        #[doc = "Deletes the Secret resource."]
         pub fn delete(&self, secret_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
             }
         }
+        #[doc = "Lists all the secret resources."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -21009,6 +21222,7 @@ pub mod mesh_secret_value {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified secret value resource."]
         pub fn get(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -21016,6 +21230,7 @@ pub mod mesh_secret_value {
                 secret_value_resource_name: secret_value_resource_name.into(),
             }
         }
+        #[doc = "Adds the specified value as a new version of the specified secret resource."]
         pub fn add_value(
             &self,
             secret_resource_name: impl Into<String>,
@@ -21029,6 +21244,7 @@ pub mod mesh_secret_value {
                 secret_value_resource_description: secret_value_resource_description.into(),
             }
         }
+        #[doc = "Deletes the specified  value of the named secret resource."]
         pub fn delete(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -21036,12 +21252,14 @@ pub mod mesh_secret_value {
                 secret_value_resource_name: secret_value_resource_name.into(),
             }
         }
+        #[doc = "List names of all values of the specified secret resource."]
         pub fn list(&self, secret_resource_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
             }
         }
+        #[doc = "Lists the specified value of the secret resource."]
         pub fn show(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> show::Builder {
             show::Builder {
                 client: self.0.clone(),
@@ -21448,12 +21666,14 @@ pub mod mesh_volume {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Volume resource with the given name."]
         pub fn get(&self, volume_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 volume_resource_name: volume_resource_name.into(),
             }
         }
+        #[doc = "Creates or updates a Volume resource."]
         pub fn create_or_update(
             &self,
             volume_resource_name: impl Into<String>,
@@ -21465,12 +21685,14 @@ pub mod mesh_volume {
                 volume_resource_description: volume_resource_description.into(),
             }
         }
+        #[doc = "Deletes the Volume resource."]
         pub fn delete(&self, volume_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 volume_resource_name: volume_resource_name.into(),
             }
         }
+        #[doc = "Lists all the volume resources."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -21775,12 +21997,14 @@ pub mod mesh_network {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Network resource with the given name."]
         pub fn get(&self, network_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 network_resource_name: network_resource_name.into(),
             }
         }
+        #[doc = "Creates or updates a Network resource."]
         pub fn create_or_update(
             &self,
             network_resource_name: impl Into<String>,
@@ -21792,12 +22016,14 @@ pub mod mesh_network {
                 network_resource_description: network_resource_description.into(),
             }
         }
+        #[doc = "Deletes the Network resource."]
         pub fn delete(&self, network_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 network_resource_name: network_resource_name.into(),
             }
         }
+        #[doc = "Lists all the network resources."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -22104,12 +22330,14 @@ pub mod mesh_application {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Application resource with the given name."]
         pub fn get(&self, application_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
             }
         }
+        #[doc = "Creates or updates a Application resource."]
         pub fn create_or_update(
             &self,
             application_resource_name: impl Into<String>,
@@ -22121,15 +22349,18 @@ pub mod mesh_application {
                 application_resource_description: application_resource_description.into(),
             }
         }
+        #[doc = "Deletes the Application resource."]
         pub fn delete(&self, application_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
             }
         }
+        #[doc = "Lists all the application resources."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets the progress of the latest upgrade performed on this application resource."]
         pub fn get_upgrade_progress(&self, application_resource_name: impl Into<String>) -> get_upgrade_progress::Builder {
             get_upgrade_progress::Builder {
                 client: self.0.clone(),
@@ -22528,6 +22759,7 @@ pub mod mesh_service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Service resource with the given name."]
         pub fn get(&self, application_resource_name: impl Into<String>, service_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -22535,6 +22767,7 @@ pub mod mesh_service {
                 service_resource_name: service_resource_name.into(),
             }
         }
+        #[doc = "Lists all the service resources."]
         pub fn list(&self, application_resource_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -22699,6 +22932,7 @@ pub mod mesh_code_package {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the logs from the container."]
         pub fn get_container_logs(
             &self,
             application_resource_name: impl Into<String>,
@@ -22808,6 +23042,7 @@ pub mod mesh_service_replica {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the given replica of the service of an application."]
         pub fn get(
             &self,
             application_resource_name: impl Into<String>,
@@ -22821,6 +23056,7 @@ pub mod mesh_service_replica {
                 replica_name: replica_name.into(),
             }
         }
+        #[doc = "Lists all the replicas of a service."]
         pub fn list(&self, application_resource_name: impl Into<String>, service_resource_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -22988,12 +23224,14 @@ pub mod mesh_gateway {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Gateway resource with the given name."]
         pub fn get(&self, gateway_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 gateway_resource_name: gateway_resource_name.into(),
             }
         }
+        #[doc = "Creates or updates a Gateway resource."]
         pub fn create_or_update(
             &self,
             gateway_resource_name: impl Into<String>,
@@ -23005,12 +23243,14 @@ pub mod mesh_gateway {
                 gateway_resource_description: gateway_resource_description.into(),
             }
         }
+        #[doc = "Deletes the Gateway resource."]
         pub fn delete(&self, gateway_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 gateway_resource_name: gateway_resource_name.into(),
             }
         }
+        #[doc = "Lists all the gateway resources."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

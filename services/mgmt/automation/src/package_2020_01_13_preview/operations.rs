@@ -4390,6 +4390,7 @@ pub mod automation_account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the Automation Accounts within an Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

@@ -783,6 +783,7 @@ pub mod alerts {
                 custom_time_range: None,
             }
         }
+        #[doc = "Get a specific alert."]
         pub fn get_by_id(&self, subscription_id: impl Into<String>, alert_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -1509,6 +1510,7 @@ pub mod smart_groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all Smart Groups within a specified subscription"]
         pub fn get_all(&self, subscription_id: impl Into<String>) -> get_all::Builder {
             get_all::Builder {
                 client: self.0.clone(),
@@ -1526,6 +1528,7 @@ pub mod smart_groups {
                 sort_order: None,
             }
         }
+        #[doc = "Get information related to a specific Smart Group."]
         pub fn get_by_id(&self, subscription_id: impl Into<String>, smart_group_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),

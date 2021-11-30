@@ -401,6 +401,7 @@ pub mod private_clouds {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List private clouds in a resource group"]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -408,12 +409,14 @@ pub mod private_clouds {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List private clouds in a subscription"]
         pub fn list_in_subscription(&self, subscription_id: impl Into<String>) -> list_in_subscription::Builder {
             list_in_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -427,6 +430,7 @@ pub mod private_clouds {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Create or update a private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -442,6 +446,7 @@ pub mod private_clouds {
                 private_cloud: private_cloud.into(),
             }
         }
+        #[doc = "Update a private cloud"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -457,6 +462,7 @@ pub mod private_clouds {
                 private_cloud_update: private_cloud_update.into(),
             }
         }
+        #[doc = "Delete a private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -470,6 +476,7 @@ pub mod private_clouds {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "List the admin credentials for the private cloud"]
         pub fn list_admin_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -1052,6 +1059,7 @@ pub mod clusters {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List clusters in a private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1065,6 +1073,7 @@ pub mod clusters {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get a cluster by name in a private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1080,6 +1089,7 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Create or update a cluster in a private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1097,6 +1107,7 @@ pub mod clusters {
                 cluster: cluster.into(),
             }
         }
+        #[doc = "Update a cluster in a private cloud"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1114,6 +1125,7 @@ pub mod clusters {
                 cluster_update: cluster_update.into(),
             }
         }
+        #[doc = "Delete a cluster in a private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1557,6 +1569,7 @@ pub mod hcx_enterprise_sites {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List HCX Enterprise Sites in a private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1570,6 +1583,7 @@ pub mod hcx_enterprise_sites {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get an HCX Enterprise Site by name in a private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1585,6 +1599,7 @@ pub mod hcx_enterprise_sites {
                 hcx_enterprise_site_name: hcx_enterprise_site_name.into(),
             }
         }
+        #[doc = "Create or update an HCX Enterprise Site in a private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1602,6 +1617,7 @@ pub mod hcx_enterprise_sites {
                 hcx_enterprise_site: hcx_enterprise_site.into(),
             }
         }
+        #[doc = "Delete an HCX Enterprise Site in a private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1951,6 +1967,7 @@ pub mod authorizations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List ExpressRoute Circuit Authorizations in a private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1964,6 +1981,7 @@ pub mod authorizations {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get an ExpressRoute Circuit Authorization by name in a private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1979,6 +1997,7 @@ pub mod authorizations {
                 authorization_name: authorization_name.into(),
             }
         }
+        #[doc = "Create or update an ExpressRoute Circuit Authorization in a private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1996,6 +2015,7 @@ pub mod authorizations {
                 authorization: authorization.into(),
             }
         }
+        #[doc = "Delete an ExpressRoute Circuit Authorization in a private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

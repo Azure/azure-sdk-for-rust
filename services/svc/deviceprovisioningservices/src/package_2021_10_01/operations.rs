@@ -119,12 +119,14 @@ pub mod individual_enrollment {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a device enrollment record."]
         pub fn get(&self, id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 id: id.into(),
             }
         }
+        #[doc = "Create or update a device enrollment record."]
         pub fn create_or_update(
             &self,
             id: impl Into<String>,
@@ -137,6 +139,7 @@ pub mod individual_enrollment {
                 if_match: None,
             }
         }
+        #[doc = "Delete a device enrollment record."]
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -144,6 +147,7 @@ pub mod individual_enrollment {
                 if_match: None,
             }
         }
+        #[doc = "Query the device enrollment records."]
         pub fn query(&self, query_specification: impl Into<models::QuerySpecification>) -> query::Builder {
             query::Builder {
                 client: self.0.clone(),
@@ -152,12 +156,14 @@ pub mod individual_enrollment {
                 x_ms_continuation: None,
             }
         }
+        #[doc = "Get the attestation mechanism in the device enrollment record."]
         pub fn get_attestation_mechanism(&self, id: impl Into<String>) -> get_attestation_mechanism::Builder {
             get_attestation_mechanism::Builder {
                 client: self.0.clone(),
                 id: id.into(),
             }
         }
+        #[doc = "Bulk device enrollment operation with maximum of 10 enrollments."]
         pub fn run_bulk_operation(&self, bulk_operation: impl Into<models::BulkEnrollmentOperation>) -> run_bulk_operation::Builder {
             run_bulk_operation::Builder {
                 client: self.0.clone(),
@@ -618,12 +624,14 @@ pub mod enrollment_group {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a device enrollment group."]
         pub fn get(&self, id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 id: id.into(),
             }
         }
+        #[doc = "Create or update a device enrollment group."]
         pub fn create_or_update(
             &self,
             id: impl Into<String>,
@@ -636,6 +644,7 @@ pub mod enrollment_group {
                 if_match: None,
             }
         }
+        #[doc = "Delete a device enrollment group."]
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -643,6 +652,7 @@ pub mod enrollment_group {
                 if_match: None,
             }
         }
+        #[doc = "Query the device enrollment groups."]
         pub fn query(&self, query_specification: impl Into<models::QuerySpecification>) -> query::Builder {
             query::Builder {
                 client: self.0.clone(),
@@ -651,12 +661,14 @@ pub mod enrollment_group {
                 x_ms_continuation: None,
             }
         }
+        #[doc = "Get the attestation mechanism in the device enrollment group record."]
         pub fn get_attestation_mechanism(&self, id: impl Into<String>) -> get_attestation_mechanism::Builder {
             get_attestation_mechanism::Builder {
                 client: self.0.clone(),
                 id: id.into(),
             }
         }
+        #[doc = "Bulk device enrollment group operation with maximum of 10 groups."]
         pub fn run_bulk_operation(&self, bulk_operation: impl Into<models::BulkEnrollmentGroupOperation>) -> run_bulk_operation::Builder {
             run_bulk_operation::Builder {
                 client: self.0.clone(),
@@ -1117,12 +1129,14 @@ pub mod device_registration_state {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the device registration state."]
         pub fn get(&self, id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 id: id.into(),
             }
         }
+        #[doc = "Deletes the device registration"]
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1130,6 +1144,7 @@ pub mod device_registration_state {
                 if_match: None,
             }
         }
+        #[doc = "Gets the registration state of devices in this enrollmentGroup."]
         pub fn query(&self, id: impl Into<String>) -> query::Builder {
             query::Builder {
                 client: self.0.clone(),

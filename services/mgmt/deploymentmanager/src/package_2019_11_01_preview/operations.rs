@@ -155,6 +155,7 @@ pub mod service_topologies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the service topology."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -168,6 +169,7 @@ pub mod service_topologies {
                 service_topology_name: service_topology_name.into(),
             }
         }
+        #[doc = "Creates or updates a service topology."]
         pub fn create_or_update(
             &self,
             service_topology_info: impl Into<models::ServiceTopologyResource>,
@@ -183,6 +185,7 @@ pub mod service_topologies {
                 service_topology_name: service_topology_name.into(),
             }
         }
+        #[doc = "Deletes the service topology."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -196,6 +199,7 @@ pub mod service_topologies {
                 service_topology_name: service_topology_name.into(),
             }
         }
+        #[doc = "Lists the service topologies in the resource group."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -520,6 +524,7 @@ pub mod services {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the service."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -535,6 +540,7 @@ pub mod services {
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Creates or updates a service in the service topology."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -552,6 +558,7 @@ pub mod services {
                 service_info: service_info.into(),
             }
         }
+        #[doc = "Deletes the service."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -567,6 +574,7 @@ pub mod services {
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Lists the services in the service topology."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -903,6 +911,7 @@ pub mod service_units {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the service unit."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -920,6 +929,7 @@ pub mod service_units {
                 service_unit_name: service_unit_name.into(),
             }
         }
+        #[doc = "Creates or updates a service unit under the service in the service topology."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -939,6 +949,7 @@ pub mod service_units {
                 service_unit_info: service_unit_info.into(),
             }
         }
+        #[doc = "Deletes the service unit."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -956,6 +967,7 @@ pub mod service_units {
                 service_unit_name: service_unit_name.into(),
             }
         }
+        #[doc = "Lists the service units under a service in the service topology."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1271,6 +1283,7 @@ pub mod steps {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the step."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1284,6 +1297,7 @@ pub mod steps {
                 step_name: step_name.into(),
             }
         }
+        #[doc = "Creates or updates a rollout step with the given step properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1298,6 +1312,7 @@ pub mod steps {
                 step_info: None,
             }
         }
+        #[doc = "Deletes the step."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1311,6 +1326,7 @@ pub mod steps {
                 step_name: step_name.into(),
             }
         }
+        #[doc = "Lists the steps in a resource group."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1641,6 +1657,7 @@ pub mod rollouts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets detailed information of a rollout."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1655,6 +1672,7 @@ pub mod rollouts {
                 retry_attempt: None,
             }
         }
+        #[doc = "Creates or updates a rollout."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1669,6 +1687,7 @@ pub mod rollouts {
                 rollout_request: None,
             }
         }
+        #[doc = "Deletes a rollout resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1682,6 +1701,7 @@ pub mod rollouts {
                 rollout_name: rollout_name.into(),
             }
         }
+        #[doc = "Stops a running rollout."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -1695,6 +1715,7 @@ pub mod rollouts {
                 rollout_name: rollout_name.into(),
             }
         }
+        #[doc = "Restarts a failed rollout and optionally skips all succeeded steps."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -1709,6 +1730,7 @@ pub mod rollouts {
                 skip_succeeded: None,
             }
         }
+        #[doc = "Lists the rollouts in a resource group."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2211,6 +2233,7 @@ pub mod artifact_sources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an artifact source."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2224,6 +2247,7 @@ pub mod artifact_sources {
                 artifact_source_name: artifact_source_name.into(),
             }
         }
+        #[doc = "Creates or updates an artifact source."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2238,6 +2262,7 @@ pub mod artifact_sources {
                 artifact_source_info: None,
             }
         }
+        #[doc = "Deletes an artifact source."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2251,6 +2276,7 @@ pub mod artifact_sources {
                 artifact_source_name: artifact_source_name.into(),
             }
         }
+        #[doc = "Lists the artifact sources in a resource group."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2581,6 +2607,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the supported operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

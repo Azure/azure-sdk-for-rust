@@ -266,6 +266,7 @@ pub mod application {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the applications available in the specified Account."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -276,6 +277,7 @@ pub mod application {
                 ocp_date: None,
             }
         }
+        #[doc = "Gets information about the specified Application."]
         pub fn get(&self, application_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -501,6 +503,7 @@ pub mod pool {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the usage metrics, aggregated by Pool across individual time intervals, for the specified Account."]
         pub fn list_usage_metrics(&self) -> list_usage_metrics::Builder {
             list_usage_metrics::Builder {
                 client: self.0.clone(),
@@ -514,6 +517,7 @@ pub mod pool {
                 ocp_date: None,
             }
         }
+        #[doc = "Gets lifetime summary statistics for all of the Pools in the specified Account."]
         pub fn get_all_lifetime_statistics(&self) -> get_all_lifetime_statistics::Builder {
             get_all_lifetime_statistics::Builder {
                 client: self.0.clone(),
@@ -523,6 +527,7 @@ pub mod pool {
                 ocp_date: None,
             }
         }
+        #[doc = "Lists all of the Pools in the specified Account."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -536,6 +541,7 @@ pub mod pool {
                 ocp_date: None,
             }
         }
+        #[doc = "Adds a Pool to the specified Account."]
         pub fn add(&self, pool: impl Into<models::PoolAddParameter>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -562,6 +568,7 @@ pub mod pool {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Updates the properties of the specified Pool."]
         pub fn patch(&self, pool_id: impl Into<String>, pool_patch_parameter: impl Into<models::PoolPatchParameter>) -> patch::Builder {
             patch::Builder {
                 client: self.0.clone(),
@@ -577,6 +584,7 @@ pub mod pool {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Deletes a Pool from the specified Account."]
         pub fn delete(&self, pool_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -605,6 +613,7 @@ pub mod pool {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Disables automatic scaling for a Pool."]
         pub fn disable_auto_scale(&self, pool_id: impl Into<String>) -> disable_auto_scale::Builder {
             disable_auto_scale::Builder {
                 client: self.0.clone(),
@@ -615,6 +624,7 @@ pub mod pool {
                 ocp_date: None,
             }
         }
+        #[doc = "Enables automatic scaling for a Pool."]
         pub fn enable_auto_scale(
             &self,
             pool_id: impl Into<String>,
@@ -634,6 +644,7 @@ pub mod pool {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Gets the result of evaluating an automatic scaling formula on the Pool."]
         pub fn evaluate_auto_scale(
             &self,
             pool_id: impl Into<String>,
@@ -649,6 +660,7 @@ pub mod pool {
                 ocp_date: None,
             }
         }
+        #[doc = "Changes the number of Compute Nodes that are assigned to a Pool."]
         pub fn resize(&self, pool_id: impl Into<String>, pool_resize_parameter: impl Into<models::PoolResizeParameter>) -> resize::Builder {
             resize::Builder {
                 client: self.0.clone(),
@@ -664,6 +676,7 @@ pub mod pool {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Stops an ongoing resize operation on the Pool."]
         pub fn stop_resize(&self, pool_id: impl Into<String>) -> stop_resize::Builder {
             stop_resize::Builder {
                 client: self.0.clone(),
@@ -678,6 +691,7 @@ pub mod pool {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Updates the properties of the specified Pool."]
         pub fn update_properties(
             &self,
             pool_id: impl Into<String>,
@@ -693,6 +707,7 @@ pub mod pool {
                 ocp_date: None,
             }
         }
+        #[doc = "Removes Compute Nodes from the specified Pool."]
         pub fn remove_nodes(
             &self,
             pool_id: impl Into<String>,
@@ -2536,6 +2551,7 @@ pub mod account {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Virtual Machine Images supported by the Azure Batch service."]
         pub fn list_supported_images(&self) -> list_supported_images::Builder {
             list_supported_images::Builder {
                 client: self.0.clone(),
@@ -2798,6 +2814,7 @@ pub mod job {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets lifetime summary statistics for all of the Jobs in the specified Account."]
         pub fn get_all_lifetime_statistics(&self) -> get_all_lifetime_statistics::Builder {
             get_all_lifetime_statistics::Builder {
                 client: self.0.clone(),
@@ -2807,6 +2824,7 @@ pub mod job {
                 ocp_date: None,
             }
         }
+        #[doc = "Gets information about the specified Job."]
         pub fn get(&self, job_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2823,6 +2841,7 @@ pub mod job {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Updates the properties of the specified Job."]
         pub fn update(&self, job_id: impl Into<String>, job_update_parameter: impl Into<models::JobUpdateParameter>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -2838,6 +2857,7 @@ pub mod job {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Updates the properties of the specified Job."]
         pub fn patch(&self, job_id: impl Into<String>, job_patch_parameter: impl Into<models::JobPatchParameter>) -> patch::Builder {
             patch::Builder {
                 client: self.0.clone(),
@@ -2853,6 +2873,7 @@ pub mod job {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Deletes a Job."]
         pub fn delete(&self, job_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -2867,6 +2888,7 @@ pub mod job {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Disables the specified Job, preventing new Tasks from running."]
         pub fn disable(
             &self,
             job_id: impl Into<String>,
@@ -2886,6 +2908,7 @@ pub mod job {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Enables the specified Job, allowing new Tasks to run."]
         pub fn enable(&self, job_id: impl Into<String>) -> enable::Builder {
             enable::Builder {
                 client: self.0.clone(),
@@ -2900,6 +2923,7 @@ pub mod job {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Terminates the specified Job, marking it as completed."]
         pub fn terminate(&self, job_id: impl Into<String>) -> terminate::Builder {
             terminate::Builder {
                 client: self.0.clone(),
@@ -2915,6 +2939,7 @@ pub mod job {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Lists all of the Jobs in the specified Account."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2928,6 +2953,7 @@ pub mod job {
                 ocp_date: None,
             }
         }
+        #[doc = "Adds a Job to the specified Account."]
         pub fn add(&self, job: impl Into<models::JobAddParameter>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -2938,6 +2964,7 @@ pub mod job {
                 ocp_date: None,
             }
         }
+        #[doc = "Lists the Jobs that have been created under the specified Job Schedule."]
         pub fn list_from_job_schedule(&self, job_schedule_id: impl Into<String>) -> list_from_job_schedule::Builder {
             list_from_job_schedule::Builder {
                 client: self.0.clone(),
@@ -2952,6 +2979,7 @@ pub mod job {
                 ocp_date: None,
             }
         }
+        #[doc = "Lists the execution status of the Job Preparation and Job Release Task for the specified Job across the Compute Nodes where the Job has run."]
         pub fn list_preparation_and_release_task_status(
             &self,
             job_id: impl Into<String>,
@@ -2968,6 +2996,7 @@ pub mod job {
                 ocp_date: None,
             }
         }
+        #[doc = "Gets the Task counts for the specified Job."]
         pub fn get_task_counts(&self, job_id: impl Into<String>) -> get_task_counts::Builder {
             get_task_counts::Builder {
                 client: self.0.clone(),
@@ -4613,6 +4642,7 @@ pub mod certificate {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the Certificates that have been added to the specified Account."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -4625,6 +4655,7 @@ pub mod certificate {
                 ocp_date: None,
             }
         }
+        #[doc = "Adds a Certificate to the specified Account."]
         pub fn add(&self, certificate: impl Into<models::CertificateAddParameter>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -4635,6 +4666,7 @@ pub mod certificate {
                 ocp_date: None,
             }
         }
+        #[doc = "Cancels a failed deletion of a Certificate from the specified Account."]
         pub fn cancel_deletion(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> cancel_deletion::Builder {
             cancel_deletion::Builder {
                 client: self.0.clone(),
@@ -4658,6 +4690,7 @@ pub mod certificate {
                 ocp_date: None,
             }
         }
+        #[doc = "Deletes a Certificate from the specified Account."]
         pub fn delete(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -5236,6 +5269,7 @@ pub mod file {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Deletes the specified Task file from the Compute Node where the Task ran."]
         pub fn delete_from_task(
             &self,
             job_id: impl Into<String>,
@@ -5293,6 +5327,7 @@ pub mod file {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Deletes the specified file from the Compute Node."]
         pub fn delete_from_compute_node(
             &self,
             pool_id: impl Into<String>,
@@ -5330,6 +5365,7 @@ pub mod file {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Lists the files in a Task's directory on its Compute Node."]
         pub fn list_from_task(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> list_from_task::Builder {
             list_from_task::Builder {
                 client: self.0.clone(),
@@ -5344,6 +5380,7 @@ pub mod file {
                 ocp_date: None,
             }
         }
+        #[doc = "Lists all of the files in Task directories on the specified Compute Node."]
         pub fn list_from_compute_node(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> list_from_compute_node::Builder {
             list_from_compute_node::Builder {
                 client: self.0.clone(),
@@ -6362,6 +6399,7 @@ pub mod job_schedule {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Updates the properties of the specified Job Schedule."]
         pub fn update(
             &self,
             job_schedule_id: impl Into<String>,
@@ -6381,6 +6419,7 @@ pub mod job_schedule {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Updates the properties of the specified Job Schedule."]
         pub fn patch(
             &self,
             job_schedule_id: impl Into<String>,
@@ -6400,6 +6439,7 @@ pub mod job_schedule {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Deletes a Job Schedule from the specified Account."]
         pub fn delete(&self, job_schedule_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -6414,6 +6454,7 @@ pub mod job_schedule {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Checks the specified Job Schedule exists."]
         pub fn exists(&self, job_schedule_id: impl Into<String>) -> exists::Builder {
             exists::Builder {
                 client: self.0.clone(),
@@ -6428,6 +6469,7 @@ pub mod job_schedule {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Disables a Job Schedule."]
         pub fn disable(&self, job_schedule_id: impl Into<String>) -> disable::Builder {
             disable::Builder {
                 client: self.0.clone(),
@@ -6442,6 +6484,7 @@ pub mod job_schedule {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Enables a Job Schedule."]
         pub fn enable(&self, job_schedule_id: impl Into<String>) -> enable::Builder {
             enable::Builder {
                 client: self.0.clone(),
@@ -6456,6 +6499,7 @@ pub mod job_schedule {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Terminates a Job Schedule."]
         pub fn terminate(&self, job_schedule_id: impl Into<String>) -> terminate::Builder {
             terminate::Builder {
                 client: self.0.clone(),
@@ -6470,6 +6514,7 @@ pub mod job_schedule {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Lists all of the Job Schedules in the specified Account."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -6483,6 +6528,7 @@ pub mod job_schedule {
                 ocp_date: None,
             }
         }
+        #[doc = "Adds a Job Schedule to the specified Account."]
         pub fn add(&self, cloud_job_schedule: impl Into<models::JobScheduleAddParameter>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -7785,6 +7831,7 @@ pub mod task {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the Tasks that are associated with the specified Job."]
         pub fn list(&self, job_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -7799,6 +7846,7 @@ pub mod task {
                 ocp_date: None,
             }
         }
+        #[doc = "Adds a Task to the specified Job."]
         pub fn add(&self, job_id: impl Into<String>, task: impl Into<models::TaskAddParameter>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -7810,6 +7858,7 @@ pub mod task {
                 ocp_date: None,
             }
         }
+        #[doc = "Adds a collection of Tasks to the specified Job."]
         pub fn add_collection(
             &self,
             job_id: impl Into<String>,
@@ -7825,6 +7874,7 @@ pub mod task {
                 ocp_date: None,
             }
         }
+        #[doc = "Gets information about the specified Task."]
         pub fn get(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -7863,6 +7913,7 @@ pub mod task {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Deletes a Task from the specified Job."]
         pub fn delete(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -7878,6 +7929,7 @@ pub mod task {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Lists all of the subtasks that are associated with the specified multi-instance Task."]
         pub fn list_subtasks(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> list_subtasks::Builder {
             list_subtasks::Builder {
                 client: self.0.clone(),
@@ -7890,6 +7942,7 @@ pub mod task {
                 ocp_date: None,
             }
         }
+        #[doc = "Terminates the specified Task."]
         pub fn terminate(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> terminate::Builder {
             terminate::Builder {
                 client: self.0.clone(),
@@ -7905,6 +7958,7 @@ pub mod task {
                 if_unmodified_since: None,
             }
         }
+        #[doc = "Reactivates a Task, allowing it to run again even if its retry count has been exhausted."]
         pub fn reactivate(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> reactivate::Builder {
             reactivate::Builder {
                 client: self.0.clone(),
@@ -9052,6 +9106,7 @@ pub mod compute_node {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Adds a user Account to the specified Compute Node."]
         pub fn add_user(
             &self,
             pool_id: impl Into<String>,
@@ -9069,6 +9124,7 @@ pub mod compute_node {
                 ocp_date: None,
             }
         }
+        #[doc = "Updates the password and expiration time of a user Account on the specified Compute Node."]
         pub fn update_user(
             &self,
             pool_id: impl Into<String>,
@@ -9088,6 +9144,7 @@ pub mod compute_node {
                 ocp_date: None,
             }
         }
+        #[doc = "Deletes a user Account from the specified Compute Node."]
         pub fn delete_user(
             &self,
             pool_id: impl Into<String>,
@@ -9105,6 +9162,7 @@ pub mod compute_node {
                 ocp_date: None,
             }
         }
+        #[doc = "Gets information about the specified Compute Node."]
         pub fn get(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -9117,6 +9175,7 @@ pub mod compute_node {
                 ocp_date: None,
             }
         }
+        #[doc = "Restarts the specified Compute Node."]
         pub fn reboot(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> reboot::Builder {
             reboot::Builder {
                 client: self.0.clone(),
@@ -9129,6 +9188,7 @@ pub mod compute_node {
                 ocp_date: None,
             }
         }
+        #[doc = "Reinstalls the operating system on the specified Compute Node."]
         pub fn reimage(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> reimage::Builder {
             reimage::Builder {
                 client: self.0.clone(),
@@ -9141,6 +9201,7 @@ pub mod compute_node {
                 ocp_date: None,
             }
         }
+        #[doc = "Disables Task scheduling on the specified Compute Node."]
         pub fn disable_scheduling(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> disable_scheduling::Builder {
             disable_scheduling::Builder {
                 client: self.0.clone(),
@@ -9153,6 +9214,7 @@ pub mod compute_node {
                 ocp_date: None,
             }
         }
+        #[doc = "Enables Task scheduling on the specified Compute Node."]
         pub fn enable_scheduling(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> enable_scheduling::Builder {
             enable_scheduling::Builder {
                 client: self.0.clone(),
@@ -9164,6 +9226,7 @@ pub mod compute_node {
                 ocp_date: None,
             }
         }
+        #[doc = "Gets the settings required for remote login to a Compute Node."]
         pub fn get_remote_login_settings(
             &self,
             pool_id: impl Into<String>,
@@ -9179,6 +9242,7 @@ pub mod compute_node {
                 ocp_date: None,
             }
         }
+        #[doc = "Gets the Remote Desktop Protocol file for the specified Compute Node."]
         pub fn get_remote_desktop(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> get_remote_desktop::Builder {
             get_remote_desktop::Builder {
                 client: self.0.clone(),
@@ -9190,6 +9254,7 @@ pub mod compute_node {
                 ocp_date: None,
             }
         }
+        #[doc = "Upload Azure Batch service log files from the specified Compute Node to Azure Blob Storage."]
         pub fn upload_batch_service_logs(
             &self,
             pool_id: impl Into<String>,
@@ -9207,6 +9272,7 @@ pub mod compute_node {
                 ocp_date: None,
             }
         }
+        #[doc = "Lists the Compute Nodes in the specified Pool."]
         pub fn list(&self, pool_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -10525,6 +10591,7 @@ pub mod compute_node_extension {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified Compute Node Extension."]
         pub fn get(&self, pool_id: impl Into<String>, node_id: impl Into<String>, extension_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -10538,6 +10605,7 @@ pub mod compute_node_extension {
                 ocp_date: None,
             }
         }
+        #[doc = "Lists the Compute Nodes Extensions in the specified Pool."]
         pub fn list(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

@@ -182,6 +182,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -259,6 +260,7 @@ pub mod operation_results {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get an azure operation result."]
         pub fn get(&self, subscription_id: impl Into<String>, operation_result_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -353,6 +355,7 @@ pub mod lab_plans {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all lab plans for a subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -360,6 +363,7 @@ pub mod lab_plans {
                 filter: None,
             }
         }
+        #[doc = "Get all lab plans for a subscription and resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -371,6 +375,7 @@ pub mod lab_plans {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieves a Lab Plan resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -384,6 +389,7 @@ pub mod lab_plans {
                 lab_plan_name: lab_plan_name.into(),
             }
         }
+        #[doc = "Updates or creates a Lab Plan resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -399,6 +405,7 @@ pub mod lab_plans {
                 body: body.into(),
             }
         }
+        #[doc = "Updates a Lab Plan resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -414,6 +421,7 @@ pub mod lab_plans {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a Lab Plan resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -427,6 +435,7 @@ pub mod lab_plans {
                 lab_plan_name: lab_plan_name.into(),
             }
         }
+        #[doc = "Save an image from a lab VM to the attached shared image gallery."]
         pub fn save_image(
             &self,
             subscription_id: impl Into<String>,
@@ -1028,6 +1037,7 @@ pub mod images {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all images."]
         pub fn list_by_lab_plan(
             &self,
             subscription_id: impl Into<String>,
@@ -1042,6 +1052,7 @@ pub mod images {
                 filter: None,
             }
         }
+        #[doc = "Gets an image."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1057,6 +1068,7 @@ pub mod images {
                 image_name: image_name.into(),
             }
         }
+        #[doc = "Updates an image via PUT."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1074,6 +1086,7 @@ pub mod images {
                 body: body.into(),
             }
         }
+        #[doc = "Updates an image."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1423,6 +1436,7 @@ pub mod labs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all labs for a subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1430,6 +1444,7 @@ pub mod labs {
                 filter: None,
             }
         }
+        #[doc = "Get all labs for a subscription and resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1441,6 +1456,7 @@ pub mod labs {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get a lab resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1454,6 +1470,7 @@ pub mod labs {
                 lab_name: lab_name.into(),
             }
         }
+        #[doc = "Create or update a lab resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1469,6 +1486,7 @@ pub mod labs {
                 body: body.into(),
             }
         }
+        #[doc = "Update a lab resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1484,6 +1502,7 @@ pub mod labs {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a lab resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1497,6 +1516,7 @@ pub mod labs {
                 lab_name: lab_name.into(),
             }
         }
+        #[doc = "Publish or re-publish a lab."]
         pub fn publish(
             &self,
             subscription_id: impl Into<String>,
@@ -1510,6 +1530,7 @@ pub mod labs {
                 lab_name: lab_name.into(),
             }
         }
+        #[doc = "Manually sync the lab group."]
         pub fn sync_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2187,6 +2208,7 @@ pub mod users {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all users for a lab."]
         pub fn list_by_lab(
             &self,
             subscription_id: impl Into<String>,
@@ -2201,6 +2223,7 @@ pub mod users {
                 filter: None,
             }
         }
+        #[doc = "Get a lab user."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2216,6 +2239,7 @@ pub mod users {
                 user_name: user_name.into(),
             }
         }
+        #[doc = "Create or update a lab user."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2233,6 +2257,7 @@ pub mod users {
                 body: body.into(),
             }
         }
+        #[doc = "Update a lab user."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2250,6 +2275,7 @@ pub mod users {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a user resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2265,6 +2291,7 @@ pub mod users {
                 user_name: user_name.into(),
             }
         }
+        #[doc = "Invite a user to a lab."]
         pub fn invite(
             &self,
             subscription_id: impl Into<String>,
@@ -2807,6 +2834,7 @@ pub mod virtual_machines {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all virtual machines for a lab."]
         pub fn list_by_lab(
             &self,
             subscription_id: impl Into<String>,
@@ -2821,6 +2849,7 @@ pub mod virtual_machines {
                 filter: None,
             }
         }
+        #[doc = "Get a lab virtual machine."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2836,6 +2865,7 @@ pub mod virtual_machines {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Start a lab virtual machine."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -2851,6 +2881,7 @@ pub mod virtual_machines {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Stop a lab virtual machine."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -2866,6 +2897,7 @@ pub mod virtual_machines {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Re-image a lab virtual machine."]
         pub fn reimage(
             &self,
             subscription_id: impl Into<String>,
@@ -2881,6 +2913,7 @@ pub mod virtual_machines {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Redeploy a lab virtual machine to a different compute node. For troubleshooting connectivity."]
         pub fn redeploy(
             &self,
             subscription_id: impl Into<String>,
@@ -2896,6 +2929,7 @@ pub mod virtual_machines {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Reset a lab virtual machine password."]
         pub fn reset_password(
             &self,
             subscription_id: impl Into<String>,
@@ -3489,6 +3523,7 @@ pub mod schedules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all schedules for a lab."]
         pub fn list_by_lab(
             &self,
             subscription_id: impl Into<String>,
@@ -3503,6 +3538,7 @@ pub mod schedules {
                 filter: None,
             }
         }
+        #[doc = "Get a lab Schedule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3518,6 +3554,7 @@ pub mod schedules {
                 schedule_name: schedule_name.into(),
             }
         }
+        #[doc = "Create or update a lab schedule."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3535,6 +3572,7 @@ pub mod schedules {
                 body: body.into(),
             }
         }
+        #[doc = "Update a lab schedule."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3552,6 +3590,7 @@ pub mod schedules {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a schedule resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

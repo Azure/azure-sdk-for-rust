@@ -167,6 +167,7 @@ pub mod look_up_resource_id {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "This operation fetches ARM resource id of support resource type."]
         pub fn post(&self, look_up_resource_id_request: impl Into<models::LookUpResourceIdRequest>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),

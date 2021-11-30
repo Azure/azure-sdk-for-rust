@@ -218,6 +218,7 @@ pub mod iot_hub_resource {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the non-security related metadata of an IoT hub."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -231,6 +232,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of an IoT hub."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -247,6 +249,7 @@ pub mod iot_hub_resource {
                 if_match: None,
             }
         }
+        #[doc = "Delete an IoT hub."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -260,12 +263,14 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get all the IoT hubs in a subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the IoT hubs in a resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -277,6 +282,7 @@ pub mod iot_hub_resource {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the statistics from an IoT hub."]
         pub fn get_stats(
             &self,
             subscription_id: impl Into<String>,
@@ -290,6 +296,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the list of valid SKUs for an IoT hub."]
         pub fn get_valid_skus(
             &self,
             subscription_id: impl Into<String>,
@@ -303,6 +310,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get a list of the consumer groups in the Event Hub-compatible device-to-cloud endpoint in an IoT hub."]
         pub fn list_event_hub_consumer_groups(
             &self,
             subscription_id: impl Into<String>,
@@ -318,6 +326,7 @@ pub mod iot_hub_resource {
                 event_hub_endpoint_name: event_hub_endpoint_name.into(),
             }
         }
+        #[doc = "Get a consumer group from the Event Hub-compatible device-to-cloud endpoint for an IoT hub."]
         pub fn get_event_hub_consumer_group(
             &self,
             subscription_id: impl Into<String>,
@@ -335,6 +344,7 @@ pub mod iot_hub_resource {
                 name: name.into(),
             }
         }
+        #[doc = "Add a consumer group to an Event Hub-compatible endpoint in an IoT hub."]
         pub fn create_event_hub_consumer_group(
             &self,
             subscription_id: impl Into<String>,
@@ -352,6 +362,7 @@ pub mod iot_hub_resource {
                 name: name.into(),
             }
         }
+        #[doc = "Delete a consumer group from an Event Hub-compatible endpoint in an IoT hub."]
         pub fn delete_event_hub_consumer_group(
             &self,
             subscription_id: impl Into<String>,
@@ -369,6 +380,7 @@ pub mod iot_hub_resource {
                 name: name.into(),
             }
         }
+        #[doc = "Get a list of all the jobs in an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry."]
         pub fn list_jobs(
             &self,
             subscription_id: impl Into<String>,
@@ -382,6 +394,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the details of a job from an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry."]
         pub fn get_job(
             &self,
             subscription_id: impl Into<String>,
@@ -397,6 +410,7 @@ pub mod iot_hub_resource {
                 job_id: job_id.into(),
             }
         }
+        #[doc = "Get the quota metrics for an IoT hub."]
         pub fn get_quota_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -410,6 +424,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Check if an IoT hub name is available."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -421,6 +436,7 @@ pub mod iot_hub_resource {
                 operation_inputs: operation_inputs.into(),
             }
         }
+        #[doc = "Get the security metadata for an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-security."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -434,6 +450,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get a shared access policy by name from an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-security."]
         pub fn get_keys_for_key_name(
             &self,
             subscription_id: impl Into<String>,
@@ -449,6 +466,7 @@ pub mod iot_hub_resource {
                 key_name: key_name.into(),
             }
         }
+        #[doc = "Exports all the device identities in the IoT hub identity registry to an Azure Storage blob container. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry#import-and-export-device-identities."]
         pub fn export_devices(
             &self,
             subscription_id: impl Into<String>,
@@ -464,6 +482,7 @@ pub mod iot_hub_resource {
                 export_devices_parameters: export_devices_parameters.into(),
             }
         }
+        #[doc = "Import, update, or delete device identities in the IoT hub identity registry from a blob. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry#import-and-export-device-identities."]
         pub fn import_devices(
             &self,
             subscription_id: impl Into<String>,
@@ -1995,6 +2014,7 @@ pub mod certificates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the certificate list."]
         pub fn list_by_iot_hub(
             &self,
             subscription_id: impl Into<String>,
@@ -2008,6 +2028,7 @@ pub mod certificates {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the certificate."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2023,6 +2044,7 @@ pub mod certificates {
                 certificate_name: certificate_name.into(),
             }
         }
+        #[doc = "Upload the certificate to the IoT hub."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2041,6 +2063,7 @@ pub mod certificates {
                 if_match: None,
             }
         }
+        #[doc = "Delete an X509 certificate."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2058,6 +2081,7 @@ pub mod certificates {
                 if_match: if_match.into(),
             }
         }
+        #[doc = "Generate verification code for proof of possession flow."]
         pub fn generate_verification_code(
             &self,
             subscription_id: impl Into<String>,
@@ -2075,6 +2099,7 @@ pub mod certificates {
                 if_match: if_match.into(),
             }
         }
+        #[doc = "Verify certificate's private key possession."]
         pub fn verify(
             &self,
             subscription_id: impl Into<String>,

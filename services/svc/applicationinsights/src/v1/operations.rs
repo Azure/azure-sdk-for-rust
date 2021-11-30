@@ -112,6 +112,7 @@ pub mod metrics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve metric data"]
         pub fn get(&self, app_id: impl Into<String>, metric_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -126,6 +127,7 @@ pub mod metrics {
                 filter: None,
             }
         }
+        #[doc = "Retrieve metric data"]
         pub fn get_multiple(&self, app_id: impl Into<String>, body: impl Into<models::MetricsPostBody>) -> get_multiple::Builder {
             get_multiple::Builder {
                 client: self.0.clone(),
@@ -133,6 +135,7 @@ pub mod metrics {
                 body: body.into(),
             }
         }
+        #[doc = "Retrieve metric metadata"]
         pub fn get_metadata(&self, app_id: impl Into<String>) -> get_metadata::Builder {
             get_metadata::Builder {
                 client: self.0.clone(),
@@ -402,6 +405,7 @@ pub mod events {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Execute OData query"]
         pub fn get_by_type(&self, app_id: impl Into<String>, event_type: impl Into<String>) -> get_by_type::Builder {
             get_by_type::Builder {
                 client: self.0.clone(),
@@ -419,6 +423,7 @@ pub mod events {
                 apply: None,
             }
         }
+        #[doc = "Get an event"]
         pub fn get(&self, app_id: impl Into<String>, event_type: impl Into<String>, event_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -428,6 +433,7 @@ pub mod events {
                 timespan: None,
             }
         }
+        #[doc = "Get OData metadata"]
         pub fn get_odata_metadata(&self, app_id: impl Into<String>) -> get_odata_metadata::Builder {
             get_odata_metadata::Builder {
                 client: self.0.clone(),
@@ -741,6 +747,7 @@ pub mod query {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Execute an Analytics query"]
         pub fn get(&self, app_id: impl Into<String>, query: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -749,6 +756,7 @@ pub mod query {
                 timespan: None,
             }
         }
+        #[doc = "Execute an Analytics query"]
         pub fn execute(&self, app_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::Builder {
             execute::Builder {
                 client: self.0.clone(),
@@ -911,12 +919,14 @@ pub mod metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets metadata information"]
         pub fn get(&self, app_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 app_id: app_id.into(),
             }
         }
+        #[doc = "Gets metadata information"]
         pub fn post(&self, app_id: impl Into<String>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),

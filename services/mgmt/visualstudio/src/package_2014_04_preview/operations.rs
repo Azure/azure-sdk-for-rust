@@ -126,6 +126,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Operations_List"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -197,6 +198,7 @@ pub mod accounts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Accounts_CheckNameAvailability"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -208,6 +210,7 @@ pub mod accounts {
                 body: body.into(),
             }
         }
+        #[doc = "Accounts_ListByResourceGroup"]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -219,6 +222,7 @@ pub mod accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Accounts_Get"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -232,6 +236,7 @@ pub mod accounts {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Accounts_CreateOrUpdate"]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -247,6 +252,7 @@ pub mod accounts {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Accounts_Update"]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -262,6 +268,7 @@ pub mod accounts {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Accounts_Delete"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -719,6 +726,7 @@ pub mod extensions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Extensions_ListByAccount"]
         pub fn list_by_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -732,6 +740,7 @@ pub mod extensions {
                 account_resource_name: account_resource_name.into(),
             }
         }
+        #[doc = "Extensions_Get"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -747,6 +756,7 @@ pub mod extensions {
                 extension_resource_name: extension_resource_name.into(),
             }
         }
+        #[doc = "Extensions_Create"]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -764,6 +774,7 @@ pub mod extensions {
                 extension_resource_name: extension_resource_name.into(),
             }
         }
+        #[doc = "Extensions_Update"]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -781,6 +792,7 @@ pub mod extensions {
                 extension_resource_name: extension_resource_name.into(),
             }
         }
+        #[doc = "Extensions_Delete"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1174,6 +1186,7 @@ pub mod projects {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Projects_ListByResourceGroup"]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1187,6 +1200,7 @@ pub mod projects {
                 root_resource_name: root_resource_name.into(),
             }
         }
+        #[doc = "Projects_Get"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1202,6 +1216,7 @@ pub mod projects {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Projects_Create"]
         pub fn create(
             &self,
             body: impl Into<models::ProjectResource>,
@@ -1220,6 +1235,7 @@ pub mod projects {
                 validating: None,
             }
         }
+        #[doc = "Projects_Update"]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1237,6 +1253,7 @@ pub mod projects {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Projects_GetJobStatus"]
         pub fn get_job_status(
             &self,
             resource_group_name: impl Into<String>,

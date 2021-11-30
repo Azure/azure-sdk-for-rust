@@ -2440,6 +2440,7 @@ pub mod protection_intent {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "It will validate followings\r\n1. Vault capacity\r\n2. VM is already protected\r\n3. Any VM related configuration passed in properties."]
         pub fn validate(
             &self,
             azure_region: impl Into<String>,
@@ -2787,6 +2788,7 @@ pub mod backup_status {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the container backup status"]
         pub fn get(
             &self,
             azure_region: impl Into<String>,
@@ -2878,6 +2880,7 @@ pub mod feature_support {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "It will validate if given feature with resource properties is supported in service"]
         pub fn validate(
             &self,
             azure_region: impl Into<String>,
@@ -3654,6 +3657,7 @@ pub mod protection_containers {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Inquires all the protectable items under the given container."]
         pub fn inquire(
             &self,
             vault_name: impl Into<String>,

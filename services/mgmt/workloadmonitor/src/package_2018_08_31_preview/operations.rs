@@ -127,6 +127,7 @@ pub mod monitors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of a monitors of a resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -146,6 +147,7 @@ pub mod monitors {
                 skiptoken: None,
             }
         }
+        #[doc = "Get details of a single monitor."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -165,6 +167,7 @@ pub mod monitors {
                 monitor_id: monitor_id.into(),
             }
         }
+        #[doc = "Update a Monitor's configuration."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -457,6 +460,7 @@ pub mod components {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of components for a resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -481,6 +485,7 @@ pub mod components {
                 skiptoken: None,
             }
         }
+        #[doc = "Get details of a component."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -744,6 +749,7 @@ pub mod monitor_instances {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of monitor instances for a resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -768,6 +774,7 @@ pub mod monitor_instances {
                 skiptoken: None,
             }
         }
+        #[doc = "Get details of a monitorInstance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1033,6 +1040,7 @@ pub mod notification_settings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of notification settings for a resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -1051,6 +1059,7 @@ pub mod notification_settings {
                 skiptoken: None,
             }
         }
+        #[doc = "Get a of notification setting for a resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1070,6 +1079,7 @@ pub mod notification_settings {
                 notification_setting_name: notification_setting_name.into(),
             }
         }
+        #[doc = "Update notification settings for a resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1338,6 +1348,7 @@ pub mod components_summary {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get subscription wide details of components."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1486,6 +1497,7 @@ pub mod monitor_instances_summary {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get subscription wide health instances."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1636,6 +1648,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the details of all operations possible on the resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

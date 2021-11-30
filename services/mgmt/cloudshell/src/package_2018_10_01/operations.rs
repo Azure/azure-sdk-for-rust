@@ -109,6 +109,7 @@ pub enum Error {
     KeepAlive(#[from] keep_alive::Error),
 }
 impl Client {
+    #[doc = "Get user settings."]
     pub fn get_user_settings_with_location(
         &self,
         user_settings_name: impl Into<String>,
@@ -120,6 +121,7 @@ impl Client {
             location: location.into(),
         }
     }
+    #[doc = "put user settings."]
     pub fn put_user_settings_with_location(
         &self,
         user_settings_name: impl Into<String>,
@@ -133,6 +135,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "patch user settings."]
     pub fn patch_user_settings_with_location(
         &self,
         user_settings_name: impl Into<String>,
@@ -146,6 +149,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "delete user settings."]
     pub fn delete_user_settings_with_location(
         &self,
         user_settings_name: impl Into<String>,
@@ -157,6 +161,7 @@ impl Client {
             location: location.into(),
         }
     }
+    #[doc = "Get console"]
     pub fn get_console_with_location(
         &self,
         console_name: impl Into<String>,
@@ -168,6 +173,7 @@ impl Client {
             location: location.into(),
         }
     }
+    #[doc = "Put console"]
     pub fn put_console_with_location(
         &self,
         console_name: impl Into<String>,
@@ -179,6 +185,7 @@ impl Client {
             location: location.into(),
         }
     }
+    #[doc = "Delete console"]
     pub fn delete_console_with_location(
         &self,
         console_name: impl Into<String>,
@@ -190,6 +197,7 @@ impl Client {
             location: location.into(),
         }
     }
+    #[doc = "Keep alive"]
     pub fn keep_alive_with_location(
         &self,
         console_name: impl Into<String>,
@@ -201,12 +209,14 @@ impl Client {
             location: location.into(),
         }
     }
+    #[doc = "Get user settings."]
     pub fn get_user_settings(&self, user_settings_name: impl Into<String>) -> get_user_settings::Builder {
         get_user_settings::Builder {
             client: self.clone(),
             user_settings_name: user_settings_name.into(),
         }
     }
+    #[doc = "put user settings."]
     pub fn put_user_settings(
         &self,
         user_settings_name: impl Into<String>,
@@ -218,6 +228,7 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "patch user settings."]
     pub fn patch_user_settings(
         &self,
         user_settings_name: impl Into<String>,
@@ -229,18 +240,21 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "delete user settings."]
     pub fn delete_user_settings(&self, user_settings_name: impl Into<String>) -> delete_user_settings::Builder {
         delete_user_settings::Builder {
             client: self.clone(),
             user_settings_name: user_settings_name.into(),
         }
     }
+    #[doc = "Get console"]
     pub fn get_console(&self, console_name: impl Into<String>) -> get_console::Builder {
         get_console::Builder {
             client: self.clone(),
             console_name: console_name.into(),
         }
     }
+    #[doc = "Put console"]
     pub fn put_console(&self, console_name: impl Into<String>, parameters: impl Into<models::ConsoleDefinition>) -> put_console::Builder {
         put_console::Builder {
             client: self.clone(),
@@ -248,12 +262,14 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Delete console"]
     pub fn delete_console(&self, console_name: impl Into<String>) -> delete_console::Builder {
         delete_console::Builder {
             client: self.clone(),
             console_name: console_name.into(),
         }
     }
+    #[doc = "Keep alive"]
     pub fn keep_alive(&self, console_name: impl Into<String>) -> keep_alive::Builder {
         keep_alive::Builder {
             client: self.clone(),

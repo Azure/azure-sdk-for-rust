@@ -139,12 +139,14 @@ pub mod marketplace_agreements {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Datadog marketplace agreements in the subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create Datadog marketplace agreement in the subscription."]
         pub fn create_or_update(&self, subscription_id: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -316,6 +318,7 @@ pub mod monitors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the api keys for a given monitor resource."]
         pub fn list_api_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -329,6 +332,7 @@ pub mod monitors {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Get the default api key."]
         pub fn get_default_key(
             &self,
             subscription_id: impl Into<String>,
@@ -342,6 +346,7 @@ pub mod monitors {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Set the default api key."]
         pub fn set_default_key(
             &self,
             subscription_id: impl Into<String>,
@@ -356,6 +361,7 @@ pub mod monitors {
                 body: None,
             }
         }
+        #[doc = "List the hosts for a given monitor resource."]
         pub fn list_hosts(
             &self,
             subscription_id: impl Into<String>,
@@ -369,6 +375,7 @@ pub mod monitors {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "List all Azure resources associated to the same Datadog organization as the target resource."]
         pub fn list_linked_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -382,6 +389,7 @@ pub mod monitors {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "List the resources currently being monitored by the Datadog monitor resource."]
         pub fn list_monitored_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -395,12 +403,14 @@ pub mod monitors {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "List all monitors under the specified subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all monitors under the specified resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -412,6 +422,7 @@ pub mod monitors {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the properties of a specific monitor resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -425,6 +436,7 @@ pub mod monitors {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Create a monitor resource."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -439,6 +451,7 @@ pub mod monitors {
                 body: None,
             }
         }
+        #[doc = "Update a monitor resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -453,6 +466,7 @@ pub mod monitors {
                 body: None,
             }
         }
+        #[doc = "Delete a monitor resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -466,6 +480,7 @@ pub mod monitors {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Refresh the set password link and return a latest one."]
         pub fn refresh_set_password_link(
             &self,
             subscription_id: impl Into<String>,
@@ -1544,6 +1559,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all operations provided by Microsoft.Datadog for the 2021-03-01 api version."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1621,6 +1637,7 @@ pub mod tag_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the tag rules for a given monitor resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1634,6 +1651,7 @@ pub mod tag_rules {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Get a tag rule set for a given monitor resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1649,6 +1667,7 @@ pub mod tag_rules {
                 rule_set_name: rule_set_name.into(),
             }
         }
+        #[doc = "Create or update a tag rule set for a given monitor resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1918,6 +1937,7 @@ pub mod single_sign_on_configurations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the single sign-on configurations for a given monitor resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1931,6 +1951,7 @@ pub mod single_sign_on_configurations {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Gets the datadog single sign-on resource for the given Monitor."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1946,6 +1967,7 @@ pub mod single_sign_on_configurations {
                 configuration_name: configuration_name.into(),
             }
         }
+        #[doc = "Configures single-sign-on for this resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,

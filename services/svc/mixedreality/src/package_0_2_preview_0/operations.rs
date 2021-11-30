@@ -92,6 +92,7 @@ pub mod ingestion_job {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the status of a job request."]
         pub fn get(&self, account_id: impl Into<String>, job_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -100,6 +101,7 @@ pub mod ingestion_job {
                 x_mrc_cv: None,
             }
         }
+        #[doc = "Creates a job request."]
         pub fn create(&self, account_id: impl Into<String>, job_id: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -281,6 +283,7 @@ pub mod blob_upload_endpoint {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a blob upload uri."]
         pub fn get(&self, account_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

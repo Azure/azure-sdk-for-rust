@@ -477,6 +477,7 @@ pub mod canonical_support_plan_types {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the Canonical Support Plans."]
         pub fn get(&self, subscription_id: impl Into<String>, provider_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

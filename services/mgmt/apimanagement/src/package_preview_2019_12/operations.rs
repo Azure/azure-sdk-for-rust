@@ -4190,6 +4190,7 @@ pub mod api_management_service_skus {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets available SKUs for API Management service"]
         pub fn list_available_service_skus(
             &self,
             resource_group_name: impl Into<String>,

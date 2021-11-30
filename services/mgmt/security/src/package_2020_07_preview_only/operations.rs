@@ -107,6 +107,7 @@ pub mod sql_vulnerability_assessment_scans {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the scan details of a single scan record."]
         pub fn get(&self, scan_id: impl Into<String>, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -115,6 +116,7 @@ pub mod sql_vulnerability_assessment_scans {
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Gets a list of scan records."]
         pub fn list(&self, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -282,6 +284,7 @@ pub mod sql_vulnerability_assessment_scan_results {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the scan results of a single rule in a scan record."]
         pub fn get(
             &self,
             scan_id: impl Into<String>,
@@ -297,6 +300,7 @@ pub mod sql_vulnerability_assessment_scan_results {
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Gets a list of scan results for a single scan record."]
         pub fn list(&self, scan_id: impl Into<String>, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -469,6 +473,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the results for a given rule in the Baseline."]
         pub fn get(&self, rule_id: impl Into<String>, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -477,6 +482,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Creates a Baseline for a rule in a database. Will overwrite any previously existing results."]
         pub fn create_or_update(
             &self,
             rule_id: impl Into<String>,
@@ -491,6 +497,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 body: None,
             }
         }
+        #[doc = "Deletes a rule from the Baseline of a given database."]
         pub fn delete(
             &self,
             rule_id: impl Into<String>,
@@ -504,6 +511,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Gets the results for all rules in the Baseline."]
         pub fn list(&self, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -511,6 +519,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Add a list of baseline rules. Will overwrite any previously existing results (for all rules)."]
         pub fn add(&self, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),

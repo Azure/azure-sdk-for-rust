@@ -131,6 +131,7 @@ pub mod apply_updates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Track Updates to resource with parent"]
         pub fn get_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -154,6 +155,7 @@ pub mod apply_updates {
                 apply_update_name: apply_update_name.into(),
             }
         }
+        #[doc = "Track Updates to resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -173,6 +175,7 @@ pub mod apply_updates {
                 apply_update_name: apply_update_name.into(),
             }
         }
+        #[doc = "Apply Updates to resource with parent"]
         pub fn create_or_update_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -194,6 +197,7 @@ pub mod apply_updates {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Apply Updates to resource"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -523,6 +527,7 @@ pub mod configuration_assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Create configuration assignment"]
         pub fn create_or_update_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -548,6 +553,7 @@ pub mod configuration_assignments {
                 configuration_assignment: configuration_assignment.into(),
             }
         }
+        #[doc = "Unregister configuration for resource"]
         pub fn delete_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -571,6 +577,7 @@ pub mod configuration_assignments {
                 configuration_assignment_name: configuration_assignment_name.into(),
             }
         }
+        #[doc = "Create configuration assignment"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -592,6 +599,7 @@ pub mod configuration_assignments {
                 configuration_assignment: configuration_assignment.into(),
             }
         }
+        #[doc = "Unregister configuration for resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -611,6 +619,7 @@ pub mod configuration_assignments {
                 configuration_assignment_name: configuration_assignment_name.into(),
             }
         }
+        #[doc = "List configurationAssignments for resource"]
         pub fn list_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -632,6 +641,7 @@ pub mod configuration_assignments {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "List configurationAssignments for resource"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1089,6 +1099,7 @@ pub mod maintenance_configurations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Configuration record"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1102,6 +1113,7 @@ pub mod maintenance_configurations {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or Update configuration record"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1117,6 +1129,7 @@ pub mod maintenance_configurations {
                 configuration: configuration.into(),
             }
         }
+        #[doc = "Patch configuration record"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1132,6 +1145,7 @@ pub mod maintenance_configurations {
                 configuration: configuration.into(),
             }
         }
+        #[doc = "Delete Configuration record"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1145,6 +1159,7 @@ pub mod maintenance_configurations {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get Configuration records within a subscription"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1544,6 +1559,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List available operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1621,6 +1637,7 @@ pub mod updates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Updates to resource"]
         pub fn list_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -1642,6 +1659,7 @@ pub mod updates {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get Updates to resource"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,

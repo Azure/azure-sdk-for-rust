@@ -227,6 +227,7 @@ pub mod accounts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Accounts in a subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -234,6 +235,7 @@ pub mod accounts {
                 skip_token: None,
             }
         }
+        #[doc = "Get an account under a resource group"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -247,6 +249,7 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Create an account in the given resource group"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -262,6 +265,7 @@ pub mod accounts {
                 account: account.into(),
             }
         }
+        #[doc = "Patch a given account"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -277,6 +281,7 @@ pub mod accounts {
                 account_update_parameters: account_update_parameters.into(),
             }
         }
+        #[doc = "Delete an account"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -290,6 +295,7 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "List Accounts in a resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -803,12 +809,14 @@ pub mod consumer_invitations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the invitations"]
         pub fn list_invitations(&self) -> list_invitations::Builder {
             list_invitations::Builder {
                 client: self.0.clone(),
                 skip_token: None,
             }
         }
+        #[doc = "Gets the invitation identified by invitationId"]
         pub fn get(&self, location: impl Into<String>, invitation_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -816,6 +824,7 @@ pub mod consumer_invitations {
                 invitation_id: invitation_id.into(),
             }
         }
+        #[doc = "Rejects the invitation identified by invitationId"]
         pub fn reject_invitation(
             &self,
             location: impl Into<String>,
@@ -1059,6 +1068,7 @@ pub mod data_sets {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get DataSet in a share."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1076,6 +1086,7 @@ pub mod data_sets {
                 data_set_name: data_set_name.into(),
             }
         }
+        #[doc = "Adds a new data set to an existing share."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1095,6 +1106,7 @@ pub mod data_sets {
                 data_set: data_set.into(),
             }
         }
+        #[doc = "Delete DataSet in a share."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1112,6 +1124,7 @@ pub mod data_sets {
                 data_set_name: data_set_name.into(),
             }
         }
+        #[doc = "List DataSets in a share."]
         pub fn list_by_share(
             &self,
             subscription_id: impl Into<String>,
@@ -1498,6 +1511,7 @@ pub mod data_set_mappings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get DataSetMapping in a shareSubscription."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1515,6 +1529,7 @@ pub mod data_set_mappings {
                 data_set_mapping_name: data_set_mapping_name.into(),
             }
         }
+        #[doc = "Maps a source data set in the source share to a sink data set in the share subscription.\r\nEnables copying the data set from source to destination."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1534,6 +1549,7 @@ pub mod data_set_mappings {
                 data_set_mapping: data_set_mapping.into(),
             }
         }
+        #[doc = "Delete DataSetMapping in a shareSubscription."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1551,6 +1567,7 @@ pub mod data_set_mappings {
                 data_set_mapping_name: data_set_mapping_name.into(),
             }
         }
+        #[doc = "List DataSetMappings in a share subscription."]
         pub fn list_by_share_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -1904,6 +1921,7 @@ pub mod email_registrations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Activates the tenant and email combination using email code received."]
         pub fn activate_email(
             &self,
             location: impl Into<String>,
@@ -1915,6 +1933,7 @@ pub mod email_registrations {
                 email_registration: email_registration.into(),
             }
         }
+        #[doc = "Registers the tenant and email combination for verification."]
         pub fn register_email(&self, location: impl Into<String>) -> register_email::Builder {
             register_email::Builder {
                 client: self.0.clone(),
@@ -2076,6 +2095,7 @@ pub mod invitations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Invitation in a share."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2093,6 +2113,7 @@ pub mod invitations {
                 invitation_name: invitation_name.into(),
             }
         }
+        #[doc = "Sends a new invitation to a recipient to access a share."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2112,6 +2133,7 @@ pub mod invitations {
                 invitation: invitation.into(),
             }
         }
+        #[doc = "Delete Invitation in a share."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2129,6 +2151,7 @@ pub mod invitations {
                 invitation_name: invitation_name.into(),
             }
         }
+        #[doc = "List all Invitations in a share."]
         pub fn list_by_share(
             &self,
             subscription_id: impl Into<String>,
@@ -2513,6 +2536,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2590,6 +2614,7 @@ pub mod shares {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List data set level details for a share synchronization"]
         pub fn list_synchronization_details(
             &self,
             subscription_id: impl Into<String>,
@@ -2610,6 +2635,7 @@ pub mod shares {
                 orderby: None,
             }
         }
+        #[doc = "List Synchronizations in a share"]
         pub fn list_synchronizations(
             &self,
             subscription_id: impl Into<String>,
@@ -2628,6 +2654,7 @@ pub mod shares {
                 orderby: None,
             }
         }
+        #[doc = "Get a specified share"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2643,6 +2670,7 @@ pub mod shares {
                 share_name: share_name.into(),
             }
         }
+        #[doc = "Create a share in the given account."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2660,6 +2688,7 @@ pub mod shares {
                 share: share.into(),
             }
         }
+        #[doc = "Deletes a share"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2675,6 +2704,7 @@ pub mod shares {
                 share_name: share_name.into(),
             }
         }
+        #[doc = "List of available shares under an account."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -3260,6 +3290,7 @@ pub mod provider_share_subscriptions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Adjust the expiration date of a share subscription in a provider share."]
         pub fn adjust(
             &self,
             subscription_id: impl Into<String>,
@@ -3279,6 +3310,7 @@ pub mod provider_share_subscriptions {
                 provider_share_subscription: provider_share_subscription.into(),
             }
         }
+        #[doc = "Reinstate share subscription in a provider share."]
         pub fn reinstate(
             &self,
             subscription_id: impl Into<String>,
@@ -3298,6 +3330,7 @@ pub mod provider_share_subscriptions {
                 provider_share_subscription: provider_share_subscription.into(),
             }
         }
+        #[doc = "Revoke share subscription in a provider share."]
         pub fn revoke(
             &self,
             subscription_id: impl Into<String>,
@@ -3315,6 +3348,7 @@ pub mod provider_share_subscriptions {
                 provider_share_subscription_id: provider_share_subscription_id.into(),
             }
         }
+        #[doc = "Get share subscription in a provider share."]
         pub fn get_by_share(
             &self,
             subscription_id: impl Into<String>,
@@ -3332,6 +3366,7 @@ pub mod provider_share_subscriptions {
                 provider_share_subscription_id: provider_share_subscription_id.into(),
             }
         }
+        #[doc = "List of available share subscriptions to a provider share."]
         pub fn list_by_share(
             &self,
             subscription_id: impl Into<String>,
@@ -3744,6 +3779,7 @@ pub mod share_subscriptions {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Request cancellation of a data share snapshot"]
         pub fn cancel_synchronization(
             &self,
             subscription_id: impl Into<String>,
@@ -3761,6 +3797,7 @@ pub mod share_subscriptions {
                 share_subscription_synchronization: share_subscription_synchronization.into(),
             }
         }
+        #[doc = "Get source share synchronization settings for a shareSubscription."]
         pub fn list_source_share_synchronization_settings(
             &self,
             subscription_id: impl Into<String>,
@@ -3777,6 +3814,7 @@ pub mod share_subscriptions {
                 skip_token: None,
             }
         }
+        #[doc = "List data set level details for a share subscription synchronization"]
         pub fn list_synchronization_details(
             &self,
             subscription_id: impl Into<String>,
@@ -3797,6 +3835,7 @@ pub mod share_subscriptions {
                 orderby: None,
             }
         }
+        #[doc = "List Synchronizations in a share subscription."]
         pub fn list_synchronizations(
             &self,
             subscription_id: impl Into<String>,
@@ -3815,6 +3854,7 @@ pub mod share_subscriptions {
                 orderby: None,
             }
         }
+        #[doc = "Initiate an asynchronous data share job"]
         pub fn synchronize(
             &self,
             subscription_id: impl Into<String>,
@@ -3832,6 +3872,7 @@ pub mod share_subscriptions {
                 synchronize: synchronize.into(),
             }
         }
+        #[doc = "Get shareSubscription in an account."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3847,6 +3888,7 @@ pub mod share_subscriptions {
                 share_subscription_name: share_subscription_name.into(),
             }
         }
+        #[doc = "Create shareSubscription in an account."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3864,6 +3906,7 @@ pub mod share_subscriptions {
                 share_subscription: share_subscription.into(),
             }
         }
+        #[doc = "Delete shareSubscription in an account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3879,6 +3922,7 @@ pub mod share_subscriptions {
                 share_subscription_name: share_subscription_name.into(),
             }
         }
+        #[doc = "List of available share subscriptions under an account."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -4720,6 +4764,7 @@ pub mod consumer_source_data_sets {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get source dataSets of a shareSubscription."]
         pub fn list_by_share_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -4822,6 +4867,7 @@ pub mod synchronization_settings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get synchronizationSetting in a share."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4839,6 +4885,7 @@ pub mod synchronization_settings {
                 synchronization_setting_name: synchronization_setting_name.into(),
             }
         }
+        #[doc = "Adds a new synchronization setting to an existing share."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -4858,6 +4905,7 @@ pub mod synchronization_settings {
                 synchronization_setting: synchronization_setting.into(),
             }
         }
+        #[doc = "Delete synchronizationSetting in a share."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4875,6 +4923,7 @@ pub mod synchronization_settings {
                 synchronization_setting_name: synchronization_setting_name.into(),
             }
         }
+        #[doc = "List synchronizationSettings in a share."]
         pub fn list_by_share(
             &self,
             subscription_id: impl Into<String>,
@@ -5226,6 +5275,7 @@ pub mod triggers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Trigger in a shareSubscription."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5243,6 +5293,7 @@ pub mod triggers {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "This method creates a trigger for a share subscription"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -5262,6 +5313,7 @@ pub mod triggers {
                 trigger: trigger.into(),
             }
         }
+        #[doc = "Delete Trigger in a shareSubscription."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5279,6 +5331,7 @@ pub mod triggers {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "List Triggers in a share subscription."]
         pub fn list_by_share_subscription(
             &self,
             subscription_id: impl Into<String>,

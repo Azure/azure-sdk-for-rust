@@ -136,6 +136,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all operations provided by Microsoft.Elastic."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -213,12 +214,14 @@ pub mod monitors {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all monitors under the specified subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all monitors under the specified resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -230,6 +233,7 @@ pub mod monitors {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the properties of a specific monitor resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -243,6 +247,7 @@ pub mod monitors {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Create a monitor resource."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -257,6 +262,7 @@ pub mod monitors {
                 body: None,
             }
         }
+        #[doc = "Update a monitor resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -271,6 +277,7 @@ pub mod monitors {
                 body: None,
             }
         }
+        #[doc = "Delete a monitor resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -784,6 +791,7 @@ pub mod monitored_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the resources currently being monitored by the Elastic monitor resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -883,6 +891,7 @@ pub mod deployment_info {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetch information regarding Elastic cloud deployment corresponding to the Elastic monitor resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -980,6 +989,7 @@ pub mod tag_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the tag rules for a given monitor resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -993,6 +1003,7 @@ pub mod tag_rules {
                 monitor_name: monitor_name.into(),
             }
         }
+        #[doc = "Get a tag rule set for a given monitor resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1008,6 +1019,7 @@ pub mod tag_rules {
                 rule_set_name: rule_set_name.into(),
             }
         }
+        #[doc = "Create or update a tag rule set for a given monitor resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1024,6 +1036,7 @@ pub mod tag_rules {
                 body: None,
             }
         }
+        #[doc = "Delete a tag rule set for a given monitor resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1374,6 +1387,7 @@ pub mod vm_host {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the vm resources currently being monitored by the Elastic monitor resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1471,6 +1485,7 @@ pub mod vm_ingestion {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the vm ingestion details that will be monitored by the Elastic monitor resource."]
         pub fn details(
             &self,
             subscription_id: impl Into<String>,
@@ -1570,6 +1585,7 @@ pub mod vm_collection {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Update the vm details that will be monitored by the Elastic monitor resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,

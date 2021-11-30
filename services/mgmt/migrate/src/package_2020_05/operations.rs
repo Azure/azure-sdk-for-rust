@@ -132,6 +132,7 @@ pub mod migrate_projects_controller {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific project."]
         pub fn get_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -145,6 +146,7 @@ pub mod migrate_projects_controller {
                 migrate_project_name: migrate_project_name.into(),
             }
         }
+        #[doc = "Create a new project with specified settings."]
         pub fn put_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -160,6 +162,7 @@ pub mod migrate_projects_controller {
                 body: body.into(),
             }
         }
+        #[doc = "Update project."]
         pub fn patch_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -175,6 +178,7 @@ pub mod migrate_projects_controller {
                 body: body.into(),
             }
         }
+        #[doc = "Delete the project"]
         pub fn delete_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -507,6 +511,7 @@ pub mod private_endpoint_connections_controller {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the private endpoint connections."]
         pub fn get_private_endpoint_connections(
             &self,
             subscription_id: impl Into<String>,
@@ -605,6 +610,7 @@ pub mod private_endpoint_connection_controller {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the private endpoint."]
         pub fn get_private_endpoint_connection(
             &self,
             subscription_id: impl Into<String>,
@@ -620,6 +626,7 @@ pub mod private_endpoint_connection_controller {
                 pe_connection_name: pe_connection_name.into(),
             }
         }
+        #[doc = "Create or update private endpoint."]
         pub fn put_private_endpoint_connection(
             &self,
             subscription_id: impl Into<String>,
@@ -637,6 +644,7 @@ pub mod private_endpoint_connection_controller {
                 body: body.into(),
             }
         }
+        #[doc = "Delete the endpoint"]
         pub fn delete_private_endpoint_connection(
             &self,
             subscription_id: impl Into<String>,
@@ -877,6 +885,7 @@ pub mod private_link_resource_controller {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the private link resource."]
         pub fn get_private_link_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -892,6 +901,7 @@ pub mod private_link_resource_controller {
                 private_link_resource_name: private_link_resource_name.into(),
             }
         }
+        #[doc = "Get the list of private link resources."]
         pub fn get_private_link_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -1069,12 +1079,14 @@ pub mod projects {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all migrate projects."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all migrate projects."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1236,6 +1248,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of operations supported in the API."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

@@ -498,6 +498,7 @@ pub mod private_clouds {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List private clouds in a resource group"]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -505,12 +506,14 @@ pub mod private_clouds {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List private clouds in a subscription"]
         pub fn list_in_subscription(&self, subscription_id: impl Into<String>) -> list_in_subscription::Builder {
             list_in_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -524,6 +527,7 @@ pub mod private_clouds {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Create or update a private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -539,6 +543,7 @@ pub mod private_clouds {
                 private_cloud: private_cloud.into(),
             }
         }
+        #[doc = "Update a private cloud"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -554,6 +559,7 @@ pub mod private_clouds {
                 private_cloud_update: private_cloud_update.into(),
             }
         }
+        #[doc = "Delete a private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -567,6 +573,7 @@ pub mod private_clouds {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Rotate the vCenter password"]
         pub fn rotate_vcenter_password(
             &self,
             subscription_id: impl Into<String>,
@@ -580,6 +587,7 @@ pub mod private_clouds {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Rotate the NSX-T Manager password"]
         pub fn rotate_nsxt_password(
             &self,
             subscription_id: impl Into<String>,
@@ -593,6 +601,7 @@ pub mod private_clouds {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "List the admin credentials for the private cloud"]
         pub fn list_admin_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -1333,6 +1342,7 @@ pub mod clusters {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List clusters in a private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1346,6 +1356,7 @@ pub mod clusters {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get a cluster by name in a private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1361,6 +1372,7 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Create or update a cluster in a private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1378,6 +1390,7 @@ pub mod clusters {
                 cluster: cluster.into(),
             }
         }
+        #[doc = "Update a cluster in a private cloud"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1395,6 +1408,7 @@ pub mod clusters {
                 cluster_update: cluster_update.into(),
             }
         }
+        #[doc = "Delete a cluster in a private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1838,6 +1852,7 @@ pub mod hcx_enterprise_sites {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List HCX Enterprise Sites in a private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1851,6 +1866,7 @@ pub mod hcx_enterprise_sites {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get an HCX Enterprise Site by name in a private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1866,6 +1882,7 @@ pub mod hcx_enterprise_sites {
                 hcx_enterprise_site_name: hcx_enterprise_site_name.into(),
             }
         }
+        #[doc = "Create or update an HCX Enterprise Site in a private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1883,6 +1900,7 @@ pub mod hcx_enterprise_sites {
                 hcx_enterprise_site: hcx_enterprise_site.into(),
             }
         }
+        #[doc = "Delete an HCX Enterprise Site in a private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2232,6 +2250,7 @@ pub mod authorizations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List ExpressRoute Circuit Authorizations in a private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2245,6 +2264,7 @@ pub mod authorizations {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get an ExpressRoute Circuit Authorization by name in a private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2260,6 +2280,7 @@ pub mod authorizations {
                 authorization_name: authorization_name.into(),
             }
         }
+        #[doc = "Create or update an ExpressRoute Circuit Authorization in a private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2277,6 +2298,7 @@ pub mod authorizations {
                 authorization: authorization.into(),
             }
         }
+        #[doc = "Delete an ExpressRoute Circuit Authorization in a private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2630,6 +2652,7 @@ pub mod global_reach_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List global reach connections in a private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2643,6 +2666,7 @@ pub mod global_reach_connections {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get a global reach connection by name in a private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2658,6 +2682,7 @@ pub mod global_reach_connections {
                 global_reach_connection_name: global_reach_connection_name.into(),
             }
         }
+        #[doc = "Create or update a global reach connection in a private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2675,6 +2700,7 @@ pub mod global_reach_connections {
                 global_reach_connection: global_reach_connection.into(),
             }
         }
+        #[doc = "Delete a global reach connection in a private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3026,6 +3052,7 @@ pub mod workload_networks {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List of segments in a private cloud workload network."]
         pub fn list_segments(
             &self,
             subscription_id: impl Into<String>,
@@ -3039,6 +3066,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get a segment by id in a private cloud workload network."]
         pub fn get_segment(
             &self,
             subscription_id: impl Into<String>,
@@ -3054,6 +3082,7 @@ pub mod workload_networks {
                 segment_id: segment_id.into(),
             }
         }
+        #[doc = "Create a segment by id in a private cloud workload network."]
         pub fn create_segments(
             &self,
             subscription_id: impl Into<String>,
@@ -3071,6 +3100,7 @@ pub mod workload_networks {
                 workload_network_segment: workload_network_segment.into(),
             }
         }
+        #[doc = "Create or update a segment by id in a private cloud workload network."]
         pub fn update_segments(
             &self,
             subscription_id: impl Into<String>,
@@ -3088,6 +3118,7 @@ pub mod workload_networks {
                 workload_network_segment: workload_network_segment.into(),
             }
         }
+        #[doc = "Delete a segment by id in a private cloud workload network."]
         pub fn delete_segment(
             &self,
             subscription_id: impl Into<String>,
@@ -3103,6 +3134,7 @@ pub mod workload_networks {
                 segment_id: segment_id.into(),
             }
         }
+        #[doc = "List dhcp in a private cloud workload network."]
         pub fn list_dhcp(
             &self,
             subscription_id: impl Into<String>,
@@ -3116,6 +3148,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get dhcp by id in a private cloud workload network."]
         pub fn get_dhcp(
             &self,
             subscription_id: impl Into<String>,
@@ -3131,6 +3164,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Create dhcp by id in a private cloud workload network."]
         pub fn create_dhcp(
             &self,
             subscription_id: impl Into<String>,
@@ -3148,6 +3182,7 @@ pub mod workload_networks {
                 workload_network_dhcp: workload_network_dhcp.into(),
             }
         }
+        #[doc = "Create or update dhcp by id in a private cloud workload network."]
         pub fn update_dhcp(
             &self,
             subscription_id: impl Into<String>,
@@ -3165,6 +3200,7 @@ pub mod workload_networks {
                 workload_network_dhcp: workload_network_dhcp.into(),
             }
         }
+        #[doc = "Delete dhcp by id in a private cloud workload network."]
         pub fn delete_dhcp(
             &self,
             subscription_id: impl Into<String>,
@@ -3180,6 +3216,7 @@ pub mod workload_networks {
                 dhcp_id: dhcp_id.into(),
             }
         }
+        #[doc = "List of gateways in a private cloud workload network."]
         pub fn list_gateways(
             &self,
             subscription_id: impl Into<String>,
@@ -3193,6 +3230,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get a gateway by id in a private cloud workload network."]
         pub fn get_gateway(
             &self,
             subscription_id: impl Into<String>,
@@ -3208,6 +3246,7 @@ pub mod workload_networks {
                 gateway_id: gateway_id.into(),
             }
         }
+        #[doc = "List of port mirroring profiles in a private cloud workload network."]
         pub fn list_port_mirroring(
             &self,
             subscription_id: impl Into<String>,
@@ -3221,6 +3260,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get a port mirroring profile by id in a private cloud workload network."]
         pub fn get_port_mirroring(
             &self,
             subscription_id: impl Into<String>,
@@ -3236,6 +3276,7 @@ pub mod workload_networks {
                 port_mirroring_id: port_mirroring_id.into(),
             }
         }
+        #[doc = "Create a port mirroring profile by id in a private cloud workload network."]
         pub fn create_port_mirroring(
             &self,
             subscription_id: impl Into<String>,
@@ -3253,6 +3294,7 @@ pub mod workload_networks {
                 workload_network_port_mirroring: workload_network_port_mirroring.into(),
             }
         }
+        #[doc = "Create or update a port mirroring profile by id in a private cloud workload network."]
         pub fn update_port_mirroring(
             &self,
             subscription_id: impl Into<String>,
@@ -3270,6 +3312,7 @@ pub mod workload_networks {
                 workload_network_port_mirroring: workload_network_port_mirroring.into(),
             }
         }
+        #[doc = "Delete a port mirroring profile by id in a private cloud workload network."]
         pub fn delete_port_mirroring(
             &self,
             subscription_id: impl Into<String>,
@@ -3285,6 +3328,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "List of vm groups in a private cloud workload network."]
         pub fn list_vm_groups(
             &self,
             subscription_id: impl Into<String>,
@@ -3298,6 +3342,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get a vm group by id in a private cloud workload network."]
         pub fn get_vm_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3313,6 +3358,7 @@ pub mod workload_networks {
                 vm_group_id: vm_group_id.into(),
             }
         }
+        #[doc = "Create a vm group by id in a private cloud workload network."]
         pub fn create_vm_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3330,6 +3376,7 @@ pub mod workload_networks {
                 workload_network_vm_group: workload_network_vm_group.into(),
             }
         }
+        #[doc = "Create or update a vm group by id in a private cloud workload network."]
         pub fn update_vm_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3347,6 +3394,7 @@ pub mod workload_networks {
                 workload_network_vm_group: workload_network_vm_group.into(),
             }
         }
+        #[doc = "Delete a vm group by id in a private cloud workload network."]
         pub fn delete_vm_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3362,6 +3410,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "List of virtual machines in a private cloud workload network."]
         pub fn list_virtual_machines(
             &self,
             subscription_id: impl Into<String>,
@@ -3375,6 +3424,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get a virtual machine by id in a private cloud workload network."]
         pub fn get_virtual_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -3390,6 +3440,7 @@ pub mod workload_networks {
                 virtual_machine_id: virtual_machine_id.into(),
             }
         }
+        #[doc = "List of DNS services in a private cloud workload network."]
         pub fn list_dns_services(
             &self,
             subscription_id: impl Into<String>,
@@ -3403,6 +3454,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get a DNS service by id in a private cloud workload network."]
         pub fn get_dns_service(
             &self,
             subscription_id: impl Into<String>,
@@ -3418,6 +3470,7 @@ pub mod workload_networks {
                 dns_service_id: dns_service_id.into(),
             }
         }
+        #[doc = "Create a DNS service by id in a private cloud workload network."]
         pub fn create_dns_service(
             &self,
             subscription_id: impl Into<String>,
@@ -3435,6 +3488,7 @@ pub mod workload_networks {
                 workload_network_dns_service: workload_network_dns_service.into(),
             }
         }
+        #[doc = "Create or update a DNS service by id in a private cloud workload network."]
         pub fn update_dns_service(
             &self,
             subscription_id: impl Into<String>,
@@ -3452,6 +3506,7 @@ pub mod workload_networks {
                 workload_network_dns_service: workload_network_dns_service.into(),
             }
         }
+        #[doc = "Delete a DNS service by id in a private cloud workload network."]
         pub fn delete_dns_service(
             &self,
             subscription_id: impl Into<String>,
@@ -3467,6 +3522,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "List of DNS zones in a private cloud workload network."]
         pub fn list_dns_zones(
             &self,
             subscription_id: impl Into<String>,
@@ -3480,6 +3536,7 @@ pub mod workload_networks {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get a DNS zone by id in a private cloud workload network."]
         pub fn get_dns_zone(
             &self,
             subscription_id: impl Into<String>,
@@ -3495,6 +3552,7 @@ pub mod workload_networks {
                 dns_zone_id: dns_zone_id.into(),
             }
         }
+        #[doc = "Create a DNS zone by id in a private cloud workload network."]
         pub fn create_dns_zone(
             &self,
             subscription_id: impl Into<String>,
@@ -3512,6 +3570,7 @@ pub mod workload_networks {
                 workload_network_dns_zone: workload_network_dns_zone.into(),
             }
         }
+        #[doc = "Create or update a DNS zone by id in a private cloud workload network."]
         pub fn update_dns_zone(
             &self,
             subscription_id: impl Into<String>,
@@ -3529,6 +3588,7 @@ pub mod workload_networks {
                 workload_network_dns_zone: workload_network_dns_zone.into(),
             }
         }
+        #[doc = "Delete a DNS zone by id in a private cloud workload network."]
         pub fn delete_dns_zone(
             &self,
             subscription_id: impl Into<String>,
@@ -6176,6 +6236,7 @@ pub mod addons {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List addons in a private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6189,6 +6250,7 @@ pub mod addons {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get an addon by name in a private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6204,6 +6266,7 @@ pub mod addons {
                 addon_name: addon_name.into(),
             }
         }
+        #[doc = "Create or update a addon in a private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -6221,6 +6284,7 @@ pub mod addons {
                 addon: addon.into(),
             }
         }
+        #[doc = "Delete a addon in a private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

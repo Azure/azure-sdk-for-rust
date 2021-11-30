@@ -101,24 +101,28 @@ pub mod partner {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific `Partner`."]
         pub fn get(&self, partner_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 partner_id: partner_id.into(),
             }
         }
+        #[doc = "Create a specific `Partner`."]
         pub fn create(&self, partner_id: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
                 partner_id: partner_id.into(),
             }
         }
+        #[doc = "Update a specific `Partner`."]
         pub fn update(&self, partner_id: impl Into<String>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
                 partner_id: partner_id.into(),
             }
         }
+        #[doc = "Delete a specific `Partner`."]
         pub fn delete(&self, partner_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -418,6 +422,7 @@ pub mod operation {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -495,6 +500,7 @@ pub mod partners {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific `Partner`."]
         pub fn get(&self) -> get::Builder {
             get::Builder { client: self.0.clone() }
         }

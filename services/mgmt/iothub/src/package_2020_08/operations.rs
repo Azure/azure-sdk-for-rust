@@ -254,6 +254,7 @@ pub mod iot_hub_resource {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the non-security related metadata of an IoT hub"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -267,6 +268,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of an IoT hub."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -283,6 +285,7 @@ pub mod iot_hub_resource {
                 if_match: None,
             }
         }
+        #[doc = "Update an existing IoT Hubs tags."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -298,6 +301,7 @@ pub mod iot_hub_resource {
                 iot_hub_tags: iot_hub_tags.into(),
             }
         }
+        #[doc = "Delete an IoT hub"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -311,12 +315,14 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get all the IoT hubs in a subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the IoT hubs in a resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -328,6 +334,7 @@ pub mod iot_hub_resource {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the statistics from an IoT hub"]
         pub fn get_stats(
             &self,
             subscription_id: impl Into<String>,
@@ -341,6 +348,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the list of valid SKUs for an IoT hub"]
         pub fn get_valid_skus(
             &self,
             subscription_id: impl Into<String>,
@@ -354,6 +362,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get a list of the consumer groups in the Event Hub-compatible device-to-cloud endpoint in an IoT hub"]
         pub fn list_event_hub_consumer_groups(
             &self,
             subscription_id: impl Into<String>,
@@ -369,6 +378,7 @@ pub mod iot_hub_resource {
                 event_hub_endpoint_name: event_hub_endpoint_name.into(),
             }
         }
+        #[doc = "Get a consumer group from the Event Hub-compatible device-to-cloud endpoint for an IoT hub"]
         pub fn get_event_hub_consumer_group(
             &self,
             subscription_id: impl Into<String>,
@@ -386,6 +396,7 @@ pub mod iot_hub_resource {
                 name: name.into(),
             }
         }
+        #[doc = "Add a consumer group to an Event Hub-compatible endpoint in an IoT hub"]
         pub fn create_event_hub_consumer_group(
             &self,
             subscription_id: impl Into<String>,
@@ -405,6 +416,7 @@ pub mod iot_hub_resource {
                 consumer_group_body: consumer_group_body.into(),
             }
         }
+        #[doc = "Delete a consumer group from an Event Hub-compatible endpoint in an IoT hub"]
         pub fn delete_event_hub_consumer_group(
             &self,
             subscription_id: impl Into<String>,
@@ -422,6 +434,7 @@ pub mod iot_hub_resource {
                 name: name.into(),
             }
         }
+        #[doc = "Get a list of all the jobs in an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry"]
         pub fn list_jobs(
             &self,
             subscription_id: impl Into<String>,
@@ -435,6 +448,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the details of a job from an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry"]
         pub fn get_job(
             &self,
             subscription_id: impl Into<String>,
@@ -450,6 +464,7 @@ pub mod iot_hub_resource {
                 job_id: job_id.into(),
             }
         }
+        #[doc = "Get the quota metrics for an IoT hub"]
         pub fn get_quota_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -463,6 +478,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the health for routing endpoints"]
         pub fn get_endpoint_health(
             &self,
             subscription_id: impl Into<String>,
@@ -476,6 +492,7 @@ pub mod iot_hub_resource {
                 iot_hub_name: iot_hub_name.into(),
             }
         }
+        #[doc = "Check if an IoT hub name is available"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -487,6 +504,7 @@ pub mod iot_hub_resource {
                 operation_inputs: operation_inputs.into(),
             }
         }
+        #[doc = "Test all routes"]
         pub fn test_all_routes(
             &self,
             input: impl Into<models::TestAllRoutesInput>,
@@ -502,6 +520,7 @@ pub mod iot_hub_resource {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Test the new route"]
         pub fn test_route(
             &self,
             input: impl Into<models::TestRouteInput>,
@@ -517,6 +536,7 @@ pub mod iot_hub_resource {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the security metadata for an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-security"]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -530,6 +550,7 @@ pub mod iot_hub_resource {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get a shared access policy by name from an IoT hub. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-security"]
         pub fn get_keys_for_key_name(
             &self,
             subscription_id: impl Into<String>,
@@ -545,6 +566,7 @@ pub mod iot_hub_resource {
                 key_name: key_name.into(),
             }
         }
+        #[doc = "Exports all the device identities in the IoT hub identity registry to an Azure Storage blob container. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry#import-and-export-device-identities"]
         pub fn export_devices(
             &self,
             subscription_id: impl Into<String>,
@@ -560,6 +582,7 @@ pub mod iot_hub_resource {
                 export_devices_parameters: export_devices_parameters.into(),
             }
         }
+        #[doc = "Import, update, or delete device identities in the IoT hub identity registry from a blob. For more information, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-identity-registry#import-and-export-device-identities"]
         pub fn import_devices(
             &self,
             subscription_id: impl Into<String>,
@@ -2404,6 +2427,7 @@ pub mod resource_provider_common {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the number of iot hubs in the subscription"]
         pub fn get_subscription_quota(&self, subscription_id: impl Into<String>) -> get_subscription_quota::Builder {
             get_subscription_quota::Builder {
                 client: self.0.clone(),
@@ -2491,6 +2515,7 @@ pub mod certificates {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the certificate list."]
         pub fn list_by_iot_hub(
             &self,
             subscription_id: impl Into<String>,
@@ -2504,6 +2529,7 @@ pub mod certificates {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the certificate."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2519,6 +2545,7 @@ pub mod certificates {
                 certificate_name: certificate_name.into(),
             }
         }
+        #[doc = "Upload the certificate to the IoT hub."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2537,6 +2564,7 @@ pub mod certificates {
                 if_match: None,
             }
         }
+        #[doc = "Delete an X509 certificate."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2554,6 +2582,7 @@ pub mod certificates {
                 if_match: if_match.into(),
             }
         }
+        #[doc = "Generate verification code for proof of possession flow."]
         pub fn generate_verification_code(
             &self,
             subscription_id: impl Into<String>,
@@ -2571,6 +2600,7 @@ pub mod certificates {
                 if_match: if_match.into(),
             }
         }
+        #[doc = "Verify certificate's private key possession."]
         pub fn verify(
             &self,
             subscription_id: impl Into<String>,
@@ -3096,6 +3126,7 @@ pub mod iot_hub {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Manually initiate a failover for the IoT Hub to its secondary region"]
         pub fn manual_failover(
             &self,
             iot_hub_name: impl Into<String>,
@@ -3197,6 +3228,7 @@ pub mod private_link_resources {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List private link resources"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3210,6 +3242,7 @@ pub mod private_link_resources {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the specified private link resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3387,6 +3420,7 @@ pub mod private_endpoint_connections {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List private endpoint connections"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3400,6 +3434,7 @@ pub mod private_endpoint_connections {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get private endpoint connection"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3415,6 +3450,7 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update private endpoint connection"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3432,6 +3468,7 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection: private_endpoint_connection.into(),
             }
         }
+        #[doc = "Delete private endpoint connection"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

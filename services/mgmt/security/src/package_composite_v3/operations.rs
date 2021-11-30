@@ -747,6 +747,7 @@ pub mod custom_assessment_automations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a custom assessment automation"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -760,6 +761,7 @@ pub mod custom_assessment_automations {
                 custom_assessment_automation_name: custom_assessment_automation_name.into(),
             }
         }
+        #[doc = "Creates a custom assessment automation"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -775,6 +777,7 @@ pub mod custom_assessment_automations {
                 custom_assessment_automation_body: custom_assessment_automation_body.into(),
             }
         }
+        #[doc = "Deletes a custom assessment automation"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -788,6 +791,7 @@ pub mod custom_assessment_automations {
                 custom_assessment_automation_name: custom_assessment_automation_name.into(),
             }
         }
+        #[doc = "List custom assessment automations in a subscription and a resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -799,6 +803,7 @@ pub mod custom_assessment_automations {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List custom assessment automations in a subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1212,6 +1217,7 @@ pub mod custom_entity_store_assignments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a custom entity store assignment"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1225,6 +1231,7 @@ pub mod custom_entity_store_assignments {
                 custom_entity_store_assignment_name: custom_entity_store_assignment_name.into(),
             }
         }
+        #[doc = "Creates a custom entity store assignment"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1240,6 +1247,7 @@ pub mod custom_entity_store_assignments {
                 custom_entity_store_assignment_request_body: custom_entity_store_assignment_request_body.into(),
             }
         }
+        #[doc = "Deleted a custom entity store assignment"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1253,6 +1261,7 @@ pub mod custom_entity_store_assignments {
                 custom_entity_store_assignment_name: custom_entity_store_assignment_name.into(),
             }
         }
+        #[doc = "List custom entity store assignments in a subscription and a resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1264,6 +1273,7 @@ pub mod custom_entity_store_assignments {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List custom entity store assignments in a subscription"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -12970,6 +12980,7 @@ pub mod sql_vulnerability_assessment_scans {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the scan details of a single scan record."]
         pub fn get(&self, scan_id: impl Into<String>, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -12978,6 +12989,7 @@ pub mod sql_vulnerability_assessment_scans {
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Gets a list of scan records."]
         pub fn list(&self, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -13145,6 +13157,7 @@ pub mod sql_vulnerability_assessment_scan_results {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the scan results of a single rule in a scan record."]
         pub fn get(
             &self,
             scan_id: impl Into<String>,
@@ -13160,6 +13173,7 @@ pub mod sql_vulnerability_assessment_scan_results {
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Gets a list of scan results for a single scan record."]
         pub fn list(&self, scan_id: impl Into<String>, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -13332,6 +13346,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the results for a given rule in the Baseline."]
         pub fn get(&self, rule_id: impl Into<String>, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -13340,6 +13355,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Creates a Baseline for a rule in a database. Will overwrite any previously existing results."]
         pub fn create_or_update(
             &self,
             rule_id: impl Into<String>,
@@ -13354,6 +13370,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 body: None,
             }
         }
+        #[doc = "Deletes a rule from the Baseline of a given database."]
         pub fn delete(
             &self,
             rule_id: impl Into<String>,
@@ -13367,6 +13384,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Gets the results for all rules in the Baseline."]
         pub fn list(&self, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -13374,6 +13392,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Add a list of baseline rules. Will overwrite any previously existing results (for all rules)."]
         pub fn add(&self, workspace_id: impl Into<String>, resource_id: impl Into<String>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),

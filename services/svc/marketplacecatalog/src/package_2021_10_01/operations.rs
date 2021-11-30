@@ -87,6 +87,7 @@ pub mod public_offers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a public offer by id"]
         pub fn get(&self, id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -97,6 +98,7 @@ pub mod public_offers {
                 hide_keys: Vec::new(),
             }
         }
+        #[doc = "Get a list of public available offers"]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

@@ -122,12 +122,14 @@ pub mod container_groups {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of container groups in the specified subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a list of container groups in the specified subscription and resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -139,6 +141,7 @@ pub mod container_groups {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the properties of the specified container group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -152,6 +155,7 @@ pub mod container_groups {
                 container_group_name: container_group_name.into(),
             }
         }
+        #[doc = "Create or update container groups."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -167,6 +171,7 @@ pub mod container_groups {
                 container_group: container_group.into(),
             }
         }
+        #[doc = "Update container groups."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -182,6 +187,7 @@ pub mod container_groups {
                 resource: resource.into(),
             }
         }
+        #[doc = "Delete the specified container group."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -195,6 +201,7 @@ pub mod container_groups {
                 container_group_name: container_group_name.into(),
             }
         }
+        #[doc = "Restarts all containers in a container group."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -208,6 +215,7 @@ pub mod container_groups {
                 container_group_name: container_group_name.into(),
             }
         }
+        #[doc = "Stops all containers in a container group."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -221,6 +229,7 @@ pub mod container_groups {
                 container_group_name: container_group_name.into(),
             }
         }
+        #[doc = "Starts all containers in a container group."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -1022,6 +1031,7 @@ pub mod location {
                 location: location.into(),
             }
         }
+        #[doc = "Get the list of cached images."]
         pub fn list_cached_images(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_cached_images::Builder {
             list_cached_images::Builder {
                 client: self.0.clone(),
@@ -1029,6 +1039,7 @@ pub mod location {
                 location: location.into(),
             }
         }
+        #[doc = "Get the list of capabilities of the location."]
         pub fn list_capabilities(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_capabilities::Builder {
             list_capabilities::Builder {
                 client: self.0.clone(),
@@ -1267,6 +1278,7 @@ pub mod containers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the logs for a specified container instance."]
         pub fn list_logs(
             &self,
             subscription_id: impl Into<String>,
@@ -1283,6 +1295,7 @@ pub mod containers {
                 tail: None,
             }
         }
+        #[doc = "Executes a command in a specific container instance."]
         pub fn execute_command(
             &self,
             subscription_id: impl Into<String>,

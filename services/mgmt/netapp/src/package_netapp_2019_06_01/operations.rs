@@ -146,6 +146,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Describes the Resource Provider"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -209,6 +210,7 @@ pub mod operations {
     }
 }
 impl Client {
+    #[doc = "Check resource name availability"]
     pub fn check_name_availability(
         &self,
         body: impl Into<models::ResourceNameAvailabilityRequest>,
@@ -222,6 +224,7 @@ impl Client {
             location: location.into(),
         }
     }
+    #[doc = "Check file path availability"]
     pub fn check_file_path_availability(
         &self,
         body: impl Into<models::ResourceNameAvailabilityRequest>,
@@ -372,6 +375,7 @@ pub mod accounts {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Describe all NetApp Accounts in a resource group"]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -379,6 +383,7 @@ pub mod accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Describe a NetApp Account"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -392,6 +397,7 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Create or update a NetApp account"]
         pub fn create_or_update(
             &self,
             body: impl Into<models::NetAppAccount>,
@@ -407,6 +413,7 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Update a NetApp account"]
         pub fn update(
             &self,
             body: impl Into<models::NetAppAccountPatch>,
@@ -422,6 +429,7 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Delete a NetApp account"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -793,6 +801,7 @@ pub mod pools {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Describe all Capacity Pools"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -806,6 +815,7 @@ pub mod pools {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Describe a Capacity Pool"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -821,6 +831,7 @@ pub mod pools {
                 pool_name: pool_name.into(),
             }
         }
+        #[doc = "Create or Update the specified capacity pool within the resource group"]
         pub fn create_or_update(
             &self,
             body: impl Into<models::CapacityPool>,
@@ -838,6 +849,7 @@ pub mod pools {
                 pool_name: pool_name.into(),
             }
         }
+        #[doc = "Update a capacity pool"]
         pub fn update(
             &self,
             body: impl Into<models::CapacityPoolPatch>,
@@ -855,6 +867,7 @@ pub mod pools {
                 pool_name: pool_name.into(),
             }
         }
+        #[doc = "Delete a capacity pool"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1238,6 +1251,7 @@ pub mod volumes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Describe all volumes"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1253,6 +1267,7 @@ pub mod volumes {
                 pool_name: pool_name.into(),
             }
         }
+        #[doc = "Describe a volume"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1270,6 +1285,7 @@ pub mod volumes {
                 volume_name: volume_name.into(),
             }
         }
+        #[doc = "Create or Update a volume"]
         pub fn create_or_update(
             &self,
             body: impl Into<models::Volume>,
@@ -1289,6 +1305,7 @@ pub mod volumes {
                 volume_name: volume_name.into(),
             }
         }
+        #[doc = "Update a volume"]
         pub fn update(
             &self,
             body: impl Into<models::VolumePatch>,
@@ -1308,6 +1325,7 @@ pub mod volumes {
                 volume_name: volume_name.into(),
             }
         }
+        #[doc = "Delete a volume"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1703,6 +1721,7 @@ pub mod mount_targets {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Describe all mount targets"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1788,6 +1807,7 @@ pub mod snapshots {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Describe all snapshots"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1805,6 +1825,7 @@ pub mod snapshots {
                 volume_name: volume_name.into(),
             }
         }
+        #[doc = "Describe a snapshot"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1824,6 +1845,7 @@ pub mod snapshots {
                 snapshot_name: snapshot_name.into(),
             }
         }
+        #[doc = "Create a snapshot"]
         pub fn create(
             &self,
             body: impl Into<models::Snapshot>,
@@ -1845,6 +1867,7 @@ pub mod snapshots {
                 snapshot_name: snapshot_name.into(),
             }
         }
+        #[doc = "Update a snapshot"]
         pub fn update(
             &self,
             body: impl Into<models::SnapshotPatch>,
@@ -1866,6 +1889,7 @@ pub mod snapshots {
                 snapshot_name: snapshot_name.into(),
             }
         }
+        #[doc = "Delete a snapshot"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

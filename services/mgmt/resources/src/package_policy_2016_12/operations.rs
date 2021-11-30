@@ -919,6 +919,7 @@ pub mod policy_assignments {
                 policy_assignment_name: policy_assignment_name.into(),
             }
         }
+        #[doc = "Creates a policy assignment."]
         pub fn create(
             &self,
             scope: impl Into<String>,
@@ -978,12 +979,14 @@ pub mod policy_assignments {
                 filter: None,
             }
         }
+        #[doc = "Gets a policy assignment by ID."]
         pub fn get_by_id(&self, policy_assignment_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
                 policy_assignment_id: policy_assignment_id.into(),
             }
         }
+        #[doc = "Creates a policy assignment by ID."]
         pub fn create_by_id(
             &self,
             policy_assignment_id: impl Into<String>,
@@ -995,6 +998,7 @@ pub mod policy_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a policy assignment by ID."]
         pub fn delete_by_id(&self, policy_assignment_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
                 client: self.0.clone(),

@@ -441,6 +441,7 @@ pub mod operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the list of available operations."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -526,6 +527,7 @@ pub mod replication_alert_settings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of configured email notification(alert) configurations."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -539,6 +541,7 @@ pub mod replication_alert_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an email notification(alert) configuration."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -554,6 +557,7 @@ pub mod replication_alert_settings {
                 alert_setting_name: alert_setting_name.into(),
             }
         }
+        #[doc = "Configures email notifications for this vault."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -799,6 +803,7 @@ pub mod replication_eligibility_results {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the validation errors in case the VM is unsuitable for protection."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -812,6 +817,7 @@ pub mod replication_eligibility_results {
                 virtual_machine_name: virtual_machine_name.into(),
             }
         }
+        #[doc = "Gets the validation errors in case the VM is unsuitable for protection."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -968,6 +974,7 @@ pub mod replication_events {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of Azure Site Recovery events."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -982,6 +989,7 @@ pub mod replication_events {
                 filter: None,
             }
         }
+        #[doc = "Get the details of an Azure Site recovery event."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -1157,6 +1165,7 @@ pub mod replication_fabrics {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of ASR fabrics."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -1170,6 +1179,7 @@ pub mod replication_fabrics {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the details of an ASR fabric."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -1186,6 +1196,7 @@ pub mod replication_fabrics {
                 filter: None,
             }
         }
+        #[doc = "Creates an Azure Site Recovery fabric."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -1203,6 +1214,7 @@ pub mod replication_fabrics {
                 input: input.into(),
             }
         }
+        #[doc = "Purges the site."]
         pub fn purge(
             &self,
             resource_name: impl Into<String>,
@@ -1218,6 +1230,7 @@ pub mod replication_fabrics {
                 fabric_name: fabric_name.into(),
             }
         }
+        #[doc = "Checks the consistency of the ASR fabric."]
         pub fn check_consistency(
             &self,
             resource_name: impl Into<String>,
@@ -1233,6 +1246,7 @@ pub mod replication_fabrics {
                 fabric_name: fabric_name.into(),
             }
         }
+        #[doc = "Migrates the site to AAD."]
         pub fn migrate_to_aad(
             &self,
             resource_name: impl Into<String>,
@@ -1248,6 +1262,7 @@ pub mod replication_fabrics {
                 fabric_name: fabric_name.into(),
             }
         }
+        #[doc = "Perform failover of the process server."]
         pub fn reassociate_gateway(
             &self,
             resource_name: impl Into<String>,
@@ -1265,6 +1280,7 @@ pub mod replication_fabrics {
                 failover_process_server_request: failover_process_server_request.into(),
             }
         }
+        #[doc = "Deletes the site."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -1280,6 +1296,7 @@ pub mod replication_fabrics {
                 fabric_name: fabric_name.into(),
             }
         }
+        #[doc = "Renews certificate for the fabric."]
         pub fn renew_certificate(
             &self,
             resource_name: impl Into<String>,
@@ -1983,6 +2000,7 @@ pub mod replication_logical_networks {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of logical networks under a fabric."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -1998,6 +2016,7 @@ pub mod replication_logical_networks {
                 fabric_name: fabric_name.into(),
             }
         }
+        #[doc = "Gets a logical network with specified server id and logical network name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -2156,6 +2175,7 @@ pub mod replication_networks {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of networks under a fabric."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -2171,6 +2191,7 @@ pub mod replication_networks {
                 fabric_name: fabric_name.into(),
             }
         }
+        #[doc = "Gets a network with specified server id and network name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -2188,6 +2209,7 @@ pub mod replication_networks {
                 network_name: network_name.into(),
             }
         }
+        #[doc = "Gets the list of networks. View-only API."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -2414,6 +2436,7 @@ pub mod replication_network_mappings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the network mappings under a network."]
         pub fn list_by_replication_networks(
             &self,
             resource_name: impl Into<String>,
@@ -2431,6 +2454,7 @@ pub mod replication_network_mappings {
                 network_name: network_name.into(),
             }
         }
+        #[doc = "Gets network mapping by name."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -2450,6 +2474,7 @@ pub mod replication_network_mappings {
                 network_mapping_name: network_mapping_name.into(),
             }
         }
+        #[doc = "Creates network mapping."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -2471,6 +2496,7 @@ pub mod replication_network_mappings {
                 input: input.into(),
             }
         }
+        #[doc = "Updates network mapping."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -2492,6 +2518,7 @@ pub mod replication_network_mappings {
                 input: input.into(),
             }
         }
+        #[doc = "Delete network mapping."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -2511,6 +2538,7 @@ pub mod replication_network_mappings {
                 network_mapping_name: network_mapping_name.into(),
             }
         }
+        #[doc = "Gets all the network mappings under a vault."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -2963,6 +2991,7 @@ pub mod replication_protection_containers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of protection container for a fabric."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -2978,6 +3007,7 @@ pub mod replication_protection_containers {
                 fabric_name: fabric_name.into(),
             }
         }
+        #[doc = "Gets the protection container details."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -2995,6 +3025,7 @@ pub mod replication_protection_containers {
                 protection_container_name: protection_container_name.into(),
             }
         }
+        #[doc = "Create a protection container."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -3014,6 +3045,7 @@ pub mod replication_protection_containers {
                 creation_input: creation_input.into(),
             }
         }
+        #[doc = "Adds a protectable item to the replication protection container."]
         pub fn discover_protectable_item(
             &self,
             resource_name: impl Into<String>,
@@ -3033,6 +3065,7 @@ pub mod replication_protection_containers {
                 discover_protectable_item_request: discover_protectable_item_request.into(),
             }
         }
+        #[doc = "Removes a protection container."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -3050,6 +3083,7 @@ pub mod replication_protection_containers {
                 protection_container_name: protection_container_name.into(),
             }
         }
+        #[doc = "Switches protection from one container to another or one replication provider to another."]
         pub fn switch_protection(
             &self,
             resource_name: impl Into<String>,
@@ -3069,6 +3103,7 @@ pub mod replication_protection_containers {
                 switch_input: switch_input.into(),
             }
         }
+        #[doc = "Gets the list of all protection containers in a vault."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -3591,6 +3626,7 @@ pub mod replication_migration_items {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of migration items in the protection container."]
         pub fn list_by_replication_protection_containers(
             &self,
             resource_name: impl Into<String>,
@@ -3611,6 +3647,7 @@ pub mod replication_migration_items {
                 filter: None,
             }
         }
+        #[doc = "Gets the details of a migration item."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -3630,6 +3667,7 @@ pub mod replication_migration_items {
                 migration_item_name: migration_item_name.into(),
             }
         }
+        #[doc = "Enables migration."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -3651,6 +3689,7 @@ pub mod replication_migration_items {
                 input: input.into(),
             }
         }
+        #[doc = "Updates migration item."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -3672,6 +3711,7 @@ pub mod replication_migration_items {
                 input: input.into(),
             }
         }
+        #[doc = "Delete the migration item."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -3692,6 +3732,7 @@ pub mod replication_migration_items {
                 delete_option: None,
             }
         }
+        #[doc = "Migrate item."]
         pub fn migrate(
             &self,
             resource_name: impl Into<String>,
@@ -3713,6 +3754,7 @@ pub mod replication_migration_items {
                 migrate_input: migrate_input.into(),
             }
         }
+        #[doc = "Resynchronizes replication."]
         pub fn resync(
             &self,
             resource_name: impl Into<String>,
@@ -3734,6 +3776,7 @@ pub mod replication_migration_items {
                 input: input.into(),
             }
         }
+        #[doc = "Test migrate item."]
         pub fn test_migrate(
             &self,
             resource_name: impl Into<String>,
@@ -3755,6 +3798,7 @@ pub mod replication_migration_items {
                 test_migrate_input: test_migrate_input.into(),
             }
         }
+        #[doc = "Test migrate cleanup."]
         pub fn test_migrate_cleanup(
             &self,
             resource_name: impl Into<String>,
@@ -3776,6 +3820,7 @@ pub mod replication_migration_items {
                 test_migrate_cleanup_input: test_migrate_cleanup_input.into(),
             }
         }
+        #[doc = "Gets the list of migration items in the vault."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -4595,6 +4640,7 @@ pub mod migration_recovery_points {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the recovery points for a migration item."]
         pub fn list_by_replication_migration_items(
             &self,
             resource_name: impl Into<String>,
@@ -4614,6 +4660,7 @@ pub mod migration_recovery_points {
                 migration_item_name: migration_item_name.into(),
             }
         }
+        #[doc = "Gets a recovery point for a migration item."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -4782,6 +4829,7 @@ pub mod replication_protectable_items {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of protectable items."]
         pub fn list_by_replication_protection_containers(
             &self,
             resource_name: impl Into<String>,
@@ -4802,6 +4850,7 @@ pub mod replication_protectable_items {
                 skip_token: None,
             }
         }
+        #[doc = "Gets the details of a protectable item."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -4988,6 +5037,7 @@ pub mod replication_protected_items {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of Replication protected items."]
         pub fn list_by_replication_protection_containers(
             &self,
             resource_name: impl Into<String>,
@@ -5005,6 +5055,7 @@ pub mod replication_protected_items {
                 protection_container_name: protection_container_name.into(),
             }
         }
+        #[doc = "Gets the details of a Replication protected item."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -5024,6 +5075,7 @@ pub mod replication_protected_items {
                 replicated_protected_item_name: replicated_protected_item_name.into(),
             }
         }
+        #[doc = "Enables protection."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -5045,6 +5097,7 @@ pub mod replication_protected_items {
                 input: input.into(),
             }
         }
+        #[doc = "Updates the replication protected item settings."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -5066,6 +5119,7 @@ pub mod replication_protected_items {
                 update_protection_input: update_protection_input.into(),
             }
         }
+        #[doc = "Purges protection."]
         pub fn purge(
             &self,
             resource_name: impl Into<String>,
@@ -5085,6 +5139,7 @@ pub mod replication_protected_items {
                 replicated_protected_item_name: replicated_protected_item_name.into(),
             }
         }
+        #[doc = "Add disk(s) for protection."]
         pub fn add_disks(
             &self,
             resource_name: impl Into<String>,
@@ -5106,6 +5161,7 @@ pub mod replication_protected_items {
                 add_disks_input: add_disks_input.into(),
             }
         }
+        #[doc = "Change or apply recovery point."]
         pub fn apply_recovery_point(
             &self,
             resource_name: impl Into<String>,
@@ -5127,6 +5183,7 @@ pub mod replication_protected_items {
                 apply_recovery_point_input: apply_recovery_point_input.into(),
             }
         }
+        #[doc = "Execute cancel failover."]
         pub fn failover_cancel(
             &self,
             resource_name: impl Into<String>,
@@ -5146,6 +5203,7 @@ pub mod replication_protected_items {
                 replicated_protected_item_name: replicated_protected_item_name.into(),
             }
         }
+        #[doc = "Execute commit failover."]
         pub fn failover_commit(
             &self,
             resource_name: impl Into<String>,
@@ -5165,6 +5223,7 @@ pub mod replication_protected_items {
                 replicated_protected_item_name: replicated_protected_item_name.into(),
             }
         }
+        #[doc = "Execute planned failover."]
         pub fn planned_failover(
             &self,
             resource_name: impl Into<String>,
@@ -5186,6 +5245,7 @@ pub mod replication_protected_items {
                 failover_input: failover_input.into(),
             }
         }
+        #[doc = "Disables protection."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -5207,6 +5267,7 @@ pub mod replication_protected_items {
                 disable_protection_input: disable_protection_input.into(),
             }
         }
+        #[doc = "Removes disk(s)."]
         pub fn remove_disks(
             &self,
             resource_name: impl Into<String>,
@@ -5228,6 +5289,7 @@ pub mod replication_protected_items {
                 remove_disks_input: remove_disks_input.into(),
             }
         }
+        #[doc = "Resynchronize or repair replication."]
         pub fn repair_replication(
             &self,
             resource_name: impl Into<String>,
@@ -5247,6 +5309,7 @@ pub mod replication_protected_items {
                 replicated_protected_item_name: replicated_protected_item_name.into(),
             }
         }
+        #[doc = "Execute Reverse Replication\\Reprotect."]
         pub fn reprotect(
             &self,
             resource_name: impl Into<String>,
@@ -5268,6 +5331,7 @@ pub mod replication_protected_items {
                 reprotect_input: reprotect_input.into(),
             }
         }
+        #[doc = "Resolve health errors."]
         pub fn resolve_health_errors(
             &self,
             resource_name: impl Into<String>,
@@ -5289,6 +5353,7 @@ pub mod replication_protected_items {
                 resolve_health_input: resolve_health_input.into(),
             }
         }
+        #[doc = "Execute test failover."]
         pub fn test_failover(
             &self,
             resource_name: impl Into<String>,
@@ -5310,6 +5375,7 @@ pub mod replication_protected_items {
                 testfailover_input: testfailover_input.into(),
             }
         }
+        #[doc = "Execute test failover cleanup."]
         pub fn test_failover_cleanup(
             &self,
             resource_name: impl Into<String>,
@@ -5331,6 +5397,7 @@ pub mod replication_protected_items {
                 cleanup_input: cleanup_input.into(),
             }
         }
+        #[doc = "Execute unplanned failover."]
         pub fn unplanned_failover(
             &self,
             resource_name: impl Into<String>,
@@ -5352,6 +5419,7 @@ pub mod replication_protected_items {
                 failover_input: failover_input.into(),
             }
         }
+        #[doc = "Updates appliance for replication protected Item."]
         pub fn update_appliance(
             &self,
             resource_name: impl Into<String>,
@@ -5373,6 +5441,7 @@ pub mod replication_protected_items {
                 appliance_update_input: appliance_update_input.into(),
             }
         }
+        #[doc = "Update the mobility service on a protected item."]
         pub fn update_mobility_service(
             &self,
             resource_name: impl Into<String>,
@@ -5394,6 +5463,7 @@ pub mod replication_protected_items {
                 update_mobility_service_request: update_mobility_service_request.into(),
             }
         }
+        #[doc = "Gets the list of replication protected items."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -7015,6 +7085,7 @@ pub mod recovery_points {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of recovery points for a replication protected item."]
         pub fn list_by_replication_protected_items(
             &self,
             resource_name: impl Into<String>,
@@ -7034,6 +7105,7 @@ pub mod recovery_points {
                 replicated_protected_item_name: replicated_protected_item_name.into(),
             }
         }
+        #[doc = "Gets a recovery point."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -7200,6 +7272,7 @@ pub mod target_compute_sizes {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of target compute sizes for the replication protected item."]
         pub fn list_by_replication_protected_items(
             &self,
             resource_name: impl Into<String>,
@@ -7296,6 +7369,7 @@ pub mod replication_protection_container_mappings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of protection container mappings for a protection container."]
         pub fn list_by_replication_protection_containers(
             &self,
             resource_name: impl Into<String>,
@@ -7313,6 +7387,7 @@ pub mod replication_protection_container_mappings {
                 protection_container_name: protection_container_name.into(),
             }
         }
+        #[doc = "Gets a protection container mapping."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -7332,6 +7407,7 @@ pub mod replication_protection_container_mappings {
                 mapping_name: mapping_name.into(),
             }
         }
+        #[doc = "Create protection container mapping."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -7353,6 +7429,7 @@ pub mod replication_protection_container_mappings {
                 creation_input: creation_input.into(),
             }
         }
+        #[doc = "Update protection container mapping."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -7374,6 +7451,7 @@ pub mod replication_protection_container_mappings {
                 update_input: update_input.into(),
             }
         }
+        #[doc = "Purge protection container mapping."]
         pub fn purge(
             &self,
             resource_name: impl Into<String>,
@@ -7393,6 +7471,7 @@ pub mod replication_protection_container_mappings {
                 mapping_name: mapping_name.into(),
             }
         }
+        #[doc = "Remove protection container mapping."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -7414,6 +7493,7 @@ pub mod replication_protection_container_mappings {
                 removal_input: removal_input.into(),
             }
         }
+        #[doc = "Gets the list of all protection container mappings in a vault."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -7938,6 +8018,7 @@ pub mod replication_recovery_services_providers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of registered recovery services providers for the fabric."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -7953,6 +8034,7 @@ pub mod replication_recovery_services_providers {
                 fabric_name: fabric_name.into(),
             }
         }
+        #[doc = "Gets the details of a recovery services provider."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -7970,6 +8052,7 @@ pub mod replication_recovery_services_providers {
                 provider_name: provider_name.into(),
             }
         }
+        #[doc = "Adds a recovery services provider."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -7989,6 +8072,7 @@ pub mod replication_recovery_services_providers {
                 add_provider_input: add_provider_input.into(),
             }
         }
+        #[doc = "Purges recovery service provider from fabric."]
         pub fn purge(
             &self,
             resource_name: impl Into<String>,
@@ -8006,6 +8090,7 @@ pub mod replication_recovery_services_providers {
                 provider_name: provider_name.into(),
             }
         }
+        #[doc = "Refresh details from the recovery services provider."]
         pub fn refresh_provider(
             &self,
             resource_name: impl Into<String>,
@@ -8023,6 +8108,7 @@ pub mod replication_recovery_services_providers {
                 provider_name: provider_name.into(),
             }
         }
+        #[doc = "Deletes provider from fabric. Note: Deleting provider for any fabric other than SingleHost is unsupported. To maintain backward compatibility for released clients the object \"deleteRspInput\" is used (if the object is empty we assume that it is old client and continue the old behavior)."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -8040,6 +8126,7 @@ pub mod replication_recovery_services_providers {
                 provider_name: provider_name.into(),
             }
         }
+        #[doc = "Gets the list of registered recovery services providers in the vault. This is a view only api."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -8554,6 +8641,7 @@ pub mod replication_storage_classifications {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of storage classification objects under a fabric."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -8569,6 +8657,7 @@ pub mod replication_storage_classifications {
                 fabric_name: fabric_name.into(),
             }
         }
+        #[doc = "Gets the details of a storage classification."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -8586,6 +8675,7 @@ pub mod replication_storage_classifications {
                 storage_classification_name: storage_classification_name.into(),
             }
         }
+        #[doc = "Gets the list of storage classification objects under a vault."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -8810,6 +8900,7 @@ pub mod replication_storage_classification_mappings {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of storage classification mappings objects under a storage."]
         pub fn list_by_replication_storage_classifications(
             &self,
             resource_name: impl Into<String>,
@@ -8827,6 +8918,7 @@ pub mod replication_storage_classification_mappings {
                 storage_classification_name: storage_classification_name.into(),
             }
         }
+        #[doc = "Gets the details of a storage classification mapping."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -8846,6 +8938,7 @@ pub mod replication_storage_classification_mappings {
                 storage_classification_mapping_name: storage_classification_mapping_name.into(),
             }
         }
+        #[doc = "Create storage classification mapping."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -8867,6 +8960,7 @@ pub mod replication_storage_classification_mappings {
                 pairing_input: pairing_input.into(),
             }
         }
+        #[doc = "Delete a storage classification mapping."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -8886,6 +8980,7 @@ pub mod replication_storage_classification_mappings {
                 storage_classification_mapping_name: storage_classification_mapping_name.into(),
             }
         }
+        #[doc = "Gets the list of storage classification mappings objects under a vault."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -9263,6 +9358,7 @@ pub mod replicationv_centers {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of vCenter registered under a fabric."]
         pub fn list_by_replication_fabrics(
             &self,
             resource_name: impl Into<String>,
@@ -9278,6 +9374,7 @@ pub mod replicationv_centers {
                 fabric_name: fabric_name.into(),
             }
         }
+        #[doc = "Gets the details of a vCenter."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -9295,6 +9392,7 @@ pub mod replicationv_centers {
                 vcenter_name: vcenter_name.into(),
             }
         }
+        #[doc = "Add vCenter."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -9314,6 +9412,7 @@ pub mod replicationv_centers {
                 add_v_center_request: add_v_center_request.into(),
             }
         }
+        #[doc = "Update vCenter operation."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -9333,6 +9432,7 @@ pub mod replicationv_centers {
                 update_v_center_request: update_v_center_request.into(),
             }
         }
+        #[doc = "Remove vcenter operation."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -9350,6 +9450,7 @@ pub mod replicationv_centers {
                 vcenter_name: vcenter_name.into(),
             }
         }
+        #[doc = "Gets the list of vCenter registered under the vault."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -9797,6 +9898,7 @@ pub mod replication_jobs {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of jobs."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -9811,6 +9913,7 @@ pub mod replication_jobs {
                 filter: None,
             }
         }
+        #[doc = "Gets the job details."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -9826,6 +9929,7 @@ pub mod replication_jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Cancels the specified job."]
         pub fn cancel(
             &self,
             resource_name: impl Into<String>,
@@ -9841,6 +9945,7 @@ pub mod replication_jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Restarts the specified job."]
         pub fn restart(
             &self,
             resource_name: impl Into<String>,
@@ -9856,6 +9961,7 @@ pub mod replication_jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Resumes the specified job."]
         pub fn resume(
             &self,
             resource_name: impl Into<String>,
@@ -9873,6 +9979,7 @@ pub mod replication_jobs {
                 resume_job_params: resume_job_params.into(),
             }
         }
+        #[doc = "Exports the details of the Azure Site Recovery jobs of the vault."]
         pub fn export(
             &self,
             resource_name: impl Into<String>,
@@ -10372,6 +10479,7 @@ pub mod replication_policies {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of replication policies."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -10385,6 +10493,7 @@ pub mod replication_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the requested policy."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -10400,6 +10509,7 @@ pub mod replication_policies {
                 policy_name: policy_name.into(),
             }
         }
+        #[doc = "Creates the policy."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -10417,6 +10527,7 @@ pub mod replication_policies {
                 input: input.into(),
             }
         }
+        #[doc = "Updates the policy."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -10434,6 +10545,7 @@ pub mod replication_policies {
                 input: input.into(),
             }
         }
+        #[doc = "Delete the policy."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -10840,6 +10952,7 @@ pub mod replication_protection_intents {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of replication protection intent objects."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -10855,6 +10968,7 @@ pub mod replication_protection_intents {
                 take_token: None,
             }
         }
+        #[doc = "Gets the details of a Replication protection intent item."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -10870,6 +10984,7 @@ pub mod replication_protection_intents {
                 intent_object_name: intent_object_name.into(),
             }
         }
+        #[doc = "Create protection intent Resource."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -11124,6 +11239,7 @@ pub mod replication_recovery_plans {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of recovery plans."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -11137,6 +11253,7 @@ pub mod replication_recovery_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the requested recovery plan."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -11152,6 +11269,7 @@ pub mod replication_recovery_plans {
                 recovery_plan_name: recovery_plan_name.into(),
             }
         }
+        #[doc = "Creates a recovery plan with the given details."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,
@@ -11169,6 +11287,7 @@ pub mod replication_recovery_plans {
                 input: input.into(),
             }
         }
+        #[doc = "Updates the given recovery plan."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -11186,6 +11305,7 @@ pub mod replication_recovery_plans {
                 input: input.into(),
             }
         }
+        #[doc = "Deletes the specified recovery plan."]
         pub fn delete(
             &self,
             resource_name: impl Into<String>,
@@ -11201,6 +11321,7 @@ pub mod replication_recovery_plans {
                 recovery_plan_name: recovery_plan_name.into(),
             }
         }
+        #[doc = "Execute cancel failover of the recovery plan."]
         pub fn failover_cancel(
             &self,
             resource_name: impl Into<String>,
@@ -11216,6 +11337,7 @@ pub mod replication_recovery_plans {
                 recovery_plan_name: recovery_plan_name.into(),
             }
         }
+        #[doc = "Execute commit failover of the recovery plan."]
         pub fn failover_commit(
             &self,
             resource_name: impl Into<String>,
@@ -11231,6 +11353,7 @@ pub mod replication_recovery_plans {
                 recovery_plan_name: recovery_plan_name.into(),
             }
         }
+        #[doc = "Execute planned failover of the recovery plan."]
         pub fn planned_failover(
             &self,
             resource_name: impl Into<String>,
@@ -11248,6 +11371,7 @@ pub mod replication_recovery_plans {
                 input: input.into(),
             }
         }
+        #[doc = "Execute reprotect of the recovery plan."]
         pub fn reprotect(
             &self,
             resource_name: impl Into<String>,
@@ -11263,6 +11387,7 @@ pub mod replication_recovery_plans {
                 recovery_plan_name: recovery_plan_name.into(),
             }
         }
+        #[doc = "Execute test failover of the recovery plan."]
         pub fn test_failover(
             &self,
             resource_name: impl Into<String>,
@@ -11280,6 +11405,7 @@ pub mod replication_recovery_plans {
                 input: input.into(),
             }
         }
+        #[doc = "Execute test failover cleanup of the recovery plan."]
         pub fn test_failover_cleanup(
             &self,
             resource_name: impl Into<String>,
@@ -11297,6 +11423,7 @@ pub mod replication_recovery_plans {
                 input: input.into(),
             }
         }
+        #[doc = "Execute unplanned failover of the recovery plan."]
         pub fn unplanned_failover(
             &self,
             resource_name: impl Into<String>,
@@ -12227,6 +12354,7 @@ pub mod supported_operating_systems {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the data of supported operating systems by SRS."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -12321,6 +12449,7 @@ pub mod replication_vault_health {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the health summary for the vault."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -12334,6 +12463,7 @@ pub mod replication_vault_health {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Refreshes health summary of the vault."]
         pub fn refresh(
             &self,
             resource_name: impl Into<String>,
@@ -12498,6 +12628,7 @@ pub mod replication_vault_setting {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of vault setting."]
         pub fn list(
             &self,
             resource_name: impl Into<String>,
@@ -12511,6 +12642,7 @@ pub mod replication_vault_setting {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the vault setting."]
         pub fn get(
             &self,
             resource_name: impl Into<String>,
@@ -12526,6 +12658,7 @@ pub mod replication_vault_setting {
                 vault_setting_name: vault_setting_name.into(),
             }
         }
+        #[doc = "Updates vault setting. A vault setting object is a singleton per vault and it is always present by default."]
         pub fn create(
             &self,
             resource_name: impl Into<String>,

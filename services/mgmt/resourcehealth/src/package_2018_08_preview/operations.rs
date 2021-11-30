@@ -122,12 +122,14 @@ pub mod metadata {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the metadata entity."]
         pub fn get(&self, name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Gets the list of metadata entities."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

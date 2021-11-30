@@ -226,12 +226,14 @@ pub mod app_service_environments {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all App Service Environments for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all App Service Environments in a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -243,6 +245,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the properties of an App Service Environment."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -256,6 +259,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update an App Service Environment."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -271,6 +275,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update an App Service Environment."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -286,6 +291,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete an App Service Environment."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -300,6 +306,7 @@ pub mod app_service_environments {
                 force_delete: None,
             }
         }
+        #[doc = "Get the used, available, and total worker capacity an App Service Environment."]
         pub fn list_capacities(
             &self,
             resource_group_name: impl Into<String>,
@@ -313,6 +320,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get IP addresses assigned to an App Service Environment."]
         pub fn list_vips(
             &self,
             resource_group_name: impl Into<String>,
@@ -326,6 +334,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get diagnostic information for an App Service Environment."]
         pub fn list_diagnostics(
             &self,
             resource_group_name: impl Into<String>,
@@ -339,6 +348,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a diagnostics item for an App Service Environment."]
         pub fn get_diagnostics_item(
             &self,
             resource_group_name: impl Into<String>,
@@ -354,6 +364,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get global metric definitions of an App Service Environment."]
         pub fn list_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -367,6 +378,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get global metrics of an App Service Environment."]
         pub fn list_metrics(
             &self,
             resource_group_name: impl Into<String>,
@@ -382,6 +394,7 @@ pub mod app_service_environments {
                 filter: None,
             }
         }
+        #[doc = "Get all multi-role pools."]
         pub fn list_multi_role_pools(
             &self,
             resource_group_name: impl Into<String>,
@@ -395,6 +408,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get properties of a multi-role pool."]
         pub fn get_multi_role_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -408,6 +422,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a multi-role pool."]
         pub fn create_or_update_multi_role_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -423,6 +438,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a multi-role pool."]
         pub fn update_multi_role_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -438,6 +454,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metric definitions for a specific instance of a multi-role pool of an App Service Environment."]
         pub fn list_multi_role_pool_instance_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -453,6 +470,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metrics for a specific instance of a multi-role pool of an App Service Environment."]
         pub fn list_multi_role_pool_instance_metrics(
             &self,
             resource_group_name: impl Into<String>,
@@ -469,6 +487,7 @@ pub mod app_service_environments {
                 details: None,
             }
         }
+        #[doc = "Get metric definitions for a multi-role pool of an App Service Environment."]
         pub fn list_multi_role_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -482,6 +501,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metrics for a multi-role pool of an App Service Environment."]
         pub fn list_multi_role_metrics(
             &self,
             resource_group_name: impl Into<String>,
@@ -500,6 +520,7 @@ pub mod app_service_environments {
                 filter: None,
             }
         }
+        #[doc = "Get available SKUs for scaling a multi-role pool."]
         pub fn list_multi_role_pool_skus(
             &self,
             resource_group_name: impl Into<String>,
@@ -513,6 +534,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get usage metrics for a multi-role pool of an App Service Environment."]
         pub fn list_multi_role_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -526,6 +548,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all currently running operations on the App Service Environment."]
         pub fn list_operations(
             &self,
             resource_group_name: impl Into<String>,
@@ -539,6 +562,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reboot all machines in an App Service Environment."]
         pub fn reboot(
             &self,
             resource_group_name: impl Into<String>,
@@ -552,6 +576,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resume an App Service Environment."]
         pub fn resume(
             &self,
             resource_group_name: impl Into<String>,
@@ -565,6 +590,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all App Service plans in an App Service Environment."]
         pub fn list_app_service_plans(
             &self,
             resource_group_name: impl Into<String>,
@@ -578,6 +604,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all apps in an App Service Environment."]
         pub fn list_web_apps(
             &self,
             resource_group_name: impl Into<String>,
@@ -592,6 +619,7 @@ pub mod app_service_environments {
                 properties_to_include: None,
             }
         }
+        #[doc = "Suspend an App Service Environment."]
         pub fn suspend(
             &self,
             resource_group_name: impl Into<String>,
@@ -605,6 +633,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get global usage metrics of an App Service Environment."]
         pub fn list_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -619,6 +648,7 @@ pub mod app_service_environments {
                 filter: None,
             }
         }
+        #[doc = "Get all worker pools of an App Service Environment."]
         pub fn list_worker_pools(
             &self,
             resource_group_name: impl Into<String>,
@@ -632,6 +662,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get properties of a worker pool."]
         pub fn get_worker_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -647,6 +678,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a worker pool."]
         pub fn create_or_update_worker_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -664,6 +696,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a worker pool."]
         pub fn update_worker_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -681,6 +714,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metric definitions for a specific instance of a worker pool of an App Service Environment."]
         pub fn list_worker_pool_instance_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -698,6 +732,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metrics for a specific instance of a worker pool of an App Service Environment."]
         pub fn list_worker_pool_instance_metrics(
             &self,
             resource_group_name: impl Into<String>,
@@ -717,6 +752,7 @@ pub mod app_service_environments {
                 filter: None,
             }
         }
+        #[doc = "Get metric definitions for a worker pool of an App Service Environment."]
         pub fn list_web_worker_metric_definitions(
             &self,
             resource_group_name: impl Into<String>,
@@ -732,6 +768,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metrics for a worker pool of a AppServiceEnvironment (App Service Environment)."]
         pub fn list_web_worker_metrics(
             &self,
             resource_group_name: impl Into<String>,
@@ -749,6 +786,7 @@ pub mod app_service_environments {
                 filter: None,
             }
         }
+        #[doc = "Get available SKUs for scaling a worker pool."]
         pub fn list_worker_pool_skus(
             &self,
             resource_group_name: impl Into<String>,
@@ -764,6 +802,7 @@ pub mod app_service_environments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get usage metrics for a worker pool of an App Service Environment."]
         pub fn list_web_worker_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -3869,6 +3908,7 @@ pub mod app_service_plans {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all App Service plans for a subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3876,6 +3916,7 @@ pub mod app_service_plans {
                 detailed: None,
             }
         }
+        #[doc = "Get all App Service plans in a resource group."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -3887,6 +3928,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get an App Service plan."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3900,6 +3942,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an App Service Plan."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3915,6 +3958,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an App Service Plan."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3930,6 +3974,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete an App Service plan."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3943,6 +3988,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all capabilities of an App Service plan."]
         pub fn list_capabilities(
             &self,
             resource_group_name: impl Into<String>,
@@ -3956,6 +4002,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a Hybrid Connection in use in an App Service plan."]
         pub fn get_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -3973,6 +4020,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a Hybrid Connection in use in an App Service plan."]
         pub fn delete_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -3990,6 +4038,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the send key name and value of a Hybrid Connection."]
         pub fn list_hybrid_connection_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -4007,6 +4056,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all apps that use a Hybrid Connection in an App Service Plan."]
         pub fn list_web_apps_by_hybrid_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -4024,6 +4074,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the maximum number of Hybrid Connections allowed in an App Service plan."]
         pub fn get_hybrid_connection_plan_limit(
             &self,
             resource_group_name: impl Into<String>,
@@ -4037,6 +4088,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve all Hybrid Connections in use in an App Service plan."]
         pub fn list_hybrid_connections(
             &self,
             resource_group_name: impl Into<String>,
@@ -4050,6 +4102,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metrics that can be queried for an App Service plan, and their definitions."]
         pub fn list_metric_defintions(
             &self,
             resource_group_name: impl Into<String>,
@@ -4063,6 +4116,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get metrics for an App Service plan."]
         pub fn list_metrics(
             &self,
             resource_group_name: impl Into<String>,
@@ -4078,6 +4132,7 @@ pub mod app_service_plans {
                 filter: None,
             }
         }
+        #[doc = "Restart all apps in an App Service plan."]
         pub fn restart_web_apps(
             &self,
             resource_group_name: impl Into<String>,
@@ -4092,6 +4147,7 @@ pub mod app_service_plans {
                 soft_restart: None,
             }
         }
+        #[doc = "Get all apps associated with an App Service plan."]
         pub fn list_web_apps(
             &self,
             resource_group_name: impl Into<String>,
@@ -4108,6 +4164,7 @@ pub mod app_service_plans {
                 top: None,
             }
         }
+        #[doc = "Gets all selectable SKUs for a given App Service Plan"]
         pub fn get_server_farm_skus(
             &self,
             resource_group_name: impl Into<String>,
@@ -4121,6 +4178,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets server farm usage information"]
         pub fn list_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -4135,6 +4193,7 @@ pub mod app_service_plans {
                 filter: None,
             }
         }
+        #[doc = "Get all Virtual Networks associated with an App Service plan."]
         pub fn list_vnets(
             &self,
             resource_group_name: impl Into<String>,
@@ -4148,6 +4207,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a Virtual Network associated with an App Service plan."]
         pub fn get_vnet_from_server_farm(
             &self,
             resource_group_name: impl Into<String>,
@@ -4163,6 +4223,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a Virtual Network gateway."]
         pub fn get_vnet_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -4180,6 +4241,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a Virtual Network gateway."]
         pub fn update_vnet_gateway(
             &self,
             resource_group_name: impl Into<String>,
@@ -4199,6 +4261,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all routes that are associated with a Virtual Network in an App Service plan."]
         pub fn list_routes_for_vnet(
             &self,
             resource_group_name: impl Into<String>,
@@ -4214,6 +4277,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a Virtual Network route in an App Service plan."]
         pub fn get_route_for_vnet(
             &self,
             resource_group_name: impl Into<String>,
@@ -4231,6 +4295,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a Virtual Network route in an App Service plan."]
         pub fn create_or_update_vnet_route(
             &self,
             resource_group_name: impl Into<String>,
@@ -4250,6 +4315,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a Virtual Network route in an App Service plan."]
         pub fn update_vnet_route(
             &self,
             resource_group_name: impl Into<String>,
@@ -4269,6 +4335,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a Virtual Network route in an App Service plan."]
         pub fn delete_vnet_route(
             &self,
             resource_group_name: impl Into<String>,
@@ -4286,6 +4353,7 @@ pub mod app_service_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reboot a worker machine in an App Service plan."]
         pub fn reboot_worker(
             &self,
             resource_group_name: impl Into<String>,

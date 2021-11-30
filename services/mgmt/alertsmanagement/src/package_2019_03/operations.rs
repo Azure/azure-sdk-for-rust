@@ -216,6 +216,7 @@ pub mod alerts {
                 custom_time_range: None,
             }
         }
+        #[doc = "Get a specific alert."]
         pub fn get_by_id(&self, scope: impl Into<String>, alert_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),

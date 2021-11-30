@@ -85,6 +85,7 @@ pub mod confidential_ledger_identity_service {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets identity information for a Confidential Ledger instance."]
         pub fn get_ledger_identity(&self, ledger_id: impl Into<String>) -> get_ledger_identity::Builder {
             get_ledger_identity::Builder {
                 client: self.0.clone(),

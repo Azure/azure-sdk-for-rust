@@ -107,12 +107,14 @@ pub mod marketplace_agreements {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Confluent marketplace agreements in the subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create Confluent Marketplace agreement in the subscription."]
         pub fn create(&self, subscription_id: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -287,6 +289,7 @@ pub mod organization_operations {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all operations provided by Microsoft.Confluent."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -364,12 +367,14 @@ pub mod organization {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all organizations under the specified subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all Organizations under the specified resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -381,6 +386,7 @@ pub mod organization {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the properties of a specific Organization resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -394,6 +400,7 @@ pub mod organization {
                 organization_name: organization_name.into(),
             }
         }
+        #[doc = "Create Organization resource"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -408,6 +415,7 @@ pub mod organization {
                 body: None,
             }
         }
+        #[doc = "Update Organization resource"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -422,6 +430,7 @@ pub mod organization {
                 body: None,
             }
         }
+        #[doc = "Delete Organization resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

@@ -100,6 +100,7 @@ pub mod connected_cluster {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the properties of the specified connected cluster."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -113,6 +114,7 @@ pub mod connected_cluster {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Register a new Kubernetes cluster with Azure Resource Manager."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -128,6 +130,7 @@ pub mod connected_cluster {
                 connected_cluster: connected_cluster.into(),
             }
         }
+        #[doc = "Updates a connected cluster."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -143,6 +146,7 @@ pub mod connected_cluster {
                 connected_cluster_patch: connected_cluster_patch.into(),
             }
         }
+        #[doc = "Delete a connected cluster."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -156,6 +160,7 @@ pub mod connected_cluster {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Lists all connected clusters"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -167,6 +172,7 @@ pub mod connected_cluster {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all connected clusters"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),

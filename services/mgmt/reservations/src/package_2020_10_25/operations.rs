@@ -145,6 +145,7 @@ pub mod reservation {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Available Scopes for `Reservation`."]
         pub fn available_scopes(
             &self,
             reservation_order_id: impl Into<String>,
@@ -158,6 +159,7 @@ pub mod reservation {
                 body: body.into(),
             }
         }
+        #[doc = "Split the `Reservation`."]
         pub fn split(&self, reservation_order_id: impl Into<String>, body: impl Into<models::SplitRequest>) -> split::Builder {
             split::Builder {
                 client: self.0.clone(),
@@ -165,6 +167,7 @@ pub mod reservation {
                 body: body.into(),
             }
         }
+        #[doc = "Merges two `Reservation`s."]
         pub fn merge(&self, reservation_order_id: impl Into<String>, body: impl Into<models::MergeRequest>) -> merge::Builder {
             merge::Builder {
                 client: self.0.clone(),
@@ -172,12 +175,14 @@ pub mod reservation {
                 body: body.into(),
             }
         }
+        #[doc = "Get `Reservation`s in a given reservation Order"]
         pub fn list(&self, reservation_order_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 reservation_order_id: reservation_order_id.into(),
             }
         }
+        #[doc = "Get `Reservation` details."]
         pub fn get(&self, reservation_id: impl Into<String>, reservation_order_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -186,6 +191,7 @@ pub mod reservation {
                 expand: None,
             }
         }
+        #[doc = "Updates a `Reservation`."]
         pub fn update(
             &self,
             reservation_order_id: impl Into<String>,
@@ -199,6 +205,7 @@ pub mod reservation {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Get `Reservation` revisions."]
         pub fn list_revisions(
             &self,
             reservation_id: impl Into<String>,
@@ -766,6 +773,7 @@ pub mod reservation {
     }
 }
 impl Client {
+    #[doc = "Get the regions and skus that are available for RI purchase for the specified Azure subscription."]
     pub fn get_catalog(&self, subscription_id: impl Into<String>, reserved_resource_type: impl Into<String>) -> get_catalog::Builder {
         get_catalog::Builder {
             client: self.clone(),
@@ -774,6 +782,7 @@ impl Client {
             location: None,
         }
     }
+    #[doc = "Get list of applicable `Reservation`s."]
     pub fn get_applied_reservation_list(&self, subscription_id: impl Into<String>) -> get_applied_reservation_list::Builder {
         get_applied_reservation_list::Builder {
             client: self.clone(),
@@ -942,15 +951,18 @@ pub mod reservation_order {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Calculate price for a `ReservationOrder`."]
         pub fn calculate(&self, body: impl Into<models::PurchaseRequest>) -> calculate::Builder {
             calculate::Builder {
                 client: self.0.clone(),
                 body: body.into(),
             }
         }
+        #[doc = "Get all `ReservationOrder`s."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Get a specific `ReservationOrder`."]
         pub fn get(&self, reservation_order_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -958,6 +970,7 @@ pub mod reservation_order {
                 expand: None,
             }
         }
+        #[doc = "Purchase `ReservationOrder`"]
         pub fn purchase(&self, reservation_order_id: impl Into<String>, body: impl Into<models::PurchaseRequest>) -> purchase::Builder {
             purchase::Builder {
                 client: self.0.clone(),
@@ -1276,6 +1289,7 @@ pub mod operation {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1353,6 +1367,7 @@ pub mod calculate_exchange {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Calculates the refund amounts and price of the new purchases."]
         pub fn post(&self, body: impl Into<models::CalculateExchangeRequest>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),
@@ -1441,6 +1456,7 @@ pub mod exchange {
     use super::{models, API_VERSION};
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Exchange Reservation(s)"]
         pub fn post(&self, body: impl Into<models::ExchangeRequest>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),
