@@ -15,14 +15,25 @@ pub struct ClientBuilder {
     credential: std::sync::Arc<dyn azure_core::TokenCredential>,
     endpoint: Option<String>,
     scopes: Option<Vec<String>>,
+    pipeline: Option<azure_core::pipeline::Pipeline>,
 }
 pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+pub fn new_pipeline() -> azure_core::pipeline::Pipeline {
+    azure_core::pipeline::Pipeline::new(
+        option_env!("CARGO_PKG_NAME"),
+        option_env!("CARGO_PKG_VERSION"),
+        azure_core::ClientOptions::default(),
+        Vec::new(),
+        Vec::new(),
+    )
+}
 impl ClientBuilder {
     pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
         Self {
             credential,
             endpoint: None,
             scopes: None,
+            pipeline: None,
         }
     }
     pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
@@ -33,10 +44,15 @@ impl ClientBuilder {
         self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
         self
     }
+    pub fn pipeline(mut self, pipeline: impl Into<azure_core::pipeline::Pipeline>) -> Self {
+        self.pipeline = Some(pipeline.into());
+        self
+    }
     pub fn build(self) -> Client {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
         let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
-        Client::new(endpoint, self.credential, scopes)
+        let pipeline = self.pipeline.unwrap_or_else(new_pipeline);
+        Client::new(endpoint, self.credential, scopes, pipeline)
     }
 }
 impl Client {
@@ -54,15 +70,14 @@ impl Client {
         let mut request = request.into();
         self.pipeline.send(&mut context, &mut request).await
     }
-    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+    pub fn new(
+        endpoint: impl Into<String>,
+        credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+        scopes: Vec<String>,
+        pipeline: impl Into<azure_core::pipeline::Pipeline>,
+    ) -> Self {
         let endpoint = endpoint.into();
-        let pipeline = azure_core::pipeline::Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            azure_core::ClientOptions::default(),
-            Vec::new(),
-            Vec::new(),
-        );
+        let pipeline = pipeline.into();
         Self {
             endpoint,
             credential,
