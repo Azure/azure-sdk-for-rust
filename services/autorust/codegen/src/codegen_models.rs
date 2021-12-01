@@ -113,7 +113,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
             file.extend(create_vec_alias(schema)?);
         } else if schema.is_local_enum() {
             let no_namespace = TokenStream::new();
-            let (_tp_name, tp) = create_enum(&no_namespace, schema_name, schema, false)?;
+            let (_tp_name, tp) = create_enum(&no_namespace, schema, false)?;
             file.extend(tp);
         } else if schema.is_basic_type() {
             let (id, value) = create_basic_type_alias(schema_name, schema)?;
@@ -153,12 +153,8 @@ fn add_schema_refs(spec: &Spec, schemas: &mut IndexMap<RefKey, SchemaGen>, doc_f
     Ok(())
 }
 
-fn create_enum(
-    namespace: &TokenStream,
-    property_name: &str,
-    property: &SchemaGen,
-    lowercase_workaround: bool,
-) -> Result<(TokenStream, TokenStream), Error> {
+fn create_enum(namespace: &TokenStream, property: &SchemaGen, lowercase_workaround: bool) -> Result<(TokenStream, TokenStream), Error> {
+    let property_name = &property.name;
     let enum_values = enum_values_as_strings(&property.schema.schema.common.enum_);
     let id = &property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
@@ -326,7 +322,7 @@ fn create_struct_field_type(
         }
         None => {
             if property.is_local_enum() {
-                let (tp_name, tp) = create_enum(namespace, property_name, property, lowercase_workaround)?;
+                let (tp_name, tp) = create_enum(namespace, property, lowercase_workaround)?;
                 Ok((tp_name, vec![tp]))
             } else if property.is_local_struct() {
                 let id = property_name.to_camel_case_ident().map_err(Error::PropertyName)?;
