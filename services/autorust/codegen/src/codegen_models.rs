@@ -4,7 +4,7 @@ use crate::{
     spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
     CodeGen, PropertyName, ResolvedSchema, Spec,
 };
-use autorust_openapi::{DataType, Reference, Schema, ReferenceOr};
+use autorust_openapi::{DataType, Reference, ReferenceOr, Schema};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -16,9 +16,11 @@ use std::{
 };
 
 struct SchemaGen {
-    file_path: PathBuf,
+    doc_file: PathBuf,
     name: String,
     schema: ResolvedSchema,
+    // resolved properties
+    properties: Vec<SchemaGen>,
 }
 
 impl SchemaGen {
@@ -57,21 +59,27 @@ impl SchemaGen {
         get_schema_array_items(&self.schema.schema.common).map_err(Error::ArrayItems)
     }
 
-    // TODO need to resolve before codegen
-    fn properties(&self, cg: &CodeGen, doc_file: &PathBuf) -> Result<Vec<SchemaGen>, Error> {
-        let properties = cg.spec.resolve_schema_map(doc_file, &self.schema.schema.properties)?;
-        Ok(properties.into_iter().map(|(name, schema)| {
-            SchemaGen {
-                file_path: doc_file.to_owned(),
-                name,
-                schema,
-            }
-        }).collect())
-    }
-
     fn enum_values_as_strings(&self) -> Vec<&str> {
         enum_values_as_strings(&self.schema.schema.common.enum_)
     }
+
+    fn properties(&self) -> Vec<&SchemaGen> {
+        self.properties.iter().collect()
+    }
+}
+
+fn resolve_properties(schema: &mut SchemaGen, spec: &Spec) -> Result<(), Error> {
+    let properties = spec.resolve_schema_map(&schema.doc_file, &schema.schema.schema.properties)?;
+    schema.properties = properties
+        .into_iter()
+        .map(|(name, resolved_schema)| SchemaGen {
+            doc_file: schema.doc_file.to_owned(),
+            name,
+            schema: resolved_schema,
+            properties: Vec::new(),
+        })
+        .collect();
+    Ok(())
 }
 
 fn enum_values_as_strings(values: &[Value]) -> Vec<&str> {
@@ -93,13 +101,14 @@ fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
         for (name, schema) in schemas {
             all_schemas.insert(
                 RefKey {
-                    file_path: doc_file.to_owned(),
+                    doc_file: doc_file.to_owned(),
                     name: name.clone(),
                 },
                 SchemaGen {
-                    file_path: doc_file.to_owned(),
+                    doc_file: doc_file.to_owned(),
                     name,
                     schema,
+                    properties: Vec::new(),
                 },
             );
         }
@@ -110,6 +119,11 @@ fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
         for reference in openapi::get_api_schema_references(doc_file, api) {
             add_schema_refs(spec, &mut all_schemas, doc_file, reference)?;
         }
+    }
+
+    // resolve properties before codegen
+    for (_ref_key, schema) in &mut all_schemas {
+        resolve_properties(schema, spec)?;
     }
 
     Ok(all_schemas)
@@ -134,7 +148,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
 
     let mut schema_names = IndexMap::new();
     for (ref_key, schema) in &all_schemas(&cg.spec)? {
-        let doc_file = &ref_key.file_path;
+        let doc_file = &ref_key.doc_file;
         let schema_name = &ref_key.name;
         if let Some(_first_doc_file) = schema_names.insert(schema_name, doc_file) {
             // eprintln!(
@@ -169,16 +183,17 @@ fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<
 fn add_schema_refs(spec: &Spec, schemas: &mut IndexMap<RefKey, SchemaGen>, doc_file: &Path, schema_ref: Reference) -> Result<(), Error> {
     let schema = spec.resolve_schema_ref(doc_file, schema_ref)?;
     if let Some(ref_key) = schema.ref_key.clone() {
-        if !schemas.contains_key(&ref_key) && !spec.is_input_file(&ref_key.file_path) {
+        if !schemas.contains_key(&ref_key) && !spec.is_input_file(&ref_key.doc_file) {
             let refs = get_schema_schema_references(&schema.schema);
             let schema = SchemaGen {
-                file_path: ref_key.file_path.clone(),
+                doc_file: ref_key.doc_file.clone(),
                 name: ref_key.name.clone(),
                 schema,
+                properties: Vec::new(),
             };
             schemas.insert(ref_key.clone(), schema);
             for reference in refs {
-                add_schema_refs(spec, schemas, &ref_key.file_path, reference)?;
+                add_schema_refs(spec, schemas, &ref_key.doc_file, reference)?;
             }
         }
     }
@@ -234,7 +249,7 @@ fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
 }
 
 fn create_struct(cg: &CodeGen, schema: &SchemaGen) -> Result<Vec<TokenStream>, Error> {
-    let doc_file = &schema.file_path;
+    let doc_file = &schema.doc_file;
     let struct_name = &schema.name;
     // println!("create_struct {} {}", doc_file.to_str().unwrap(), struct_name);
     let mut streams = Vec::new();
@@ -253,7 +268,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen) -> Result<Vec<TokenStream>, E
         });
     }
 
-    for property in schema.properties(cg, doc_file)? {
+    for property in schema.properties() {
         let property_name = &property.name;
         let nm = property_name.to_snake_case_ident().map_err(Error::StructName)?;
         let prop_nm = &PropertyName {
@@ -264,7 +279,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen) -> Result<Vec<TokenStream>, E
 
         let lowercase_workaround = cg.should_workaround_case();
 
-        let (mut field_tp_name, field_tp) = create_struct_field_type(cg, &ns, &property, lowercase_workaround)?;
+        let (mut field_tp_name, field_tp) = create_struct_field_type(cg, &ns, property, lowercase_workaround)?;
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path.display(), prop_nm.schema_name, property_name);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
@@ -357,10 +372,7 @@ fn create_struct_field_type(
                 // println!("creating local struct {:?} {}", tp_name, tps.len());
                 Ok((tp_name, tps))
             } else {
-                Ok((
-                    type_name_gen(&property.type_name()?, false, false)?,
-                    Vec::new(),
-                ))
+                Ok((type_name_gen(&property.type_name()?, false, false)?, Vec::new()))
             }
         }
     }

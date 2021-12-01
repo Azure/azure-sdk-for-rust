@@ -36,7 +36,7 @@ impl Spec {
             for (name, schema) in &doc.definitions {
                 if let ReferenceOr::Item(schema) = schema {
                     let ref_key = RefKey {
-                        file_path: path.clone(),
+                        doc_file: path.clone(),
                         name: name.clone(),
                     };
                     schemas.insert(ref_key, schema.clone());
@@ -46,7 +46,7 @@ impl Spec {
             for (name, param) in &doc.parameters {
                 parameters.insert(
                     RefKey {
-                        file_path: path.clone(),
+                        doc_file: path.clone(),
                         name: name.clone(),
                     },
                     param.clone(),
@@ -136,10 +136,7 @@ impl Spec {
         };
 
         let name = reference.name.ok_or(Error::NoNameInReference)?;
-        let ref_key = RefKey {
-            file_path: full_path,
-            name,
-        };
+        let ref_key = RefKey { doc_file: full_path, name };
         let schema = self
             .schemas
             .get(&ref_key)
@@ -159,10 +156,7 @@ impl Spec {
             Some(file) => path::join(doc_file, &file).map_err(|source| Error::PathJoin { source })?,
         };
         let name = reference.name.ok_or(Error::NoNameInReference)?;
-        let ref_key = RefKey {
-            file_path: full_path,
-            name,
-        };
+        let ref_key = RefKey { doc_file: full_path, name };
         Ok(self.parameters.get(&ref_key).ok_or(Error::ParameterNotFound { ref_key })?.clone())
     }
 
@@ -265,7 +259,7 @@ type Result<T, E = Error> = std::result::Result<T, E>;
 pub enum Error {
     #[error("PathJoin")]
     PathJoin { source: path::Error },
-    #[error("SchemaNotFound {} {}", ref_key.file_path.display(), ref_key.name)]
+    #[error("SchemaNotFound {} {}", ref_key.doc_file.display(), ref_key.name)]
     SchemaNotFound { ref_key: RefKey },
     #[error("NoNameInReference")]
     NoNameInReference,
@@ -291,7 +285,7 @@ pub enum Error {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RefKey {
-    pub file_path: PathBuf,
+    pub doc_file: PathBuf,
     pub name: String,
 }
 
