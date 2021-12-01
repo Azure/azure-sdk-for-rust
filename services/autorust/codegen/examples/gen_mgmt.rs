@@ -5,7 +5,7 @@ use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
 
-const ONLY_SERVICES: &[&str] = &[];
+const ONLY_SERVICES: &[&str] = &["vmware"];
 
 const SKIP_SERVICES: &[&str] = &[
     "datamigration",
@@ -338,7 +338,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut box_properties = HashSet::new();
     for (file_path, schema_name, property_name) in BOX_PROPERTIES {
         box_properties.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
+            doc_file: PathBuf::from(file_path),
             schema_name: schema_name.to_string(),
             property_name: property_name.to_string(),
         });
@@ -347,7 +347,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut optional_properties = HashSet::new();
     for (file_path, schema_name, property_name) in OPTIONAL_PROPERTIES {
         optional_properties.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
+            doc_file: PathBuf::from(file_path),
             schema_name: schema_name.to_string(),
             property_name: property_name.to_string(),
         });

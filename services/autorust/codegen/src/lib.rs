@@ -48,7 +48,7 @@ pub enum Error {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PropertyName {
-    pub file_path: PathBuf,
+    pub doc_file: PathBuf,
     pub schema_name: String,
     pub property_name: String,
 }

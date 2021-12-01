@@ -249,7 +249,6 @@ fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
 }
 
 fn create_struct(cg: &CodeGen, schema: &SchemaGen) -> Result<Vec<TokenStream>, Error> {
-    let doc_file = &schema.doc_file;
     let struct_name = &schema.name;
     // println!("create_struct {} {}", doc_file.to_str().unwrap(), struct_name);
     let mut streams = Vec::new();
@@ -272,7 +271,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen) -> Result<Vec<TokenStream>, E
         let property_name = &property.name;
         let nm = property_name.to_snake_case_ident().map_err(Error::StructName)?;
         let prop_nm = &PropertyName {
-            file_path: PathBuf::from(doc_file),
+            doc_file: schema.doc_file.clone(),
             schema_name: struct_name.to_owned(),
             property_name: property_name.clone(),
         };
