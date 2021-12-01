@@ -1,10 +1,10 @@
 use crate::{
     codegen::{add_option, create_generated_by_header, is_vec, type_name_gen, Error},
     identifier::{CamelCaseIdent, SnakeCaseIdent},
-    spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref},
+    spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
     CodeGen, PropertyName, ResolvedSchema, Spec,
 };
-use autorust_openapi::{DataType, Reference};
+use autorust_openapi::{DataType, Reference, Schema, ReferenceOr};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -16,29 +16,61 @@ use std::{
 };
 
 struct SchemaGen {
-    pub file_path: PathBuf,
-    pub name: String,
-    pub schema: ResolvedSchema,
+    file_path: PathBuf,
+    name: String,
+    schema: ResolvedSchema,
 }
 
 impl SchemaGen {
-    pub fn is_array(&self) -> bool {
+    fn is_array(&self) -> bool {
         matches!(self.schema.schema.common.type_, Some(DataType::Array))
     }
 
-    pub fn is_local_enum(&self) -> bool {
+    fn is_local_enum(&self) -> bool {
         !self.schema.schema.common.enum_.is_empty()
     }
 
-    pub fn is_local_struct(&self) -> bool {
+    fn is_local_struct(&self) -> bool {
         !self.schema.schema.properties.is_empty()
     }
 
-    pub fn is_basic_type(&self) -> bool {
+    fn is_basic_type(&self) -> bool {
         matches!(
             self.schema.schema.common.type_,
             Some(DataType::Integer | DataType::String | DataType::Number | DataType::Boolean)
         )
+    }
+
+    fn type_name(&self) -> Result<TypeName, Error> {
+        get_type_name_for_schema(&self.schema.schema.common).map_err(Error::TypeNameForSchema)
+    }
+
+    fn required(&self) -> HashSet<&str> {
+        self.schema.schema.required.iter().map(String::as_str).collect()
+    }
+
+    fn all_of(&self) -> Vec<&ReferenceOr<Schema>> {
+        self.schema.schema.all_of.iter().collect()
+    }
+
+    fn array_items(&self) -> Result<&ReferenceOr<Schema>, Error> {
+        get_schema_array_items(&self.schema.schema.common).map_err(Error::ArrayItems)
+    }
+
+    // TODO need to resolve before codegen
+    fn properties(&self, cg: &CodeGen, doc_file: &PathBuf) -> Result<Vec<SchemaGen>, Error> {
+        let properties = cg.spec.resolve_schema_map(doc_file, &self.schema.schema.properties)?;
+        Ok(properties.into_iter().map(|(name, schema)| {
+            SchemaGen {
+                file_path: doc_file.to_owned(),
+                name,
+                schema,
+            }
+        }).collect())
+    }
+
+    fn enum_values_as_strings(&self) -> Vec<&str> {
+        enum_values_as_strings(&self.schema.schema.common.enum_)
     }
 }
 
@@ -129,7 +161,7 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
 
 fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<(TokenStream, TokenStream), Error> {
     let id = property_name.to_camel_case_ident().map_err(Error::StructName)?;
-    let value = type_name_gen(&get_type_name_for_schema(&property.schema.schema.common)?, false, false)?;
+    let value = type_name_gen(&property.type_name()?, false, false)?;
     Ok((id, value))
 }
 
@@ -155,7 +187,7 @@ fn add_schema_refs(spec: &Spec, schemas: &mut IndexMap<RefKey, SchemaGen>, doc_f
 
 fn create_enum(namespace: &TokenStream, property: &SchemaGen, lowercase_workaround: bool) -> Result<(TokenStream, TokenStream), Error> {
     let property_name = &property.name;
-    let enum_values = enum_values_as_strings(&property.schema.schema.common.enum_);
+    let enum_values = property.enum_values_as_strings();
     let id = &property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
         property: property_name.to_owned(),
@@ -195,7 +227,7 @@ fn create_enum(namespace: &TokenStream, property: &SchemaGen, lowercase_workarou
 }
 
 fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
-    let items = get_schema_array_items(&schema.schema.schema.common)?;
+    let items = schema.array_items()?;
     let typ = &schema.name.to_camel_case_ident().map_err(Error::VecAliasName)?;
     let items_typ = type_name_gen(&get_type_name_for_schema_ref(items)?, false, false)?;
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
@@ -210,9 +242,9 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen) -> Result<Vec<TokenStream>, E
     let mut props = TokenStream::new();
     let ns = struct_name.to_snake_case_ident().map_err(Error::StructName)?;
     let nm = struct_name.to_camel_case_ident().map_err(Error::StructName)?;
-    let required: HashSet<&str> = schema.schema.schema.required.iter().map(String::as_str).collect();
+    let required = schema.required();
 
-    for schema in &schema.schema.schema.all_of {
+    for schema in schema.all_of() {
         let type_name = type_name_gen(&get_type_name_for_schema_ref(schema)?, false, false)?;
         let field_name = type_name.to_string().to_snake_case_ident().map_err(Error::StructFieldName)?;
         props.extend(quote! {
@@ -221,19 +253,13 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen) -> Result<Vec<TokenStream>, E
         });
     }
 
-    // TODO need to resolve before codegen
-    let properties = cg.spec.resolve_schema_map(doc_file, &schema.schema.schema.properties)?;
-    for (property_name, property) in properties {
-        let property = SchemaGen {
-            file_path: doc_file.to_owned(),
-            name: property_name.clone(),
-            schema: property,
-        };
+    for property in schema.properties(cg, doc_file)? {
+        let property_name = &property.name;
         let nm = property_name.to_snake_case_ident().map_err(Error::StructName)?;
         let prop_nm = &PropertyName {
             file_path: PathBuf::from(doc_file),
             schema_name: struct_name.to_owned(),
-            property_name: property_name.to_string(),
+            property_name: property_name.clone(),
         };
 
         let lowercase_workaround = cg.should_workaround_case();
@@ -255,7 +281,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen) -> Result<Vec<TokenStream>, E
         }
         local_types.extend(field_tp);
         let mut serde_attrs: Vec<TokenStream> = Vec::new();
-        if nm.to_string() != property_name {
+        if &nm.to_string() != property_name {
             serde_attrs.push(quote! { rename = #property_name });
         }
         if !is_required {
@@ -332,7 +358,7 @@ fn create_struct_field_type(
                 Ok((tp_name, tps))
             } else {
                 Ok((
-                    type_name_gen(&get_type_name_for_schema(&property.schema.schema.common)?, false, false)?,
+                    type_name_gen(&property.type_name()?, false, false)?,
                     Vec::new(),
                 ))
             }

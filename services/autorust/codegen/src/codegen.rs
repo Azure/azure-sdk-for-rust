@@ -115,6 +115,10 @@ pub enum Error {
     ExamplesName(#[source] crate::identifier::Error),
     #[error("status code: {0}")]
     StatusCode(#[from] crate::status_codes::Error),
+    #[error("creating type name for schema: {0}")]
+    TypeNameForSchema(#[source] crate::spec::Error),
+    #[error("array items: {0}")]
+    ArrayItems(#[source] crate::spec::Error),
 }
 
 pub fn is_vec(ts: &TokenStream) -> bool {
