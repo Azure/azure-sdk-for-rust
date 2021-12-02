@@ -180,7 +180,10 @@ impl Spec {
         let mut resolved = IndexMap::new();
         let doc_file = doc_file.into();
         for (name, schema) in ref_or_schemas {
-            let ref_key = RefKey { doc_file: doc_file.clone(), name: name.clone()};
+            let ref_key = RefKey {
+                doc_file: doc_file.clone(),
+                name: name.clone(),
+            };
             resolved.insert(ref_key, self.resolve_schema(&doc_file, schema)?);
         }
         Ok(resolved)
@@ -189,9 +192,7 @@ impl Spec {
     pub fn resolve_path(&self, _doc_file: impl AsRef<Path>, path: &ReferenceOr<PathItem>) -> Result<PathItem> {
         match path {
             ReferenceOr::Item(path) => Ok(path.clone()),
-            ReferenceOr::Reference { .. } => {
-                Err(Error::NotImplemented)
-            }
+            ReferenceOr::Reference { .. } => Err(Error::NotImplemented),
         }
     }
 
