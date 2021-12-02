@@ -15,13 +15,16 @@ use std::{
     path::{Path, PathBuf},
 };
 
+struct PropertyGen {
+    name: String,
+    schema: SchemaGen,
+}
+
 struct SchemaGen {
-    // doc_file: PathBuf,
-    // name: String,
     ref_key: Option<RefKey>,
     schema: Schema,
     // resolved properties
-    properties: Vec<SchemaGen>,
+    properties: Vec<PropertyGen>,
 }
 
 // pub const NO_DOC_FILE: &Path = &PathBuf::default();
@@ -32,7 +35,6 @@ impl SchemaGen {
     }
 
     fn doc_file(&self) -> Result<PathBuf, Error> {
-        // Ok(&self.ref_key.as_ref().ok_or(Error::NoRefKeyDocFile)?.doc_file)
         Ok(self.ref_key.as_ref().map(|ref_key| ref_key.doc_file.clone()).unwrap_or(PathBuf::default()))
     }
 
@@ -75,7 +77,7 @@ impl SchemaGen {
         enum_values_as_strings(&self.schema.common.enum_)
     }
 
-    fn properties(&self) -> Vec<&SchemaGen> {
+    fn properties(&self) -> Vec<&PropertyGen> {
         self.properties.iter().collect()
     }
 }
@@ -85,16 +87,17 @@ fn resolve_properties(schema: &mut SchemaGen, spec: &Spec, doc_file: impl Into<P
     schema.properties = properties
         .into_iter()
         .map(|(ref_key, resolved_schema)| {
-            let mut sg = SchemaGen {
-                // doc_file: ref_key.doc_file,
-                // name: ref_key.name,
-                ref_key: Some(ref_key.clone()),
-                // ref_key: resolved_schema.ref_key,
-                schema: resolved_schema.schema,
-                properties: Vec::new(),
-            };
-            resolve_properties(&mut sg, spec, ref_key.doc_file)?; // recursive
-            Ok(sg)
+            let property =
+                PropertyGen {
+                    name: ref_key.name,
+                    schema: SchemaGen {
+                        ref_key: resolved_schema.ref_key,
+                        schema: resolved_schema.schema,
+                        properties: Vec::new(),
+                    },
+                };
+            // resolve_properties(&mut sg, spec, ref_key.doc_file)?; // recursive
+            Ok(property)
         })
         .collect::<Result<_, Error>>()?;
     Ok(())
@@ -118,12 +121,9 @@ fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
         let schemas = spec.resolve_schema_map(doc_file, &doc.definitions).map_err(Error::Spec)?;
         for (ref_key, resolved_schema) in schemas {
             all_schemas.insert(
-                ref_key,
+                ref_key.clone(),
                 SchemaGen {
-                    // doc_file: ref_key.doc_file,
-                    // name: ref_key.name,
-                    // ref_key: Some(ref_key),
-                    ref_key: resolved_schema.ref_key,
+                    ref_key: Some(ref_key),
                     schema: resolved_schema.schema,
                     properties: Vec::new(),
                 },
@@ -286,7 +286,8 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
     }
 
     for property in schema.properties() {
-        let property_name = property.name().map_err(|_| Error::SchemaNameProperty)?;
+        // let property_name = property.name().map_err(|_| Error::SchemaNameProperty)?;
+        let property_name = property.name.as_str();
         let nm = property_name.to_snake_case_ident().map_err(Error::StructName)?;
         let prop_nm = &PropertyName {
             doc_file: schema.doc_file()?.to_owned(),
@@ -296,7 +297,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
 
         let lowercase_workaround = cg.should_workaround_case();
 
-        let (mut field_tp_name, field_tp) = create_struct_field_type(cg, &ns, property, property_name, lowercase_workaround)?;
+        let TypeCode{ type_name: mut field_tp_name, inner_types: field_tp } = create_struct_field_code(cg, &ns, &property.schema, property_name, lowercase_workaround)?;
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path.display(), prop_nm.schema_name, property_name);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
@@ -323,7 +324,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
                 serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});
             }
         }
-        if property.is_local_enum() && lowercase_workaround {
+        if property.schema.is_local_enum() && lowercase_workaround {
             serde_attrs.push(quote! { deserialize_with = "case_insensitive_deserialize"});
         }
         let serde = if !serde_attrs.is_empty() {
@@ -364,32 +365,37 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
     Ok(streams)
 }
 
+struct TypeCode {
+    type_name: TokenStream,
+    inner_types: Vec<TokenStream>,
+}
+
 /// Creates the type reference for a struct field from a struct property.
 /// Optionally, creates a type for a local schema.
-fn create_struct_field_type(
+fn create_struct_field_code(
     cg: &CodeGen,
     namespace: &TokenStream,
     property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
-) -> Result<(TokenStream, Vec<TokenStream>), Error> {
+) -> Result<TypeCode, Error> {
     match &property.ref_key {
         Some(ref_key) => {
             let tp = ref_key.name.to_camel_case_ident().map_err(Error::PropertyName)?;
-            Ok((tp, Vec::new()))
+            Ok(TypeCode{ type_name: tp, inner_types: Vec::new() })
         }
         None => {
             if property.is_local_enum() {
                 let (tp_name, tp) = create_enum(namespace, property, property_name, lowercase_workaround)?;
-                Ok((tp_name, vec![tp]))
+                Ok(TypeCode{ type_name: tp_name, inner_types: vec![tp]})
             } else if property.is_local_struct() {
                 let id = property_name.to_camel_case_ident().map_err(Error::PropertyName)?;
                 let tp_name = quote! {#namespace::#id};
                 let tps = create_struct(cg, property, property_name)?;
                 // println!("creating local struct {:?} {}", tp_name, tps.len());
-                Ok((tp_name, tps))
+                Ok(TypeCode{type_name: tp_name, inner_types: tps})
             } else {
-                Ok((type_name_gen(&property.type_name()?, false, false)?, Vec::new()))
+                Ok(TypeCode{ type_name: type_name_gen(&property.type_name()?, false, false)?, inner_types: Vec::new()})
             }
         }
     }

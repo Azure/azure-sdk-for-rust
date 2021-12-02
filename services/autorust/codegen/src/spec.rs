@@ -283,6 +283,7 @@ pub enum Error {
     NoNameForRef,
 }
 
+/// a qualified reference
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RefKey {
     pub doc_file: PathBuf,
