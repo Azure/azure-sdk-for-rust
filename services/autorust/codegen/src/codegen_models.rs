@@ -90,7 +90,7 @@ fn resolve_properties(schema: &mut SchemaGen, spec: &Spec, doc_file: impl Into<P
                 schema: resolved_schema.schema,
                 properties: Vec::new(),
             };
-            resolve_properties(&mut schema, spec, ref_key.doc_file)?; // recursive
+            // resolve_properties(&mut schema, spec, ref_key.doc_file)?; // recursive
             let property = PropertyGen {
                 name: ref_key.name,
                 schema,
