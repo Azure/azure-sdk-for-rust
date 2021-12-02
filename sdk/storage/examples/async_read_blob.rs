@@ -5,12 +5,7 @@ use azure_storage::core::prelude::*;
 use futures::stream::TryStreamExt;
 use futures::AsyncBufReadExt;
 use std::io;
-// This example shows how to stream data from a blob. We will create a simple blob first, the we
-// ask it back using streaming features of the future crate. In this simple example we just
-// concatenate the data received in order to make sure the retrieved blob is equals to the one
-// created in the first place.
-// We do not use leases here but you definitely want to do so otherwise the returned stream
-// is not guaranteed to be consistent.
+// This example shows how to async read data from a blob by wrapping the stream.
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let file_name = "azure_sdk_for_rust_async_read_test.txt";
@@ -36,14 +31,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         get_blob_stream(&blob).map_err(|e| io::Error::new(io::ErrorKind::Other, format!("{}", &e))),
     )
     .into_async_read();
-    println!("{}", connection_string);
+
     let mut buf = String::new();
     let mut i = 0;
-    loop {
-        let size = reader.read_line(&mut buf).await?;
-        if size == 0 {
-            break;
-        }
+    while reader.read_line(&mut buf).await? > 0 {
         println!("line {}: {}", i, buf);
         i += 1;
         buf.clear();
