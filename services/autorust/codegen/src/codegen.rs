@@ -119,6 +119,16 @@ pub enum Error {
     TypeNameForSchema(#[source] crate::spec::Error),
     #[error("array items: {0}")]
     ArrayItems(#[source] crate::spec::Error),
+    #[error("no ref key")]
+    NoRefKey,
+    #[error("NoRefKeyDocFile")]
+    NoRefKeyDocFile,
+    #[error("EnumPropertyName")]
+    EnumPropertyName,
+    #[error("SchemaNameStruct")]
+    SchemaNameStruct,
+    #[error("SchemaNameProperty")]
+    SchemaNameProperty,
 }
 
 pub fn is_vec(ts: &TokenStream) -> bool {
