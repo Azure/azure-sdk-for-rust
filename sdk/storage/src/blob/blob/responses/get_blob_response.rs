@@ -40,3 +40,9 @@ impl TryFrom<(&str, Response<Bytes>)> for GetBlobResponse {
         })
     }
 }
+
+impl AsRef<[u8]> for GetBlobResponse {
+    fn as_ref(&self) -> &[u8] {
+        self.data.as_ref()
+    }
+}
