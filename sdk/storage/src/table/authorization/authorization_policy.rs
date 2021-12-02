@@ -38,13 +38,13 @@ impl Policy<TableContext> for AuthorizationPolicy {
         match &self.authorization_token {
             AuthorizationToken::SASToken {} => todo!(),
             AuthorizationToken::BearerToken {} => todo!(),
-            AuthorizationToken::SharedKeyToken { account, key } => {
+            AuthorizationToken::SharedKeyToken(credential) => {
                 let token = shared_key_token(
                     request.headers(),
                     request.uri(),
                     &request.method(),
-                    account,
-                    key,
+                    credential.account(),
+                    credential.key(),
                 );
                 request
                     .headers_mut()
@@ -68,7 +68,7 @@ fn shared_key_token(
     uri: &Uri,
     method: &Method,
     account: &str,
-    key: &str,
+    key: &[u8],
 ) -> String {
     let to_sign = format!(
         "{}\n{}\n{}\n{}\n/{}{}",
@@ -83,13 +83,9 @@ fn shared_key_token(
         account,
         uri.path()
     );
-    let signature = hmac::sign(
-        &hmac::Key::new(hmac::HMAC_SHA256, &base64::decode(key).unwrap()),
+    let signature = base64::encode(hmac::sign(
+        &hmac::Key::new(hmac::HMAC_SHA256, key),
         to_sign.as_bytes(),
-    );
-    format!(
-        "SharedKey {}:{}",
-        account,
-        base64::encode(signature.as_ref())
-    )
+    ));
+    format!("SharedKey {}:{}", account, signature)
 }

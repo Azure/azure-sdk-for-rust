@@ -39,6 +39,28 @@ pub enum Error {
     JsonError(#[from] serde_json::Error),
     #[error("error append headers")]
     InvalidHeaderError(#[from] HTTPHeaderError),
+    #[error("SAS error")]
+    SasCreationError(#[from] TableSasParsingError),
+}
+
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum TableSasParsingError {
+    #[error("failed to parse TableSasProtocol - invalid string: {0}")]
+    ProtocolParsingError(String),
+    #[error("failed to parse TableSasIpRange - invalid string: {0}")]
+    IpParsingError(String),
+    #[error("failed to parse SasPermissions - invalid char: {0}")]
+    SasPermissionParsingError(char),
+}
+
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum SasError {
+    #[error("Error occured while trying to parse {field}, invalid input: {input}")]
+    SasParsingError { field: String, input: String },
+    #[error("General sas error: {0}")]
+    GeneralError(String),
 }
 
 #[cfg(feature = "enable_hyper")]

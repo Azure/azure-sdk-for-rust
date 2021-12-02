@@ -1,5 +1,5 @@
 use azure_core::{Context, Error};
-use azure_storage::table::prelude::*;
+use azure_storage::{authorization::AccountCredential, table::prelude::*};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -159,10 +159,9 @@ fn create_client() -> TableClient {
         .map(|i| i.1);
 
     let auth_token = match (account.as_ref(), key) {
-        (Some(account), Some(key)) => Some(AuthorizationToken::SharedKeyToken {
-            account: account.to_owned(),
-            key,
-        }),
+        (Some(account), Some(key)) => Some(AuthorizationToken::SharedKeyToken(
+            AccountCredential::new(account, key),
+        )),
         _ => None,
     };
 
