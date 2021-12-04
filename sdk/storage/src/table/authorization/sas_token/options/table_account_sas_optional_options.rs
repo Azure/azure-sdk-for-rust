@@ -1,42 +1,36 @@
-use super::{table_sas_ip_range::TableSasIpRange, table_sas_protocol::TableSasProtocol};
+use super::{table_sas_ip_option::TableSasIpOption, table_sas_protocol::TableSasProtocol};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TableAccountSasOptions {
+pub struct TableAccountSasOptionalOptions {
     /// Gets the optional IP address or a range of IP addresses from which to accept requests.
     /// When specifying a range, note that the range is inclusive.
-    pub ip_range: Option<TableSasIpRange>,
+    pub ip: Option<TableSasIpOption>,
 
     /// Optional. Specifies the protocol permitted for a request made with
     /// the shared access signature.
     pub protocol: Option<TableSasProtocol>,
 
-    /// Gets the optional time at which the shared access signature becomes valid.
-    /// If omitted, start time for this call is assumed to be the time when the storage service receives the request.
+    /// The time at which the SAS becomes valid.
+    /// If omitted, the start time is assumed to be the time when the storage service receives the request.
     pub start_time: Option<DateTime<Utc>>,
-
-    /// Gets the optional unique value up to 64 characters in length that
-    /// correlates to an access policy specified for the blob container, queue, or share.
-    pub identifier: Option<String>,
 }
 
-impl Default for TableAccountSasOptions {
+impl Default for TableAccountSasOptionalOptions {
     fn default() -> Self {
         Self {
+            ip: Default::default(),
             start_time: Some(Utc::now()),
-            ip_range: Default::default(),
-            identifier: Default::default(),
             protocol: Some(TableSasProtocol::HttpsAndHttp),
         }
     }
 }
 
-impl TableAccountSasOptions {
+impl TableAccountSasOptionalOptions {
     setters! {
-        ip_range: TableSasIpRange => Some(ip_range),
+        ip: TableSasIpOption => Some(ip),
         protocol: TableSasProtocol  => Some(protocol),
         start_time:  DateTime<Utc> => Some(start_time),
-        identifier: String => Some(identifier),
     }
 }
 
@@ -44,18 +38,17 @@ impl TableAccountSasOptions {
 mod test {
     use chrono::{Duration, Utc};
 
-    use super::TableAccountSasOptions;
+    use super::TableAccountSasOptionalOptions;
     use crate::authorization::sas_token::options::{
-        table_sas_ip_range::TableSasIpRange, table_sas_protocol::TableSasProtocol,
+        table_sas_ip_option::TableSasIpOption, table_sas_protocol::TableSasProtocol,
     };
 
     #[test]
     fn creation_test() {
-        let sas_options = TableAccountSasOptions::default()
-            .ip_range(TableSasIpRange::new([127, 0, 0, 1], [127, 0, 0, 15]))
+        let sas_options = TableAccountSasOptionalOptions::default()
+            .ip(TableSasIpOption::new_single([127, 0, 0, 1]))
             .start_time(Utc::now() + Duration::hours(1))
-            .protocol(TableSasProtocol::Https)
-            .identifier("some_identifier");
+            .protocol(TableSasProtocol::Https);
     }
 }
 // /// Gets the time at which the shared access signature becomes invalid.

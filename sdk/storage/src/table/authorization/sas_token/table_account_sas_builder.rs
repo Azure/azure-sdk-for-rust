@@ -2,18 +2,18 @@ use crate::authorization::AccountCredential;
 
 use super::{
     options::{
-        constants, table_account_sas_options::TableAccountSasOptions,
+        constants, table_account_sas_optional_options::TableAccountSasOptionalOptions,
         table_account_sas_permission::TableAccountSasPermissions,
         table_account_sas_resource_type::TableAccountSasResourceTypes,
     },
     table_sas_query_parameters::TableSasQueryParameters,
 };
 use azure_core::SasError;
-use chrono::{DateTime, Utc};
-use std::str::FromStr;
+use chrono::{DateTime, SecondsFormat, Utc};
+use std::{ops::Add, str::FromStr};
 
 pub struct TableAccountSasBuilder {
-    /// Gets the time at which the shared access signature becomes invalid.
+    /// The time at which the shared access signature becomes invalid
     expires_on: DateTime<Utc>,
 
     /// Gets the permissions associated with the shared access signature.
@@ -27,6 +27,9 @@ pub struct TableAccountSasBuilder {
 }
 
 impl TableAccountSasBuilder {
+    /// * expires_on - The time at which the shared access signature becomes invalid
+    /// * permissions -
+    /// * resource_types -
     pub fn new(
         expires_on: DateTime<Utc>,
         permissions: TableAccountSasPermissions,
@@ -57,50 +60,53 @@ impl TableAccountSasBuilder {
 
     pub fn sign(
         &self,
-        options: &TableAccountSasOptions,
         credential: &AccountCredential,
+        options: &TableAccountSasOptionalOptions,
     ) -> Result<TableSasQueryParameters, SasError> {
         let permissions: String = self.permissions.into();
         let resource_types: String = self.resource_types.into();
-
         let expires_on = self
             .expires_on
             .to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
 
+        let mut parts_to_sign = vec![
+            credential.account(),
+            permissions.as_str(),
+            constants::TABLE_ACCOUNT_SERVICES_IDENTIFIER,
+            resource_types.as_str(),
+        ];
+
         let start_on = options
             .start_time
-            .ok_or(SasError::GeneralError("start_time value not found".into()))?
-            .to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+            .map(|dt| dt.to_rfc3339_opts(SecondsFormat::Secs, true))
+            .unwrap_or_default();
+        parts_to_sign.push(&start_on);
 
-        let ip_range: String = options.ip_range.map(|c| c.into()).unwrap_or_default();
-        let protocol: String = options.protocol.map(|c| c.into()).unwrap_or_default();
+        parts_to_sign.push(&expires_on);
 
-        let signature = credential.sign(
-            &[
-                credential.account(),
-                permissions.as_str(),
-                constants::TABLE_ACCOUNT_SERVICES_IDENTIFIER,
-                resource_types.as_str(),
-                start_on.as_str(),
-                expires_on.as_str(),
-                ip_range.as_str(),
-                protocol.as_str(),
-                constants::SAS_VERSION,
-            ]
-            .join("\n"),
-        );
+        let ip: String = options.ip.map(|ip| ip.into()).unwrap_or_default();
+        parts_to_sign.push(&ip);
+
+        let protocol: String = options
+            .protocol
+            .map(|protocol| protocol.into())
+            .unwrap_or_default();
+        parts_to_sign.push(&protocol);
+
+        parts_to_sign.push(&constants::SAS_VERSION);
+
+        let to_sign = parts_to_sign.join("\n");
+        println!("{:#?}", to_sign);
 
         Ok(TableSasQueryParameters::new(
             constants::SAS_VERSION.into(),
-            resource_types,
-            protocol,
-            start_on,
+            credential.sign(to_sign),
             expires_on,
-            self.permissions.into(),
-            signature,
-            Some(ip_range),
-            None,
-            None,
+            permissions,
+            resource_types,
+            Some(ip),
+            Some(protocol),
+            Some(start_on),
         ))
     }
 }

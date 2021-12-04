@@ -4,70 +4,47 @@ pub mod table_sas_query_parameters;
 
 #[cfg(test)]
 mod test {
-    // use std::{
-    //     net::{IpAddr, Ipv4Addr},
-    //     str::FromStr,
-    // };
+    use std::ops::Add;
 
-    // use crate::authorization::AccountCredential;
+    use chrono::{DateTime, Duration, Utc};
 
-    // use super::{
-    //     options::{
-    //         table_account_sas_options::TableAccountSasOptions,
-    //         table_sas_options::TableSasQueryOptions, TableAccountSasPermission,
-    //         TableAccountSasPermissions, TableAccountSasResourceType, TableAccountSasResourceTypes,
-    //         TableSasIpRange, TableSasProtocol,
-    //     },
-    //     TableAccountSasBuilder,
-    // };
-    // use chrono::{Duration, Utc};
+    use crate::authorization::{
+        sas_token::options::{
+            table_account_sas_permission::TableAccountSasPermission,
+            table_account_sas_resource_type::TableAccountSasResourceType,
+            table_sas_ip_option::TableSasIpOption, table_sas_protocol::TableSasProtocol,
+        },
+        AccountCredential,
+    };
 
-    // #[test]
-    // fn try_create_table_account_sas() {
-    //     let account_credential = AccountCredential::new("", "");
+    use super::{
+        options::{
+            table_account_sas_optional_options::TableAccountSasOptionalOptions,
+            table_account_sas_permission::TableAccountSasPermissions,
+            table_account_sas_resource_type::TableAccountSasResourceTypes,
+        },
+        table_account_sas_builder::TableAccountSasBuilder,
+    };
 
-    //     let expiry_time = Utc::now() + Duration::days(1);
-    //     let permissions_builder = TableAccountSasPermissions::default()
-    //         .add_permission(TableAccountSasPermission::Read)
-    //         .add_permission(TableAccountSasPermission::List);
-    //     let resource_types_builder = TableAccountSasResourceTypes::default()
-    //         .add_resource(TableAccountSasResourceType::Container);
+    #[test]
+    fn try_create_table_account_sas() {
+        let credentials = AccountCredential::new_emulator();
 
-    //     let sas_options =
-    //         TableAccountSasOptions::new(expiry_time, permissions_builder, resource_types_builder)
-    //             .protocol(TableSasProtocol::Https)
-    //             .identifier("identifier")
-    //             .start_time(Utc::now() + Duration::hours(1))
-    //             .ip_range(TableSasIpRange::new(
-    //                 IpAddr::V4(Ipv4Addr::from_str("127.0.0.1").unwrap()),
-    //                 IpAddr::V4(Ipv4Addr::from_str("127.0.0.2").unwrap()),
-    //             ));
+        let builder = TableAccountSasBuilder::new(
+            Utc::now() + Duration::hours(1),
+            TableAccountSasPermissions::new().add_permission(TableAccountSasPermission::Read),
+            TableAccountSasResourceTypes::new().add_resource(TableAccountSasResourceType::Object),
+        );
 
-    //     match TableAccountSasBuilder::new(sas_options).sign(&account_credential) {
-    //         Ok(sas) => println!("sas: {:#?}", sas),
-    //         Err(err) => eprintln!("error: {:#?}", err),
-    //     };
-    // }
+        let optional_options = TableAccountSasOptionalOptions::default();
+        // .protocol(TableSasProtocol::Https)
+        // .start_time(Utc::now() + Duration::minutes(1))
+        // .ip(TableSasIpOption::new_single([127, 0, 0, 1]));
 
-    // #[test]
-    // fn try_create_table_account_sas_all_all() {
-    //     // let credential = AccountCredential::new("", "");
-    //     // let sas_options = TableAccountSasOptions::new(
-    //     //     Utc::now() + Duration::days(1),
-    //     //     TableAccountSasPermissions::all(),
-    //     //     TableAccountSasResourceTypes::all(),
-    //     // );
-    //     // let sas = TableAccountSasBuilder::new(sas_options)
-    //     //     .sign(&credential)
-    //     //     .unwrap();
-    // }
+        let sas = builder.sign(&credentials, &optional_options).unwrap();
+        println!("{:#?}", sas);
 
-    // #[test]
-    // fn try_create_table_sas() {
-    //     let sas_options = TableSasQueryOptions::new("some_table_name")
-    //         .start_partition_key("partition_key_from")
-    //         .end_partition_key("partition_key_to")
-    //         .start_row_key("row_key_from")
-    //         .end_row_key("row_key_from");
-    // }
+        let sas_string: String = sas.into();
+        println!("{}", sas_string);
+    }
 }

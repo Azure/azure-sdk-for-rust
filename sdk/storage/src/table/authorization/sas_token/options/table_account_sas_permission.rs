@@ -3,8 +3,8 @@ use azure_core::{SasError, TableSasParsingError};
 use super::constants::*;
 use std::str::FromStr;
 
-/// Contains the list of permissions that can be set for a file's access policy.
-/// Use TODO  to set the permissions on the.
+/// Specifies the signed permissions for the account SAS.
+/// Permissions are only valid if they match the specified signed resource type; otherwise they are ignored.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TableAccountSasPermission {
     /// Indicates that Read is permitted.

@@ -39,13 +39,25 @@ impl Policy<TableContext> for AuthorizationPolicy {
             AuthorizationToken::SASToken {} => todo!(),
             AuthorizationToken::BearerToken {} => todo!(),
             AuthorizationToken::SharedKeyToken(credential) => {
-                let token = shared_key_token(
-                    request.headers(),
-                    request.uri(),
-                    &request.method(),
+                let signature = credential.sign(format!(
+                    "{}\n{}\n{}\n{}\n/{}{}",
+                    request.method().as_str(),
+                    request
+                        .headers()
+                        .get("Content-MD5")
+                        .map_or("", |v| v.to_str().unwrap()),
+                    request
+                        .headers()
+                        .get("Content-Type")
+                        .map_or("", |v| v.to_str().unwrap()),
+                    request
+                        .headers()
+                        .get("x-ms-date")
+                        .map_or("", |v| v.to_str().unwrap()),
                     credential.account(),
-                    credential.key(),
-                );
+                    request.uri().path()
+                ));
+                let token = format!("SharedKey {}:{}", credential.account(), signature);
                 request
                     .headers_mut()
                     .append("authorization", HeaderValue::from_str(&token).unwrap());
@@ -62,7 +74,6 @@ impl Policy<TableContext> for AuthorizationPolicy {
 /// * content type (if exists else empty string and new a line)
 /// * x-ms-date (utc new formatted as 'Wed, 18 Aug 2021 14:52:59 GMT')
 /// * canonicalized resource (for example, /devstoreaccount1/devstoreaccount1/Tables)
-/// log example:
 fn shared_key_token(
     headers: &HeaderMap,
     uri: &Uri,

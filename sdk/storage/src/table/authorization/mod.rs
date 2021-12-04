@@ -17,6 +17,13 @@ impl AccountCredential {
         }
     }
 
+    pub fn new_emulator() -> Self {
+        Self {
+            account: "devstoreaccount1".into(),
+            key: base64::decode("Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==").unwrap(),
+        }
+    }
+
     /// Get a reference to the table credential's account.
     pub fn account(&self) -> &str {
         self.account.as_ref()

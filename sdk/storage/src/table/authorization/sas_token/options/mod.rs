@@ -1,7 +1,7 @@
-pub mod table_account_sas_options;
+pub mod table_account_sas_optional_options;
 pub mod table_account_sas_permission;
 pub mod table_account_sas_resource_type;
-pub mod table_sas_ip_range;
+pub mod table_sas_ip_option;
 pub mod table_sas_options;
 pub mod table_sas_protocol;
 

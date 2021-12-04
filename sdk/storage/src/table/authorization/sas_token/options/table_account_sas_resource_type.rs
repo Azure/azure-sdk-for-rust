@@ -6,16 +6,16 @@ use std::str::FromStr;
 /// Specifies the resource types accessible from an account level shared access signature.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TableAccountSasResourceType {
-    /// Indicates whether service-level APIs are accessible
-    /// from this shared access signature (e.g., Get/Set Service Properties, Get Service Stats, List Tables).
+    /// Access to service-level APIs
+    ///  (e.g., Get/Set Service Properties, Get Service Stats, List Containers/Queues/Tables/Shares)
     Service,
 
-    /// Indicates whether table account-level APIs are accessible
-    /// from this shared access signature (e.g. Create/Delete/Query Table).
+    /// Access to container-level APIs
+    ///  (e.g., Create/Delete Container, Create/Delete Queue, Create/Delete Table, Create/Delete Share, List Blobs/Files and Directories)
     Container,
 
-    /// Indicates whether entity-level APIs are accessible from this shared access
-    /// signature (e.g. Query/Insert/Update/Delete entity).
+    /// Access to object-level APIs for blobs, queue messages, table entities, and files
+    /// (e.g. Put Blob, Query Entity, Get Messages, Create File, etc.)
     Object,
 }
 

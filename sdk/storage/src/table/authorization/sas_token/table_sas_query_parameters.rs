@@ -1,63 +1,80 @@
+use crate::authorization::sas_token::options::constants::TABLE_ACCOUNT_SERVICES_IDENTIFIER;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct TableSasQueryParameters {
     /// Gets the storage service version to use to authenticate requests
     /// made with this shared access signature, and the service version to
     /// use when handling requests made with this shared access signature.
-    version: String,
-    protocol: String,
-    start_on: String,
+    pub version: String,
 
     /// The signature is an HMAC computed over the string-to-sign and key
     /// using the SHA256 algorithm, and then encoded using Base64 encoding.
-    signature: String,
+    pub signature: String,
 
-    expires_on: String,
-    permissions: String,
-    resource_types: String,
+    pub expires_on: String,
+    pub permissions: String,
+    pub resource_types: String,
 
-    ip_range: Option<String>,
-    resource: Option<String>,
-    identifier: Option<String>,
+    pub ip: Option<String>,
+    pub start_on: Option<String>,
+    pub protocol: Option<String>,
 }
 
 impl TableSasQueryParameters {
     pub fn new(
         version: String,
-        resource_types: String,
-        protocol: String,
-        start_on: String,
+        signature: String,
         expires_on: String,
         permissions: String,
-        signature: String,
-        ip_range: Option<String>,
-        resource: Option<String>,
-        identifier: Option<String>,
+        resource_types: String,
+        ip: Option<String>,
+        protocol: Option<String>,
+        start_on: Option<String>,
     ) -> Self {
         Self {
             version,
-            resource_types,
-            protocol,
-            start_on,
+            signature,
             expires_on,
             permissions,
-            signature,
-            ip_range,
-            resource,
-            identifier,
+            resource_types,
+            ip,
+            protocol,
+            start_on,
         }
     }
 }
 
-// sv=2019-07-07&ss=t&srt=c&se=2021-11-29T04%3A22%3A38Z&sp=r&sig=79EMOCtIXnD3IlP2FRO9qO4Ac6XWgL%2BIF9o882bUMOM%3D
+/// sv=2019-02-02&
+/// st=2019-04-29T22%3A18%3A26Z&
+/// se=2019-04-30T02%3A23%3A26Z&
+/// sr=b&
+/// sp=rw&
+/// sip=168.1.5.60-168.1.5.70&
+/// spr=https&
+/// sig=Z%2FRHIX5Xcg0Mq2rqI3OlWTjEg2tYkboXr1P9ZUXDtkk%3D
 impl From<TableSasQueryParameters> for String {
     fn from(parameters: TableSasQueryParameters) -> Self {
-        format!(
-            "sv={}ss=tsrt={}se={}sp={}sig={}",
-            parameters.version,
-            parameters.resource_types,
-            parameters.expires_on,
-            parameters.permissions,
-            parameters.signature
-        )
+        let mut sas_query_params = Vec::with_capacity(9);
+        sas_query_params.push(("sv", parameters.version));
+        sas_query_params.push(("ss", TABLE_ACCOUNT_SERVICES_IDENTIFIER.to_string()));
+        if let Some(start_time) = parameters.start_on {
+            sas_query_params.push(("st", start_time))
+        }
+        sas_query_params.push(("se", parameters.expires_on));
+        sas_query_params.push(("sr", parameters.resource_types));
+        sas_query_params.push(("sp", parameters.permissions));
+        if let Some(ip) = parameters.ip {
+            sas_query_params.push(("sip", ip))
+        }
+        if let Some(protocol) = parameters.protocol {
+            sas_query_params.push(("spr", protocol))
+        }
+        sas_query_params.push(("sig", parameters.signature));
+
+        url::Url::parse_with_params("https://example.com/products", &sas_query_params)
+            .unwrap()
+            .query()
+            .map(|sas| sas.to_string())
+            .unwrap()
     }
 }
