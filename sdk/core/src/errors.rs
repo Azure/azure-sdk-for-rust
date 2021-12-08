@@ -38,6 +38,8 @@ pub enum Error {
     HttpError(#[from] HttpError),
     #[error("to str error: {0}")]
     ToStrError(#[from] http::header::ToStrError),
+    #[error("header error: {0}")]
+    HeaderError(#[from] HTTPHeaderError),
     #[error("header not found: {0}")]
     HeaderNotFound(String),
     #[error("at least one of these headers must be present: {0:?}")]
@@ -57,6 +59,8 @@ pub enum Error {
     StreamError(#[from] StreamError),
     #[error("JSON error: {0}")]
     JsonError(#[from] serde_json::Error),
+    #[error("Other error: {0}")]
+    Other(Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
 #[cfg(feature = "enable_hyper")]

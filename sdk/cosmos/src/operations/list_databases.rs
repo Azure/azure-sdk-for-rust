@@ -8,19 +8,7 @@ use azure_core::headers::{
 };
 use azure_core::{collect_pinned_stream, prelude::*, Response};
 use chrono::{DateTime, Utc};
-use futures::stream::unfold;
-use futures::Stream;
 
-macro_rules! r#try {
-    ($expr:expr $(,)?) => {
-        match $expr {
-            Result::Ok(val) => val,
-            Result::Err(err) => {
-                return Some((Err(err.into()), State::Done));
-            }
-        }
-    };
-}
 #[derive(Debug, Clone)]
 pub struct ListDatabases {
     client: CosmosClient,
@@ -60,7 +48,7 @@ impl ListDatabases {
                 if let Some(c) = continuation {
                     match http::HeaderValue::from_str(c.as_str()) {
                         Ok(h) => request.headers_mut().append(headers::CONTINUATION, h),
-                        Err(e) => return Err(crate::Error::InvalidHeaderValue(e.into())),
+                        Err(e) => return Err(azure_core::Error::Other(Box::new(e))),
                     };
                 }
 
@@ -74,10 +62,13 @@ impl ListDatabases {
                     .await
                 {
                     Ok(r) => r,
-                    Err(e) => return Err(crate::Error::Core(e)),
+                    Err(e) => return Err(e),
                 };
 
-                Ok(ListDatabasesResponse::try_from(response).await)
+                match ListDatabasesResponse::try_from(response).await {
+                    Ok(r) => Ok(r),
+                    Err(e) => Err(azure_core::Error::Other(Box::new(e))),
+                }
             }
         };
 
@@ -151,62 +142,4 @@ impl IntoIterator for ListDatabasesResponse {
     fn into_iter(self) -> Self::IntoIter {
         self.databases.into_iter()
     }
-}
-
-pub struct Pageable<T> {
-    stream: std::pin::Pin<Box<dyn Stream<Item = crate::Result<T>>>>,
-}
-
-impl<T: Continuable> Pageable<T> {
-    fn new<F>(make_request: std::sync::Arc<dyn Fn(Option<String>) -> F>) -> Self
-    where
-        F: std::future::Future<Output = crate::Result<crate::Result<T>>> + 'static,
-    {
-        let stream = unfold(State::Init, move |state: State| {
-            let make_request = make_request.clone();
-            async move {
-                let response = match state {
-                    State::Init => r#try!(make_request(None).await),
-                    State::Continuation(token) => {
-                        r#try!(make_request(Some(token)).await)
-                    }
-                    State::Done => return None,
-                };
-
-                let response = r#try!(response);
-
-                let next_state = response
-                    .continuation()
-                    .map(State::Continuation)
-                    .unwrap_or(State::Done);
-
-                Some((Ok(response), next_state))
-            }
-        });
-        Self {
-            stream: Box::pin(stream),
-        }
-    }
-}
-
-pub trait Continuable {
-    fn continuation(&self) -> Option<String>;
-}
-
-impl<T> Stream for Pageable<T> {
-    type Item = crate::Result<T>;
-
-    fn poll_next(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Option<Self::Item>> {
-        std::pin::Pin::new(&mut self.stream).poll_next(cx)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-enum State {
-    Init,
-    Continuation(String),
-    Done,
 }
