@@ -1,4 +1,4 @@
-use azure_core::SasError;
+use azure_core::{SasError, TableSasParsingError};
 
 use super::constants::*;
 use std::str::FromStr;

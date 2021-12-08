@@ -10,7 +10,7 @@ use super::{
 };
 use azure_core::SasError;
 use chrono::{DateTime, SecondsFormat, Utc};
-use std::str::FromStr;
+use std::{ops::Add, str::FromStr};
 
 pub struct TableAccountSasBuilder {
     /// The time at which the shared access signature becomes invalid
@@ -54,7 +54,7 @@ impl TableAccountSasBuilder {
         })
     }
 
-    pub fn new_from_sas_uri(sas_uri: &http::Uri) -> Result<Self, SasError> {
+    pub fn new_from_sas_uri(sas_uri: http::Uri) -> Result<Self, SasError> {
         todo!()
     }
 
@@ -78,34 +78,25 @@ impl TableAccountSasBuilder {
 
         let start_on = options
             .start_time
-            .map(|dt| dt.to_rfc3339_opts(SecondsFormat::Secs, true));
-        if start_on.is_some() {
-            parts_to_sign.push(&start_on.as_ref().unwrap());
-        } else {
-            parts_to_sign.push("");
-        }
+            .map(|dt| dt.to_rfc3339_opts(SecondsFormat::Secs, true))
+            .unwrap_or_default();
+        parts_to_sign.push(&start_on);
 
         parts_to_sign.push(&expires_on);
 
-        let ip: Option<String> = options.ip.map(|ip| ip.into());
-        if ip.is_some() {
-            parts_to_sign.push(&ip.as_ref().unwrap());
-        } else {
-            parts_to_sign.push("");
-        }
+        let ip: String = options.ip.map(|ip| ip.into()).unwrap_or_default();
+        parts_to_sign.push(&ip);
 
-        let protocol: Option<String> = options.protocol.map(|protocol| protocol.into());
-        if protocol.is_some() {
-            parts_to_sign.push(&protocol.as_ref().unwrap());
-        } else {
-            parts_to_sign.push("");
-        }
+        let protocol: String = options
+            .protocol
+            .map(|protocol| protocol.into())
+            .unwrap_or_default();
+        parts_to_sign.push(&protocol);
 
         parts_to_sign.push(&constants::SAS_VERSION);
-        parts_to_sign.push("");
 
         let to_sign = parts_to_sign.join("\n");
-        println!("{}", to_sign);
+        println!("{:#?}", to_sign);
 
         Ok(TableSasQueryParameters::new(
             constants::SAS_VERSION.into(),
@@ -113,9 +104,9 @@ impl TableAccountSasBuilder {
             expires_on,
             permissions,
             resource_types,
-            ip,
-            protocol,
-            start_on,
+            Some(ip),
+            Some(protocol),
+            Some(start_on),
         ))
     }
 }

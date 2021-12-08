@@ -91,7 +91,10 @@ impl TableClient {
     pub fn emulator(options: TableOptions) -> Self {
         Self::new_custom(
             self::EMULATOR_ACCOUNT,
-            AuthorizationToken::SharedKeyToken(AccountCredential::new_emulator()),
+            AuthorizationToken::SharedKeyToken(AccountCredential::new(
+                self::EMULATOR_ACCOUNT,
+                self::EMULATOR_KEY,
+            )),
             format!(
                 "http://{}:{}/{}",
                 self::ADDRESS,

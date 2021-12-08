@@ -1,5 +1,3 @@
-use azure_core::SasError;
-
 use crate::authorization::sas_token::options::constants::TABLE_ACCOUNT_SERVICES_IDENTIFIER;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -7,23 +5,23 @@ pub struct TableSasQueryParameters {
     /// Gets the storage service version to use to authenticate requests
     /// made with this shared access signature, and the service version to
     /// use when handling requests made with this shared access signature.
-    pub(crate) version: String,
+    pub version: String,
 
     /// The signature is an HMAC computed over the string-to-sign and key
     /// using the SHA256 algorithm, and then encoded using Base64 encoding.
-    pub(crate) signature: String,
+    pub signature: String,
 
-    pub(crate) expires_on: String,
-    pub(crate) permissions: String,
-    pub(crate) resource_types: String,
+    pub expires_on: String,
+    pub permissions: String,
+    pub resource_types: String,
 
-    pub(crate) ip: Option<String>,
-    pub(crate) start_on: Option<String>,
-    pub(crate) protocol: Option<String>,
+    pub ip: Option<String>,
+    pub start_on: Option<String>,
+    pub protocol: Option<String>,
 }
 
 impl TableSasQueryParameters {
-    pub(crate) fn new(
+    pub fn new(
         version: String,
         signature: String,
         expires_on: String,
@@ -44,64 +42,6 @@ impl TableSasQueryParameters {
             start_on,
         }
     }
-
-    pub fn token(&self) -> Result<String, SasError> {
-        let mut sas_query_params = Vec::with_capacity(9);
-        sas_query_params.push(("sv", self.version.as_str()));
-        sas_query_params.push(("ss", TABLE_ACCOUNT_SERVICES_IDENTIFIER));
-        sas_query_params.push(("srt", &self.resource_types));
-        if let Some(ref start_time) = self.start_on {
-            sas_query_params.push(("st", start_time.as_str()))
-        }
-        sas_query_params.push(("se", &self.expires_on.as_str()));
-        sas_query_params.push(("sp", &self.permissions.as_str()));
-        if let Some(ref ip) = self.ip {
-            sas_query_params.push(("sip", ip.as_str()))
-        }
-        if let Some(ref protocol) = self.protocol {
-            sas_query_params.push(("spr", protocol.as_str()))
-        }
-        sas_query_params.push(("sig", &self.signature.as_str()));
-
-        serde_urlencoded::to_string(&sas_query_params).map_err(|_| {
-            SasError::GeneralError("error creating sas token from the given parameters".to_string())
-        })
-    }
-
-    /// Get a reference to the table sas query parameters's signature.
-    pub fn signature(&self) -> &str {
-        self.signature.as_ref()
-    }
-
-    /// Get a reference to the table sas query parameters's expires on.
-    pub fn expires_on(&self) -> &str {
-        self.expires_on.as_ref()
-    }
-
-    /// Get a reference to the table sas query parameters's protocol.
-    pub fn protocol(&self) -> Option<&String> {
-        self.protocol.as_ref()
-    }
-
-    /// Get a reference to the table sas query parameters's start on.
-    pub fn start_on(&self) -> Option<&String> {
-        self.start_on.as_ref()
-    }
-
-    /// Get a reference to the table sas query parameters's ip.
-    pub fn ip(&self) -> Option<&String> {
-        self.ip.as_ref()
-    }
-
-    /// Get a reference to the table sas query parameters's resource types.
-    pub fn resource_types(&self) -> &str {
-        self.resource_types.as_ref()
-    }
-
-    /// Get a reference to the table sas query parameters's permissions.
-    pub fn permissions(&self) -> &str {
-        self.permissions.as_ref()
-    }
 }
 
 /// sv=2019-02-02&
@@ -117,11 +57,11 @@ impl From<TableSasQueryParameters> for String {
         let mut sas_query_params = Vec::with_capacity(9);
         sas_query_params.push(("sv", parameters.version));
         sas_query_params.push(("ss", TABLE_ACCOUNT_SERVICES_IDENTIFIER.to_string()));
-        sas_query_params.push(("srt", parameters.resource_types));
         if let Some(start_time) = parameters.start_on {
             sas_query_params.push(("st", start_time))
         }
         sas_query_params.push(("se", parameters.expires_on));
+        sas_query_params.push(("sr", parameters.resource_types));
         sas_query_params.push(("sp", parameters.permissions));
         if let Some(ip) = parameters.ip {
             sas_query_params.push(("sip", ip))
@@ -131,6 +71,10 @@ impl From<TableSasQueryParameters> for String {
         }
         sas_query_params.push(("sig", parameters.signature));
 
-        serde_urlencoded::to_string(&sas_query_params).unwrap()
+        url::Url::parse_with_params("https://example.com/products", &sas_query_params)
+            .unwrap()
+            .query()
+            .map(|sas| sas.to_string())
+            .unwrap()
     }
 }

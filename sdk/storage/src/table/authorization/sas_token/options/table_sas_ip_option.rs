@@ -1,4 +1,4 @@
-use azure_core::SasError;
+use azure_core::{SasError, TableSasParsingError};
 use std::{net::IpAddr, str::FromStr};
 
 /// Specifies an IP address or a range of IP addresses from which to accept requests.
@@ -34,19 +34,19 @@ impl FromStr for TableSasIpOption {
         if let Some((start, end)) = s.split_once('-') {
             Ok(TableSasIpOption::new_range(
                 IpAddr::from_str(start).map_err(|_| SasError::SasParsingError {
-                    field: "start".into(),
-                    input: start.into(),
+                    field: "".into(),
+                    input: "".into(),
                 })?,
                 IpAddr::from_str(end).map_err(|_| SasError::SasParsingError {
-                    field: "end".into(),
-                    input: end.into(),
+                    field: "".into(),
+                    input: "".into(),
                 })?,
             ))
         } else {
             Ok(TableSasIpOption::Single(IpAddr::from_str(s).map_err(
                 |_| SasError::SasParsingError {
-                    field: "single ip".into(),
-                    input: s.into(),
+                    field: "".into(),
+                    input: "".into(),
                 },
             )?))
         }

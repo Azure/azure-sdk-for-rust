@@ -36,18 +36,9 @@ impl Policy<TableContext> for AuthorizationPolicy {
         }
 
         match &self.authorization_token {
+            AuthorizationToken::SASToken {} => todo!(),
             AuthorizationToken::BearerToken {} => todo!(),
-            AuthorizationToken::SASToken(sas) => {
-                let uri = request.uri_mut();
-            }
             AuthorizationToken::SharedKeyToken(credential) => {
-                // An authorization shared key token.
-                // to create the token first create string to sign, the string should contain the following:
-                // * http method
-                // * md5 content (if exists else empty string and new a line)
-                // * content type (if exists else empty string and new a line)
-                // * x-ms-date (utc new formatted as 'Wed, 18 Aug 2021 14:52:59 GMT')
-                // * canonicalized resource (for example, /devstoreaccount1/devstoreaccount1/Tables)
                 let signature = credential.sign(format!(
                     "{}\n{}\n{}\n{}\n/{}{}",
                     request.method().as_str(),
@@ -74,4 +65,38 @@ impl Policy<TableContext> for AuthorizationPolicy {
         }
         next[0].send(ctx, request, &next[1..]).await
     }
+}
+
+/// An authorization shared key token.
+/// to create the token first create string to sign, the string should contain the following:
+/// * http method
+/// * md5 content (if exists else empty string and new a line)
+/// * content type (if exists else empty string and new a line)
+/// * x-ms-date (utc new formatted as 'Wed, 18 Aug 2021 14:52:59 GMT')
+/// * canonicalized resource (for example, /devstoreaccount1/devstoreaccount1/Tables)
+fn shared_key_token(
+    headers: &HeaderMap,
+    uri: &Uri,
+    method: &Method,
+    account: &str,
+    key: &[u8],
+) -> String {
+    let to_sign = format!(
+        "{}\n{}\n{}\n{}\n/{}{}",
+        method.as_str(),
+        headers
+            .get("Content-MD5")
+            .map_or("", |v| v.to_str().unwrap()),
+        headers
+            .get("Content-Type")
+            .map_or("", |v| v.to_str().unwrap()),
+        headers.get("x-ms-date").map_or("", |v| v.to_str().unwrap()),
+        account,
+        uri.path()
+    );
+    let signature = base64::encode(hmac::sign(
+        &hmac::Key::new(hmac::HMAC_SHA256, key),
+        to_sign.as_bytes(),
+    ));
+    format!("SharedKey {}:{}", account, signature)
 }

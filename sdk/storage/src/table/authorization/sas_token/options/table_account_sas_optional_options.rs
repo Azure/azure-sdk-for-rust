@@ -1,7 +1,7 @@
 use super::{table_sas_ip_option::TableSasIpOption, table_sas_protocol::TableSasProtocol};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TableAccountSasOptionalOptions {
     /// Gets the optional IP address or a range of IP addresses from which to accept requests.
     /// When specifying a range, note that the range is inclusive.
@@ -14,6 +14,16 @@ pub struct TableAccountSasOptionalOptions {
     /// The time at which the SAS becomes valid.
     /// If omitted, the start time is assumed to be the time when the storage service receives the request.
     pub start_time: Option<DateTime<Utc>>,
+}
+
+impl Default for TableAccountSasOptionalOptions {
+    fn default() -> Self {
+        Self {
+            ip: Default::default(),
+            start_time: Some(Utc::now()),
+            protocol: Some(TableSasProtocol::HttpsAndHttp),
+        }
+    }
 }
 
 impl TableAccountSasOptionalOptions {

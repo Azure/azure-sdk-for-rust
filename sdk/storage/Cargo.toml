@@ -25,7 +25,6 @@ serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 serde-xml-rs = "0.5"
-serde_urlencoded = "0.7"
 url = "2.2"
 uuid = { version = "0.8", features = ["v4"] }
 bytes = "1.0"
@@ -43,7 +42,7 @@ reqwest = "0.11"
 [features]
 default = ["account", "blob", "queue", "table", "data_lake"]
 test_e2e = ["account", "blob", "queue", "table", "data_lake"]
-mock_transport_framework = ["azure_core/mock_transport_framework"]
+mock_transport_framework = [ "azure_core/mock_transport_framework"]
 test_integration = ["account", "blob", "queue", "table", "data_lake"]
 account = []
 azurite_workaround = []
