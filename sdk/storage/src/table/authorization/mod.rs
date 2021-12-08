@@ -3,6 +3,10 @@ use ring::hmac;
 pub mod authorization_policy;
 pub mod sas_token;
 
+const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
+const EMULATOR_KEY: &str =
+    "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+
 #[derive(PartialEq, Clone, Eq)]
 pub struct AccountCredential {
     account: String,
@@ -19,19 +23,14 @@ impl AccountCredential {
 
     pub fn new_emulator() -> Self {
         Self {
-            account: "devstoreaccount1".into(),
-            key: base64::decode("Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==").unwrap(),
+            account: EMULATOR_ACCOUNT.into(),
+            key: base64::decode(EMULATOR_KEY).unwrap(),
         }
     }
 
     /// Get a reference to the table credential's account.
     pub fn account(&self) -> &str {
         self.account.as_ref()
-    }
-
-    /// Get a reference to the account credential's key.
-    pub fn key(&self) -> &[u8] {
-        self.key.as_ref()
     }
 
     pub fn sign(&self, message: impl AsRef<[u8]>) -> String {
@@ -55,7 +54,7 @@ impl std::fmt::Debug for AccountCredential {
 
 #[derive(Debug, PartialEq, Clone, Eq)]
 pub enum AuthorizationToken {
-    SASToken {},
+    SASToken(String),
     BearerToken {},
     SharedKeyToken(AccountCredential),
 }
