@@ -15,12 +15,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("please specify database name as first command line parameter");
 
-    azure_core::mock::start_transaction("create_delete_database");
-
     // This is how you construct an authorization token.
     // Remember to pick the correct token type.
     // Here we assume master.
-    // Most methods return a ```Result<_, azure_cosmos::Error```.
+    // Most methods return a ```Result<_, azure_cosmos::Error>```.
     // ```azure_cosmos::Error``` is an enum union of all the possible underlying
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
@@ -36,8 +34,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
 
-    let mut list_databases_stream =
-        Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()));
+    let mut list_databases_stream = Box::pin(client.list_databases().into_stream());
     while let Some(list_databases_response) = list_databases_stream.next().await {
         println!("list_databases_response = {:#?}", list_databases_response?);
     }
@@ -72,8 +69,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .await?;
         println!("get_collection_response == {:#?}", get_collection_response);
 
-        let stream = db_client.list_collections();
-        let mut stream = Box::pin(stream.stream());
+        let stream = db_client.list_collections(Context::new(), ListCollectionsOptions::new());
+        let mut stream = Box::pin(stream);
         while let Some(res) = stream.next().await {
             let res = res?;
             println!("res == {:#?}", res);
@@ -87,8 +84,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let resp = client
         .into_database_client(database_name)
-        .delete_database()
-        .execute()
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
         .await?;
     println!("database deleted. resp == {:#?}", resp);
 

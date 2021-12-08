@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // This is how you construct an authorization token.
     // Remember to pick the correct token type.
     // Here we assume master.
-    // Most methods return a ```Result<_, azure_cosmos::Error```.
+    // Most methods return a ```Result<_, azure_cosmos::Error>```.
     // ```azure_cosmos::Error``` is an enum union of all the possible underlying
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
@@ -31,10 +31,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified
-    // account. Database do not implement Display but deref to &str so you can pass it to methods
-    // both as struct or id.
-    let databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified account.
+    let databases = Box::pin(client.list_databases().into_stream())
         .next()
         .await
         .unwrap()?;
@@ -61,7 +59,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     for db in databases.databases {
         let database_client = client.clone().into_database_client(db.id.clone());
-        let collections = database_client.list_collections().execute().await?;
+        let collections = Box::pin(
+            database_client.list_collections(Context::new(), ListCollectionsOptions::new()),
+        )
+        .next()
+        .await
+        .unwrap()?;
         println!(
             "database {} has {} collection(s)",
             db.id,

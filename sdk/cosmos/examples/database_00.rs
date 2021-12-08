@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
 
-    let dbs = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let dbs = Box::pin(client.list_databases().into_stream())
         .next()
         .await
         .unwrap()?;
@@ -25,7 +25,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("database == {:?}", db);
         let database = client.clone().into_database_client(db.name().to_owned());
 
-        let collections = database.list_collections().execute().await?;
+        let collections =
+            Box::pin(database.list_collections(Context::new(), ListCollectionsOptions::new()))
+                .next()
+                .await
+                .unwrap()?;
         for collection in collections.collections {
             println!("collection == {:?}", collection);
             let collection_client = database.clone().into_collection_client(collection.id);

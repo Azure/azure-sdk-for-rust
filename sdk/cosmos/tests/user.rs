@@ -23,6 +23,12 @@ async fn users() {
         .await
         .unwrap();
 
+    let databases = Box::pin(client.list_databases().into_stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(databases.databases.first().unwrap().id == DATABASE_NAME);
     let database_client = client.clone().into_database_client(DATABASE_NAME);
     let user_client = database_client.clone().into_user_client(USER_NAME);
 
@@ -83,12 +89,11 @@ async fn users() {
     client
         .clone()
         .into_database_client(DATABASE_NAME)
-        .delete_database()
-        .execute()
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
         .await
         .unwrap();
 
-    let _databases = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let _databases = Box::pin(client.list_databases().into_stream())
         .next()
         .await
         .unwrap()
