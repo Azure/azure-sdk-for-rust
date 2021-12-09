@@ -11,7 +11,7 @@ use std::net::TcpListener;
 
 /// A very naive implementation of a redirect server.
 ///
-/// A ripoff of https://github.com/ramosbugs/oauth2-rs/blob/master/examples/msgraph.rs, stripped
+/// A ripoff of <https://github.com/ramosbugs/oauth2-rs/blob/master/examples/msgraph.rs>, stripped
 /// down for simplicity. This server blocks until redirected to.
 ///
 /// This implementation should only be used for testing.

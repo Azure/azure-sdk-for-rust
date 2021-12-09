@@ -106,6 +106,7 @@ where
 // NOTE: expires_on is a String version of unix epoch time, not an integer.
 // https://docs.microsoft.com/en-us/azure/app-service/overview-managed-identity?tabs=dotnet#rest-protocol-examples
 #[derive(Debug, Clone, Deserialize)]
+#[allow(unused)]
 struct MsiTokenResponse {
     pub access_token: AccessToken,
     #[serde(deserialize_with = "expires_on_string")]

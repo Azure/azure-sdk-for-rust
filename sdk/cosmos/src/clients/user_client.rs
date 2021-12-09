@@ -52,7 +52,7 @@ impl UserClient {
         options.decorate_request(&mut request, self.user_name())?;
         let response = self
             .pipeline()
-            .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
+            .send(ctx.clone().insert(ResourceType::Users), &mut request)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -69,7 +69,7 @@ impl UserClient {
         options.decorate_request(&mut request)?;
         let response = self
             .pipeline()
-            .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
+            .send(ctx.clone().insert(ResourceType::Users), &mut request)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -87,7 +87,7 @@ impl UserClient {
         options.decorate_request(&mut request, user_name.as_ref())?;
         let response = self
             .pipeline()
-            .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
+            .send(ctx.clone().insert(ResourceType::Users), &mut request)
             .await?;
 
         Ok(UserResponse::try_from(response).await?)
@@ -103,7 +103,7 @@ impl UserClient {
         options.decorate_request(&mut request)?;
         let response = self
             .pipeline()
-            .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
+            .send(ctx.clone().insert(ResourceType::Users), &mut request)
             .await?;
 
         Ok(DeleteUserResponse::try_from(response).await?)

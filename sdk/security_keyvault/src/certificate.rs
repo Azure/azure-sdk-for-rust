@@ -28,6 +28,7 @@ pub(crate) struct KeyVaultCertificateBaseIdentifierAttributedRaw {
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultCertificateBaseIdentifierRaw {
     id: String,
+    #[allow(unused)]
     x5t: String,
     attributes: KeyVaultCertificateBaseIdentifierAttributedRaw,
 }
@@ -64,9 +65,11 @@ pub(crate) struct KeyVaultGetCertificateResponseAttributes {
     #[serde(with = "ts_seconds")]
     updated: DateTime<Utc>,
     #[serde(rename = "recoveryLevel")]
+    #[allow(unused)]
     recovery_level: String,
 }
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub(crate) struct KeyVaultGetCertificateResponsePolicy {
     id: String,
     key_props: KeyVaultGetCertificateResponsePolicyKeyProperties,
@@ -76,6 +79,7 @@ pub(crate) struct KeyVaultGetCertificateResponsePolicy {
     attributes: KeyVaultGetCertificateResponsePolicyAttributes,
 }
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub(crate) struct KeyVaultGetCertificateResponsePolicyKeyProperties {
     exportable: bool,
     kty: String,
@@ -88,15 +92,18 @@ pub(crate) struct KeyVaultGetCertificateResponsePolicySecretProperties {
     content_type: String,
 }
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub(crate) struct KeyVaultGetCertificateResponsePolicyX509Properties {
     subject: String,
     validity_months: u64,
 }
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub(crate) struct KeyVaultGetCertificateResponsePolicyIssuer {
     name: String,
 }
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub(crate) struct KeyVaultGetCertificateResponsePolicyAttributes {
     enabled: bool,
     #[serde(with = "ts_seconds")]
@@ -590,13 +597,13 @@ mod tests {
         let mut client = mock_cert_client!(&"test-keyvault", &creds,);
 
         let certificate: KeyVaultCertificate =
-            client.get_certificate(&"test-certificate").await.unwrap();
+            client.get_certificate("test-certificate").await.unwrap();
 
         assert_eq!(
             "https://test-keyvault.vault.azure.net/keys/test-certificate/002ade539442463aba45c0efb42e3e84",
             certificate.key_id()
         );
-        assert_eq!(true, *certificate.properties.enabled());
+        assert!(*certificate.properties.enabled());
         assert!(diff(time_created, *certificate.properties.created_on()) < Duration::seconds(1));
         assert!(diff(time_updated, *certificate.properties.updated_on()) < Duration::seconds(1));
     }
@@ -660,7 +667,7 @@ mod tests {
         let mut client = mock_cert_client!(&"test-keyvault", &creds,);
 
         let certificate_versions = client
-            .list_properties_of_certificate_versions(&"test-certificate")
+            .list_properties_of_certificate_versions("test-certificate")
             .await
             .unwrap();
 

@@ -53,10 +53,7 @@ impl CollectionClient {
 
         let response = self
             .pipeline()
-            .send(
-                &mut ctx.clone().insert(ResourceType::Collections),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
             .await?;
 
         Ok(GetCollectionResponse::try_from(response).await?)
@@ -74,10 +71,7 @@ impl CollectionClient {
 
         let response = self
             .pipeline()
-            .send(
-                &mut ctx.clone().insert(ResourceType::Collections),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
             .await?;
 
         Ok(DeleteCollectionResponse::try_from(response).await?)
@@ -95,10 +89,7 @@ impl CollectionClient {
 
         let response = self
             .pipeline()
-            .send(
-                &mut ctx.clone().insert(ResourceType::Collections),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
             .await?;
 
         Ok(ReplaceCollectionResponse::try_from(response).await?)
@@ -121,10 +112,7 @@ impl CollectionClient {
         options.decorate_request(&mut request, document)?;
         let response = self
             .pipeline()
-            .send(
-                &mut ctx.clone().insert(ResourceType::Documents),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Documents), &mut request)
             .await?;
 
         Ok(CreateDocumentResponse::try_from(response).await?)

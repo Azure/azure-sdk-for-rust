@@ -111,7 +111,7 @@ pub struct JsonWebKey {
     /// Key identifier.
     #[serde(rename = "kid")]
     id: Option<String>,
-    /// JsonWebKey Key Type (kty), as defined in https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40.
+    /// JsonWebKey Key Type (kty), as defined in <https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40>.
     #[serde(rename = "kty")]
     key_type: String,
     /// RSA modulus.
@@ -605,7 +605,7 @@ mod tests {
             tags.to_owned().unwrap().get("purpose").unwrap(),
             "unit test"
         );
-        assert_eq!(true, enabled.unwrap());
+        assert!(enabled.unwrap());
         assert!(diff(time_created, created_on.unwrap()) < Duration::seconds(1));
         assert!(diff(time_updated, updated_on.unwrap()) < Duration::seconds(1));
     }

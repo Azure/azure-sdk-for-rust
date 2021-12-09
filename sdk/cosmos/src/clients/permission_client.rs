@@ -63,10 +63,7 @@ impl PermissionClient {
 
         let response = self
             .pipeline()
-            .send(
-                &mut ctx.clone().insert(ResourceType::Permissions),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
             .await?;
 
         Ok(PermissionResponse::try_from(response).await?)
@@ -85,10 +82,7 @@ impl PermissionClient {
 
         let response = self
             .pipeline()
-            .send(
-                &mut ctx.clone().insert(ResourceType::Permissions),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
             .await?;
 
         Ok(PermissionResponse::try_from(response).await?)
@@ -106,10 +100,7 @@ impl PermissionClient {
 
         let response = self
             .pipeline()
-            .send(
-                &mut ctx.clone().insert(ResourceType::Permissions),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
             .await?;
 
         Ok(PermissionResponse::try_from(response).await?)
@@ -127,10 +118,7 @@ impl PermissionClient {
 
         let response = self
             .pipeline()
-            .send(
-                &mut ctx.clone().insert(ResourceType::Permissions),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
             .await?;
 
         Ok(DeletePermissionResponse::try_from(response).await?)

@@ -69,10 +69,7 @@ impl DatabaseClient {
         options.decorate_request(&mut request)?;
         let response = self
             .pipeline()
-            .send(
-                &mut ctx.clone().insert(ResourceType::Databases),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Databases), &mut request)
             .await?;
 
         Ok(GetDatabaseResponse::try_from(response).await?)
@@ -92,10 +89,7 @@ impl DatabaseClient {
         options.decorate_request(&mut request)?;
         let response = self
             .pipeline()
-            .send(
-                &mut ctx.clone().insert(ResourceType::Databases),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Databases), &mut request)
             .await?;
 
         Ok(DeleteDatabaseResponse::try_from(response).await?)
@@ -122,10 +116,7 @@ impl DatabaseClient {
                         r#try!(options.decorate_request(&mut request));
                         let response = r#try!(
                             this.pipeline()
-                                .send(
-                                    &mut ctx.clone().insert(ResourceType::Collections),
-                                    &mut request
-                                )
+                                .send(ctx.clone().insert(ResourceType::Collections), &mut request)
                                 .await
                         );
                         ListCollectionsResponse::try_from(response).await
@@ -141,10 +132,7 @@ impl DatabaseClient {
                         r#try!(continuation.add_as_header2(&mut request));
                         let response = r#try!(
                             this.pipeline()
-                                .send(
-                                    &mut ctx.clone().insert(ResourceType::Collections),
-                                    &mut request
-                                )
+                                .send(ctx.clone().insert(ResourceType::Collections), &mut request)
                                 .await
                         );
                         ListCollectionsResponse::try_from(response).await
@@ -180,10 +168,7 @@ impl DatabaseClient {
         options.decorate_request(&mut request, collection_name.as_ref())?;
         let response = self
             .pipeline()
-            .send(
-                &mut ctx.clone().insert(ResourceType::Collections),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
             .await?;
 
         Ok(CreateCollectionResponse::try_from(response).await?)
@@ -210,7 +195,7 @@ impl DatabaseClient {
                         r#try!(options.decorate_request(&mut request));
                         let response = r#try!(
                             this.pipeline()
-                                .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
+                                .send(ctx.clone().insert(ResourceType::Users), &mut request)
                                 .await
                         );
                         ListUsersResponse::try_from(response).await
@@ -226,7 +211,7 @@ impl DatabaseClient {
                         r#try!(continuation.add_as_header2(&mut request));
                         let response = r#try!(
                             this.pipeline()
-                                .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
+                                .send(ctx.clone().insert(ResourceType::Users), &mut request)
                                 .await
                         );
                         ListUsersResponse::try_from(response).await

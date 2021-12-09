@@ -16,6 +16,7 @@ const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
 pub struct DataLakeClient {
     pipeline: Pipeline,
     storage_client: Arc<StorageClient>,
+    #[allow(unused)]
     account: String,
     custom_dns_suffix: Option<String>,
     url: String, // TODO: Use CloudLocation similar to CosmosClient

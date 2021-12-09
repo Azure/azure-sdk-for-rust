@@ -9,6 +9,7 @@ pub struct PutBlockBuilder<'a> {
     blob_client: &'a BlobClient,
     block_id: BlockId,
     body: Bytes,
+    #[allow(unused)]
     hash: Option<&'a Hash>,
     client_request_id: Option<ClientRequestId<'a>>,
     timeout: Option<Timeout>,

@@ -48,7 +48,7 @@ mod test {
         let v = vec![0, 1, 2, 3, 4, 5];
         let ic = IncompleteVector::new(None, v);
 
-        assert_eq!(ic.is_complete(), true);
+        assert!(ic.is_complete());
     }
 
     #[test]
@@ -56,7 +56,7 @@ mod test {
         let v = vec![0, 1, 2, 3, 4, 5];
         let ic = IncompleteVector::new(Some("aaa".into()), v);
 
-        assert_eq!(ic.is_complete(), false);
+        assert!(!ic.is_complete());
     }
 
     #[test]

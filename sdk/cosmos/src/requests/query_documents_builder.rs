@@ -21,6 +21,7 @@ pub struct QueryDocumentsBuilder<'a, 'b> {
     max_item_count: MaxItemCount,
     partition_key_serialized: Option<String>,
     query_cross_partition: QueryCrossPartition,
+    #[allow(unused)]
     parallelize_cross_partition_query: ParallelizeCrossPartition,
 }
 

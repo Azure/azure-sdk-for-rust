@@ -25,7 +25,7 @@ use std::sync::Arc;
 /// A pipeline is immutable. In other words a policy can either succeed and call the following
 /// policy of fail and return to the calling policy. Arbitrary policy "skip" must be avoided (but
 /// cannot be enforced by code). All policies except Transport policy can assume there is another following policy (so
-/// self.pipeline[0] is always valid).
+/// `self.pipeline[0]` is always valid).
 ///
 /// The `C` generic contains the pipeline-specific context. Different crates can pass
 /// different contexts using this generic. This way each crate can have its own specific pipeline

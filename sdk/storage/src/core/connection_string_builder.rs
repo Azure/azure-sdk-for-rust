@@ -1,12 +1,7 @@
 use crate::core::connection_string::*;
 
+#[derive(Debug, Default)]
 pub struct ConnectionStringBuilder<'a>(ConnectionString<'a>);
-
-impl<'a> Default for ConnectionStringBuilder<'a> {
-    fn default() -> Self {
-        Self(ConnectionString::default())
-    }
-}
 
 impl<'a> ConnectionStringBuilder<'a> {
     pub fn new() -> Self {

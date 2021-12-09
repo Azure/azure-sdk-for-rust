@@ -56,6 +56,7 @@ pub(crate) struct KeyVaultGetSecretResponseAttributes {
     #[serde(with = "ts_seconds")]
     updated: DateTime<Utc>,
     #[serde(rename = "recoveryLevel")]
+    #[allow(unused)]
     recovery_level: String,
 }
 
@@ -368,13 +369,13 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         Ok(())
     }
 
-    /// Updates the [`RecoveryLevel`](RecoveryLevel) of a secret version.
+    /// Updates the recovery level of a secret version.
     ///
     /// # Arguments
     ///
     /// * `secret_name` - Name of the secret
     /// * `secret_version` - Version of the secret. Use an empty string for the latest version
-    /// * `recovery_level` - New `RecoveryLevel`(RecoveryLevel) value of the secret
+    /// * `recovery_level` - The new recovery level value of the secret
     ///
     /// # Example
     ///
@@ -643,7 +644,7 @@ mod tests {
             "https://test-keyvault.vault.azure.net/secrets/test-secret/4387e9f3d6e14c459867679a90fd0f79",
             secret.id()
         );
-        assert_eq!(true, *secret.enabled());
+        assert!(*secret.enabled());
         assert!(diff(time_created, *secret.time_created()) < Duration::seconds(1));
         assert!(diff(time_updated, *secret.time_updated()) < Duration::seconds(1));
     }

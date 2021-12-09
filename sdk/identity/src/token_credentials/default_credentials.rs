@@ -187,27 +187,27 @@ mod tests {
     #[test]
     fn test_builder_included_credential_flags() {
         let builder = DefaultAzureCredentialBuilder::new();
-        assert_eq!(builder.include_cli_credential, true);
-        assert_eq!(builder.include_environment_credential, true);
-        assert_eq!(builder.include_managed_identity_credential, true);
+        assert!(builder.include_cli_credential);
+        assert!(builder.include_environment_credential);
+        assert!(builder.include_managed_identity_credential);
 
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_cli_credential();
-        assert_eq!(builder.include_cli_credential, false);
-        assert_eq!(builder.include_environment_credential, true);
-        assert_eq!(builder.include_managed_identity_credential, true);
+        assert!(!builder.include_cli_credential);
+        assert!(builder.include_environment_credential);
+        assert!(builder.include_managed_identity_credential);
 
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_environment_credential();
-        assert_eq!(builder.include_cli_credential, true);
-        assert_eq!(builder.include_environment_credential, false);
-        assert_eq!(builder.include_managed_identity_credential, true);
+        assert!(builder.include_cli_credential);
+        assert!(!builder.include_environment_credential);
+        assert!(builder.include_managed_identity_credential);
 
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_managed_identity_credential();
-        assert_eq!(builder.include_cli_credential, true);
-        assert_eq!(builder.include_environment_credential, true);
-        assert_eq!(builder.include_managed_identity_credential, false);
+        assert!(builder.include_cli_credential);
+        assert!(builder.include_environment_credential);
+        assert!(!builder.include_managed_identity_credential);
     }
 
     macro_rules! contains_credential {

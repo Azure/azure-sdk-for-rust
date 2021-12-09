@@ -32,8 +32,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // It then finalizes the block blob by calling
     // PutBlockList. Finally it gets back
     // the blob as a whole.
-    let mut data = bytes::BytesMut::with_capacity(1 * 1024);
-    for _ in 0..1 * (1024 / 64) {
+    let mut data = bytes::BytesMut::with_capacity(1024);
+    for _ in 0..1024 / 64 {
         data.put("the brown fox jumped over the lazy dog. 123456789Pangram12345678".as_bytes());
     }
     let data = data.freeze();

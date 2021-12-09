@@ -15,7 +15,7 @@ use std::time::Duration;
 ///     .retry(RetryOptions::default().max_retries(10u32))
 ///     .telemetry(TelemetryOptions::default().application_id("my-application"));
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct ClientOptions {
     // TODO: Expose transport override.
     /// Policies called per call.
@@ -32,18 +32,6 @@ pub struct ClientOptions {
 
     /// Transport options.
     pub(crate) transport: TransportOptions,
-}
-
-impl Default for ClientOptions {
-    fn default() -> Self {
-        Self {
-            per_call_policies: Vec::new(),
-            per_retry_policies: Vec::new(),
-            retry: RetryOptions::default(),
-            telemetry: TelemetryOptions::default(),
-            transport: TransportOptions::default(),
-        }
-    }
 }
 
 impl ClientOptions {

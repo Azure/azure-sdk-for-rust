@@ -18,6 +18,7 @@ pub(crate) enum Operation {
 pub struct UpdateOrMergeEntityBuilder<'a> {
     entity_client: &'a EntityClient,
     operation: Operation,
+    #[allow(unused)]
     timeout: Option<Timeout>,
     client_request_id: Option<ClientRequestId<'a>>,
 }
