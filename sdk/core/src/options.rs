@@ -17,19 +17,14 @@ use std::time::Duration;
 /// ```
 #[derive(Clone, Debug, Default)]
 pub struct ClientOptions {
-    // TODO: Expose transport override.
     /// Policies called per call.
     pub(crate) per_call_policies: Vec<Arc<dyn Policy>>,
-
     /// Policies called per retry.
     pub(crate) per_retry_policies: Vec<Arc<dyn Policy>>,
-
     /// Retry options.
     pub(crate) retry: RetryOptions,
-
     /// Telemetry options.
     pub(crate) telemetry: TelemetryOptions,
-
     /// Transport options.
     pub(crate) transport: TransportOptions,
 }
