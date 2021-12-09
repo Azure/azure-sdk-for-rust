@@ -8,8 +8,12 @@ use std::convert::TryInto;
 pub struct FindBlobsByTagsBuilder<'a> {
     client: &'a StorageClient,
     expression: String,
+
+    #[allow(unused)]
     lease_id: Option<&'a str>,
+    #[allow(unused)]
     next_marker: Option<NextMarker>,
+    #[allow(unused)]
     max_results: Option<MaxResults>,
     client_request_id: Option<ClientRequestId<'a>>,
     timeout: Option<Timeout>,

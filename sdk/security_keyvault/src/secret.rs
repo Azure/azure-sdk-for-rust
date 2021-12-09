@@ -56,6 +56,7 @@ pub(crate) struct KeyVaultGetSecretResponseAttributes {
     #[serde(with = "ts_seconds")]
     updated: DateTime<Utc>,
     #[serde(rename = "recoveryLevel")]
+    #[allow(unused)]
     recovery_level: String,
 }
 

@@ -31,6 +31,7 @@ struct CliTokenResponse {
     pub expires_on: DateTime<Utc>,
     pub subscription: String,
     pub tenant: String,
+    #[allow(unused)]
     pub token_type: String,
 }
 

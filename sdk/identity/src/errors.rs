@@ -43,6 +43,7 @@ pub(crate) enum ErrorResponse {
 
 /// Error Token
 #[derive(Debug, Clone, Deserialize)]
+#[allow(unused)]
 pub struct ErrorToken {
     error: String,
     error_description: String,

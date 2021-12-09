@@ -28,6 +28,7 @@ pub(crate) struct KeyVaultCertificateBaseIdentifierAttributedRaw {
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultCertificateBaseIdentifierRaw {
     id: String,
+    #[allow(unused)]
     x5t: String,
     attributes: KeyVaultCertificateBaseIdentifierAttributedRaw,
 }
@@ -64,9 +65,11 @@ pub(crate) struct KeyVaultGetCertificateResponseAttributes {
     #[serde(with = "ts_seconds")]
     updated: DateTime<Utc>,
     #[serde(rename = "recoveryLevel")]
+    #[allow(unused)]
     recovery_level: String,
 }
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub(crate) struct KeyVaultGetCertificateResponsePolicy {
     id: String,
     key_props: KeyVaultGetCertificateResponsePolicyKeyProperties,
@@ -76,6 +79,7 @@ pub(crate) struct KeyVaultGetCertificateResponsePolicy {
     attributes: KeyVaultGetCertificateResponsePolicyAttributes,
 }
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub(crate) struct KeyVaultGetCertificateResponsePolicyKeyProperties {
     exportable: bool,
     kty: String,
@@ -88,15 +92,18 @@ pub(crate) struct KeyVaultGetCertificateResponsePolicySecretProperties {
     content_type: String,
 }
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub(crate) struct KeyVaultGetCertificateResponsePolicyX509Properties {
     subject: String,
     validity_months: u64,
 }
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub(crate) struct KeyVaultGetCertificateResponsePolicyIssuer {
     name: String,
 }
 #[derive(Deserialize, Debug)]
+#[allow(unused)]
 pub(crate) struct KeyVaultGetCertificateResponsePolicyAttributes {
     enabled: bool,
     #[serde(with = "ts_seconds")]

@@ -353,6 +353,7 @@ impl CosmosClient {
 ///
 /// All variants require the cosmos account name. `Custom` also requires a valid
 /// base URL (e.g. https://custom.documents.azure.com)
+#[allow(unused)]
 #[derive(Debug, Clone)]
 enum CloudLocation {
     /// Azure public cloud
