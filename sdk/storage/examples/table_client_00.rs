@@ -107,7 +107,7 @@ async fn main() -> Result<(), Error> {
                     .timeout(12),
             )
             .await?;
-        println!("Entity found - {:?}", entity);
+        println!("Entity found - {:#?}", entity);
 
         // update entity by adding new column
         let _ = entity_client
@@ -135,11 +135,7 @@ async fn main() -> Result<(), Error> {
                 DeleteEntityOptions::default(),
             )
             .await?;
-        println!(
-            "Entity with partition_key: {} and row_key: {} deleted successfully",
-            user.partition_key(),
-            user.row_key()
-        );
+        println!("Entity deleted successfully - {:?}", user);
     }
 
     TableClient::emulator(TableOptions::default())

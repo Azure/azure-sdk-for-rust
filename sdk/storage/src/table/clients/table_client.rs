@@ -5,9 +5,9 @@ use http::{method::Method, request::Builder as RequestBuilder, Uri};
 use std::{str::FromStr, sync::Arc};
 
 const PORT: u16 = 10002;
-const ADDRESS: &str = "127.0.0.1";
-const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
-const EMULATOR_KEY: &str =
+const ADDRESS: &'static str = "127.0.0.1";
+const EMULATOR_ACCOUNT: &'static str = "devstoreaccount1";
+const EMULATOR_KEY: &'static str =
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
 /// Options for specifying how a Table client will behave

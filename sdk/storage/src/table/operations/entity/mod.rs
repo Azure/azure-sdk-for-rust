@@ -56,7 +56,7 @@ mod entity_timestamp_format {
     use chrono::{DateTime, TimeZone, Utc};
     use serde::{Deserialize, Deserializer, Serializer};
 
-    const FMT: &str = "%+";
+    const FMT: &'static str = "%+";
 
     pub fn serialize<S>(date: &DateTime<Utc>, serializer: S) -> Result<S::Ok, S::Error>
     where
