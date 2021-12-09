@@ -1,6 +1,6 @@
 use crate::policies::{Policy, PolicyResult, Request, Response};
 use crate::sleep::sleep;
-use crate::PipelineContext;
+use crate::{Context, HttpError};
 use chrono::{DateTime, Local};
 use std::sync::Arc;
 use std::time::Duration;
@@ -11,16 +11,15 @@ pub trait RetryPolicy {
 }
 
 #[async_trait::async_trait]
-impl<T, C> Policy<C> for T
+impl<T> Policy for T
 where
     T: RetryPolicy + std::fmt::Debug + Send + Sync,
-    C: Send + Sync,
 {
     async fn send(
         &self,
-        ctx: &mut PipelineContext<C>,
+        ctx: &Context,
         request: &mut Request,
-        next: &[Arc<dyn Policy<C>>],
+        next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
         let mut first_retry_time = None;
         let mut retry_count = 0;

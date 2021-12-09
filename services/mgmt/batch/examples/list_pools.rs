@@ -9,19 +9,22 @@ image reference: ImageReference { publisher: Some("canonical"), offer: Some("ubu
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
-use azure_mgmt_batch::operations::pool;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let resource_group_name = std::env::args().nth(1).expect("please specify resource group");
     let account_name = std::env::args().nth(2).expect("please specify batch account");
 
-    let http_client = azure_core::new_http_client();
-    let token_credential = AzureCliCredential {};
-    let subscription_id = &AzureCliCredential::get_subscription()?;
-    let config = &azure_mgmt_batch::config(http_client, Box::new(token_credential)).build();
+    let credential = Arc::new(AzureCliCredential {});
+    let subscription_id = AzureCliCredential::get_subscription()?;
+    let client = azure_mgmt_batch::ClientBuilder::new(credential).build();
 
-    let pools = pool::list_by_batch_account(config, &resource_group_name, &account_name, None, None, None, subscription_id).await?;
+    let pools = client
+        .pool()
+        .list_by_batch_account(resource_group_name, account_name, subscription_id)
+        .into_future()
+        .await?;
 
     for pool in pools.value {
         println!("name: {:?}", pool.proxy_resource.name.unwrap_or_default());

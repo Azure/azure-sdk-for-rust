@@ -1002,8 +1002,6 @@ pub struct FlowletTypeProperties {
     pub script: Option<String>,
     #[serde(rename = "scriptLines", default, skip_serializing_if = "Vec::is_empty")]
     pub script_lines: Vec<String>,
-    #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
-    pub additional_properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetListResponse {
@@ -1208,43 +1206,7 @@ pub struct ParquetFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetCompression {
     #[serde(rename = "type")]
-    pub type_: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetBZip2Compression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetGZipCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetDeflateCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetZipDeflateCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetTarCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatasetTarGZipCompression {
-    #[serde(flatten)]
-    pub dataset_compression: DatasetCompression,
+    pub type_: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<serde_json::Value>,
 }
@@ -5742,6 +5704,8 @@ pub struct FtpReadSettings {
     pub file_list_path: Option<serde_json::Value>,
     #[serde(rename = "useBinaryTransfer", default, skip_serializing_if = "Option::is_none")]
     pub use_binary_transfer: Option<bool>,
+    #[serde(rename = "disableChunking", default, skip_serializing_if = "Option::is_none")]
+    pub disable_chunking: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SftpReadSettings {
@@ -5765,6 +5729,8 @@ pub struct SftpReadSettings {
     pub modified_datetime_start: Option<serde_json::Value>,
     #[serde(rename = "modifiedDatetimeEnd", default, skip_serializing_if = "Option::is_none")]
     pub modified_datetime_end: Option<serde_json::Value>,
+    #[serde(rename = "disableChunking", default, skip_serializing_if = "Option::is_none")]
+    pub disable_chunking: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpReadSettings {

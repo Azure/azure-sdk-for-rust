@@ -2,48 +2,258 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
-pub async fn get_locations(operation_config: &crate::OperationConfig) -> std::result::Result<LocationCollection, get_locations::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/providers/Microsoft.Intune/locations", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(get_locations::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_locations::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-    }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_locations::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_locations::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: LocationCollection =
-                serde_json::from_slice(rsp_body).map_err(|source| get_locations::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::pipeline::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error =
-                serde_json::from_slice(rsp_body).map_err(|source| get_locations::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_locations::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
-            })
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub(crate) fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub(crate) fn token_credential(&self) -> &dyn azure_core::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub(crate) fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::pipeline::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    pub fn android(&self) -> android::Client {
+        android::Client(self.clone())
+    }
+    pub fn ios(&self) -> ios::Client {
+        ios::Client(self.clone())
+    }
+}
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    GetLocations(#[from] get_locations::Error),
+    #[error(transparent)]
+    GetLocationByHostName(#[from] get_location_by_host_name::Error),
+    #[error(transparent)]
+    GetApps(#[from] get_apps::Error),
+    #[error(transparent)]
+    Ios_GetMamPolicies(#[from] ios::get_mam_policies::Error),
+    #[error(transparent)]
+    Android_GetMamPolicies(#[from] android::get_mam_policies::Error),
+    #[error(transparent)]
+    Ios_GetMamPolicyByName(#[from] ios::get_mam_policy_by_name::Error),
+    #[error(transparent)]
+    Ios_CreateOrUpdateMamPolicy(#[from] ios::create_or_update_mam_policy::Error),
+    #[error(transparent)]
+    Ios_PatchMamPolicy(#[from] ios::patch_mam_policy::Error),
+    #[error(transparent)]
+    Ios_DeleteMamPolicy(#[from] ios::delete_mam_policy::Error),
+    #[error(transparent)]
+    Android_GetMamPolicyByName(#[from] android::get_mam_policy_by_name::Error),
+    #[error(transparent)]
+    Android_CreateOrUpdateMamPolicy(#[from] android::create_or_update_mam_policy::Error),
+    #[error(transparent)]
+    Android_PatchMamPolicy(#[from] android::patch_mam_policy::Error),
+    #[error(transparent)]
+    Android_DeleteMamPolicy(#[from] android::delete_mam_policy::Error),
+    #[error(transparent)]
+    Ios_GetAppForMamPolicy(#[from] ios::get_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_GetAppForMamPolicy(#[from] android::get_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Ios_AddAppForMamPolicy(#[from] ios::add_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Ios_DeleteAppForMamPolicy(#[from] ios::delete_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_AddAppForMamPolicy(#[from] android::add_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_DeleteAppForMamPolicy(#[from] android::delete_app_for_mam_policy::Error),
+    #[error(transparent)]
+    Ios_GetGroupsForMamPolicy(#[from] ios::get_groups_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_GetGroupsForMamPolicy(#[from] android::get_groups_for_mam_policy::Error),
+    #[error(transparent)]
+    Ios_AddGroupForMamPolicy(#[from] ios::add_group_for_mam_policy::Error),
+    #[error(transparent)]
+    Ios_DeleteGroupForMamPolicy(#[from] ios::delete_group_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_AddGroupForMamPolicy(#[from] android::add_group_for_mam_policy::Error),
+    #[error(transparent)]
+    Android_DeleteGroupForMamPolicy(#[from] android::delete_group_for_mam_policy::Error),
+    #[error(transparent)]
+    GetMamUserDevices(#[from] get_mam_user_devices::Error),
+    #[error(transparent)]
+    GetMamUserDeviceByDeviceName(#[from] get_mam_user_device_by_device_name::Error),
+    #[error(transparent)]
+    WipeMamUserDevice(#[from] wipe_mam_user_device::Error),
+    #[error(transparent)]
+    GetOperationResults(#[from] get_operation_results::Error),
+    #[error(transparent)]
+    GetMamStatuses(#[from] get_mam_statuses::Error),
+    #[error(transparent)]
+    GetMamFlaggedUsers(#[from] get_mam_flagged_users::Error),
+    #[error(transparent)]
+    GetMamFlaggedUserByName(#[from] get_mam_flagged_user_by_name::Error),
+    #[error(transparent)]
+    GetMamUserFlaggedEnrolledApps(#[from] get_mam_user_flagged_enrolled_apps::Error),
+}
+impl Client {
+    pub fn get_locations(&self) -> get_locations::Builder {
+        get_locations::Builder { client: self.clone() }
+    }
+    pub fn get_location_by_host_name(&self) -> get_location_by_host_name::Builder {
+        get_location_by_host_name::Builder { client: self.clone() }
+    }
+    pub fn get_apps(&self, host_name: impl Into<String>) -> get_apps::Builder {
+        get_apps::Builder {
+            client: self.clone(),
+            host_name: host_name.into(),
+            filter: None,
+            top: None,
+            select: None,
+        }
+    }
+    pub fn get_mam_user_devices(&self, host_name: impl Into<String>, user_name: impl Into<String>) -> get_mam_user_devices::Builder {
+        get_mam_user_devices::Builder {
+            client: self.clone(),
+            host_name: host_name.into(),
+            user_name: user_name.into(),
+            filter: None,
+            top: None,
+            select: None,
+        }
+    }
+    pub fn get_mam_user_device_by_device_name(
+        &self,
+        host_name: impl Into<String>,
+        user_name: impl Into<String>,
+        device_name: impl Into<String>,
+    ) -> get_mam_user_device_by_device_name::Builder {
+        get_mam_user_device_by_device_name::Builder {
+            client: self.clone(),
+            host_name: host_name.into(),
+            user_name: user_name.into(),
+            device_name: device_name.into(),
+            select: None,
+        }
+    }
+    pub fn wipe_mam_user_device(
+        &self,
+        host_name: impl Into<String>,
+        user_name: impl Into<String>,
+        device_name: impl Into<String>,
+    ) -> wipe_mam_user_device::Builder {
+        wipe_mam_user_device::Builder {
+            client: self.clone(),
+            host_name: host_name.into(),
+            user_name: user_name.into(),
+            device_name: device_name.into(),
+        }
+    }
+    pub fn get_operation_results(&self, host_name: impl Into<String>) -> get_operation_results::Builder {
+        get_operation_results::Builder {
+            client: self.clone(),
+            host_name: host_name.into(),
+            filter: None,
+            top: None,
+            select: None,
+        }
+    }
+    pub fn get_mam_statuses(&self, host_name: impl Into<String>) -> get_mam_statuses::Builder {
+        get_mam_statuses::Builder {
+            client: self.clone(),
+            host_name: host_name.into(),
+        }
+    }
+    pub fn get_mam_flagged_users(&self, host_name: impl Into<String>) -> get_mam_flagged_users::Builder {
+        get_mam_flagged_users::Builder {
+            client: self.clone(),
+            host_name: host_name.into(),
+            filter: None,
+            top: None,
+            select: None,
+        }
+    }
+    pub fn get_mam_flagged_user_by_name(
+        &self,
+        host_name: impl Into<String>,
+        user_name: impl Into<String>,
+    ) -> get_mam_flagged_user_by_name::Builder {
+        get_mam_flagged_user_by_name::Builder {
+            client: self.clone(),
+            host_name: host_name.into(),
+            user_name: user_name.into(),
+            select: None,
+        }
+    }
+    pub fn get_mam_user_flagged_enrolled_apps(
+        &self,
+        host_name: impl Into<String>,
+        user_name: impl Into<String>,
+    ) -> get_mam_user_flagged_enrolled_apps::Builder {
+        get_mam_user_flagged_enrolled_apps::Builder {
+            client: self.clone(),
+            host_name: host_name.into(),
+            user_name: user_name.into(),
+            filter: None,
+            top: None,
+            select: None,
         }
     }
 }
 pub mod get_locations {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -52,64 +262,66 @@ pub mod get_locations {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_location_by_host_name(
-    operation_config: &crate::OperationConfig,
-) -> std::result::Result<Location, get_location_by_host_name::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!("{}/providers/Microsoft.Intune/locations/hostName", operation_config.base_path(),);
-    let mut url = url::Url::parse(url_str).map_err(get_location_by_host_name::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_location_by_host_name::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(get_location_by_host_name::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_location_by_host_name::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: Location = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_location_by_host_name::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_location_by_host_name::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_location_by_host_name::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LocationCollection, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/providers/Microsoft.Intune/locations", self.client.endpoint(),);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::LocationCollection =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
 }
 pub mod get_location_by_host_name {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -118,79 +330,66 @@ pub mod get_location_by_host_name {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_apps(
-    operation_config: &crate::OperationConfig,
-    host_name: &str,
-    filter: Option<&str>,
-    top: Option<i32>,
-    select: Option<&str>,
-) -> std::result::Result<ApplicationCollection, get_apps::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/providers/Microsoft.Intune/locations/{}/apps",
-        operation_config.base_path(),
-        host_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(get_apps::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_apps::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(filter) = filter {
-        url.query_pairs_mut().append_pair("$filter", filter);
-    }
-    if let Some(top) = top {
-        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-    }
-    if let Some(select) = select {
-        url.query_pairs_mut().append_pair("$select", select);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_apps::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_apps::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: ApplicationCollection =
-                serde_json::from_slice(rsp_body).map_err(|source| get_apps::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error =
-                serde_json::from_slice(rsp_body).map_err(|source| get_apps::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_apps::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Location, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/providers/Microsoft.Intune/locations/hostName", self.client.endpoint(),);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Location =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
 }
 pub mod get_apps {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -199,81 +398,95 @@ pub mod get_apps {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_mam_user_devices(
-    operation_config: &crate::OperationConfig,
-    host_name: &str,
-    user_name: &str,
-    filter: Option<&str>,
-    top: Option<i32>,
-    select: Option<&str>,
-) -> std::result::Result<DeviceCollection, get_mam_user_devices::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices",
-        operation_config.base_path(),
-        host_name,
-        user_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(get_mam_user_devices::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_mam_user_devices::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) host_name: String,
+        pub(crate) filter: Option<String>,
+        pub(crate) top: Option<i32>,
+        pub(crate) select: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(filter) = filter {
-        url.query_pairs_mut().append_pair("$filter", filter);
-    }
-    if let Some(top) = top {
-        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-    }
-    if let Some(select) = select {
-        url.query_pairs_mut().append_pair("$select", select);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_mam_user_devices::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_mam_user_devices::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: DeviceCollection = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_mam_user_devices::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn filter(mut self, filter: impl Into<String>) -> Self {
+            self.filter = Some(filter.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_mam_user_devices::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_mam_user_devices::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn top(mut self, top: i32) -> Self {
+            self.top = Some(top);
+            self
+        }
+        pub fn select(mut self, select: impl Into<String>) -> Self {
+            self.select = Some(select.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationCollection, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/apps",
+                    self.client.endpoint(),
+                    &self.host_name
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(filter) = &self.filter {
+                    url.query_pairs_mut().append_pair("$filter", filter);
+                }
+                if let Some(top) = &self.top {
+                    url.query_pairs_mut().append_pair("$top", &top.to_string());
+                }
+                if let Some(select) = &self.select {
+                    url.query_pairs_mut().append_pair("$select", select);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::ApplicationCollection =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
 }
 pub mod get_mam_user_devices {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -282,77 +495,97 @@ pub mod get_mam_user_devices {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_mam_user_device_by_device_name(
-    operation_config: &crate::OperationConfig,
-    host_name: &str,
-    user_name: &str,
-    device_name: &str,
-    select: Option<&str>,
-) -> std::result::Result<Device, get_mam_user_device_by_device_name::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}",
-        operation_config.base_path(),
-        host_name,
-        user_name,
-        device_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(get_mam_user_device_by_device_name::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_mam_user_device_by_device_name::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) host_name: String,
+        pub(crate) user_name: String,
+        pub(crate) filter: Option<String>,
+        pub(crate) top: Option<i32>,
+        pub(crate) select: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(select) = select {
-        url.query_pairs_mut().append_pair("$select", select);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(get_mam_user_device_by_device_name::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_mam_user_device_by_device_name::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: Device = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_mam_user_device_by_device_name::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn filter(mut self, filter: impl Into<String>) -> Self {
+            self.filter = Some(filter.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_mam_user_device_by_device_name::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_mam_user_device_by_device_name::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn top(mut self, top: i32) -> Self {
+            self.top = Some(top);
+            self
+        }
+        pub fn select(mut self, select: impl Into<String>) -> Self {
+            self.select = Some(select.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DeviceCollection, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.user_name
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(filter) = &self.filter {
+                    url.query_pairs_mut().append_pair("$filter", filter);
+                }
+                if let Some(top) = &self.top {
+                    url.query_pairs_mut().append_pair("$top", &top.to_string());
+                }
+                if let Some(select) = &self.select {
+                    url.query_pairs_mut().append_pair("$select", select);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::DeviceCollection =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
 }
 pub mod get_mam_user_device_by_device_name {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -361,72 +594,83 @@ pub mod get_mam_user_device_by_device_name {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn wipe_mam_user_device(
-    operation_config: &crate::OperationConfig,
-    host_name: &str,
-    user_name: &str,
-    device_name: &str,
-) -> std::result::Result<WipeDeviceOperationResult, wipe_mam_user_device::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}/wipe",
-        operation_config.base_path(),
-        host_name,
-        user_name,
-        device_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(wipe_mam_user_device::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::POST);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(wipe_mam_user_device::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) host_name: String,
+        pub(crate) user_name: String,
+        pub(crate) device_name: String,
+        pub(crate) select: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(wipe_mam_user_device::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(wipe_mam_user_device::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: WipeDeviceOperationResult = serde_json::from_slice(rsp_body)
-                .map_err(|source| wipe_mam_user_device::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn select(mut self, select: impl Into<String>) -> Self {
+            self.select = Some(select.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
-                .map_err(|source| wipe_mam_user_device::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(wipe_mam_user_device::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Device, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.user_name,
+                    &self.device_name
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(select) = &self.select {
+                    url.query_pairs_mut().append_pair("$select", select);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Device =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
 }
 pub mod wipe_mam_user_device {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -435,81 +679,76 @@ pub mod wipe_mam_user_device {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_operation_results(
-    operation_config: &crate::OperationConfig,
-    host_name: &str,
-    filter: Option<&str>,
-    top: Option<i32>,
-    select: Option<&str>,
-) -> std::result::Result<OperationResultCollection, get_operation_results::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/providers/Microsoft.Intune/locations/{}/operationResults",
-        operation_config.base_path(),
-        host_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(get_operation_results::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_operation_results::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) host_name: String,
+        pub(crate) user_name: String,
+        pub(crate) device_name: String,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(filter) = filter {
-        url.query_pairs_mut().append_pair("$filter", filter);
-    }
-    if let Some(top) = top {
-        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-    }
-    if let Some(select) = select {
-        url.query_pairs_mut().append_pair("$select", select);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(get_operation_results::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_operation_results::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: OperationResultCollection = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_operation_results::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_operation_results::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_operation_results::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::WipeDeviceOperationResult, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}/wipe",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.user_name,
+                    &self.device_name
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::POST);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::WipeDeviceOperationResult =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
 }
 pub mod get_operation_results {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -518,67 +757,95 @@ pub mod get_operation_results {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_mam_statuses(
-    operation_config: &crate::OperationConfig,
-    host_name: &str,
-) -> std::result::Result<StatusesDefault, get_mam_statuses::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/providers/Microsoft.Intune/locations/{}/statuses/default",
-        operation_config.base_path(),
-        host_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(get_mam_statuses::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_mam_statuses::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) host_name: String,
+        pub(crate) filter: Option<String>,
+        pub(crate) top: Option<i32>,
+        pub(crate) select: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder.body(req_body).map_err(get_mam_statuses::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_mam_statuses::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: StatusesDefault =
-                serde_json::from_slice(rsp_body).map_err(|source| get_mam_statuses::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn filter(mut self, filter: impl Into<String>) -> Self {
+            self.filter = Some(filter.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error =
-                serde_json::from_slice(rsp_body).map_err(|source| get_mam_statuses::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_mam_statuses::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn top(mut self, top: i32) -> Self {
+            self.top = Some(top);
+            self
+        }
+        pub fn select(mut self, select: impl Into<String>) -> Self {
+            self.select = Some(select.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::OperationResultCollection, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/operationResults",
+                    self.client.endpoint(),
+                    &self.host_name
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(filter) = &self.filter {
+                    url.query_pairs_mut().append_pair("$filter", filter);
+                }
+                if let Some(top) = &self.top {
+                    url.query_pairs_mut().append_pair("$top", &top.to_string());
+                }
+                if let Some(select) = &self.select {
+                    url.query_pairs_mut().append_pair("$select", select);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::OperationResultCollection =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
 }
 pub mod get_mam_statuses {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -587,81 +854,71 @@ pub mod get_mam_statuses {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_mam_flagged_users(
-    operation_config: &crate::OperationConfig,
-    host_name: &str,
-    filter: Option<&str>,
-    top: Option<i32>,
-    select: Option<&str>,
-) -> std::result::Result<FlaggedUserCollection, get_mam_flagged_users::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers",
-        operation_config.base_path(),
-        host_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(get_mam_flagged_users::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_mam_flagged_users::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) host_name: String,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(filter) = filter {
-        url.query_pairs_mut().append_pair("$filter", filter);
-    }
-    if let Some(top) = top {
-        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-    }
-    if let Some(select) = select {
-        url.query_pairs_mut().append_pair("$select", select);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(get_mam_flagged_users::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_mam_flagged_users::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: FlaggedUserCollection = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_mam_flagged_users::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
-        }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_mam_flagged_users::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_mam_flagged_users::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::StatusesDefault, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/statuses/default",
+                    self.client.endpoint(),
+                    &self.host_name
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::StatusesDefault =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
 }
 pub mod get_mam_flagged_users {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -670,75 +927,95 @@ pub mod get_mam_flagged_users {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_mam_flagged_user_by_name(
-    operation_config: &crate::OperationConfig,
-    host_name: &str,
-    user_name: &str,
-    select: Option<&str>,
-) -> std::result::Result<FlaggedUser, get_mam_flagged_user_by_name::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}",
-        operation_config.base_path(),
-        host_name,
-        user_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(get_mam_flagged_user_by_name::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_mam_flagged_user_by_name::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) host_name: String,
+        pub(crate) filter: Option<String>,
+        pub(crate) top: Option<i32>,
+        pub(crate) select: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(select) = select {
-        url.query_pairs_mut().append_pair("$select", select);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(get_mam_flagged_user_by_name::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_mam_flagged_user_by_name::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: FlaggedUser = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_mam_flagged_user_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn filter(mut self, filter: impl Into<String>) -> Self {
+            self.filter = Some(filter.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_mam_flagged_user_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_mam_flagged_user_by_name::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn top(mut self, top: i32) -> Self {
+            self.top = Some(top);
+            self
+        }
+        pub fn select(mut self, select: impl Into<String>) -> Self {
+            self.select = Some(select.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FlaggedUserCollection, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers",
+                    self.client.endpoint(),
+                    &self.host_name
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(filter) = &self.filter {
+                    url.query_pairs_mut().append_pair("$filter", filter);
+                }
+                if let Some(top) = &self.top {
+                    url.query_pairs_mut().append_pair("$top", &top.to_string());
+                }
+                if let Some(select) = &self.select {
+                    url.query_pairs_mut().append_pair("$select", select);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::FlaggedUserCollection =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
 }
 pub mod get_mam_flagged_user_by_name {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -747,83 +1024,81 @@ pub mod get_mam_flagged_user_by_name {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
     }
-}
-pub async fn get_mam_user_flagged_enrolled_apps(
-    operation_config: &crate::OperationConfig,
-    host_name: &str,
-    user_name: &str,
-    filter: Option<&str>,
-    top: Option<i32>,
-    select: Option<&str>,
-) -> std::result::Result<FlaggedEnrolledAppCollection, get_mam_user_flagged_enrolled_apps::Error> {
-    let http_client = operation_config.http_client();
-    let url_str = &format!(
-        "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}/flaggedEnrolledApps",
-        operation_config.base_path(),
-        host_name,
-        user_name
-    );
-    let mut url = url::Url::parse(url_str).map_err(get_mam_user_flagged_enrolled_apps::Error::ParseUrlError)?;
-    let mut req_builder = http::request::Builder::new();
-    req_builder = req_builder.method(http::Method::GET);
-    if let Some(token_credential) = operation_config.token_credential() {
-        let token_response = token_credential
-            .get_token(operation_config.token_credential_resource())
-            .await
-            .map_err(get_mam_user_flagged_enrolled_apps::Error::GetTokenError)?;
-        req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) host_name: String,
+        pub(crate) user_name: String,
+        pub(crate) select: Option<String>,
     }
-    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-    if let Some(filter) = filter {
-        url.query_pairs_mut().append_pair("$filter", filter);
-    }
-    if let Some(top) = top {
-        url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-    }
-    if let Some(select) = select {
-        url.query_pairs_mut().append_pair("$select", select);
-    }
-    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-    req_builder = req_builder.uri(url.as_str());
-    let req = req_builder
-        .body(req_body)
-        .map_err(get_mam_user_flagged_enrolled_apps::Error::BuildRequestError)?;
-    let rsp = http_client
-        .execute_request(req)
-        .await
-        .map_err(get_mam_user_flagged_enrolled_apps::Error::ExecuteRequestError)?;
-    match rsp.status() {
-        http::StatusCode::OK => {
-            let rsp_body = rsp.body();
-            let rsp_value: FlaggedEnrolledAppCollection = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_mam_user_flagged_enrolled_apps::Error::DeserializeError(source, rsp_body.clone()))?;
-            Ok(rsp_value)
+    impl Builder {
+        pub fn select(mut self, select: impl Into<String>) -> Self {
+            self.select = Some(select.into());
+            self
         }
-        status_code => {
-            let rsp_body = rsp.body();
-            let rsp_value: Error = serde_json::from_slice(rsp_body)
-                .map_err(|source| get_mam_user_flagged_enrolled_apps::Error::DeserializeError(source, rsp_body.clone()))?;
-            Err(get_mam_user_flagged_enrolled_apps::Error::DefaultResponse {
-                status_code,
-                value: rsp_value,
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FlaggedUser, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.user_name
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(select) = &self.select {
+                    url.query_pairs_mut().append_pair("$select", select);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::FlaggedUser =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
             })
         }
     }
 }
 pub mod get_mam_user_flagged_enrolled_apps {
-    use super::{models, models::*, API_VERSION};
+    use super::{models, API_VERSION};
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -832,81 +1107,237 @@ pub mod get_mam_user_flagged_enrolled_apps {
             value: models::Error,
         },
         #[error("Failed to parse request URL: {0}")]
-        ParseUrlError(url::ParseError),
+        ParseUrl(url::ParseError),
         #[error("Failed to build request: {0}")]
-        BuildRequestError(http::Error),
-        #[error("Failed to execute request: {0}")]
-        ExecuteRequestError(azure_core::HttpError),
+        BuildRequest(http::Error),
         #[error("Failed to serialize request body: {0}")]
-        SerializeError(serde_json::Error),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        DeserializeError(serde_json::Error, bytes::Bytes),
+        Serialize(serde_json::Error),
         #[error("Failed to get access token: {0}")]
-        GetTokenError(azure_core::Error),
+        GetToken(azure_core::Error),
+        #[error("Failed to execute request: {0}")]
+        SendRequest(azure_core::Error),
+        #[error("Failed to get response bytes: {0}")]
+        ResponseBytes(azure_core::StreamError),
+        #[error("Failed to deserialize response: {0}, body: {1:?}")]
+        Deserialize(serde_json::Error, bytes::Bytes),
+    }
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) host_name: String,
+        pub(crate) user_name: String,
+        pub(crate) filter: Option<String>,
+        pub(crate) top: Option<i32>,
+        pub(crate) select: Option<String>,
+    }
+    impl Builder {
+        pub fn filter(mut self, filter: impl Into<String>) -> Self {
+            self.filter = Some(filter.into());
+            self
+        }
+        pub fn top(mut self, top: i32) -> Self {
+            self.top = Some(top);
+            self
+        }
+        pub fn select(mut self, select: impl Into<String>) -> Self {
+            self.select = Some(select.into());
+            self
+        }
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::FlaggedEnrolledAppCollection, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}/flaggedEnrolledApps",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.user_name
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::GET);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                if let Some(filter) = &self.filter {
+                    url.query_pairs_mut().append_pair("$filter", filter);
+                }
+                if let Some(top) = &self.top {
+                    url.query_pairs_mut().append_pair("$top", &top.to_string());
+                }
+                if let Some(select) = &self.select {
+                    url.query_pairs_mut().append_pair("$select", select);
+                }
+                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::FlaggedEnrolledAppCollection =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::Error =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
     }
 }
 pub mod ios {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get_mam_policies(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        select: Option<&str>,
-    ) -> std::result::Result<IosmamPolicyCollection, get_mam_policies::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies",
-            operation_config.base_path(),
-            host_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_mam_policies::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_mam_policies::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_mam_policies::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_mam_policies::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: IosmamPolicyCollection = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_mam_policies::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+    use super::{models, API_VERSION};
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn get_mam_policies(&self, host_name: impl Into<String>) -> get_mam_policies::Builder {
+            get_mam_policies::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                filter: None,
+                top: None,
+                select: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_mam_policies::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_mam_policies::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn get_mam_policy_by_name(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+        ) -> get_mam_policy_by_name::Builder {
+            get_mam_policy_by_name::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                select: None,
+            }
+        }
+        pub fn create_or_update_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            parameters: impl Into<models::IOsmamPolicy>,
+        ) -> create_or_update_mam_policy::Builder {
+            create_or_update_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn patch_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            parameters: impl Into<models::IOsmamPolicy>,
+        ) -> patch_mam_policy::Builder {
+            patch_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete_mam_policy(&self, host_name: impl Into<String>, policy_name: impl Into<String>) -> delete_mam_policy::Builder {
+            delete_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+            }
+        }
+        pub fn get_app_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+        ) -> get_app_for_mam_policy::Builder {
+            get_app_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                filter: None,
+                top: None,
+                select: None,
+            }
+        }
+        pub fn add_app_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            app_name: impl Into<String>,
+            parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
+        ) -> add_app_for_mam_policy::Builder {
+            add_app_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                app_name: app_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete_app_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            app_name: impl Into<String>,
+        ) -> delete_app_for_mam_policy::Builder {
+            delete_app_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                app_name: app_name.into(),
+            }
+        }
+        pub fn get_groups_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+        ) -> get_groups_for_mam_policy::Builder {
+            get_groups_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+            }
+        }
+        pub fn add_group_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            group_id: impl Into<String>,
+            parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
+        ) -> add_group_for_mam_policy::Builder {
+            add_group_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                group_id: group_id.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete_group_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            group_id: impl Into<String>,
+        ) -> delete_group_for_mam_policy::Builder {
+            delete_group_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                group_id: group_id.into(),
             }
         }
     }
     pub mod get_mam_policies {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -915,75 +1346,95 @@ pub mod ios {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_mam_policy_by_name(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        select: Option<&str>,
-    ) -> std::result::Result<IOsmamPolicy, get_mam_policy_by_name::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_mam_policy_by_name::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_mam_policy_by_name::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) select: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_mam_policy_by_name::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_mam_policy_by_name::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: IOsmamPolicy = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_mam_policy_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_mam_policy_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_mam_policy_by_name::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IosmamPolicyCollection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/iosPolicies",
+                        self.client.endpoint(),
+                        &self.host_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IosmamPolicyCollection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_mam_policy_by_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -992,73 +1443,81 @@ pub mod ios {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        parameters: &IOsmamPolicy,
-    ) -> std::result::Result<IOsmamPolicy, create_or_update_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) select: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update_mam_policy::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(create_or_update_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: IOsmamPolicy = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IOsmamPolicy, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IOsmamPolicy =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod create_or_update_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1067,71 +1526,75 @@ pub mod ios {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn patch_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        parameters: &IOsmamPolicy,
-    ) -> std::result::Result<IOsmamPolicy, patch_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(patch_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(patch_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) parameters: models::IOsmamPolicy,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(patch_mam_policy::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(patch_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(patch_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: IOsmamPolicy = serde_json::from_slice(rsp_body)
-                    .map_err(|source| patch_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| patch_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(patch_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IOsmamPolicy, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IOsmamPolicy =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod patch_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1140,65 +1603,75 @@ pub mod ios {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-    ) -> std::result::Result<delete_mam_policy::Response, delete_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) parameters: models::IOsmamPolicy,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete_mam_policy::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete_mam_policy::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| delete_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::IOsmamPolicy, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::IOsmamPolicy =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1212,83 +1685,69 @@ pub mod ios {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_app_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        select: Option<&str>,
-    ) -> std::result::Result<ApplicationCollection, get_app_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_app_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_app_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_app_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_app_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ApplicationCollection = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_app_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1297,71 +1756,97 @@ pub mod ios {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add_app_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        app_name: &str,
-        parameters: &MamPolicyAppIdOrGroupIdPayload,
-    ) -> std::result::Result<add_app_for_mam_policy::Response, add_app_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name,
-            app_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(add_app_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add_app_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) select: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(add_app_for_mam_policy::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(add_app_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(add_app_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(add_app_for_mam_policy::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(add_app_for_mam_policy::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| add_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add_app_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationCollection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ApplicationCollection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod add_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1375,69 +1860,73 @@ pub mod ios {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete_app_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        app_name: &str,
-    ) -> std::result::Result<delete_app_for_mam_policy::Response, delete_app_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name,
-            app_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_app_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_app_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) app_name: String,
+            pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(delete_app_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_app_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete_app_for_mam_policy::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete_app_for_mam_policy::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| delete_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_app_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name,
+                        &self.app_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1451,71 +1940,71 @@ pub mod ios {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_groups_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-    ) -> std::result::Result<GroupsCollection, get_groups_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_groups_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_groups_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) app_name: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_groups_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_groups_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: GroupsCollection = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_groups_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_groups_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_groups_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name,
+                        &self.app_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_groups_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1524,71 +2013,73 @@ pub mod ios {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add_group_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        group_id: &str,
-        parameters: &MamPolicyAppIdOrGroupIdPayload,
-    ) -> std::result::Result<add_group_for_mam_policy::Response, add_group_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name,
-            group_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(add_group_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add_group_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(add_group_for_mam_policy::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(add_group_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(add_group_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(add_group_for_mam_policy::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(add_group_for_mam_policy::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| add_group_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add_group_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::GroupsCollection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::GroupsCollection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod add_group_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1602,69 +2093,73 @@ pub mod ios {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete_group_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        group_id: &str,
-    ) -> std::result::Result<delete_group_for_mam_policy::Response, delete_group_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name,
-            group_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_group_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_group_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) group_id: String,
+            pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(delete_group_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_group_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete_group_for_mam_policy::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete_group_for_mam_policy::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| delete_group_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_group_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name,
+                        &self.group_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete_group_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1678,82 +2173,212 @@ pub mod ios {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) group_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name,
+                        &self.group_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod android {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get_mam_policies(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        select: Option<&str>,
-    ) -> std::result::Result<AndroidMamPolicyCollection, get_mam_policies::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies",
-            operation_config.base_path(),
-            host_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_mam_policies::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_mam_policies::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_mam_policies::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_mam_policies::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: AndroidMamPolicyCollection = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_mam_policies::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+    use super::{models, API_VERSION};
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn get_mam_policies(&self, host_name: impl Into<String>) -> get_mam_policies::Builder {
+            get_mam_policies::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                filter: None,
+                top: None,
+                select: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_mam_policies::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_mam_policies::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        pub fn get_mam_policy_by_name(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+        ) -> get_mam_policy_by_name::Builder {
+            get_mam_policy_by_name::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                select: None,
+            }
+        }
+        pub fn create_or_update_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            parameters: impl Into<models::AndroidMamPolicy>,
+        ) -> create_or_update_mam_policy::Builder {
+            create_or_update_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn patch_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            parameters: impl Into<models::AndroidMamPolicy>,
+        ) -> patch_mam_policy::Builder {
+            patch_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete_mam_policy(&self, host_name: impl Into<String>, policy_name: impl Into<String>) -> delete_mam_policy::Builder {
+            delete_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+            }
+        }
+        pub fn get_app_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+        ) -> get_app_for_mam_policy::Builder {
+            get_app_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                filter: None,
+                top: None,
+                select: None,
+            }
+        }
+        pub fn add_app_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            app_name: impl Into<String>,
+            parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
+        ) -> add_app_for_mam_policy::Builder {
+            add_app_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                app_name: app_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete_app_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            app_name: impl Into<String>,
+        ) -> delete_app_for_mam_policy::Builder {
+            delete_app_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                app_name: app_name.into(),
+            }
+        }
+        pub fn get_groups_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+        ) -> get_groups_for_mam_policy::Builder {
+            get_groups_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+            }
+        }
+        pub fn add_group_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            group_id: impl Into<String>,
+            parameters: impl Into<models::MamPolicyAppIdOrGroupIdPayload>,
+        ) -> add_group_for_mam_policy::Builder {
+            add_group_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                group_id: group_id.into(),
+                parameters: parameters.into(),
+            }
+        }
+        pub fn delete_group_for_mam_policy(
+            &self,
+            host_name: impl Into<String>,
+            policy_name: impl Into<String>,
+            group_id: impl Into<String>,
+        ) -> delete_group_for_mam_policy::Builder {
+            delete_group_for_mam_policy::Builder {
+                client: self.0.clone(),
+                host_name: host_name.into(),
+                policy_name: policy_name.into(),
+                group_id: group_id.into(),
             }
         }
     }
     pub mod get_mam_policies {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1762,75 +2387,97 @@ pub mod android {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_mam_policy_by_name(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        select: Option<&str>,
-    ) -> std::result::Result<AndroidMamPolicy, get_mam_policy_by_name::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_mam_policy_by_name::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_mam_policy_by_name::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) select: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_mam_policy_by_name::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_mam_policy_by_name::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: AndroidMamPolicy = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_mam_policy_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_mam_policy_by_name::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_mam_policy_by_name::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::AndroidMamPolicyCollection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/androidPolicies",
+                        self.client.endpoint(),
+                        &self.host_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AndroidMamPolicyCollection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_mam_policy_by_name {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1839,73 +2486,81 @@ pub mod android {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn create_or_update_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        parameters: &AndroidMamPolicy,
-    ) -> std::result::Result<AndroidMamPolicy, create_or_update_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(create_or_update_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(create_or_update_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) select: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(create_or_update_mam_policy::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(create_or_update_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(create_or_update_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: AndroidMamPolicy = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| create_or_update_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(create_or_update_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AndroidMamPolicy, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AndroidMamPolicy =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod create_or_update_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1914,71 +2569,75 @@ pub mod android {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn patch_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        parameters: &AndroidMamPolicy,
-    ) -> std::result::Result<AndroidMamPolicy, patch_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(patch_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(patch_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) parameters: models::AndroidMamPolicy,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(patch_mam_policy::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(patch_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(patch_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: AndroidMamPolicy = serde_json::from_slice(rsp_body)
-                    .map_err(|source| patch_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| patch_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(patch_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AndroidMamPolicy, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AndroidMamPolicy =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod patch_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1987,65 +2646,75 @@ pub mod android {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-    ) -> std::result::Result<delete_mam_policy::Response, delete_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) parameters: models::AndroidMamPolicy,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete_mam_policy::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete_mam_policy::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| delete_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AndroidMamPolicy, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AndroidMamPolicy =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2059,83 +2728,69 @@ pub mod android {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_app_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        filter: Option<&str>,
-        top: Option<i32>,
-        select: Option<&str>,
-    ) -> std::result::Result<ApplicationCollection, get_app_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/AndroidPolicies/{}/apps",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_app_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_app_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(top) = top {
-            url.query_pairs_mut().append_pair("$top", top.to_string().as_str());
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_app_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_app_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ApplicationCollection = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_app_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2144,71 +2799,97 @@ pub mod android {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add_app_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        app_name: &str,
-        parameters: &MamPolicyAppIdOrGroupIdPayload,
-    ) -> std::result::Result<add_app_for_mam_policy::Response, add_app_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name,
-            app_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(add_app_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add_app_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) select: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(add_app_for_mam_policy::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(add_app_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(add_app_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(add_app_for_mam_policy::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(add_app_for_mam_policy::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| add_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add_app_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationCollection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/AndroidPolicies/{}/apps",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(top) = &self.top {
+                        url.query_pairs_mut().append_pair("$top", &top.to_string());
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ApplicationCollection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod add_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2222,69 +2903,73 @@ pub mod android {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete_app_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        app_name: &str,
-    ) -> std::result::Result<delete_app_for_mam_policy::Response, delete_app_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name,
-            app_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_app_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_app_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) app_name: String,
+            pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(delete_app_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_app_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete_app_for_mam_policy::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete_app_for_mam_policy::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| delete_app_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_app_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name,
+                        &self.app_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete_app_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2298,71 +2983,71 @@ pub mod android {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_groups_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-    ) -> std::result::Result<GroupsCollection, get_groups_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups",
-            operation_config.base_path(),
-            host_name,
-            policy_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_groups_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_groups_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) app_name: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_groups_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_groups_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: GroupsCollection = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_groups_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
-            }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_groups_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_groups_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name,
+                        &self.app_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_groups_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2371,71 +3056,73 @@ pub mod android {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add_group_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        group_id: &str,
-        parameters: &MamPolicyAppIdOrGroupIdPayload,
-    ) -> std::result::Result<add_group_for_mam_policy::Response, add_group_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name,
-            group_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(add_group_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add_group_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json");
-        let req_body = azure_core::to_json(parameters).map_err(add_group_for_mam_policy::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(add_group_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(add_group_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(add_group_for_mam_policy::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(add_group_for_mam_policy::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| add_group_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add_group_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::GroupsCollection, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::GroupsCollection =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod add_group_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2449,69 +3136,73 @@ pub mod android {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete_group_for_mam_policy(
-        operation_config: &crate::OperationConfig,
-        host_name: &str,
-        policy_name: &str,
-        group_id: &str,
-    ) -> std::result::Result<delete_group_for_mam_policy::Response, delete_group_for_mam_policy::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
-            operation_config.base_path(),
-            host_name,
-            policy_name,
-            group_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_group_for_mam_policy::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_group_for_mam_policy::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) group_id: String,
+            pub(crate) parameters: models::MamPolicyAppIdOrGroupIdPayload,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(delete_group_for_mam_policy::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_group_for_mam_policy::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(delete_group_for_mam_policy::Response::Ok200),
-            http::StatusCode::NO_CONTENT => Ok(delete_group_for_mam_policy::Response::NoContent204),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: Error = serde_json::from_slice(rsp_body)
-                    .map_err(|source| delete_group_for_mam_policy::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_group_for_mam_policy::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name,
+                        &self.group_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete_group_for_mam_policy {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2525,17 +3216,67 @@ pub mod android {
                 value: models::Error,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) host_name: String,
+            pub(crate) policy_name: String,
+            pub(crate) group_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
+                        self.client.endpoint(),
+                        &self.host_name,
+                        &self.policy_name,
+                        &self.group_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(Response::Ok200),
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Error =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }

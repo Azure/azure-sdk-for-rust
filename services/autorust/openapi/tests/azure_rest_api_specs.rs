@@ -6,6 +6,8 @@ mod common;
 use common::*;
 
 const PATHS: &[&str] = &[
+    // empty tags[] & consumes[]
+    // "../../../../azure-rest-api-specs/specification/machinelearningservices/data-plane/Microsoft.MachineLearningServices/preview/2019-09-30/execution.json",
     "../../../../azure-rest-api-specs/specification/vmware/resource-manager/Microsoft.AVS/stable/2020-03-20/vmware.json",
     "../../../../azure-rest-api-specs/specification/batch/data-plane/Microsoft.Batch/stable/2020-03-01.11.0/BatchService.json",
     "../../../../azure-rest-api-specs/specification/security/resource-manager/common/v1/types.json",

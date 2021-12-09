@@ -19,7 +19,7 @@ pub struct CreateDocumentOptions<'a> {
     if_match_condition: Option<IfMatchCondition<'a>>,
     if_modified_since: Option<IfModifiedSince<'a>>,
     consistency_level: Option<ConsistencyLevel>,
-    allow_tentative_writes: TenativeWritesAllowance,
+    allow_tentative_writes: TentativeWritesAllowance,
     partition_key: Option<String>,
 }
 
@@ -31,7 +31,7 @@ impl<'a> CreateDocumentOptions<'a> {
             if_match_condition: None,
             if_modified_since: None,
             consistency_level: None,
-            allow_tentative_writes: TenativeWritesAllowance::Deny,
+            allow_tentative_writes: TentativeWritesAllowance::Deny,
             partition_key: None,
         }
     }
@@ -40,7 +40,7 @@ impl<'a> CreateDocumentOptions<'a> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
         if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
-        allow_tentative_writes: TenativeWritesAllowance,
+        allow_tentative_writes: TentativeWritesAllowance,
         is_upsert: bool => if is_upsert { IsUpsert::Yes } else { IsUpsert::No },
         indexing_directive: IndexingDirective,
     }
@@ -62,10 +62,10 @@ impl<'a> CreateDocumentOptions<'a> {
         DOC: Serialize + CosmosEntity<'b>,
     {
         let serialized = serde_json::to_string(document)?;
-        let partition_key = self
-            .partition_key
-            .clone()
-            .unwrap_or_else(|| serialize_partition_key(&document.partition_key()).unwrap());
+        let partition_key = match &self.partition_key {
+            Some(s) => s.clone(),
+            None => serialize_partition_key(&document.partition_key())?,
+        };
 
         add_as_partition_key_header_serialized2(&partition_key, req);
         azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;

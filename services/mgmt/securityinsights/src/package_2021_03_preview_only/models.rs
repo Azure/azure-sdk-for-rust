@@ -521,6 +521,8 @@ pub struct IncidentProperties {
     pub related_analytic_rule_ids: Vec<String>,
     pub severity: incident_properties::Severity,
     pub status: incident_properties::Status,
+    #[serde(rename = "teamInformation", default, skip_serializing_if = "Option::is_none")]
+    pub team_information: Option<TeamInformation>,
     pub title: String,
 }
 pub mod incident_properties {

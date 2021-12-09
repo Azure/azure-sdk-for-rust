@@ -5,7 +5,6 @@ use http::request::Builder;
 pub struct ContentLength(i32);
 
 impl ContentLength {
-    /// Create a new `ContentLength`
     pub fn new(count: i32) -> Self {
         Self(count)
     }

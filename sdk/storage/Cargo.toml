@@ -14,7 +14,7 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.1.0" }
+azure_core = { path = "../core", version = "0.1.0", default-features=false }
 ring = "0.16"
 base64 = "0.13"
 chrono = "0.4"
@@ -40,7 +40,7 @@ azure_identity = { path = "../identity" }
 reqwest = "0.11"
 
 [features]
-default = ["account", "blob", "queue", "table", "data_lake"]
+default = ["account", "blob", "queue", "table", "data_lake", "enable_reqwest"]
 test_e2e = ["account", "blob", "queue", "table", "data_lake"]
 mock_transport_framework = [ "azure_core/mock_transport_framework"]
 test_integration = ["account", "blob", "queue", "table", "data_lake"]
@@ -50,6 +50,8 @@ blob = []
 queue = []
 table = []
 data_lake = []
+enable_reqwest = ["azure_core/enable_reqwest"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 
 # This section specifies the required features for the examples.
 [[example]]
@@ -128,23 +130,14 @@ required-features = ["blob"]
 name = "stream_blob_01"
 required-features = ["blob"]
 [[example]]
-name = "list_queues"
-required-features = ["queue"]
+name="data_lake_00_file_system"
+required-features=["data_lake"]
 [[example]]
-name = "queue_create"
-required-features = ["queue"]
+name="data_lake_01_file_create_delete"
+required-features=["data_lake"]
 [[example]]
-name = "get_messages"
-required-features = ["queue"]
+name="data_lake_02_file_upload"
+required-features=["data_lake"]
 [[example]]
-name = "peek_messages"
-required-features = ["queue"]
-[[example]]
-name = "delete_message"
-required-features = ["queue"]
-[[example]]
-name = "put_message"
-required-features = ["queue"]
-[[example]]
-name = "data_lake_00"
-required-features = ["data_lake"]
+name="data_lake_03_file_rename"
+required-features=["data_lake"]

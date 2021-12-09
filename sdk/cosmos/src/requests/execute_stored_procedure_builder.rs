@@ -14,7 +14,7 @@ pub struct ExecuteStoredProcedureBuilder<'a, 'b> {
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
-    allow_tentative_writes: TenativeWritesAllowance,
+    allow_tentative_writes: TentativeWritesAllowance,
     partition_key: Option<String>,
 }
 
@@ -28,7 +28,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
             user_agent: None,
             activity_id: None,
             consistency_level: None,
-            allow_tentative_writes: TenativeWritesAllowance::Deny,
+            allow_tentative_writes: TentativeWritesAllowance::Deny,
             partition_key: None,
         }
     }
@@ -37,7 +37,7 @@ impl<'a, 'b> ExecuteStoredProcedureBuilder<'a, 'b> {
         user_agent: &'b str => Some(UserAgent::new(user_agent)),
         activity_id: &'b str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
-        allow_tentative_writes: TenativeWritesAllowance,
+        allow_tentative_writes: TentativeWritesAllowance,
         parameters: Parameters => Some(parameters),
     }
 

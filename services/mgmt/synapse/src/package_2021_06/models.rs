@@ -132,314 +132,6 @@ pub struct LibraryRequirements {
     pub filename: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AadAdminProperties {
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub login: Option<String>,
-    #[serde(rename = "administratorType", default, skip_serializing_if = "Option::is_none")]
-    pub administrator_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sid: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceInfoListResult {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Workspace>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataLakeStorageAccountDetails {
-    #[serde(rename = "accountUrl", default, skip_serializing_if = "Option::is_none")]
-    pub account_url: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub filesystem: Option<String>,
-    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
-    #[serde(rename = "createManagedPrivateEndpoint", default, skip_serializing_if = "Option::is_none")]
-    pub create_managed_private_endpoint: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionDetails {
-    #[serde(rename = "doubleEncryptionEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub double_encryption_enabled: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cmk: Option<CustomerManagedKeyDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CustomerManagedKeyDetails {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub key: Option<WorkspaceKeyDetails>,
-    #[serde(rename = "kekIdentity", default, skip_serializing_if = "Option::is_none")]
-    pub kek_identity: Option<KekIdentityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KekIdentityProperties {
-    #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identity: Option<String>,
-    #[serde(rename = "useSystemAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
-    pub use_system_assigned_identity: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceKeyDetails {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "keyVaultUrl", default, skip_serializing_if = "Option::is_none")]
-    pub key_vault_url: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedIdentity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<managed_identity::Type>,
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<UserAssignedManagedIdentities>,
-}
-pub mod managed_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        None,
-        SystemAssigned,
-        #[serde(rename = "SystemAssigned,UserAssigned")]
-        SystemAssignedUserAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserAssignedManagedIdentities {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserAssignedManagedIdentity {
-    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<String>,
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualNetworkProfile {
-    #[serde(rename = "computeSubnetId", default, skip_serializing_if = "Option::is_none")]
-    pub compute_subnet_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedVirtualNetworkSettings {
-    #[serde(rename = "preventDataExfiltration", default, skip_serializing_if = "Option::is_none")]
-    pub prevent_data_exfiltration: Option<bool>,
-    #[serde(rename = "linkedAccessCheckOnTargetResource", default, skip_serializing_if = "Option::is_none")]
-    pub linked_access_check_on_target_resource: Option<bool>,
-    #[serde(rename = "allowedAadTenantIdsForLinking", default, skip_serializing_if = "Vec::is_empty")]
-    pub allowed_aad_tenant_ids_for_linking: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceRepositoryConfiguration {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
-    pub host_name: Option<String>,
-    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
-    pub account_name: Option<String>,
-    #[serde(rename = "projectName", default, skip_serializing_if = "Option::is_none")]
-    pub project_name: Option<String>,
-    #[serde(rename = "repositoryName", default, skip_serializing_if = "Option::is_none")]
-    pub repository_name: Option<String>,
-    #[serde(rename = "collaborationBranch", default, skip_serializing_if = "Option::is_none")]
-    pub collaboration_branch: Option<String>,
-    #[serde(rename = "rootFolder", default, skip_serializing_if = "Option::is_none")]
-    pub root_folder: Option<String>,
-    #[serde(rename = "lastCommitId", default, skip_serializing_if = "Option::is_none")]
-    pub last_commit_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PurviewConfiguration {
-    #[serde(rename = "purviewResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub purview_resource_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceAadAdminInfo {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AadAdminProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CspWorkspaceAdminProperties {
-    #[serde(rename = "initialWorkspaceAdminObjectId", default, skip_serializing_if = "Option::is_none")]
-    pub initial_workspace_admin_object_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Workspace {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WorkspaceProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ManagedIdentity>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceProperties {
-    #[serde(rename = "defaultDataLakeStorage", default, skip_serializing_if = "Option::is_none")]
-    pub default_data_lake_storage: Option<DataLakeStorageAccountDetails>,
-    #[serde(rename = "sqlAdministratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
-    pub sql_administrator_login_password: Option<String>,
-    #[serde(rename = "managedResourceGroupName", default, skip_serializing_if = "Option::is_none")]
-    pub managed_resource_group_name: Option<String>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "sqlAdministratorLogin", default, skip_serializing_if = "Option::is_none")]
-    pub sql_administrator_login: Option<String>,
-    #[serde(rename = "virtualNetworkProfile", default, skip_serializing_if = "Option::is_none")]
-    pub virtual_network_profile: Option<VirtualNetworkProfile>,
-    #[serde(rename = "connectivityEndpoints", default, skip_serializing_if = "Option::is_none")]
-    pub connectivity_endpoints: Option<serde_json::Value>,
-    #[serde(rename = "managedVirtualNetwork", default, skip_serializing_if = "Option::is_none")]
-    pub managed_virtual_network: Option<String>,
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
-    pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub encryption: Option<EncryptionDetails>,
-    #[serde(rename = "workspaceUID", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_uid: Option<String>,
-    #[serde(rename = "extraProperties", default, skip_serializing_if = "Option::is_none")]
-    pub extra_properties: Option<serde_json::Value>,
-    #[serde(rename = "managedVirtualNetworkSettings", default, skip_serializing_if = "Option::is_none")]
-    pub managed_virtual_network_settings: Option<ManagedVirtualNetworkSettings>,
-    #[serde(rename = "workspaceRepositoryConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_repository_configuration: Option<WorkspaceRepositoryConfiguration>,
-    #[serde(rename = "purviewConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub purview_configuration: Option<PurviewConfiguration>,
-    #[serde(rename = "adlaResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub adla_resource_id: Option<String>,
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
-    pub public_network_access: Option<workspace_properties::PublicNetworkAccess>,
-    #[serde(rename = "cspWorkspaceAdminProperties", default, skip_serializing_if = "Option::is_none")]
-    pub csp_workspace_admin_properties: Option<CspWorkspaceAdminProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub settings: Option<serde_json::Value>,
-    #[serde(rename = "azureADOnlyAuthentication", default, skip_serializing_if = "Option::is_none")]
-    pub azure_ad_only_authentication: Option<bool>,
-}
-pub mod workspace_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PublicNetworkAccess {
-        Enabled,
-        Disabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspacePatchInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ManagedIdentity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WorkspacePatchProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspacePatchProperties {
-    #[serde(rename = "sqlAdministratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
-    pub sql_administrator_login_password: Option<String>,
-    #[serde(rename = "managedVirtualNetworkSettings", default, skip_serializing_if = "Option::is_none")]
-    pub managed_virtual_network_settings: Option<ManagedVirtualNetworkSettings>,
-    #[serde(rename = "workspaceRepositoryConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_repository_configuration: Option<WorkspaceRepositoryConfiguration>,
-    #[serde(rename = "purviewConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub purview_configuration: Option<PurviewConfiguration>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub encryption: Option<EncryptionDetails>,
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
-    pub public_network_access: Option<workspace_patch_properties::PublicNetworkAccess>,
-}
-pub mod workspace_patch_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PublicNetworkAccess {
-        Enabled,
-        Disabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedIdentitySqlControlSettingsModel {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<managed_identity_sql_control_settings_model::Properties>,
-}
-pub mod managed_identity_sql_control_settings_model {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Properties {
-        #[serde(rename = "grantSqlControlToManagedIdentity", default, skip_serializing_if = "Option::is_none")]
-        pub grant_sql_control_to_managed_identity: Option<properties::GrantSqlControlToManagedIdentity>,
-    }
-    pub mod properties {
-        use super::*;
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub struct GrantSqlControlToManagedIdentity {
-            #[serde(rename = "desiredState", default, skip_serializing_if = "Option::is_none")]
-            pub desired_state: Option<grant_sql_control_to_managed_identity::DesiredState>,
-            #[serde(rename = "actualState", default, skip_serializing_if = "Option::is_none")]
-            pub actual_state: Option<grant_sql_control_to_managed_identity::ActualState>,
-        }
-        pub mod grant_sql_control_to_managed_identity {
-            use super::*;
-            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-            pub enum DesiredState {
-                Enabled,
-                Disabled,
-            }
-            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-            pub enum ActualState {
-                Enabling,
-                Enabled,
-                Disabling,
-                Disabled,
-                Unknown,
-            }
-        }
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestorableDroppedSqlPoolProperties {
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub edition: Option<String>,
-    #[serde(rename = "maxSizeBytes", default, skip_serializing_if = "Option::is_none")]
-    pub max_size_bytes: Option<String>,
-    #[serde(rename = "serviceLevelObjective", default, skip_serializing_if = "Option::is_none")]
-    pub service_level_objective: Option<String>,
-    #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
-    pub elastic_pool_name: Option<String>,
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
-    #[serde(rename = "deletionDate", default, skip_serializing_if = "Option::is_none")]
-    pub deletion_date: Option<String>,
-    #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
-    pub earliest_restore_date: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestorableDroppedSqlPool {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RestorableDroppedSqlPoolProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestorableDroppedSqlPoolListResult {
-    pub value: Vec<RestorableDroppedSqlPool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1276,35 +968,6 @@ pub struct AvailableRpOperation {
     pub properties: Option<OperationMetaPropertyInfo>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<operation_resource::Status>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
-    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
-    pub percent_complete: Option<f64>,
-}
-pub mod operation_resource {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        InProgress,
-        Succeeded,
-        Failed,
-        Canceled,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailableRpOperationDisplayInfo {
@@ -2847,6 +2510,314 @@ pub struct RecoverableSqlPoolListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AadAdminProperties {
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub login: Option<String>,
+    #[serde(rename = "administratorType", default, skip_serializing_if = "Option::is_none")]
+    pub administrator_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sid: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceInfoListResult {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Workspace>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataLakeStorageAccountDetails {
+    #[serde(rename = "accountUrl", default, skip_serializing_if = "Option::is_none")]
+    pub account_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filesystem: Option<String>,
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(rename = "createManagedPrivateEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub create_managed_private_endpoint: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EncryptionDetails {
+    #[serde(rename = "doubleEncryptionEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub double_encryption_enabled: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cmk: Option<CustomerManagedKeyDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomerManagedKeyDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key: Option<WorkspaceKeyDetails>,
+    #[serde(rename = "kekIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub kek_identity: Option<KekIdentityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KekIdentityProperties {
+    #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identity: Option<String>,
+    #[serde(rename = "useSystemAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub use_system_assigned_identity: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceKeyDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "keyVaultUrl", default, skip_serializing_if = "Option::is_none")]
+    pub key_vault_url: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<managed_identity::Type>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<UserAssignedManagedIdentities>,
+}
+pub mod managed_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        None,
+        SystemAssigned,
+        #[serde(rename = "SystemAssigned,UserAssigned")]
+        SystemAssignedUserAssigned,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserAssignedManagedIdentities {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserAssignedManagedIdentity {
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualNetworkProfile {
+    #[serde(rename = "computeSubnetId", default, skip_serializing_if = "Option::is_none")]
+    pub compute_subnet_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedVirtualNetworkSettings {
+    #[serde(rename = "preventDataExfiltration", default, skip_serializing_if = "Option::is_none")]
+    pub prevent_data_exfiltration: Option<bool>,
+    #[serde(rename = "linkedAccessCheckOnTargetResource", default, skip_serializing_if = "Option::is_none")]
+    pub linked_access_check_on_target_resource: Option<bool>,
+    #[serde(rename = "allowedAadTenantIdsForLinking", default, skip_serializing_if = "Vec::is_empty")]
+    pub allowed_aad_tenant_ids_for_linking: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceRepositoryConfiguration {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
+    pub host_name: Option<String>,
+    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
+    pub account_name: Option<String>,
+    #[serde(rename = "projectName", default, skip_serializing_if = "Option::is_none")]
+    pub project_name: Option<String>,
+    #[serde(rename = "repositoryName", default, skip_serializing_if = "Option::is_none")]
+    pub repository_name: Option<String>,
+    #[serde(rename = "collaborationBranch", default, skip_serializing_if = "Option::is_none")]
+    pub collaboration_branch: Option<String>,
+    #[serde(rename = "rootFolder", default, skip_serializing_if = "Option::is_none")]
+    pub root_folder: Option<String>,
+    #[serde(rename = "lastCommitId", default, skip_serializing_if = "Option::is_none")]
+    pub last_commit_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PurviewConfiguration {
+    #[serde(rename = "purviewResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub purview_resource_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceAadAdminInfo {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AadAdminProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CspWorkspaceAdminProperties {
+    #[serde(rename = "initialWorkspaceAdminObjectId", default, skip_serializing_if = "Option::is_none")]
+    pub initial_workspace_admin_object_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Workspace {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<WorkspaceProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ManagedIdentity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceProperties {
+    #[serde(rename = "defaultDataLakeStorage", default, skip_serializing_if = "Option::is_none")]
+    pub default_data_lake_storage: Option<DataLakeStorageAccountDetails>,
+    #[serde(rename = "sqlAdministratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
+    pub sql_administrator_login_password: Option<String>,
+    #[serde(rename = "managedResourceGroupName", default, skip_serializing_if = "Option::is_none")]
+    pub managed_resource_group_name: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "sqlAdministratorLogin", default, skip_serializing_if = "Option::is_none")]
+    pub sql_administrator_login: Option<String>,
+    #[serde(rename = "virtualNetworkProfile", default, skip_serializing_if = "Option::is_none")]
+    pub virtual_network_profile: Option<VirtualNetworkProfile>,
+    #[serde(rename = "connectivityEndpoints", default, skip_serializing_if = "Option::is_none")]
+    pub connectivity_endpoints: Option<serde_json::Value>,
+    #[serde(rename = "managedVirtualNetwork", default, skip_serializing_if = "Option::is_none")]
+    pub managed_virtual_network: Option<String>,
+    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encryption: Option<EncryptionDetails>,
+    #[serde(rename = "workspaceUID", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_uid: Option<String>,
+    #[serde(rename = "extraProperties", default, skip_serializing_if = "Option::is_none")]
+    pub extra_properties: Option<serde_json::Value>,
+    #[serde(rename = "managedVirtualNetworkSettings", default, skip_serializing_if = "Option::is_none")]
+    pub managed_virtual_network_settings: Option<ManagedVirtualNetworkSettings>,
+    #[serde(rename = "workspaceRepositoryConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_repository_configuration: Option<WorkspaceRepositoryConfiguration>,
+    #[serde(rename = "purviewConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub purview_configuration: Option<PurviewConfiguration>,
+    #[serde(rename = "adlaResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub adla_resource_id: Option<String>,
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    pub public_network_access: Option<workspace_properties::PublicNetworkAccess>,
+    #[serde(rename = "cspWorkspaceAdminProperties", default, skip_serializing_if = "Option::is_none")]
+    pub csp_workspace_admin_properties: Option<CspWorkspaceAdminProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<serde_json::Value>,
+    #[serde(rename = "azureADOnlyAuthentication", default, skip_serializing_if = "Option::is_none")]
+    pub azure_ad_only_authentication: Option<bool>,
+}
+pub mod workspace_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PublicNetworkAccess {
+        Enabled,
+        Disabled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspacePatchInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ManagedIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<WorkspacePatchProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspacePatchProperties {
+    #[serde(rename = "sqlAdministratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
+    pub sql_administrator_login_password: Option<String>,
+    #[serde(rename = "managedVirtualNetworkSettings", default, skip_serializing_if = "Option::is_none")]
+    pub managed_virtual_network_settings: Option<ManagedVirtualNetworkSettings>,
+    #[serde(rename = "workspaceRepositoryConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_repository_configuration: Option<WorkspaceRepositoryConfiguration>,
+    #[serde(rename = "purviewConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub purview_configuration: Option<PurviewConfiguration>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encryption: Option<EncryptionDetails>,
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    pub public_network_access: Option<workspace_patch_properties::PublicNetworkAccess>,
+}
+pub mod workspace_patch_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PublicNetworkAccess {
+        Enabled,
+        Disabled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedIdentitySqlControlSettingsModel {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<managed_identity_sql_control_settings_model::Properties>,
+}
+pub mod managed_identity_sql_control_settings_model {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "grantSqlControlToManagedIdentity", default, skip_serializing_if = "Option::is_none")]
+        pub grant_sql_control_to_managed_identity: Option<properties::GrantSqlControlToManagedIdentity>,
+    }
+    pub mod properties {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub struct GrantSqlControlToManagedIdentity {
+            #[serde(rename = "desiredState", default, skip_serializing_if = "Option::is_none")]
+            pub desired_state: Option<grant_sql_control_to_managed_identity::DesiredState>,
+            #[serde(rename = "actualState", default, skip_serializing_if = "Option::is_none")]
+            pub actual_state: Option<grant_sql_control_to_managed_identity::ActualState>,
+        }
+        pub mod grant_sql_control_to_managed_identity {
+            use super::*;
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            pub enum DesiredState {
+                Enabled,
+                Disabled,
+            }
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            pub enum ActualState {
+                Enabling,
+                Enabled,
+                Disabling,
+                Disabled,
+                Unknown,
+            }
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedSqlPoolProperties {
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub edition: Option<String>,
+    #[serde(rename = "maxSizeBytes", default, skip_serializing_if = "Option::is_none")]
+    pub max_size_bytes: Option<String>,
+    #[serde(rename = "serviceLevelObjective", default, skip_serializing_if = "Option::is_none")]
+    pub service_level_objective: Option<String>,
+    #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
+    pub elastic_pool_name: Option<String>,
+    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
+    pub creation_date: Option<String>,
+    #[serde(rename = "deletionDate", default, skip_serializing_if = "Option::is_none")]
+    pub deletion_date: Option<String>,
+    #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
+    pub earliest_restore_date: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedSqlPool {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RestorableDroppedSqlPoolProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestorableDroppedSqlPoolListResult {
+    pub value: Vec<RestorableDroppedSqlPool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureAdOnlyAuthenticationProperties {
     #[serde(rename = "azureADOnlyAuthentication")]
     pub azure_ad_only_authentication: bool,
@@ -2926,6 +2897,42 @@ pub struct ProxyResource {
     pub resource: Resource,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureEntityResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<operation_resource::Status>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
+    pub percent_complete: Option<f64>,
+}
+pub mod operation_resource {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        InProgress,
+        Succeeded,
+        Failed,
+        Canceled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -2954,13 +2961,6 @@ pub struct PrivateLinkServiceConnectionState {
     pub description: Option<String>,
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureEntityResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionList {

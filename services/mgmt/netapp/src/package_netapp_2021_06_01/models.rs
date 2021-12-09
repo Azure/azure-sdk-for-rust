@@ -177,8 +177,6 @@ pub struct SubscriptionQuotaItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionQuotaItemProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<i32>,
@@ -597,7 +595,7 @@ pub mod replication_object {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReplicationSchedule {
         #[serde(rename = "_10minutely")]
-        U5f10minutely,
+        N10minutely,
         #[serde(rename = "hourly")]
         Hourly,
         #[serde(rename = "daily")]

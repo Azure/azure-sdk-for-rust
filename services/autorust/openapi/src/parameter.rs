@@ -57,7 +57,8 @@ pub enum ParameterType {
     Query,
     Header,
     Body,
-    Form,
+    /// https://swagger.io/docs/specification/2-0/describing-parameters/#form-parameters
+    FormData,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]

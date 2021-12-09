@@ -1,9 +1,7 @@
 use crate::bytes_response::BytesResponse;
 use crate::mock_transaction::MockTransaction;
 use crate::policies::{Policy, PolicyResult};
-use crate::{MockFrameworkError, TransportOptions};
-use crate::{PipelineContext, Request, Response};
-
+use crate::{Context, MockFrameworkError, Request, Response, TransportOptions};
 use std::io::Write;
 use std::sync::Arc;
 
@@ -24,15 +22,12 @@ impl MockTransportRecorderPolicy {
 }
 
 #[async_trait::async_trait]
-impl<C> Policy<C> for MockTransportRecorderPolicy
-where
-    C: Send + Sync,
-{
+impl Policy for MockTransportRecorderPolicy {
     async fn send(
         &self,
-        _ctx: &mut PipelineContext<C>,
+        _ctx: &Context,
         request: &mut Request,
-        next: &[Arc<dyn Policy<C>>],
+        next: &[Arc<dyn Policy>],
     ) -> PolicyResult<Response> {
         // there must be no more policies
         assert_eq!(0, next.len());

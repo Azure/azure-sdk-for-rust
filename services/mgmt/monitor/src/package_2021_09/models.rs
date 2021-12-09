@@ -1228,12 +1228,12 @@ pub struct MetricAlertStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertCriteria {
     #[serde(rename = "odata.type")]
-    pub odata_type: metric_alert_criteria::Odata_type,
+    pub odata_type: metric_alert_criteria::OdataType,
 }
 pub mod metric_alert_criteria {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Odata_type {
+    pub enum OdataType {
         #[serde(rename = "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria")]
         MicrosoftAzureMonitorSingleResourceMultipleMetricCriteria,
         #[serde(rename = "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria")]

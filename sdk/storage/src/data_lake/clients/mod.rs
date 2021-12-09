@@ -1,4 +1,4 @@
 mod data_lake_client;
-pub use data_lake_client::{AsDataLakeClient, DataLakeClient};
+pub use data_lake_client::DataLakeClient;
 mod file_system_client;
-pub use file_system_client::{AsFileSystemClient, FileSystemClient};
+pub use file_system_client::FileSystemClient;

@@ -1,11 +1,10 @@
 use super::*;
-use crate::authorization_policy::CosmosContext;
 use crate::operations::*;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
 use azure_core::pipeline::Pipeline;
 use azure_core::prelude::Continuation;
-use azure_core::{AddAsHeader, Context, PipelineContext};
+use azure_core::{AddAsHeader, Context};
 use futures::stream::unfold;
 use futures::Stream;
 
@@ -66,14 +65,14 @@ impl DatabaseClient {
         let mut request = self
             .cosmos_client()
             .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
 
         options.decorate_request(&mut request)?;
         let response = self
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
+            .send(
+                &mut ctx.clone().insert(ResourceType::Databases),
+                &mut request,
+            )
             .await?;
 
         Ok(GetDatabaseResponse::try_from(response).await?)
@@ -85,17 +84,18 @@ impl DatabaseClient {
         ctx: Context,
         options: DeleteDatabaseOptions,
     ) -> crate::Result<DeleteDatabaseResponse> {
-        let mut request = self
-            .cosmos_client()
-            .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Databases.into());
+        let mut request = self.cosmos_client().prepare_request_pipeline(
+            &format!("dbs/{}", self.database_name()),
+            http::Method::DELETE,
+        );
 
         options.decorate_request(&mut request)?;
         let response = self
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
+            .send(
+                &mut ctx.clone().insert(ResourceType::Databases),
+                &mut request,
+            )
             .await?;
 
         Ok(DeleteDatabaseResponse::try_from(response).await?)
@@ -118,13 +118,14 @@ impl DatabaseClient {
                             &format!("dbs/{}/colls", this.database_name()),
                             http::Method::GET,
                         );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Collections.into());
 
                         r#try!(options.decorate_request(&mut request));
                         let response = r#try!(
                             this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
+                                .send(
+                                    &mut ctx.clone().insert(ResourceType::Collections),
+                                    &mut request
+                                )
                                 .await
                         );
                         let response = r#try!(response.validate(http::StatusCode::OK).await);
@@ -136,14 +137,15 @@ impl DatabaseClient {
                             &format!("dbs/{}/colls", self.database_name()),
                             http::Method::GET,
                         );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Collections.into());
 
                         r#try!(options.decorate_request(&mut request));
                         r#try!(continuation.add_as_header2(&mut request));
                         let response = r#try!(
                             this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
+                                .send(
+                                    &mut ctx.clone().insert(ResourceType::Collections),
+                                    &mut request
+                                )
                                 .await
                         );
                         let response = r#try!(response.validate(http::StatusCode::OK).await);
@@ -176,14 +178,14 @@ impl DatabaseClient {
             &format!("dbs/{}/colls", self.database_name()),
             http::Method::POST,
         );
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
 
         options.decorate_request(&mut request, collection_name.as_ref())?;
         let response = self
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
+            .send(
+                &mut ctx.clone().insert(ResourceType::Collections),
+                &mut request,
+            )
             .await?;
 
         Ok(CreateCollectionResponse::try_from(response).await?)
@@ -206,13 +208,11 @@ impl DatabaseClient {
                             &format!("dbs/{}/users", this.database_name()),
                             http::Method::GET,
                         );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Users.into());
 
                         r#try!(options.decorate_request(&mut request));
                         let response = r#try!(
                             this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
+                                .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
                                 .await
                         );
                         let response = r#try!(response.validate(http::StatusCode::OK).await);
@@ -224,14 +224,12 @@ impl DatabaseClient {
                             &format!("dbs/{}/users", self.database_name()),
                             http::Method::GET,
                         );
-                        let mut pipeline_context =
-                            PipelineContext::new(ctx.clone(), ResourceType::Users.into());
 
                         r#try!(options.decorate_request(&mut request));
                         r#try!(continuation.add_as_header2(&mut request));
                         let response = r#try!(
                             this.pipeline()
-                                .send(&mut pipeline_context, &mut request)
+                                .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
                                 .await
                         );
                         let response = r#try!(response.validate(http::StatusCode::OK).await);
@@ -266,7 +264,7 @@ impl DatabaseClient {
         UserClient::new(self, user_name)
     }
 
-    fn pipeline(&self) -> &Pipeline<CosmosContext> {
+    fn pipeline(&self) -> &Pipeline {
         self.cosmos_client.pipeline()
     }
 }

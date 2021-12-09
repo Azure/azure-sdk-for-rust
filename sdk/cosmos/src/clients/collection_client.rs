@@ -1,12 +1,10 @@
 use super::{DatabaseClient, UserDefinedFunctionClient};
-use crate::authorization_policy::CosmosContext;
 use crate::clients::*;
 use crate::operations::*;
 use crate::requests;
 use crate::resources::ResourceType;
 use crate::CosmosEntity;
 use crate::ReadonlyString;
-use azure_core::PipelineContext;
 use azure_core::{pipeline::Pipeline, Context, HttpClient, Request};
 use serde::Serialize;
 
@@ -51,15 +49,14 @@ impl CollectionClient {
     ) -> crate::Result<GetCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::GET);
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
-
         options.decorate_request(&mut request)?;
 
         let response = self
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
+            .send(
+                &mut ctx.clone().insert(ResourceType::Collections),
+                &mut request,
+            )
             .await?;
 
         Ok(GetCollectionResponse::try_from(response).await?)
@@ -73,15 +70,14 @@ impl CollectionClient {
     ) -> crate::Result<DeleteCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::DELETE);
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
-
         options.decorate_request(&mut request)?;
 
         let response = self
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::NO_CONTENT)
+            .send(
+                &mut ctx.clone().insert(ResourceType::Collections),
+                &mut request,
+            )
             .await?;
 
         Ok(DeleteCollectionResponse::try_from(response).await?)
@@ -95,15 +91,14 @@ impl CollectionClient {
     ) -> crate::Result<ReplaceCollectionResponse> {
         let mut request = self.prepare_request_with_collection_name(http::Method::PUT);
 
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Collections.into());
-
         options.decorate_request(&mut request, self.collection_name())?;
 
         let response = self
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::OK)
+            .send(
+                &mut ctx.clone().insert(ResourceType::Collections),
+                &mut request,
+            )
             .await?;
 
         Ok(ReplaceCollectionResponse::try_from(response).await?)
@@ -122,14 +117,14 @@ impl CollectionClient {
         options: CreateDocumentOptions<'_>,
     ) -> crate::Result<CreateDocumentResponse> {
         let mut request = self.prepare_doc_request_pipeline(http::Method::POST);
-        let mut pipeline_context = PipelineContext::new(ctx, ResourceType::Documents.into());
 
         options.decorate_request(&mut request, document)?;
         let response = self
             .pipeline()
-            .send(&mut pipeline_context, &mut request)
-            .await?
-            .validate(http::StatusCode::CREATED)
+            .send(
+                &mut ctx.clone().insert(ResourceType::Documents),
+                &mut request,
+            )
             .await?;
 
         Ok(CreateDocumentResponse::try_from(response).await?)
@@ -204,7 +199,7 @@ impl CollectionClient {
         self.cosmos_client().http_client()
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline<CosmosContext> {
+    pub(crate) fn pipeline(&self) -> &Pipeline {
         self.cosmos_client().pipeline()
     }
 

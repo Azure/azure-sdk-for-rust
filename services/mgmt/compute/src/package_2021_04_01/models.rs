@@ -108,17 +108,6 @@ pub struct RestorePointSourceVmDataDisk {
     pub disk_restore_point: Option<ApiEntityReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestorePointProvisioningDetails {
-    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
-    pub creation_time: Option<String>,
-    #[serde(rename = "totalUsedSizeInBytes", default, skip_serializing_if = "Option::is_none")]
-    pub total_used_size_in_bytes: Option<i64>,
-    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
-    pub status_code: Option<i32>,
-    #[serde(rename = "statusMessage", default, skip_serializing_if = "Option::is_none")]
-    pub status_message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorePoint {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -135,8 +124,8 @@ pub struct RestorePointProperties {
     pub provisioning_state: Option<String>,
     #[serde(rename = "consistencyMode", default, skip_serializing_if = "Option::is_none")]
     pub consistency_mode: Option<restore_point_properties::ConsistencyMode>,
-    #[serde(rename = "provisioningDetails", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_details: Option<RestorePointProvisioningDetails>,
+    #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
+    pub time_created: Option<String>,
 }
 pub mod restore_point_properties {
     use super::*;

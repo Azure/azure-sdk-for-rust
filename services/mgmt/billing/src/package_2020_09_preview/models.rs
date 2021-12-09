@@ -620,6 +620,8 @@ pub struct InvoiceListResult {
     pub value: Vec<Invoice>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_count: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Invoice {
@@ -1463,7 +1465,12 @@ pub type AppliedScopes = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PromotionCheckEligibilityResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PromotionCheckEligibilityResponseProperties>,
+    pub properties: Option<PromotionCheckEligibilityResponsePromptionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PromotionCheckEligibilityResponsePromptionProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub promotion: Option<PromotionCheckEligibilityResponseProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PromotionCheckEligibilityResponseProperties {

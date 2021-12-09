@@ -11,16 +11,15 @@ cargo run --package azure_mgmt_vmware --example private_cloud_list
 */
 
 use azure_identity::token_credentials::AzureCliCredential;
-use azure_mgmt_vmware::operations::private_clouds;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let http_client = azure_core::new_http_client();
-    let token_credential = AzureCliCredential {};
-    let subscription_id = &AzureCliCredential::get_subscription()?;
-    let config = &azure_mgmt_vmware::config(http_client, Box::new(token_credential)).build();
+    let subscription_id = AzureCliCredential::get_subscription()?;
+    let credential = Arc::new(AzureCliCredential {});
+    let client = azure_mgmt_vmware::ClientBuilder::new(credential).build();
 
-    let clouds = private_clouds::list_in_subscription(config, subscription_id).await?;
+    let clouds = client.private_clouds().list_in_subscription(subscription_id).into_future().await?;
     println!("# of private clouds {}", clouds.value.len());
     for cloud in &clouds.value {
         println!("{:?}", cloud.tracked_resource.resource.id);
