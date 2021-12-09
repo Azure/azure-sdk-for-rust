@@ -74,10 +74,7 @@ impl DocumentClient {
         let response = self
             .cosmos_client()
             .pipeline()
-            .send(
-                ctx.clone().insert(ResourceType::Documents),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Documents), &mut request)
             .await?;
 
         GetDocumentResponse::try_from(response).await
@@ -97,10 +94,7 @@ impl DocumentClient {
         let response = self
             .cosmos_client()
             .pipeline()
-            .send(
-                ctx.clone().insert(ResourceType::Documents),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Documents), &mut request)
             .await?;
 
         ReplaceDocumentResponse::try_from(response).await
@@ -119,10 +113,7 @@ impl DocumentClient {
         let response = self
             .cosmos_client()
             .pipeline()
-            .send(
-                ctx.clone().insert(ResourceType::Documents),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Documents), &mut request)
             .await?;
 
         DeleteDocumentResponse::try_from(response).await
