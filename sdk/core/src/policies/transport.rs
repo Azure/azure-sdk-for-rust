@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct TransportPolicy {
+    #[allow(unused)]
     pub(crate) transport_options: TransportOptions,
 }
 
