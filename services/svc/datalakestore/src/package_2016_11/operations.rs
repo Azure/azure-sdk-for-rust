@@ -418,6 +418,7 @@ pub mod file_system {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) path: String,
+            #[allow(unused)]
             pub(crate) sources: Vec<String>,
             pub(crate) op: String,
         }
