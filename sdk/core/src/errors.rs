@@ -6,12 +6,14 @@ use std::cmp::PartialEq;
 /// A specialized `Result` type for this crate.
 pub type Result<T> = std::result::Result<T, Error>;
 
+/// An error originating from a pipeline.
 #[derive(Debug, thiserror::Error)]
 pub enum PipelineError {
     #[error("invalid pipeline: last policy is not a TransportPolicy: {0:?}")]
     InvalidTailPolicy(String),
 }
 
+/// An error caused by an HTTP header.
 #[derive(Debug, thiserror::Error)]
 pub enum HTTPHeaderError {
     #[error("{0}")]
@@ -20,6 +22,7 @@ pub enum HTTPHeaderError {
     InvalidHeaderName(#[from] http::header::InvalidHeaderName),
 }
 
+/// A general Azure error type.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -61,6 +64,7 @@ type HttpClientError = hyper::Error;
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 type HttpClientError = reqwest::Error;
 
+/// An error caused by a failure to parse data.
 #[non_exhaustive]
 #[derive(Debug, PartialEq, thiserror::Error)]
 pub enum ParsingError {
@@ -84,6 +88,7 @@ pub enum ParsingError {
     ParseBoolError(#[from] std::str::ParseBoolError),
 }
 
+/// An unexpected value.
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedValue {
     expected: Vec<String>,
@@ -106,6 +111,7 @@ impl UnexpectedValue {
     }
 }
 
+/// An unexpected HTTP Result.
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnexpectedHTTPResult {
     expected: Vec<StatusCode>,
@@ -113,6 +119,7 @@ pub struct UnexpectedHTTPResult {
     body: String,
 }
 
+/// An error originating from a streaming response.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum StreamError {
@@ -122,6 +129,7 @@ pub enum StreamError {
     ReadError(HttpClientError),
 }
 
+/// An error originating from an HTTP client.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum HttpError {
@@ -151,6 +159,7 @@ pub enum HttpError {
     StreamResetError(StreamError),
 }
 
+/// An error caused by a range not being 512-byte aligned.
 #[derive(Debug, PartialEq, thiserror::Error)]
 pub enum Not512ByteAlignedError {
     #[error("start range not 512-byte aligned: {0}")]
@@ -159,6 +168,7 @@ pub enum Not512ByteAlignedError {
     EndRange(u64),
 }
 
+/// An error caused by invalid permissions.
 #[derive(Debug, thiserror::Error)]
 pub enum PermissionError {
     #[error("Permission token not supported in this service ({}). Received token {}, supported tokens {:?}",
@@ -170,6 +180,7 @@ pub enum PermissionError {
     },
 }
 
+/// An error caused by a range not being 512-byte aligned or by a parse failure.
 #[derive(Debug, PartialEq, thiserror::Error)]
 pub enum Parse512AlignedError {
     #[error("split not found")]
@@ -180,6 +191,7 @@ pub enum Parse512AlignedError {
     Not512ByteAlignedError(#[from] Not512ByteAlignedError),
 }
 
+/// An error caused by failure to traverse a data structure.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum TraversingError {
@@ -205,6 +217,7 @@ pub enum TraversingError {
     ParsingError(#[from] ParsingError),
 }
 
+/// An error relating to the mock transport framework.
 #[cfg(feature = "mock_transport_framework")]
 #[derive(Debug, thiserror::Error)]
 pub enum MockFrameworkError {
@@ -230,6 +243,7 @@ pub enum MockFrameworkError {
     MismatchedRequestBody(Vec<u8>, Vec<u8>),
 }
 
+/// Extract the headers and body from a `hyper` HTTP response.
 #[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn extract_status_headers_and_body(
@@ -245,6 +259,7 @@ pub async fn extract_status_headers_and_body(
     Ok((status, headers, body))
 }
 
+/// Extract the status and body from a `hyper` HTTP response.
 #[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn extract_status_and_body(
@@ -258,6 +273,7 @@ pub async fn extract_status_and_body(
     Ok((status, std::str::from_utf8(&body)?.to_owned()))
 }
 
+/// Extract the `Location` header, status and body from a `hyper` HTTP response.
 #[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn extract_location_status_and_body(
@@ -275,6 +291,8 @@ pub async fn extract_location_status_and_body(
     Ok((status, location, std::str::from_utf8(&body)?.to_owned()))
 }
 
+/// Extract the HTTP body from a `hyper` HTTP response, and check the response
+/// status is 200.
 #[cfg(feature = "enable_hyper")]
 #[inline]
 pub async fn check_status_extract_body(
@@ -289,6 +307,8 @@ pub async fn check_status_extract_body(
     }
 }
 
+/// Extract the HTTP body from a `hyper` HTTP response, and check the response
+/// status is expected.
 #[cfg(feature = "enable_hyper")]
 pub async fn check_status_extract_body_2(
     resp: hyper::Response<Body>,

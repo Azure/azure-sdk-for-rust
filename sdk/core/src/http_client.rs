@@ -12,11 +12,13 @@ use hyper_rustls::HttpsConnector;
 use serde::Serialize;
 use std::sync::Arc;
 
+/// Construct a new HTTP client with the `reqwest` backend.
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 pub fn new_http_client() -> Arc<dyn HttpClient> {
     Arc::new(reqwest::Client::new())
 }
 
+/// Construct a new HTTP client with the `hyper` backend.
 #[cfg(feature = "enable_hyper")]
 pub fn new_http_client() -> Arc<dyn HttpClient> {
     Arc::new(hyper::Client::builder().build(hyper_rustls::HttpsConnector::with_native_roots()))
@@ -199,7 +201,7 @@ impl HttpClient for reqwest::Client {
     }
 }
 
-/// Serialize to json
+/// Serialize a type to json.
 pub fn to_json<T>(value: &T) -> Result<Bytes, serde_json::Error>
 where
     T: ?Sized + Serialize,

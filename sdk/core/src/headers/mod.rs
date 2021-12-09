@@ -1,3 +1,4 @@
+//! Azure HTTP headers.
 mod utilities;
 
 use crate::{Error, RequestId};

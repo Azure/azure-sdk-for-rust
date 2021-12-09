@@ -3,9 +3,12 @@ use http::{HeaderMap, Method, Uri};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use std::fmt::Debug;
 
+/// An HTTP Body.
 #[derive(Debug, Clone)]
 pub enum Body {
+    /// A body of a known size.
     Bytes(bytes::Bytes),
+    /// A streaming body.
     SeekableStream(Box<dyn SeekableStream>),
 }
 
