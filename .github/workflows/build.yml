@@ -5,7 +5,7 @@ on:
   push:
 
 env:
-  RUSTFLAGS: --deny warnings --allow unused_attributes
+  RUSTFLAGS: -Dwarnings
   CARGO_INCREMENTAL: 0
 
 jobs:
@@ -28,6 +28,9 @@ jobs:
 
       - name: cargo clippy sdk
         run: cargo clippy --all
+
+      - name: cargo doc sdk
+        run: cargo doc --all
 
       - name: cargo fmt services
         run: |
