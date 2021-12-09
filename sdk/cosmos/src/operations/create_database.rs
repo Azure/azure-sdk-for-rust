@@ -49,7 +49,7 @@ impl CreateDatabaseBuilder {
             let response = self
                 .client
                 .pipeline()
-                .send(&mut self.context, &mut request)
+                .send(self.context.insert(ResourceType::Databases), &mut request)
                 .await?;
 
             CreateDatabaseResponse::try_from(response).await
