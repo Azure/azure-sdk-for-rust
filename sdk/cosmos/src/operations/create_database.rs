@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::Database;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::{collect_pinned_stream, Context, PipelineContext, Response as HttpResponse};
+use azure_core::{collect_pinned_stream, Context, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
@@ -34,14 +34,11 @@ impl CreateDatabaseBuilder {
         self
     }
 
-    pub fn into_future(self) -> CreateDatabase {
-        Box::pin(async {
+    pub fn into_future(mut self) -> CreateDatabase {
+        Box::pin(async move {
             let mut request = self
                 .client
                 .prepare_request_pipeline("dbs", http::Method::POST);
-
-            let mut pipeline_context =
-                PipelineContext::new(self.context, ResourceType::Databases.into());
 
             let body = CreateDatabaseBody {
                 id: self.database_name.as_str(),
@@ -52,7 +49,7 @@ impl CreateDatabaseBuilder {
             let response = self
                 .client
                 .pipeline()
-                .send(&mut pipeline_context, &mut request)
+                .send(&mut self.context, &mut request)
                 .await?;
 
             CreateDatabaseResponse::try_from(response).await
