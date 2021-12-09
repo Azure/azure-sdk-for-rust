@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct MockTransportPlayerPolicy {
+    #[allow(unused)]
     pub(crate) transport_options: TransportOptions,
     transaction: MockTransaction,
 }
