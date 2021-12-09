@@ -1,7 +1,6 @@
 //! Core crate for the unofficial Microsoft Azure SDK for Rust. This crate is
 //! part of a collection of crates: for more information please refer to
 //! [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
-//!
 
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations, nonstandard_style)]
@@ -29,9 +28,7 @@ mod seekable_stream;
 mod sleep;
 
 pub mod auth;
-
 pub mod headers;
-pub mod incompletevector;
 #[cfg(feature = "mock_transport_framework")]
 mod mock_transaction;
 pub mod parsing;

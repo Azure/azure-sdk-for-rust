@@ -1,5 +1,5 @@
+use super::super::IncompleteVector;
 use crate::container::Container;
-use azure_core::incompletevector::IncompleteVector;
 use azure_core::RequestId;
 
 #[derive(Debug, Clone)]
