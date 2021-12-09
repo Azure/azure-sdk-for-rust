@@ -369,13 +369,13 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         Ok(())
     }
 
-    /// Updates the [`RecoveryLevel`](RecoveryLevel) of a secret version.
+    /// Updates the recovery level of a secret version.
     ///
     /// # Arguments
     ///
     /// * `secret_name` - Name of the secret
     /// * `secret_version` - Version of the secret. Use an empty string for the latest version
-    /// * `recovery_level` - New `RecoveryLevel`(RecoveryLevel) value of the secret
+    /// * `recovery_level` - The new recovery level value of the secret
     ///
     /// # Example
     ///
