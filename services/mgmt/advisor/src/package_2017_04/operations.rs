@@ -6,19 +6,19 @@ use super::{models, API_VERSION};
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
-    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
     scopes: Vec<String>,
     pipeline: azure_core::pipeline::Pipeline,
 }
 #[derive(Clone)]
 pub struct ClientBuilder {
-    credential: std::sync::Arc<dyn azure_core::TokenCredential>,
+    credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
     endpoint: Option<String>,
     scopes: Option<Vec<String>>,
 }
 pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
 impl ClientBuilder {
-    pub fn new(credential: std::sync::Arc<dyn azure_core::TokenCredential>) -> Self {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
         Self {
             credential,
             endpoint: None,
@@ -43,7 +43,7 @@ impl Client {
     pub(crate) fn endpoint(&self) -> &str {
         self.endpoint.as_str()
     }
-    pub(crate) fn token_credential(&self) -> &dyn azure_core::TokenCredential {
+    pub(crate) fn token_credential(&self) -> &dyn azure_core::auth::TokenCredential {
         self.credential.as_ref()
     }
     pub(crate) fn scopes(&self) -> Vec<&str> {
@@ -54,7 +54,7 @@ impl Client {
         let mut request = request.into();
         self.pipeline.send(&mut context, &mut request).await
     }
-    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::TokenCredential>, scopes: Vec<String>) -> Self {
+    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>, scopes: Vec<String>) -> Self {
         let endpoint = endpoint.into();
         let pipeline = azure_core::pipeline::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),

@@ -3,6 +3,9 @@ use http::StatusCode;
 use hyper::{self, body, Body};
 use std::cmp::PartialEq;
 
+/// A specialized `Result` type for this crate.
+pub type Result<T> = std::result::Result<T, Error>;
+
 #[derive(Debug, thiserror::Error)]
 pub enum PipelineError {
     #[error("invalid pipeline: last policy is not a TransportPolicy: {0:?}")]
@@ -320,7 +323,7 @@ mod test {
     {
     }
 
-    fn error_generator() -> Result<(), Error> {
+    fn error_generator() -> Result<()> {
         Ok(())
     }
 

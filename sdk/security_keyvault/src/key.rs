@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display};
 
-use azure_core::TokenCredential;
+use azure_core::auth::TokenCredential;
 use base64::{CharacterSet, Config};
 use chrono::serde::ts_seconds_option;
 use chrono::{DateTime, Utc};

@@ -8,9 +8,8 @@ use crate::{ReadonlyString, TimeNonce};
 
 use azure_core::pipeline::Pipeline;
 use azure_core::prelude::Continuation;
-use azure_core::HttpClient;
-use azure_core::Request;
-use azure_core::*;
+use azure_core::{AddAsHeader, ClientOptions, HttpClient};
+use azure_core::{Context, Request};
 use futures::stream::unfold;
 use futures::Stream;
 use http::request::Builder as RequestBuilder;

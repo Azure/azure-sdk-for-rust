@@ -1,7 +1,7 @@
 use super::{
     AzureCliCredential, EnvironmentCredential, ImdsManagedIdentityCredential, TokenCredential,
 };
-use azure_core::TokenResponse;
+use azure_core::auth::TokenResponse;
 
 #[derive(Debug)]
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
@@ -160,11 +160,11 @@ impl TokenCredential for DefaultAzureCredential {
 }
 
 #[async_trait::async_trait]
-impl azure_core::TokenCredential for DefaultAzureCredential {
+impl azure_core::auth::TokenCredential for DefaultAzureCredential {
     async fn get_token(
         &self,
         resource: &str,
-    ) -> Result<azure_core::TokenResponse, azure_core::Error> {
+    ) -> Result<azure_core::auth::TokenResponse, azure_core::Error> {
         TokenCredential::get_token(self, resource)
             .await
             .map_err(|error| azure_core::Error::GetTokenError(Box::new(error)))

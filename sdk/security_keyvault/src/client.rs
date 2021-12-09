@@ -1,5 +1,5 @@
 use crate::Error;
-use azure_core::{TokenCredential, TokenResponse};
+use azure_core::auth::{TokenCredential, TokenResponse};
 use const_format::formatcp;
 use url::Url;
 
