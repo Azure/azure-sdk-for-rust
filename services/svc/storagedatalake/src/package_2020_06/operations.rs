@@ -227,7 +227,7 @@ pub mod service {
                         url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -445,7 +445,7 @@ pub mod file_system {
                     if let Some(x_ms_properties) = &self.x_ms_properties {
                         req_builder = req_builder.header("x-ms-properties", x_ms_properties);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -553,7 +553,7 @@ pub mod file_system {
                     if let Some(if_unmodified_since) = &self.if_unmodified_since {
                         req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -653,7 +653,7 @@ pub mod file_system {
                     if let Some(if_unmodified_since) = &self.if_unmodified_since {
                         req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -737,7 +737,7 @@ pub mod file_system {
                         url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -856,7 +856,7 @@ pub mod file_system {
                     if let Some(upn) = &self.upn {
                         url.query_pairs_mut().append_pair("upn", &upn.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -999,7 +999,7 @@ pub mod file_system {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1459,7 +1459,7 @@ pub mod path {
                     if let Some(if_unmodified_since) = &self.if_unmodified_since {
                         req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1624,7 +1624,7 @@ pub mod path {
                     if let Some(if_unmodified_since) = &self.if_unmodified_since {
                         req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -1885,7 +1885,7 @@ pub mod path {
                     if let Some(x_ms_source_if_unmodified_since) = &self.x_ms_source_if_unmodified_since {
                         req_builder = req_builder.header("x-ms-source-if-unmodified-since", x_ms_source_if_unmodified_since);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2309,7 +2309,7 @@ pub mod path {
                     if let Some(if_unmodified_since) = &self.if_unmodified_since {
                         req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2447,7 +2447,7 @@ pub mod path {
                     if let Some(if_unmodified_since) = &self.if_unmodified_since {
                         req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2609,7 +2609,7 @@ pub mod path {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
                     req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2736,7 +2736,7 @@ pub mod path {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
                     req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2947,7 +2947,7 @@ pub mod path {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
                     req_builder = req_builder.header("x-ms-version", &self.x_ms_version);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3169,7 +3169,7 @@ pub mod path {
                     if let Some(x_ms_expiry_time) = &self.x_ms_expiry_time {
                         req_builder = req_builder.header("x-ms-expiry-time", x_ms_expiry_time);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3262,7 +3262,7 @@ pub mod path {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;

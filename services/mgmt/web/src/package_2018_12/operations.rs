@@ -1545,7 +1545,7 @@ pub mod app_service_certificate_orders {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1687,7 +1687,7 @@ pub mod app_service_certificate_orders {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1766,7 +1766,7 @@ pub mod app_service_certificate_orders {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2025,7 +2025,7 @@ pub mod app_service_certificate_orders {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2092,7 +2092,7 @@ pub mod app_service_certificate_orders {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2166,7 +2166,7 @@ pub mod app_service_certificate_orders {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2410,7 +2410,7 @@ pub mod app_service_certificate_orders {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -2610,7 +2610,7 @@ pub mod app_service_certificate_orders {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2808,7 +2808,7 @@ pub mod app_service_certificate_orders {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2875,7 +2875,7 @@ pub mod app_service_certificate_orders {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2947,7 +2947,7 @@ pub mod app_service_certificate_orders {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3026,7 +3026,7 @@ pub mod certificate_registration_provider {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3389,7 +3389,7 @@ pub mod domains {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3464,7 +3464,7 @@ pub mod domains {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3615,7 +3615,7 @@ pub mod domains {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3692,7 +3692,7 @@ pub mod domains {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3960,7 +3960,7 @@ pub mod domains {
                         url.query_pairs_mut()
                             .append_pair("forceHardDeleteDomain", &force_hard_delete_domain.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4027,7 +4027,7 @@ pub mod domains {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4099,7 +4099,7 @@ pub mod domains {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4321,7 +4321,7 @@ pub mod domains {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4399,7 +4399,7 @@ pub mod domains {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4505,7 +4505,7 @@ pub mod top_level_domains {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4580,7 +4580,7 @@ pub mod top_level_domains {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4737,7 +4737,7 @@ pub mod domain_registration_provider {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4895,7 +4895,7 @@ pub mod certificates {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4970,7 +4970,7 @@ pub mod certificates {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5047,7 +5047,7 @@ pub mod certificates {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5284,7 +5284,7 @@ pub mod certificates {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5386,7 +5386,7 @@ pub mod deleted_web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5461,7 +5461,7 @@ pub mod deleted_web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5538,7 +5538,7 @@ pub mod deleted_web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6022,7 +6022,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6125,7 +6125,7 @@ pub mod diagnostics {
                     if let Some(time_grain) = &self.time_grain {
                         url.query_pairs_mut().append_pair("timeGrain", time_grain);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6204,7 +6204,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6307,7 +6307,7 @@ pub mod diagnostics {
                     if let Some(time_grain) = &self.time_grain {
                         url.query_pairs_mut().append_pair("timeGrain", time_grain);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6386,7 +6386,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6465,7 +6465,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6546,7 +6546,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6627,7 +6627,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6732,7 +6732,7 @@ pub mod diagnostics {
                     if let Some(time_grain) = &self.time_grain {
                         url.query_pairs_mut().append_pair("timeGrain", time_grain);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6814,7 +6814,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6897,7 +6897,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7004,7 +7004,7 @@ pub mod diagnostics {
                     if let Some(time_grain) = &self.time_grain {
                         url.query_pairs_mut().append_pair("timeGrain", time_grain);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7086,7 +7086,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7191,7 +7191,7 @@ pub mod diagnostics {
                     if let Some(time_grain) = &self.time_grain {
                         url.query_pairs_mut().append_pair("timeGrain", time_grain);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7272,7 +7272,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7353,7 +7353,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7436,7 +7436,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7519,7 +7519,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7617,7 +7617,7 @@ pub mod diagnostics {
                     if let Some(time_grain) = &self.time_grain {
                         url.query_pairs_mut().append_pair("timeGrain", time_grain);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7701,7 +7701,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7786,7 +7786,7 @@ pub mod diagnostics {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7886,7 +7886,7 @@ pub mod diagnostics {
                     if let Some(time_grain) = &self.time_grain {
                         url.query_pairs_mut().append_pair("timeGrain", time_grain);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7990,7 +7990,7 @@ pub mod provider {
                     if let Some(os_type_selected) = &self.os_type_selected {
                         url.query_pairs_mut().append_pair("osTypeSelected", os_type_selected);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8058,7 +8058,7 @@ pub mod provider {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8141,7 +8141,7 @@ pub mod provider {
                     if let Some(os_type_selected) = &self.os_type_selected {
                         url.query_pairs_mut().append_pair("osTypeSelected", os_type_selected);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8458,7 +8458,7 @@ pub mod recommendations {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8528,7 +8528,7 @@ pub mod recommendations {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8594,7 +8594,7 @@ pub mod recommendations {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8681,7 +8681,7 @@ pub mod recommendations {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8774,7 +8774,7 @@ pub mod recommendations {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8851,7 +8851,7 @@ pub mod recommendations {
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     let environment_name = &self.environment_name;
                     url.query_pairs_mut().append_pair("environmentName", environment_name);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8922,7 +8922,7 @@ pub mod recommendations {
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     let environment_name = &self.environment_name;
                     url.query_pairs_mut().append_pair("environmentName", environment_name);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -9011,7 +9011,7 @@ pub mod recommendations {
                     if let Some(recommendation_id) = &self.recommendation_id {
                         url.query_pairs_mut().append_pair("recommendationId", recommendation_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9090,7 +9090,7 @@ pub mod recommendations {
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     let environment_name = &self.environment_name;
                     url.query_pairs_mut().append_pair("environmentName", environment_name);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -9177,7 +9177,7 @@ pub mod recommendations {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9270,7 +9270,7 @@ pub mod recommendations {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9344,7 +9344,7 @@ pub mod recommendations {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -9412,7 +9412,7 @@ pub mod recommendations {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -9501,7 +9501,7 @@ pub mod recommendations {
                     if let Some(recommendation_id) = &self.recommendation_id {
                         url.query_pairs_mut().append_pair("recommendationId", recommendation_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9577,7 +9577,7 @@ pub mod recommendations {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -9812,7 +9812,7 @@ pub mod get_publishing_user {
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                 url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9950,7 +9950,7 @@ pub mod list_source_controls {
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                 url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -10023,7 +10023,7 @@ pub mod get_source_control {
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                 url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -10187,7 +10187,7 @@ pub mod list_billing_meters {
                 if let Some(os_type) = &self.os_type {
                     url.query_pairs_mut().append_pair("osType", os_type);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -10335,7 +10335,7 @@ pub mod get_subscription_deployment_locations {
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                 url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -10443,7 +10443,7 @@ pub mod list_geo_regions {
                     url.query_pairs_mut()
                         .append_pair("linuxDynamicWorkersEnabled", &linux_dynamic_workers_enabled.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -10591,7 +10591,7 @@ pub mod list_premier_add_on_offers {
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                 url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -10664,7 +10664,7 @@ pub mod list_skus {
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                 url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -16953,7 +16953,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -17036,7 +17036,7 @@ pub mod web_apps {
                     if let Some(include_slots) = &self.include_slots {
                         url.query_pairs_mut().append_pair("includeSlots", &include_slots.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -17112,7 +17112,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -17389,7 +17389,7 @@ pub mod web_apps {
                         url.query_pairs_mut()
                             .append_pair("deleteEmptyServerFarm", &delete_empty_server_farm.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -17471,7 +17471,7 @@ pub mod web_apps {
                     if let Some(host_name) = &self.host_name {
                         url.query_pairs_mut().append_pair("hostName", host_name);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -17696,7 +17696,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -17775,7 +17775,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -17853,7 +17853,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -18084,7 +18084,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -18240,7 +18240,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -18397,7 +18397,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -18560,7 +18560,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -18714,7 +18714,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -18784,7 +18784,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -18945,7 +18945,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -19023,7 +19023,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -19258,7 +19258,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -19336,7 +19336,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -19493,7 +19493,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -19571,7 +19571,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -19727,7 +19727,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -19965,7 +19965,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20044,7 +20044,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20120,7 +20120,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -20193,7 +20193,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -20271,7 +20271,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -20349,7 +20349,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20427,7 +20427,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20507,7 +20507,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20579,7 +20579,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -20652,7 +20652,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -20724,7 +20724,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20803,7 +20803,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20965,7 +20965,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21038,7 +21038,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21194,7 +21194,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21273,7 +21273,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21516,7 +21516,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21587,7 +21587,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21740,7 +21740,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21817,7 +21817,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21893,7 +21893,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21971,7 +21971,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22129,7 +22129,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22202,7 +22202,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -22280,7 +22280,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22359,7 +22359,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22521,7 +22521,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22596,7 +22596,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22842,7 +22842,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22909,7 +22909,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -22987,7 +22987,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23066,7 +23066,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23147,7 +23147,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23391,7 +23391,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23462,7 +23462,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23541,7 +23541,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23698,7 +23698,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23775,7 +23775,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23854,7 +23854,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23933,7 +23933,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -24007,7 +24007,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -24087,7 +24087,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -24168,7 +24168,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -24249,7 +24249,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -24330,7 +24330,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -24406,7 +24406,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -24484,7 +24484,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -24564,7 +24564,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -24657,7 +24657,7 @@ pub mod web_apps {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -24895,7 +24895,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -24972,7 +24972,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -25206,7 +25206,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -25278,7 +25278,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -25361,7 +25361,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -25469,7 +25469,7 @@ pub mod web_apps {
                     if let Some(sas_url) = &self.sas_url {
                         url.query_pairs_mut().append_pair("sasUrl", sas_url);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -25577,7 +25577,7 @@ pub mod web_apps {
                     if let Some(sas_url) = &self.sas_url {
                         url.query_pairs_mut().append_pair("sasUrl", sas_url);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -25663,7 +25663,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -25737,7 +25737,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -25821,7 +25821,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -25906,7 +25906,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -25985,7 +25985,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -26065,7 +26065,7 @@ pub mod web_apps {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -26142,7 +26142,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -26219,7 +26219,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -26298,7 +26298,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -26536,7 +26536,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -26606,7 +26606,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -26761,7 +26761,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -26838,7 +26838,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -26915,7 +26915,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -26987,7 +26987,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -27065,7 +27065,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -27144,7 +27144,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -27223,7 +27223,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -27302,7 +27302,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -27380,7 +27380,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -27459,7 +27459,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -27621,7 +27621,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -27767,7 +27767,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -27851,7 +27851,7 @@ pub mod web_apps {
                     if let Some(synchronous) = &self.synchronous {
                         url.query_pairs_mut().append_pair("synchronous", &synchronous.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -28148,7 +28148,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -28225,7 +28225,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -28307,7 +28307,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -28390,7 +28390,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -28461,7 +28461,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -28539,7 +28539,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -28822,7 +28822,7 @@ pub mod web_apps {
                         url.query_pairs_mut()
                             .append_pair("deleteEmptyServerFarm", &delete_empty_server_farm.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -28906,7 +28906,7 @@ pub mod web_apps {
                     if let Some(host_name) = &self.host_name {
                         url.query_pairs_mut().append_pair("hostName", host_name);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -29137,7 +29137,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -29218,7 +29218,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -29298,7 +29298,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -29535,7 +29535,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -29695,7 +29695,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -29856,7 +29856,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -30023,7 +30023,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -30181,7 +30181,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -30253,7 +30253,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -30418,7 +30418,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -30498,7 +30498,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -30739,7 +30739,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -30819,7 +30819,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -30980,7 +30980,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -31060,7 +31060,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -31304,7 +31304,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -31385,7 +31385,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -31463,7 +31463,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -31538,7 +31538,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -31618,7 +31618,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -31698,7 +31698,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -31778,7 +31778,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -31860,7 +31860,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -31934,7 +31934,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -32009,7 +32009,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -32083,7 +32083,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -32164,7 +32164,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -32330,7 +32330,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -32405,7 +32405,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -32565,7 +32565,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -32646,7 +32646,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -32895,7 +32895,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -32968,7 +32968,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -33125,7 +33125,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -33204,7 +33204,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -33282,7 +33282,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -33362,7 +33362,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -33524,7 +33524,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -33599,7 +33599,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -33679,7 +33679,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -33760,7 +33760,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -33926,7 +33926,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -33994,7 +33994,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -34219,7 +34219,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -34287,7 +34287,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -34367,7 +34367,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -34448,7 +34448,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -34531,7 +34531,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -34781,7 +34781,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -34854,7 +34854,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -34935,7 +34935,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -35088,7 +35088,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -35167,7 +35167,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -35248,7 +35248,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -35329,7 +35329,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -35405,7 +35405,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -35487,7 +35487,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -35560,7 +35560,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -35643,7 +35643,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -35716,7 +35716,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -35794,7 +35794,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -35874,7 +35874,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -35956,7 +35956,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -36051,7 +36051,7 @@ pub mod web_apps {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -36130,7 +36130,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -36209,7 +36209,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -36449,7 +36449,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -36523,7 +36523,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -36608,7 +36608,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -36718,7 +36718,7 @@ pub mod web_apps {
                     if let Some(sas_url) = &self.sas_url {
                         url.query_pairs_mut().append_pair("sasUrl", sas_url);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -36828,7 +36828,7 @@ pub mod web_apps {
                     if let Some(sas_url) = &self.sas_url {
                         url.query_pairs_mut().append_pair("sasUrl", sas_url);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -36916,7 +36916,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -36992,7 +36992,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -37070,7 +37070,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -37157,7 +37157,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -37238,7 +37238,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -37320,7 +37320,7 @@ pub mod web_apps {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -37399,7 +37399,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -37478,7 +37478,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -37559,7 +37559,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -37803,7 +37803,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -37875,7 +37875,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -38034,7 +38034,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -38113,7 +38113,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -38192,7 +38192,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -38266,7 +38266,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -38346,7 +38346,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -38427,7 +38427,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -38508,7 +38508,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -38589,7 +38589,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -38669,7 +38669,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -38750,7 +38750,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -38916,7 +38916,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -39066,7 +39066,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -39152,7 +39152,7 @@ pub mod web_apps {
                     if let Some(synchronous) = &self.synchronous {
                         url.query_pairs_mut().append_pair("synchronous", &synchronous.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -39457,7 +39457,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -39536,7 +39536,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -39620,7 +39620,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -39705,7 +39705,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -39936,7 +39936,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -40015,7 +40015,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -40100,7 +40100,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -40393,7 +40393,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -40464,7 +40464,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -40567,7 +40567,7 @@ pub mod web_apps {
                     if let Some(sas_url) = &self.sas_url {
                         url.query_pairs_mut().append_pair("sasUrl", sas_url);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -40650,7 +40650,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -40725,7 +40725,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -40796,7 +40796,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -40866,7 +40866,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -40939,7 +40939,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -41019,7 +41019,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -41101,7 +41101,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -41177,7 +41177,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -41258,7 +41258,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -41337,7 +41337,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -41419,7 +41419,7 @@ pub mod web_apps {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -41498,7 +41498,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -41579,7 +41579,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -41825,7 +41825,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -41892,7 +41892,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -42122,7 +42122,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -42203,7 +42203,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -42434,7 +42434,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -42511,7 +42511,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -42594,7 +42594,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -42881,7 +42881,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -42950,7 +42950,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -43051,7 +43051,7 @@ pub mod web_apps {
                     if let Some(sas_url) = &self.sas_url {
                         url.query_pairs_mut().append_pair("sasUrl", sas_url);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -43132,7 +43132,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -43205,7 +43205,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -43274,7 +43274,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -43342,7 +43342,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -43413,7 +43413,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -43491,7 +43491,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -43571,7 +43571,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -43645,7 +43645,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -43724,7 +43724,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -43801,7 +43801,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -43881,7 +43881,7 @@ pub mod web_apps {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -43958,7 +43958,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -44037,7 +44037,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -44277,7 +44277,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -44351,7 +44351,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -44593,7 +44593,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -44672,7 +44672,7 @@ pub mod web_apps {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -45389,7 +45389,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -45466,7 +45466,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -45545,7 +45545,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -45826,7 +45826,7 @@ pub mod app_service_environments {
                     if let Some(force_delete) = &self.force_delete {
                         url.query_pairs_mut().append_pair("forceDelete", &force_delete.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -45900,7 +45900,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -45977,7 +45977,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -46146,7 +46146,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -46227,7 +46227,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -46300,7 +46300,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -46377,7 +46377,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -46470,7 +46470,7 @@ pub mod app_service_environments {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -46547,7 +46547,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -46624,7 +46624,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -46886,7 +46886,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -46966,7 +46966,7 @@ pub mod app_service_environments {
                     if let Some(details) = &self.details {
                         url.query_pairs_mut().append_pair("details", &details.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -47039,7 +47039,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -47150,7 +47150,7 @@ pub mod app_service_environments {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -47227,7 +47227,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -47298,7 +47298,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -47375,7 +47375,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -47449,7 +47449,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -47529,7 +47529,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -47608,7 +47608,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -47692,7 +47692,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -47777,7 +47777,7 @@ pub mod app_service_environments {
                     if let Some(properties_to_include) = &self.properties_to_include {
                         url.query_pairs_mut().append_pair("propertiesToInclude", properties_to_include);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -47859,7 +47859,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -47951,7 +47951,7 @@ pub mod app_service_environments {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -48028,7 +48028,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -48107,7 +48107,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -48374,7 +48374,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -48463,7 +48463,7 @@ pub mod app_service_environments {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -48537,7 +48537,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -48632,7 +48632,7 @@ pub mod app_service_environments {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -48711,7 +48711,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -48790,7 +48790,7 @@ pub mod app_service_environments {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -49338,7 +49338,7 @@ pub mod app_service_plans {
                     if let Some(detailed) = &self.detailed {
                         url.query_pairs_mut().append_pair("detailed", &detailed.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -49413,7 +49413,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -49489,7 +49489,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -49754,7 +49754,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -49825,7 +49825,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -49898,7 +49898,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -49973,7 +49973,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -50040,7 +50040,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -50114,7 +50114,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -50191,7 +50191,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -50270,7 +50270,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -50349,7 +50349,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -50442,7 +50442,7 @@ pub mod app_service_plans {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -50524,7 +50524,7 @@ pub mod app_service_plans {
                     if let Some(soft_restart) = &self.soft_restart {
                         url.query_pairs_mut().append_pair("softRestart", &soft_restart.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -50619,7 +50619,7 @@ pub mod app_service_plans {
                     if let Some(top) = &self.top {
                         url.query_pairs_mut().append_pair("$top", top);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -50696,7 +50696,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -50781,7 +50781,7 @@ pub mod app_service_plans {
                     if let Some(filter) = &self.filter {
                         url.query_pairs_mut().append_pair("$filter", filter);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -50858,7 +50858,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -50936,7 +50936,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -51008,7 +51008,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -51162,7 +51162,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -51234,7 +51234,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -51457,7 +51457,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -51527,7 +51527,7 @@ pub mod app_service_plans {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -51681,7 +51681,7 @@ pub mod resource_health_metadata {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -51758,7 +51758,7 @@ pub mod resource_health_metadata {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -51837,7 +51837,7 @@ pub mod resource_health_metadata {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -51914,7 +51914,7 @@ pub mod resource_health_metadata {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -51995,7 +51995,7 @@ pub mod resource_health_metadata {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -52074,7 +52074,7 @@ pub mod resource_health_metadata {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;

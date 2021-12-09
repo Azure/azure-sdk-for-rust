@@ -172,7 +172,7 @@ pub mod health_api {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -496,7 +496,7 @@ pub mod web_pub_sub {
                     if let Some(minutes_to_expire) = &self.minutes_to_expire {
                         url.query_pairs_mut().append_pair("minutesToExpire", &minutes_to_expire.to_string());
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -583,7 +583,7 @@ pub mod web_pub_sub {
                     if let Some(reason) = &self.reason {
                         url.query_pairs_mut().append_pair("reason", reason);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -737,7 +737,7 @@ pub mod web_pub_sub {
                     if let Some(reason) = &self.reason {
                         url.query_pairs_mut().append_pair("reason", reason);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -809,7 +809,7 @@ pub mod web_pub_sub {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -949,7 +949,7 @@ pub mod web_pub_sub {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1037,7 +1037,7 @@ pub mod web_pub_sub {
                     if let Some(reason) = &self.reason {
                         url.query_pairs_mut().append_pair("reason", reason);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -1186,7 +1186,7 @@ pub mod web_pub_sub {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1258,7 +1258,7 @@ pub mod web_pub_sub {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1325,7 +1325,7 @@ pub mod web_pub_sub {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1413,7 +1413,7 @@ pub mod web_pub_sub {
                     if let Some(reason) = &self.reason {
                         url.query_pairs_mut().append_pair("reason", reason);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -1553,7 +1553,7 @@ pub mod web_pub_sub {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1625,7 +1625,7 @@ pub mod web_pub_sub {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1690,7 +1690,7 @@ pub mod web_pub_sub {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1770,7 +1770,7 @@ pub mod web_pub_sub {
                     if let Some(target_name) = &self.target_name {
                         url.query_pairs_mut().append_pair("targetName", target_name);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1850,7 +1850,7 @@ pub mod web_pub_sub {
                     if let Some(target_name) = &self.target_name {
                         url.query_pairs_mut().append_pair("targetName", target_name);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1932,7 +1932,7 @@ pub mod web_pub_sub {
                     if let Some(target_name) = &self.target_name {
                         url.query_pairs_mut().append_pair("targetName", target_name);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;

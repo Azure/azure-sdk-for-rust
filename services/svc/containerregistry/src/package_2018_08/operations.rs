@@ -262,7 +262,7 @@ pub mod get_docker_registry_v2_support {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -327,7 +327,7 @@ pub mod get_tag_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -399,7 +399,7 @@ pub mod get_manifest {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -483,7 +483,7 @@ pub mod get_repositories {
                 if let Some(n) = &self.n {
                     url.query_pairs_mut().append_pair("n", n);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -566,7 +566,7 @@ pub mod get_acr_repositories {
                 if let Some(n) = &self.n {
                     url.query_pairs_mut().append_pair("n", n);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -636,7 +636,7 @@ pub mod get_acr_repository_attributes {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -716,7 +716,7 @@ pub mod update_acr_repository_attributes {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(value).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -783,7 +783,7 @@ pub mod delete_acr_repository {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -886,7 +886,7 @@ pub mod get_acr_tags {
                 if let Some(digest) = &self.digest {
                     url.query_pairs_mut().append_pair("digest", digest);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -958,7 +958,7 @@ pub mod get_acr_tag_attributes {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1039,7 +1039,7 @@ pub mod update_acr_tag_attributes {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(value).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -1107,7 +1107,7 @@ pub mod delete_acr_tag {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1197,7 +1197,7 @@ pub mod get_acr_manifests {
                 if let Some(orderby) = &self.orderby {
                     url.query_pairs_mut().append_pair("orderby", orderby);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1269,7 +1269,7 @@ pub mod get_acr_manifest_attributes {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1350,7 +1350,7 @@ pub mod update_acr_manifest_attributes {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(value).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;

@@ -413,7 +413,7 @@ impl StorageAccountClient {
         let request = if let Some(request_body) = request_body {
             request.body(request_body)
         } else {
-            request.body(Bytes::from_static(EMPTY_BODY))
+            request.body(EMPTY_BODY)
         }?;
 
         debug!("using request == {:#?}", request);

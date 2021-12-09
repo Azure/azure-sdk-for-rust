@@ -43,7 +43,7 @@ impl<'a> DeleteIdentityBuilder<'a> {
             .prepare_request(&uri, Method::DELETE)
             .header(http::header::IF_MATCH, format!("\"{}\"", &self.if_match));
 
-        let request = request.body(bytes::Bytes::from_static(azure_core::EMPTY_BODY))?;
+        let request = request.body(azure_core::EMPTY_BODY)?;
 
         self.service_client
             .http_client()

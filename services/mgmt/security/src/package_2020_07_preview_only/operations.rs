@@ -177,7 +177,7 @@ pub mod sql_vulnerability_assessment_scans {
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -253,7 +253,7 @@ pub mod sql_vulnerability_assessment_scans {
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -364,7 +364,7 @@ pub mod sql_vulnerability_assessment_scan_results {
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -442,7 +442,7 @@ pub mod sql_vulnerability_assessment_scan_results {
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -581,7 +581,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -668,7 +668,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                         req_builder = req_builder.header("content-type", "application/json");
                         azure_core::to_json(body).map_err(Error::Serialize)?
                     } else {
-                        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                        azure_core::EMPTY_BODY
                     };
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -752,7 +752,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -824,7 +824,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -909,7 +909,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                         req_builder = req_builder.header("content-type", "application/json");
                         azure_core::to_json(body).map_err(Error::Serialize)?
                     } else {
-                        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                        azure_core::EMPTY_BODY
                     };
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;

@@ -2984,7 +2984,7 @@ pub mod get_cluster_manifest {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3107,7 +3107,7 @@ pub mod get_cluster_health {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3236,7 +3236,7 @@ pub mod get_cluster_health_using_policy {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(cluster_health_policies).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -3316,7 +3316,7 @@ pub mod get_cluster_health_chunk {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3401,7 +3401,7 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(cluster_health_chunk_query_description).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -3570,7 +3570,7 @@ pub mod get_provisioned_fabric_code_version_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3654,7 +3654,7 @@ pub mod get_provisioned_fabric_config_version_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3730,7 +3730,7 @@ pub mod get_cluster_upgrade_progress {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3810,7 +3810,7 @@ pub mod get_cluster_configuration {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3888,7 +3888,7 @@ pub mod get_cluster_configuration_upgrade_status {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -3966,7 +3966,7 @@ pub mod get_upgrade_orchestration_service_state {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4268,7 +4268,7 @@ pub mod rollback_cluster_upgrade {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4632,7 +4632,7 @@ pub mod get_aad_metadata {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4708,7 +4708,7 @@ pub mod get_cluster_version {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4784,7 +4784,7 @@ pub mod get_cluster_load {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -4863,7 +4863,7 @@ pub mod toggle_verbose_service_placement_health_reporting {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4959,7 +4959,7 @@ pub mod get_node_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5041,7 +5041,7 @@ pub mod get_node_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5128,7 +5128,7 @@ pub mod get_node_health {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5220,7 +5220,7 @@ pub mod get_node_health_using_policy {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(cluster_health_policy).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -5383,7 +5383,7 @@ pub mod get_node_load_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5534,7 +5534,7 @@ pub mod enable_node {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5607,7 +5607,7 @@ pub mod remove_node_state {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5758,7 +5758,7 @@ pub mod remove_configuration_overrides {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -5830,7 +5830,7 @@ pub mod get_configuration_overrides {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6028,7 +6028,7 @@ pub mod get_application_type_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6139,7 +6139,7 @@ pub mod get_application_type_info_list_by_name {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6388,7 +6388,7 @@ pub mod get_service_type_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6480,7 +6480,7 @@ pub mod get_service_type_info_by_name {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6569,7 +6569,7 @@ pub mod get_service_manifest {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6660,7 +6660,7 @@ pub mod get_deployed_service_type_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6758,7 +6758,7 @@ pub mod get_deployed_service_type_info_by_name {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -6917,7 +6917,7 @@ pub mod delete_application {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6999,7 +6999,7 @@ pub mod get_application_load_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7118,7 +7118,7 @@ pub mod get_application_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7209,7 +7209,7 @@ pub mod get_application_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7325,7 +7325,7 @@ pub mod get_application_health {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7446,7 +7446,7 @@ pub mod get_application_health_using_policy {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(application_health_policy).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -7689,7 +7689,7 @@ pub mod get_application_upgrade {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7918,7 +7918,7 @@ pub mod rollback_application_upgrade {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8018,7 +8018,7 @@ pub mod get_deployed_application_info_list {
                 if let Some(max_results) = &self.max_results {
                     url.query_pairs_mut().append_pair("MaxResults", &max_results.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8115,7 +8115,7 @@ pub mod get_deployed_application_info {
                     url.query_pairs_mut()
                         .append_pair("IncludeHealthState", &include_health_state.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8228,7 +8228,7 @@ pub mod get_deployed_application_health {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8342,7 +8342,7 @@ pub mod get_deployed_application_health_using_policy {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(application_health_policy).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(exclude_health_statistics) = &self.exclude_health_statistics {
                     url.query_pairs_mut()
@@ -8523,7 +8523,7 @@ pub mod get_application_manifest {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8616,7 +8616,7 @@ pub mod get_service_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8704,7 +8704,7 @@ pub mod get_service_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -8782,7 +8782,7 @@ pub mod get_application_name_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9023,7 +9023,7 @@ pub mod delete_service {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -9170,7 +9170,7 @@ pub mod get_service_description {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9274,7 +9274,7 @@ pub mod get_service_health {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9380,7 +9380,7 @@ pub mod get_service_health_using_policy {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(application_health_policy).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(exclude_health_statistics) = &self.exclude_health_statistics {
                     url.query_pairs_mut()
@@ -9572,7 +9572,7 @@ pub mod resolve_service {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9670,7 +9670,7 @@ pub mod get_unplaced_replica_information {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9755,7 +9755,7 @@ pub mod get_partition_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9837,7 +9837,7 @@ pub mod get_partition_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -9915,7 +9915,7 @@ pub mod get_service_name_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -10019,7 +10019,7 @@ pub mod get_partition_health {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -10125,7 +10125,7 @@ pub mod get_partition_health_using_policy {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(application_health_policy).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(exclude_health_statistics) = &self.exclude_health_statistics {
                     url.query_pairs_mut()
@@ -10292,7 +10292,7 @@ pub mod get_partition_load_information {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -10369,7 +10369,7 @@ pub mod reset_partition_load {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -10442,7 +10442,7 @@ pub mod recover_partition {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -10519,7 +10519,7 @@ pub mod recover_service_partitions {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -10591,7 +10591,7 @@ pub mod recover_system_partitions {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -10663,7 +10663,7 @@ pub mod recover_all_partitions {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -10753,7 +10753,7 @@ pub mod move_primary_replica {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -10850,7 +10850,7 @@ pub mod move_secondary_replica {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -11239,7 +11239,7 @@ pub mod get_repair_task_list {
                 if let Some(executor_filter) = &self.executor_filter {
                     url.query_pairs_mut().append_pair("ExecutorFilter", executor_filter);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -11534,7 +11534,7 @@ pub mod get_replica_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -11622,7 +11622,7 @@ pub mod get_replica_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -11715,7 +11715,7 @@ pub mod get_replica_health {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -11813,7 +11813,7 @@ pub mod get_replica_health_using_policy {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(application_health_policy).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -12012,7 +12012,7 @@ pub mod get_deployed_service_replica_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -12100,7 +12100,7 @@ pub mod get_deployed_service_replica_detail_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -12185,7 +12185,7 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -12270,7 +12270,7 @@ pub mod restart_replica {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -12359,7 +12359,7 @@ pub mod remove_replica {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -12440,7 +12440,7 @@ pub mod get_deployed_service_package_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -12530,7 +12530,7 @@ pub mod get_deployed_service_package_info_list_by_name {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -12625,7 +12625,7 @@ pub mod get_deployed_service_package_health {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -12725,7 +12725,7 @@ pub mod get_deployed_service_package_health_using_policy {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(application_health_policy).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -12992,7 +12992,7 @@ pub mod get_deployed_code_package_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -13177,7 +13177,7 @@ pub mod get_container_logs_deployed_on_node {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -13421,7 +13421,7 @@ pub mod get_compose_deployment_status {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -13515,7 +13515,7 @@ pub mod get_compose_deployment_status_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -13598,7 +13598,7 @@ pub mod get_compose_deployment_upgrade_progress {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -13675,7 +13675,7 @@ pub mod remove_compose_deployment {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -13826,7 +13826,7 @@ pub mod start_rollback_compose_deployment_upgrade {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -13898,7 +13898,7 @@ pub mod get_chaos {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -14047,7 +14047,7 @@ pub mod stop_chaos {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -14151,7 +14151,7 @@ pub mod get_chaos_events {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -14227,7 +14227,7 @@ pub mod get_chaos_schedule {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -14377,7 +14377,7 @@ pub mod get_image_store_content {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -14454,7 +14454,7 @@ pub mod upload_file {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -14526,7 +14526,7 @@ pub mod delete_image_store_content {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -14597,7 +14597,7 @@ pub mod get_image_store_root_content {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -14749,7 +14749,7 @@ pub mod delete_image_store_upload_session {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -14823,7 +14823,7 @@ pub mod commit_image_store_upload_session {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -14898,7 +14898,7 @@ pub mod get_image_store_upload_session_by_id {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -14975,7 +14975,7 @@ pub mod get_image_store_upload_session_by_path {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -15057,7 +15057,7 @@ pub mod upload_file_chunk {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -15128,7 +15128,7 @@ pub mod get_image_store_root_folder_size {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -15205,7 +15205,7 @@ pub mod get_image_store_folder_size {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -15281,7 +15281,7 @@ pub mod get_image_store_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -15368,7 +15368,7 @@ pub mod invoke_infrastructure_command {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -15456,7 +15456,7 @@ pub mod invoke_infrastructure_query {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -15545,7 +15545,7 @@ pub mod start_data_loss {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -15627,7 +15627,7 @@ pub mod get_data_loss_progress {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -15720,7 +15720,7 @@ pub mod start_quorum_loss {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -15802,7 +15802,7 @@ pub mod get_quorum_loss_progress {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -15891,7 +15891,7 @@ pub mod start_partition_restart {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -15973,7 +15973,7 @@ pub mod get_partition_restart_progress {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -16063,7 +16063,7 @@ pub mod start_node_transition {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -16143,7 +16143,7 @@ pub mod get_node_transition_progress {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -16225,7 +16225,7 @@ pub mod get_fault_operation_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -16307,7 +16307,7 @@ pub mod cancel_operation {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -16457,7 +16457,7 @@ pub mod delete_backup_policy {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -16547,7 +16547,7 @@ pub mod get_backup_policy_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -16628,7 +16628,7 @@ pub mod get_backup_policy_by_name {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -16725,7 +16725,7 @@ pub mod get_all_entities_backed_up_by_policy {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -16963,7 +16963,7 @@ pub mod disable_application_backup {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(disable_backup_description).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -17058,7 +17058,7 @@ pub mod get_application_backup_configuration_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -17175,7 +17175,7 @@ pub mod get_application_backup_list {
                 if let Some(max_results) = &self.max_results {
                     url.query_pairs_mut().append_pair("MaxResults", &max_results.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -17252,7 +17252,7 @@ pub mod suspend_application_backup {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -17325,7 +17325,7 @@ pub mod resume_application_backup {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -17478,7 +17478,7 @@ pub mod disable_service_backup {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(disable_backup_description).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -17576,7 +17576,7 @@ pub mod get_service_backup_configuration_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -17693,7 +17693,7 @@ pub mod get_service_backup_list {
                 if let Some(max_results) = &self.max_results {
                     url.query_pairs_mut().append_pair("MaxResults", &max_results.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -17770,7 +17770,7 @@ pub mod suspend_service_backup {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -17843,7 +17843,7 @@ pub mod resume_service_backup {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -17996,7 +17996,7 @@ pub mod disable_partition_backup {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(disable_backup_description).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -18078,7 +18078,7 @@ pub mod get_partition_backup_configuration_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -18179,7 +18179,7 @@ pub mod get_partition_backup_list {
                 if let Some(end_date_time_filter) = &self.end_date_time_filter {
                     url.query_pairs_mut().append_pair("EndDateTimeFilter", end_date_time_filter);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -18256,7 +18256,7 @@ pub mod suspend_partition_backup {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -18329,7 +18329,7 @@ pub mod resume_partition_backup {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -18413,7 +18413,7 @@ pub mod backup_partition {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(backup_partition_description).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(backup_timeout) = &self.backup_timeout {
                     url.query_pairs_mut().append_pair("BackupTimeout", &backup_timeout.to_string());
@@ -18492,7 +18492,7 @@ pub mod get_partition_backup_progress {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -18651,7 +18651,7 @@ pub mod get_partition_restore_progress {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -18895,7 +18895,7 @@ pub mod get_name_exists_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -18967,7 +18967,7 @@ pub mod delete_name {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -19055,7 +19055,7 @@ pub mod get_sub_name_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -19148,7 +19148,7 @@ pub mod get_property_info_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -19228,7 +19228,7 @@ pub mod get_property_info {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -19382,7 +19382,7 @@ pub mod delete_property {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -19572,7 +19572,7 @@ pub mod get_cluster_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -19680,7 +19680,7 @@ pub mod get_containers_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -19789,7 +19789,7 @@ pub mod get_node_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -19897,7 +19897,7 @@ pub mod get_nodes_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20010,7 +20010,7 @@ pub mod get_application_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20118,7 +20118,7 @@ pub mod get_applications_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20227,7 +20227,7 @@ pub mod get_service_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20335,7 +20335,7 @@ pub mod get_services_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20444,7 +20444,7 @@ pub mod get_partition_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20552,7 +20552,7 @@ pub mod get_partitions_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20667,7 +20667,7 @@ pub mod get_partition_replica_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20780,7 +20780,7 @@ pub mod get_partition_replicas_event_list {
                     url.query_pairs_mut()
                         .append_pair("SkipCorrelationLookup", &skip_correlation_lookup.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20861,7 +20861,7 @@ pub mod get_correlated_event_list {
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -20965,7 +20965,7 @@ pub mod mesh_secret {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21124,7 +21124,7 @@ pub mod mesh_secret {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21191,7 +21191,7 @@ pub mod mesh_secret {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21319,7 +21319,7 @@ pub mod mesh_secret_value {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21490,7 +21490,7 @@ pub mod mesh_secret_value {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21559,7 +21559,7 @@ pub mod mesh_secret_value {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21634,7 +21634,7 @@ pub mod mesh_secret_value {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -21740,7 +21740,7 @@ pub mod mesh_volume {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21899,7 +21899,7 @@ pub mod mesh_volume {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -21966,7 +21966,7 @@ pub mod mesh_volume {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22073,7 +22073,7 @@ pub mod mesh_network {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22232,7 +22232,7 @@ pub mod mesh_network {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22299,7 +22299,7 @@ pub mod mesh_network {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22417,7 +22417,7 @@ pub mod mesh_application {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22584,7 +22584,7 @@ pub mod mesh_application {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22652,7 +22652,7 @@ pub mod mesh_application {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22728,7 +22728,7 @@ pub mod mesh_application {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22826,7 +22826,7 @@ pub mod mesh_service {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -22901,7 +22901,7 @@ pub mod mesh_service {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23011,7 +23011,7 @@ pub mod mesh_code_package {
                     if let Some(tail) = &self.tail {
                         url.query_pairs_mut().append_pair("Tail", tail);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23116,7 +23116,7 @@ pub mod mesh_service_replica {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23193,7 +23193,7 @@ pub mod mesh_service_replica {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23300,7 +23300,7 @@ pub mod mesh_gateway {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23459,7 +23459,7 @@ pub mod mesh_gateway {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -23526,7 +23526,7 @@ pub mod mesh_gateway {
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;

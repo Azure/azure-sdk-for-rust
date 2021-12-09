@@ -37,7 +37,7 @@ impl<'a> GetDocumentOptions<'a> {
         azure_core::headers::add_optional_header2(&self.if_modified_since, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
-        request.set_body(bytes::Bytes::from_static(EMPTY_BODY).into());
+        request.set_body(EMPTY_BODY.into());
 
         Ok(())
     }

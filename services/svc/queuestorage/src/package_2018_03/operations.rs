@@ -250,7 +250,7 @@ pub mod service {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -429,7 +429,7 @@ pub mod service {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -546,7 +546,7 @@ pub mod service {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -732,7 +732,7 @@ pub mod queue {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -814,7 +814,7 @@ pub mod queue {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -898,7 +898,7 @@ pub mod queue {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -990,7 +990,7 @@ pub mod queue {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1074,7 +1074,7 @@ pub mod queue {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1165,7 +1165,7 @@ pub mod queue {
                         req_builder = req_builder.header("content-type", "application/json");
                         azure_core::to_json(queue_acl).map_err(Error::Serialize)?
                     } else {
-                        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                        azure_core::EMPTY_BODY
                     };
                     if let Some(timeout) = &self.timeout {
                         url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -1325,7 +1325,7 @@ pub mod messages {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1516,7 +1516,7 @@ pub mod messages {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1608,7 +1608,7 @@ pub mod messages {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1742,7 +1742,7 @@ pub mod message_id {
                         req_builder = req_builder.header("content-type", "application/json");
                         azure_core::to_json(queue_message).map_err(Error::Serialize)?
                     } else {
-                        bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                        azure_core::EMPTY_BODY
                     };
                     let popreceipt = &self.popreceipt;
                     url.query_pairs_mut().append_pair("popreceipt", popreceipt);
@@ -1840,7 +1840,7 @@ pub mod message_id {
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;

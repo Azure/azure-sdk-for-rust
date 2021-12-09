@@ -1,6 +1,11 @@
-//! Core crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
-#![recursion_limit = "256"]
-#![warn(rust_2018_idioms)]
+//! Core crate for the unofficial Microsoft Azure SDK for Rust. This crate is
+//! part of a collection of crates: for more information please refer to
+//! [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
+//!
+
+#![forbid(unsafe_code)]
+#![deny(missing_debug_implementations, nonstandard_style)]
+// #![warn(missing_docs, future_incompatible, unreachable_pub)]
 
 #[macro_use]
 extern crate serde_derive;
@@ -13,22 +18,23 @@ mod bytes_stream;
 mod constants;
 mod context;
 mod errors;
-pub mod headers;
 mod http_client;
-pub mod incompletevector;
-#[cfg(feature = "mock_transport_framework")]
-mod mock_transaction;
 mod models;
 mod options;
-pub mod parsing;
-pub mod pipeline;
 mod policies;
-pub mod prelude;
 mod request;
 mod request_options;
 mod response;
 mod seekable_stream;
 mod sleep;
+
+pub mod headers;
+pub mod incompletevector;
+#[cfg(feature = "mock_transport_framework")]
+mod mock_transaction;
+pub mod parsing;
+pub mod pipeline;
+pub mod prelude;
 pub mod util;
 
 use chrono::{DateTime, Utc};
@@ -54,7 +60,7 @@ pub use seekable_stream::*;
 
 pub type RequestId = Uuid;
 pub type SessionToken = String;
-pub const EMPTY_BODY: &[u8] = &[];
+pub const EMPTY_BODY: bytes::Bytes = bytes::Bytes::from_static(&[]);
 
 /// Represents an Azure service bearer access token with expiry information.
 #[derive(Debug, Clone)]

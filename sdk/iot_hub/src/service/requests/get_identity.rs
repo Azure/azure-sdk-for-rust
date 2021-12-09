@@ -26,7 +26,7 @@ where
     };
 
     let request = service_client.prepare_request(&uri, Method::GET);
-    let request = request.body(bytes::Bytes::from_static(azure_core::EMPTY_BODY))?;
+    let request = request.body(azure_core::EMPTY_BODY)?;
 
     Ok(service_client
         .http_client()

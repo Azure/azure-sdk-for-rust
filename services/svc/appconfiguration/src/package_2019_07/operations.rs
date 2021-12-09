@@ -340,7 +340,7 @@ pub mod get_keys {
                 if let Some(accept_datetime) = &self.accept_datetime {
                     req_builder = req_builder.header("Accept-Datetime", accept_datetime);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -437,7 +437,7 @@ pub mod check_keys {
                 if let Some(accept_datetime) = &self.accept_datetime {
                     req_builder = req_builder.header("Accept-Datetime", accept_datetime);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -537,7 +537,7 @@ pub mod get_key_values {
                 if let Some(accept_datetime) = &self.accept_datetime {
                     req_builder = req_builder.header("Accept-Datetime", accept_datetime);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -647,7 +647,7 @@ pub mod check_key_values {
                 if let Some(accept_datetime) = &self.accept_datetime {
                     req_builder = req_builder.header("Accept-Datetime", accept_datetime);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -748,7 +748,7 @@ pub mod get_key_value {
                 if let Some(if_none_match) = &self.if_none_match {
                     req_builder = req_builder.header("If-None-Match", if_none_match);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -849,7 +849,7 @@ pub mod put_key_value {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(entity).map_err(Error::Serialize)?
                 } else {
-                    bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                    azure_core::EMPTY_BODY
                 };
                 if let Some(sync_token) = &self.sync_token {
                     req_builder = req_builder.header("Sync-Token", sync_token);
@@ -957,7 +957,7 @@ pub mod delete_key_value {
                 if let Some(if_match) = &self.if_match {
                     req_builder = req_builder.header("If-Match", if_match);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1069,7 +1069,7 @@ pub mod check_key_value {
                 if let Some(if_none_match) = &self.if_none_match {
                     req_builder = req_builder.header("If-None-Match", if_none_match);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1161,7 +1161,7 @@ pub mod get_labels {
                 if let Some(accept_datetime) = &self.accept_datetime {
                     req_builder = req_builder.header("Accept-Datetime", accept_datetime);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1263,7 +1263,7 @@ pub mod check_labels {
                 if let Some(accept_datetime) = &self.accept_datetime {
                     req_builder = req_builder.header("Accept-Datetime", accept_datetime);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1351,7 +1351,7 @@ pub mod put_lock {
                 if let Some(if_none_match) = &self.if_none_match {
                     req_builder = req_builder.header("If-None-Match", if_none_match);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1452,7 +1452,7 @@ pub mod delete_lock {
                 if let Some(if_none_match) = &self.if_none_match {
                     req_builder = req_builder.header("If-None-Match", if_none_match);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1565,7 +1565,7 @@ pub mod get_revisions {
                 if let Some(accept_datetime) = &self.accept_datetime {
                     req_builder = req_builder.header("Accept-Datetime", accept_datetime);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1675,7 +1675,7 @@ pub mod check_revisions {
                 if let Some(accept_datetime) = &self.accept_datetime {
                     req_builder = req_builder.header("Accept-Datetime", accept_datetime);
                 }
-                let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.uri(url.as_str());
                 let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                 let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;

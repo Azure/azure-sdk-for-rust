@@ -215,7 +215,7 @@ pub mod query {
                     if let Some(x_ms_client_session_id) = &self.x_ms_client_session_id {
                         req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -516,7 +516,7 @@ pub mod model_settings {
                     if let Some(x_ms_client_session_id) = &self.x_ms_client_session_id {
                         req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -733,7 +733,7 @@ pub mod time_series_instances {
                     if let Some(x_ms_client_session_id) = &self.x_ms_client_session_id {
                         req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1115,7 +1115,7 @@ pub mod time_series_types {
                     if let Some(x_ms_client_session_id) = &self.x_ms_client_session_id {
                         req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -1315,7 +1315,7 @@ pub mod time_series_hierarchies {
                     if let Some(x_ms_client_session_id) = &self.x_ms_client_session_id {
                         req_builder = req_builder.header("x-ms-client-session-id", x_ms_client_session_id);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
