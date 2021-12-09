@@ -35,7 +35,7 @@ pub struct CosmosClient {
 }
 
 /// Options for specifying how a Cosmos client will behave
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CosmosOptions {
     options: ClientOptions,
 }
@@ -51,14 +51,6 @@ impl CosmosOptions {
     pub fn new_with_transaction_name(name: String) -> Self {
         Self {
             options: ClientOptions::new_with_transaction_name(name.into()),
-        }
-    }
-}
-
-impl Default for CosmosOptions {
-    fn default() -> Self {
-        Self {
-            options: Default::default(),
         }
     }
 }
@@ -188,10 +180,7 @@ impl CosmosClient {
         options.decorate_request(&mut request, database_name.as_ref())?;
         let response = self
             .pipeline()
-            .send(
-                ctx.clone().insert(ResourceType::Databases),
-                &mut request,
-            )
+            .send(ctx.clone().insert(ResourceType::Databases), &mut request)
             .await?;
 
         Ok(CreateDatabaseResponse::try_from(response).await?)
@@ -233,10 +222,7 @@ impl CosmosClient {
                         r#try!(options.decorate_request(&mut request).await);
                         let response = r#try!(
                             this.pipeline()
-                                .send(
-                                    ctx.clone().insert(ResourceType::Databases),
-                                    &mut request
-                                )
+                                .send(ctx.clone().insert(ResourceType::Databases), &mut request)
                                 .await
                         );
 
@@ -250,10 +236,7 @@ impl CosmosClient {
                         r#try!(continuation.add_as_header2(&mut request));
                         let response = r#try!(
                             this.pipeline()
-                                .send(
-                                    ctx.clone().insert(ResourceType::Databases),
-                                    &mut request
-                                )
+                                .send(ctx.clone().insert(ResourceType::Databases), &mut request)
                                 .await
                         );
                         ListDatabasesResponse::try_from(response).await
