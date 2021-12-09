@@ -2,7 +2,7 @@ use super::*;
 use crate::operations::*;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::pipeline::Pipeline;
+use azure_core::Pipeline;
 use azure_core::prelude::Continuation;
 use azure_core::{AddAsHeader, Context};
 use futures::stream::unfold;

@@ -55,7 +55,7 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
             endpoint: String,
             credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
             scopes: Vec<String>,
-            pipeline: azure_core::pipeline::Pipeline,
+            pipeline: azure_core::Pipeline,
         }
 
         #[derive(Clone)]
@@ -110,7 +110,7 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
             }
             pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>, scopes: Vec<String>) -> Self {
                 let endpoint = endpoint.into();
-                let pipeline = azure_core::pipeline::Pipeline::new(
+                let pipeline = azure_core::Pipeline::new(
                     option_env!("CARGO_PKG_NAME"),
                     option_env!("CARGO_PKG_VERSION"),
                     azure_core::ClientOptions::default(),

@@ -5,7 +5,7 @@ use crate::requests;
 use crate::resources::ResourceType;
 use crate::CosmosEntity;
 use crate::ReadonlyString;
-use azure_core::{pipeline::Pipeline, Context, HttpClient, Request};
+use azure_core::{Context, HttpClient, Pipeline, Request};
 use serde::Serialize;
 
 /// A client for Cosmos collection resources.

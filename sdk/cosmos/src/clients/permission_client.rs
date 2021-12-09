@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::permission::{PermissionMode, PermissionResponse};
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::{pipeline::Pipeline, Context, Request};
+use azure_core::{Pipeline, Context, Request};
 
 /// A client for Cosmos permission resources.
 #[derive(Debug, Clone)]

@@ -20,6 +20,7 @@ mod errors;
 mod http_client;
 mod models;
 mod options;
+mod pipeline;
 mod policies;
 mod request;
 mod request_options;
@@ -32,7 +33,6 @@ pub mod headers;
 #[cfg(feature = "mock_transport_framework")]
 mod mock_transaction;
 pub mod parsing;
-pub mod pipeline;
 pub mod prelude;
 pub mod util;
 
@@ -49,6 +49,7 @@ pub use http_client::{new_http_client, to_json, HttpClient};
 pub use mock_transaction::constants::*;
 pub use models::*;
 pub use options::*;
+pub use pipeline::Pipeline;
 pub use policies::{Policy, PolicyResult};
 pub use request::*;
 pub use response::*;
