@@ -56,7 +56,7 @@ mod test {
         let v = vec![0, 1, 2, 3, 4, 5];
         let ic = IncompleteVector::new(Some("aaa".into()), v);
 
-        assert!(ic.is_complete());
+        assert!(!ic.is_complete());
     }
 
     #[test]
