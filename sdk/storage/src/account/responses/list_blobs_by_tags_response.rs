@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn deserde_azure() {
-        const S: &'static str = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+        const S: &str = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
         <EnumerationResults ServiceEndpoint=\"https://hsdgeventstoredev.blob.core.windows.net/\">
           <Where>tag1='value1'</Where>
           <Blobs>

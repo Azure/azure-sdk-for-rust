@@ -605,7 +605,7 @@ mod tests {
             tags.to_owned().unwrap().get("purpose").unwrap(),
             "unit test"
         );
-        assert_eq!(true, enabled.unwrap());
+        assert!(enabled.unwrap());
         assert!(diff(time_created, created_on.unwrap()) < Duration::seconds(1));
         assert!(diff(time_updated, updated_on.unwrap()) < Duration::seconds(1));
     }

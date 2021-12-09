@@ -70,7 +70,7 @@ impl DatabaseClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Databases),
+                ctx.clone().insert(ResourceType::Databases),
                 &mut request,
             )
             .await?;
@@ -93,7 +93,7 @@ impl DatabaseClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Databases),
+                ctx.clone().insert(ResourceType::Databases),
                 &mut request,
             )
             .await?;
@@ -123,7 +123,7 @@ impl DatabaseClient {
                         let response = r#try!(
                             this.pipeline()
                                 .send(
-                                    &mut ctx.clone().insert(ResourceType::Collections),
+                                    ctx.clone().insert(ResourceType::Collections),
                                     &mut request
                                 )
                                 .await
@@ -142,7 +142,7 @@ impl DatabaseClient {
                         let response = r#try!(
                             this.pipeline()
                                 .send(
-                                    &mut ctx.clone().insert(ResourceType::Collections),
+                                    ctx.clone().insert(ResourceType::Collections),
                                     &mut request
                                 )
                                 .await
@@ -181,7 +181,7 @@ impl DatabaseClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Collections),
+                ctx.clone().insert(ResourceType::Collections),
                 &mut request,
             )
             .await?;
@@ -210,7 +210,7 @@ impl DatabaseClient {
                         r#try!(options.decorate_request(&mut request));
                         let response = r#try!(
                             this.pipeline()
-                                .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
+                                .send(ctx.clone().insert(ResourceType::Users), &mut request)
                                 .await
                         );
                         ListUsersResponse::try_from(response).await
@@ -226,7 +226,7 @@ impl DatabaseClient {
                         r#try!(continuation.add_as_header2(&mut request));
                         let response = r#try!(
                             this.pipeline()
-                                .send(&mut ctx.clone().insert(ResourceType::Users), &mut request)
+                                .send(ctx.clone().insert(ResourceType::Users), &mut request)
                                 .await
                         );
                         ListUsersResponse::try_from(response).await

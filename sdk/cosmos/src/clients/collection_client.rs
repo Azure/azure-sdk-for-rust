@@ -54,7 +54,7 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Collections),
+                ctx.clone().insert(ResourceType::Collections),
                 &mut request,
             )
             .await?;
@@ -75,7 +75,7 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Collections),
+                ctx.clone().insert(ResourceType::Collections),
                 &mut request,
             )
             .await?;
@@ -96,7 +96,7 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Collections),
+                ctx.clone().insert(ResourceType::Collections),
                 &mut request,
             )
             .await?;
@@ -122,7 +122,7 @@ impl CollectionClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Documents),
+                ctx.clone().insert(ResourceType::Documents),
                 &mut request,
             )
             .await?;

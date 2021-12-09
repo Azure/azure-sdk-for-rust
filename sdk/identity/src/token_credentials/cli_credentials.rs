@@ -148,12 +148,12 @@ mod tests {
     #[test]
     fn can_parse_cli_datetime() {
         let s = "2020-11-16T04:25:03Z";
-        let utc = Utc.ymd(2020, 11, 16).and_hms(4, 25, 03);
+        let utc = Utc.ymd(2020, 11, 16).and_hms(4, 25, 3);
         let dt = AzureDateTime { date: utc };
         assert_de_tokens(&dt.date, &[Token::Str(s)]);
 
         let s = "2020-11-16 04:25:03Z";
-        let utc = Utc.ymd(2020, 11, 16).and_hms(4, 25, 03);
+        let utc = Utc.ymd(2020, 11, 16).and_hms(4, 25, 3);
         let dt = AzureDateTime { date: utc };
         assert_de_tokens(&dt.date, &[Token::Str(s)]);
     }

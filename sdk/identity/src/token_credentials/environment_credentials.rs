@@ -21,6 +21,7 @@ const AZURE_CLIENT_CERTIFICATE_PATH_ENV_KEY: &str = "AZURE_CLIENT_CERTIFICATE_PA
 /// This credential ultimately uses a `ClientSecretCredential` to perform the authentication using
 /// these details.
 /// Please consult the documentation of that class for more details.
+#[derive(Clone, Debug, Default)]
 pub struct EnvironmentCredential {
     options: TokenCredentialOptions,
 }
@@ -28,14 +29,6 @@ pub struct EnvironmentCredential {
 impl EnvironmentCredential {
     pub fn new(options: TokenCredentialOptions) -> Self {
         Self { options }
-    }
-}
-
-impl Default for EnvironmentCredential {
-    fn default() -> Self {
-        Self {
-            options: TokenCredentialOptions::default(),
-        }
     }
 }
 

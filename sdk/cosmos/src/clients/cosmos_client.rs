@@ -189,7 +189,7 @@ impl CosmosClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Databases),
+                ctx.clone().insert(ResourceType::Databases),
                 &mut request,
             )
             .await?;
@@ -234,7 +234,7 @@ impl CosmosClient {
                         let response = r#try!(
                             this.pipeline()
                                 .send(
-                                    &mut ctx.clone().insert(ResourceType::Databases),
+                                    ctx.clone().insert(ResourceType::Databases),
                                     &mut request
                                 )
                                 .await
@@ -251,7 +251,7 @@ impl CosmosClient {
                         let response = r#try!(
                             this.pipeline()
                                 .send(
-                                    &mut ctx.clone().insert(ResourceType::Databases),
+                                    ctx.clone().insert(ResourceType::Databases),
                                     &mut request
                                 )
                                 .await

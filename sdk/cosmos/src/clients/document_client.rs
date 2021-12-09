@@ -75,7 +75,7 @@ impl DocumentClient {
             .cosmos_client()
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Documents),
+                ctx.clone().insert(ResourceType::Documents),
                 &mut request,
             )
             .await?;
@@ -98,7 +98,7 @@ impl DocumentClient {
             .cosmos_client()
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Documents),
+                ctx.clone().insert(ResourceType::Documents),
                 &mut request,
             )
             .await?;
@@ -120,7 +120,7 @@ impl DocumentClient {
             .cosmos_client()
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Documents),
+                ctx.clone().insert(ResourceType::Documents),
                 &mut request,
             )
             .await?;

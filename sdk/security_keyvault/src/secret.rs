@@ -644,7 +644,7 @@ mod tests {
             "https://test-keyvault.vault.azure.net/secrets/test-secret/4387e9f3d6e14c459867679a90fd0f79",
             secret.id()
         );
-        assert_eq!(true, *secret.enabled());
+        assert!(*secret.enabled());
         assert!(diff(time_created, *secret.time_created()) < Duration::seconds(1));
         assert!(diff(time_updated, *secret.time_updated()) < Duration::seconds(1));
     }

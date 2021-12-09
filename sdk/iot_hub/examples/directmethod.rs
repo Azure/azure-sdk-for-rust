@@ -1,5 +1,5 @@
 use iot_hub::service::ServiceClient;
-use serde_json;
+
 use std::error::Error;
 
 #[tokio::main]

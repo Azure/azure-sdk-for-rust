@@ -64,7 +64,7 @@ impl PermissionClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Permissions),
+                ctx.clone().insert(ResourceType::Permissions),
                 &mut request,
             )
             .await?;
@@ -86,7 +86,7 @@ impl PermissionClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Permissions),
+                ctx.clone().insert(ResourceType::Permissions),
                 &mut request,
             )
             .await?;
@@ -107,7 +107,7 @@ impl PermissionClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Permissions),
+                ctx.clone().insert(ResourceType::Permissions),
                 &mut request,
             )
             .await?;
@@ -128,7 +128,7 @@ impl PermissionClient {
         let response = self
             .pipeline()
             .send(
-                &mut ctx.clone().insert(ResourceType::Permissions),
+                ctx.clone().insert(ResourceType::Permissions),
                 &mut request,
             )
             .await?;
