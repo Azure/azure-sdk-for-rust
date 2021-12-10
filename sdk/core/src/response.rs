@@ -1,5 +1,3 @@
-use crate::bytes_response::BytesResponse;
-use crate::BytesStream;
 use crate::StreamError;
 use bytes::Bytes;
 use futures::Stream;
@@ -16,7 +14,6 @@ pub(crate) struct ResponseBuilder {
 }
 
 impl ResponseBuilder {
-    #[allow(dead_code)]
     pub fn new(status: StatusCode) -> Self {
         Self {
             status,
@@ -24,13 +21,11 @@ impl ResponseBuilder {
         }
     }
 
-    #[allow(dead_code)]
     pub fn with_header(&mut self, key: &HeaderName, value: HeaderValue) -> &mut Self {
         self.headers.append(key, value);
         self
     }
 
-    #[allow(dead_code)]
     pub fn with_pinned_stream(self, response: PinnedStream) -> Response {
         Response::new(self.status, self.headers, response)
     }
@@ -107,18 +102,4 @@ pub async fn pinned_stream_into_utf8_string(stream: PinnedStream) -> String {
         .unwrap_or("<NON-UTF8 BODY>")
         .to_owned();
     body
-}
-
-impl From<BytesResponse> for Response {
-    fn from(bytes_response: BytesResponse) -> Self {
-        let (status, headers, body) = bytes_response.deconstruct();
-
-        let bytes_stream: BytesStream = body.into();
-
-        Self {
-            status,
-            headers,
-            body: Box::pin(bytes_stream),
-        }
-    }
 }

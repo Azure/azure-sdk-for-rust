@@ -14,6 +14,7 @@ extern crate serde_derive;
 #[macro_use]
 mod macros;
 
+#[cfg(feature = "mock_transport_framework")]
 mod bytes_response;
 mod bytes_stream;
 mod constants;
