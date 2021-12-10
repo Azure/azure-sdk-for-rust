@@ -1,7 +1,7 @@
-use crate::bytes_response::BytesResponse;
-use crate::mock_transaction::MockTransaction;
+use super::bytes_response::BytesResponse;
+use super::MockTransaction;
 use crate::policies::{Policy, PolicyResult};
-use crate::{Context, MockFrameworkError, Request, Response, TransportOptions};
+use crate::{Context, Request, Response, TransportOptions};
 use std::io::Write;
 use std::sync::Arc;
 
@@ -45,7 +45,9 @@ impl Policy for MockTransportRecorderPolicy {
             let mut request_contents_stream = std::fs::File::create(&request_path).unwrap();
             request_contents_stream
                 .write_all(request_contents.as_str().as_bytes())
-                .map_err(|e| MockFrameworkError::IOError("cannot write request file".into(), e))?;
+                .map_err(|e| {
+                    super::MockFrameworkError::IOError("cannot write request file".into(), e)
+                })?;
         }
 
         let response = self
@@ -62,7 +64,9 @@ impl Policy for MockTransportRecorderPolicy {
             let mut response_contents_stream = std::fs::File::create(&response_path).unwrap();
             response_contents_stream
                 .write_all(response_contents.as_bytes())
-                .map_err(|e| MockFrameworkError::IOError("cannot write response file".into(), e))?;
+                .map_err(|e| {
+                    super::MockFrameworkError::IOError("cannot write response file".into(), e)
+                })?;
         }
 
         self.transaction.increment_number();
