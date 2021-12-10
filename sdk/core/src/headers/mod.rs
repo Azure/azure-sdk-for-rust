@@ -35,7 +35,8 @@ impl TryFrom<&HeaderMap> for CommonStorageResponseHeaders {
     }
 }
 
-/// Implement this trait to allow a custom struct to express itself as a HTTP header.
+/// View a type as an HTTP header.
+///
 /// Ad interim we require two functions: `add_as_header` and `add_as_header2`. Make sure
 /// your implementations are functionally equivalent between the two. In other words, the
 /// effect should be the same regardless of which function the SDK calls.

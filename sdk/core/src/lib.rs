@@ -1,6 +1,8 @@
-//! Core crate for the unofficial Microsoft Azure SDK for Rust. This crate is
-//! part of a collection of crates: for more information please refer to
-//! [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
+//! Core types and traits for the Rust Azure SDK.
+//!
+//! This crate is part of the unofficial Azure SDK effort in Rust. For more
+//! information on the project, and an overview of other crates, please refer to
+//! [our GitHub repository](https://github.com/azure/azure-sdk-for-rust).
 
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations, nonstandard_style)]
@@ -43,6 +45,7 @@ pub use bytes_stream::*;
 pub use constants::*;
 pub use context::Context;
 pub use errors::*;
+#[doc(inline)]
 pub use headers::AddAsHeader;
 pub use http_client::{new_http_client, to_json, HttpClient};
 #[cfg(feature = "mock_transport_framework")]
