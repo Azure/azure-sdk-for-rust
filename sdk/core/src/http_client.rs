@@ -24,11 +24,17 @@ pub fn new_http_client() -> Arc<dyn HttpClient> {
     Arc::new(hyper::Client::builder().build(hyper_rustls::HttpsConnector::with_native_roots()))
 }
 
+/// An HTTP client which can send requests.
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 pub trait HttpClient: Send + Sync + std::fmt::Debug {
+    /// Send out a request using `hyperium/http`'s types.
+    ///
+    /// This method is considered deprecated and should not be used in new code.
     async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError>;
 
+    /// Send out a request using `azure_core`'s types.
+    ///
     /// This function will be the only one remaining in the trait as soon as the trait stabilizes.
     /// It will be renamed to `execute_request`. The other helper functions (ie
     /// `execute_request_check_status`) will be removed since the status check will be
@@ -40,6 +46,12 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         request: &crate::Request,
     ) -> Result<crate::Response, HttpError>;
 
+    /// Send out a request and validate it was in the `2xx` range, using
+    /// `hyperium/http`'s types.
+    ///
+    /// Note: the `expected_status` parameter is never used, and instead we
+    /// always validate the status was in the `2xx` range. This method should
+    /// be considered deprecated, and should not be used in new code.
     async fn execute_request_check_status(
         &self,
         request: Request<Bytes>,

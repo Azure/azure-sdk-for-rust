@@ -66,6 +66,7 @@ pub type SessionToken = String;
 /// An empty HTTP body.
 pub const EMPTY_BODY: bytes::Bytes = bytes::Bytes::from_static(&[]);
 
+/// Add a new query pair into the target URL's query string.
 pub trait AppendToUrlQuery {
     fn append_to_url_query(&self, url: &mut url::Url);
 }
