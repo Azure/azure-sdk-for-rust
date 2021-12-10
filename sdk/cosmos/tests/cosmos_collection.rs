@@ -14,11 +14,8 @@ async fn create_and_delete_collection() {
     let client = setup::initialize().unwrap();
 
     client
-        .create_database(
-            azure_core::Context::new(),
-            DATABASE_NAME,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(DATABASE_NAME)
+        .into_future()
         .await
         .unwrap();
 
@@ -85,11 +82,8 @@ async fn replace_collection() {
     const COLLECTION_NAME: &str = "test-collection";
 
     client
-        .create_database(
-            azure_core::Context::new(),
-            DATABASE_NAME,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(DATABASE_NAME)
+        .into_future()
         .await
         .unwrap();
 

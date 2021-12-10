@@ -17,9 +17,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     let database_name = "test-collection-operations";
     let context = Context::new();
 
-    client
-        .create_database(context.clone(), database_name, CreateDatabaseOptions::new())
-        .await?;
+    client.create_database(database_name).into_future().await?;
 
     // create collection!
     let db_client = client.clone().into_database_client(database_name.clone());

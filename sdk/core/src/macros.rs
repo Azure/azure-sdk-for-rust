@@ -1,6 +1,6 @@
 /// Creates setter methods
 ///
-/// The methods created are of the form `with_$name` that takes an argument of type `$typ`
+/// The methods created are of the form `$name` that takes an argument of type `$typ`
 /// and sets the field $name to result of calling `$transform` with the value of the argument.
 ///
 /// In other words. The following macro call:
