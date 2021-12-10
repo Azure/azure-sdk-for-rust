@@ -6,8 +6,8 @@ use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{ReadonlyString, TimeNonce};
 
-use azure_core::Pipeline;
 use azure_core::prelude::Continuation;
+use azure_core::Pipeline;
 use azure_core::{AddAsHeader, ClientOptions, HttpClient};
 use azure_core::{Context, Request};
 use futures::stream::unfold;
