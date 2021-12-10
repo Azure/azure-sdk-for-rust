@@ -54,7 +54,11 @@ impl Client {
         let mut request = request.into();
         self.pipeline.send(&mut context, &mut request).await
     }
-    pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>, scopes: Vec<String>) -> Self {
+    pub fn new(
+        endpoint: impl Into<String>,
+        credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
+        scopes: Vec<String>,
+    ) -> Self {
         let endpoint = endpoint.into();
         let pipeline = azure_core::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
