@@ -186,7 +186,7 @@ pub mod usage_aggregates {
                     if let Some(continuation_token) = &self.continuation_token {
                         url.query_pairs_mut().append_pair("continuationToken", continuation_token);
                     }
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -275,7 +275,7 @@ pub mod rate_card {
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     let filter = &self.filter;
                     url.query_pairs_mut().append_pair("$filter", filter);
-                    let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+                    let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;

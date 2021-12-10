@@ -437,7 +437,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                                 #set_content_type
                                 azure_core::to_json(#param_name_var).map_err(Error::Serialize)?
                             } else {
-                                bytes::Bytes::from_static(azure_core::EMPTY_BODY)
+                                azure_core::EMPTY_BODY
                             };
                     });
                 }
@@ -465,7 +465,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let has_body_parameter = operation.0.has_body_parameter();
     if !has_body_parameter {
         ts_request_builder.extend(quote! {
-            let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
+            let req_body = azure_core::EMPTY_BODY;
         });
     }
 
