@@ -38,26 +38,14 @@ impl Policy<TableContext> for AuthorizationPolicy {
         match &self.authorization_token {
             AuthorizationToken::SASToken {} => todo!(),
             AuthorizationToken::BearerToken {} => todo!(),
-            AuthorizationToken::SharedKeyToken(credential) => {
-                let signature = credential.sign(format!(
-                    "{}\n{}\n{}\n{}\n/{}{}",
-                    request.method().as_str(),
-                    request
-                        .headers()
-                        .get("Content-MD5")
-                        .map_or("", |v| v.to_str().unwrap()),
-                    request
-                        .headers()
-                        .get("Content-Type")
-                        .map_or("", |v| v.to_str().unwrap()),
-                    request
-                        .headers()
-                        .get("x-ms-date")
-                        .map_or("", |v| v.to_str().unwrap()),
-                    credential.account(),
-                    request.uri().path()
-                ));
-                let token = format!("SharedKey {}:{}", credential.account(), signature);
+            AuthorizationToken::SharedKeyToken { account, key } => {
+                let token = shared_key_token(
+                    request.headers(),
+                    request.uri(),
+                    &request.method(),
+                    account,
+                    key,
+                );
                 request
                     .headers_mut()
                     .append("authorization", HeaderValue::from_str(&token).unwrap());
@@ -74,12 +62,13 @@ impl Policy<TableContext> for AuthorizationPolicy {
 /// * content type (if exists else empty string and new a line)
 /// * x-ms-date (utc new formatted as 'Wed, 18 Aug 2021 14:52:59 GMT')
 /// * canonicalized resource (for example, /devstoreaccount1/devstoreaccount1/Tables)
+/// log example:
 fn shared_key_token(
     headers: &HeaderMap,
     uri: &Uri,
     method: &Method,
     account: &str,
-    key: &[u8],
+    key: &str,
 ) -> String {
     let to_sign = format!(
         "{}\n{}\n{}\n{}\n{}",
@@ -93,9 +82,13 @@ fn shared_key_token(
         headers.get("x-ms-date").map_or("", |v| v.to_str().unwrap()),
         format!("/{}{}", account, uri.path())
     );
-    let signature = base64::encode(hmac::sign(
-        &hmac::Key::new(hmac::HMAC_SHA256, key),
+    let signature = hmac::sign(
+        &hmac::Key::new(hmac::HMAC_SHA256, &base64::decode(key).unwrap()),
         to_sign.as_bytes(),
-    ));
-    format!("SharedKey {}:{}", account, signature)
+    );
+    format!(
+        "SharedKey {}:{}",
+        account,
+        base64::encode(signature.as_ref())
+    )
 }

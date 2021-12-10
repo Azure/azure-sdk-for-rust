@@ -1,4 +1,4 @@
-use crate::authorization::{authorization_policy::AuthorizationPolicy, AccountCredential};
+use crate::authorization::authorization_policy::AuthorizationPolicy;
 use crate::table::prelude::*;
 use azure_core::{pipeline::Pipeline, ClientOptions, Context, Error, PipelineContext, Policy};
 use http::{method::Method, request::Builder as RequestBuilder, Uri};
@@ -91,10 +91,10 @@ impl TableClient {
     pub fn emulator(options: TableOptions) -> Self {
         Self::new_custom(
             self::EMULATOR_ACCOUNT,
-            AuthorizationToken::SharedKeyToken(AccountCredential::new(
-                self::EMULATOR_ACCOUNT,
-                self::EMULATOR_KEY,
-            )),
+            AuthorizationToken::SharedKeyToken {
+                account: self::EMULATOR_ACCOUNT.to_string(),
+                key: self::EMULATOR_KEY.to_string(),
+            },
             format!(
                 "http://{}:{}/{}",
                 self::ADDRESS,
