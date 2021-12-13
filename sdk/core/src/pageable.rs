@@ -21,7 +21,7 @@ pub struct Pageable<T> {
 }
 
 impl<T: Continuable> Pageable<T> {
-    pub fn new<F>(make_request: std::sync::Arc<dyn Fn(Option<String>) -> F>) -> Self
+    pub fn new<F>(make_request: impl Fn(Option<String>) -> F + Clone + 'static) -> Self
     where
         F: std::future::Future<Output = Result<T, crate::Error>> + 'static,
     {

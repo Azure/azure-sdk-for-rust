@@ -72,7 +72,7 @@ impl ListDatabases {
             }
         };
 
-        Pageable::new(std::sync::Arc::new(make_request))
+        Pageable::new(make_request)
     }
 }
 
