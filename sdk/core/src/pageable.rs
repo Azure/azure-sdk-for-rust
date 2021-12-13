@@ -12,14 +12,12 @@ macro_rules! r#try {
     };
 }
 
+/// A pageable stream that yields items of type `T`
+///
+/// Internally uses the Azure specific continuation header to
+/// make repeated requests to Azure yielding a new page each time.
 pub struct Pageable<T> {
     stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, crate::Error>>>>,
-}
-
-impl<T> std::fmt::Debug for Pageable<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Pageable").finish_non_exhaustive()
-    }
 }
 
 impl<T: Continuable> Pageable<T> {
@@ -52,10 +50,6 @@ impl<T: Continuable> Pageable<T> {
     }
 }
 
-pub trait Continuable {
-    fn continuation(&self) -> Option<String>;
-}
-
 impl<T> Stream for Pageable<T> {
     type Item = Result<T, crate::Error>;
 
@@ -65,6 +59,17 @@ impl<T> Stream for Pageable<T> {
     ) -> std::task::Poll<Option<Self::Item>> {
         std::pin::Pin::new(&mut self.stream).poll_next(cx)
     }
+}
+
+impl<T> std::fmt::Debug for Pageable<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Pageable").finish_non_exhaustive()
+    }
+}
+
+/// A type that can yield an optional continuation token
+pub trait Continuable {
+    fn continuation(&self) -> Option<String>;
 }
 
 #[derive(Debug, Clone, PartialEq)]
