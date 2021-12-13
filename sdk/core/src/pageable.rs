@@ -16,6 +16,12 @@ pub struct Pageable<T> {
     stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, crate::Error>>>>,
 }
 
+impl<T> std::fmt::Debug for Pageable<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Pageable").finish_non_exhaustive()
+    }
+}
+
 impl<T: Continuable> Pageable<T> {
     pub fn new<F>(make_request: std::sync::Arc<dyn Fn(Option<String>) -> F>) -> Self
     where

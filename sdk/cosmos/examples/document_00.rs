@@ -70,7 +70,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Some(db) => db,
         None => {
             client
-                .create_database(Context::new(), DATABASE, CreateDatabaseOptions::new())
+                .create_database(DATABASE)
+                .into_future()
                 .await?
                 .database
         }

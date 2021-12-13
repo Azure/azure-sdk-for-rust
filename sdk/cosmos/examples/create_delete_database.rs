@@ -40,9 +40,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     }
     drop(list_databases_stream);
 
-    let db = client
-        .create_database(Context::new(), &database_name, CreateDatabaseOptions::new())
-        .await?;
+    let db = client.create_database(&database_name).into_future().await?;
     println!("created database = {:#?}", db);
 
     // create collection!
