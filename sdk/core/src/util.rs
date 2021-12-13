@@ -98,17 +98,6 @@ fn format<D: Display>(value: D) -> String {
     format!("{}", value)
 }
 
-const UTF8_BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
-
-/// Returns Bytes without the UTF-8 BOM.
-pub fn slice_bom(bytes: &Bytes) -> Bytes {
-    if bytes.len() > 3 && bytes.slice(0..3).as_ref() == UTF8_BOM {
-        bytes.slice(3..)
-    } else {
-        bytes.clone()
-    }
-}
-
 pub fn case_insensitive_deserialize<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
     T: DeserializeOwned + std::fmt::Debug,
@@ -118,18 +107,4 @@ where
     T::deserialize(serde_json::Value::String(v.clone()))
         .or_else(|_| T::deserialize(serde_json::Value::String(v.to_lowercase())))
         .map_err(de::Error::custom)
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_slice_bom() {
-        let bytes = Bytes::from_static(&[0xEF, 0xBB, 0xBF, 7]);
-        assert_eq!(Bytes::from_static(&[7]), slice_bom(&bytes));
-
-        let bytes = Bytes::from_static(&[8]);
-        assert_eq!(Bytes::from_static(&[8]), slice_bom(&bytes));
-    }
 }
