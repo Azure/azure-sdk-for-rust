@@ -3,7 +3,7 @@ use crate::request_options::LeaseId;
 use crate::*;
 use crate::{RequestId, SessionToken};
 use chrono::{DateTime, FixedOffset, Utc};
-use http::header::{DATE, ETAG, LAST_MODIFIED};
+use http::header::{DATE, ETAG, LAST_MODIFIED, SERVER};
 #[cfg(feature = "enable_hyper")]
 use http::status::StatusCode;
 use http::HeaderMap;
@@ -109,7 +109,7 @@ pub fn session_token_from_headers(headers: &HeaderMap) -> Result<SessionToken> {
 }
 
 pub fn server_from_headers(headers: &HeaderMap) -> Result<&str> {
-    get_str_from_headers(headers, SERVER)
+    get_str_from_headers(headers, SERVER.as_str())
 }
 
 pub fn version_from_headers(headers: &HeaderMap) -> Result<&str> {
