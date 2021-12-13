@@ -5,6 +5,7 @@ mod copy_id;
 mod copy_progress;
 mod errors;
 mod into_azure_path;
+mod macros;
 pub mod prelude;
 pub mod shared_access_signature;
 

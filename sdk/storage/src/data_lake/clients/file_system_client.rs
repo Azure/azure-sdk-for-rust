@@ -1,8 +1,8 @@
 use crate::data_lake::operations::*;
 use crate::data_lake::requests::*;
 use crate::{data_lake::clients::DataLakeClient, Properties};
-use azure_core::pipeline::Pipeline;
 use azure_core::prelude::IfMatchCondition;
+use azure_core::Pipeline;
 use azure_core::{Context, HttpClient};
 use bytes::Bytes;
 use url::Url;

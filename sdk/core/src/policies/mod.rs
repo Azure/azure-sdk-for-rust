@@ -19,6 +19,7 @@ use std::sync::Arc;
 pub use telemetry_policy::*;
 pub use transport::*;
 
+/// A specialized `Result` type for policies.
 pub type PolicyResult<T> = Result<T, Box<dyn Error + Send + Sync>>;
 
 /// A pipeline policy.

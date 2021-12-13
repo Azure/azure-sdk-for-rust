@@ -1,3 +1,5 @@
+//! An assortment of helper utilities.
+
 use bytes::Bytes;
 use http::header::{AsHeaderName, HeaderMap, HeaderName, HeaderValue};
 use http::{self, request::Builder};

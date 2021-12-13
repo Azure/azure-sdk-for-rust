@@ -2,8 +2,8 @@ use azure_core::AddAsHeader;
 pub mod requests;
 pub mod responses;
 
+use super::IncompleteVector;
 use crate::parsing_xml::{cast_must, cast_optional, traverse};
-use azure_core::incompletevector::IncompleteVector;
 use azure_core::{
     headers::{
         BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE,

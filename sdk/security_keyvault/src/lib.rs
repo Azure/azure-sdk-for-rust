@@ -57,7 +57,7 @@ pub enum Error {
 
 #[cfg(test)]
 mod tests {
-    use azure_core::{TokenCredential, TokenResponse};
+    use azure_core::auth::{TokenCredential, TokenResponse};
     use chrono::{Duration, Utc};
     use oauth2::AccessToken;
 

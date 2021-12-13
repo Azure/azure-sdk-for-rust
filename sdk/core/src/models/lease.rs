@@ -1,3 +1,5 @@
+//! Create and manage locks on Azure resources.
+
 create_enum!(LeaseStatus, (Locked, "locked"), (Unlocked, "unlocked"));
 
 create_enum!(

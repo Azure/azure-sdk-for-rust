@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::user::UserResponse;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::{pipeline::Pipeline, Context, HttpClient, Request};
+use azure_core::{Context, HttpClient, Pipeline, Request};
 
 /// A client for Cosmos user resources.
 #[derive(Debug, Clone)]

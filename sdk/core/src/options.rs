@@ -86,8 +86,10 @@ impl Default for RetryMode {
     }
 }
 
-/// The set of options that can be specified to influence how retry attempts are made,
-/// and a failure is eligible to be retried.
+/// Specify how retries should behave.
+///
+/// Note that not all requests can be retried. These options will only be used
+/// when a retry is attempted.
 #[derive(Clone, Debug)]
 pub struct RetryOptions {
     /// The algorithm to use for calculating retry delays.

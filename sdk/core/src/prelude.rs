@@ -1,3 +1,5 @@
+//! The Azure Core prelude.
+
 pub use crate::etag::Etag;
 pub use crate::policies::CustomHeaders;
 pub use crate::request_options::*;

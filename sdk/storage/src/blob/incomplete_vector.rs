@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use azure_core::prelude::NextMarker;
 use std::ops::{Deref, DerefMut};
 
 #[derive(Debug, Clone, PartialEq)]

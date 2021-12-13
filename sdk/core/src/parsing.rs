@@ -1,3 +1,5 @@
+//! Parser helper utilities.
+
 use crate::TraversingError;
 
 pub trait FromStringOptional<T> {

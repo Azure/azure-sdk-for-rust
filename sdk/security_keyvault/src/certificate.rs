@@ -2,7 +2,7 @@ use crate::client::API_VERSION_PARAM;
 use crate::CertificateClient;
 use crate::Error;
 
-use azure_core::TokenCredential;
+use azure_core::auth::TokenCredential;
 use chrono::serde::{ts_seconds, ts_seconds_option};
 use chrono::{DateTime, Utc};
 use getset::Getters;
