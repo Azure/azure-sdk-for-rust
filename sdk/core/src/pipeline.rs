@@ -81,7 +81,7 @@ impl Pipeline {
                 Arc::new(TransportPolicy::new(options.transport.clone()));
 
             #[cfg(feature = "mock_transport_framework")]
-            crate::mock_transport::set_mock_transport_policy(&mut policy, options.transport);
+            crate::mock::set_mock_transport_policy(&mut policy, options.transport);
 
             pipeline.push(policy);
         }

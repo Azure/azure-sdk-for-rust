@@ -1,4 +1,4 @@
-use crate::{Request, Body};
+use crate::{Body, Request};
 use http::{HeaderMap, Method, Uri};
 use serde::de::Visitor;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
@@ -7,6 +7,17 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 const FIELDS: &[&str] = &["uri", "method", "headers", "body"];
+
+impl Request {
+    fn new(uri: Uri, method: Method, headers: HeaderMap, body: Body) -> Self {
+        Self {
+            uri,
+            method,
+            headers,
+            body,
+        }
+    }
+}
 
 impl<'de> Deserialize<'de> for Request {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
