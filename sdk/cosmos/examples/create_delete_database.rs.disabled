@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("please specify database name as first command line parameter");
 
-    azure_core::mock_transport::start_transaction("create_delete_database");
+    azure_core::mock::start_transaction("create_delete_database");
 
     // This is how you construct an authorization token.
     // Remember to pick the correct token type.

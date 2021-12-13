@@ -80,36 +80,8 @@ impl Pipeline {
             let mut policy: Arc<dyn Policy> =
                 Arc::new(TransportPolicy::new(options.transport.clone()));
 
-            // This code replaces the default transport policy at runtime if these two conditions
-            // are met:
-            // 1. The mock_transport_framework is enabled
-            // 2. The environmental variable TESTING_MODE is either RECORD or PLAY
             #[cfg(feature = "mock_transport_framework")]
-            match std::env::var(crate::TESTING_MODE_KEY)
-                .as_deref()
-                .unwrap_or(crate::TESTING_MODE_REPLAY)
-            {
-                crate::TESTING_MODE_RECORD => {
-                    log::warn!("mock testing framework record mode enabled");
-                    policy = Arc::new(crate::policies::MockTransportRecorderPolicy::new(
-                        options.transport,
-                    ))
-                }
-                crate::TESTING_MODE_REPLAY => {
-                    log::info!("mock testing framework replay mode enabled");
-                    policy = Arc::new(crate::policies::MockTransportPlayerPolicy::new(
-                        options.transport,
-                    ))
-                }
-                m => {
-                    log::error!(
-                        "invalid TESTING_MODE '{}' selected. Supported options are '{}' and '{}'",
-                        m,
-                        crate::TESTING_MODE_RECORD,
-                        crate::TESTING_MODE_REPLAY
-                    );
-                }
-            };
+            crate::mock::set_mock_transport_policy(&mut policy, options.transport);
 
             pipeline.push(policy);
         }

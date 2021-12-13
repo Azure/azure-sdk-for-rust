@@ -1,7 +1,7 @@
-use crate::bytes_response::BytesResponse;
-use crate::mock_transaction::MockTransaction;
+use super::mock_response::MockResponse;
+use super::MockTransaction;
 use crate::policies::{Policy, PolicyResult};
-use crate::{Context, MockFrameworkError, Request, Response, TransportOptions};
+use crate::{Context, Request, Response, TransportOptions};
 use std::io::Write;
 use std::sync::Arc;
 
@@ -45,7 +45,9 @@ impl Policy for MockTransportRecorderPolicy {
             let mut request_contents_stream = std::fs::File::create(&request_path).unwrap();
             request_contents_stream
                 .write_all(request_contents.as_str().as_bytes())
-                .map_err(|e| MockFrameworkError::IOError("cannot write request file".into(), e))?;
+                .map_err(|e| {
+                    super::MockFrameworkError::IOError("cannot write request file".into(), e)
+                })?;
         }
 
         let response = self
@@ -56,13 +58,15 @@ impl Policy for MockTransportRecorderPolicy {
 
         // we need to duplicate the response because we are about to consume the response stream.
         // We replace the HTTP stream with a memory-backed stream.
-        let (response, bytes_response) = BytesResponse::duplicate(response).await?;
-        let response_contents = serde_json::to_string(&bytes_response).unwrap();
+        let (response, mock_response) = MockResponse::duplicate(response).await?;
+        let response_contents = serde_json::to_string(&mock_response).unwrap();
         {
             let mut response_contents_stream = std::fs::File::create(&response_path).unwrap();
             response_contents_stream
                 .write_all(response_contents.as_bytes())
-                .map_err(|e| MockFrameworkError::IOError("cannot write response file".into(), e))?;
+                .map_err(|e| {
+                    super::MockFrameworkError::IOError("cannot write response file".into(), e)
+                })?;
         }
 
         self.transaction.increment_number();
