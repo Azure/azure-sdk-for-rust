@@ -1,6 +1,5 @@
 use super::*;
 use crate::request_options::LeaseId;
-use crate::util::HeaderMapExt;
 use crate::*;
 use crate::{RequestId, SessionToken};
 use chrono::{DateTime, FixedOffset, Utc};
@@ -21,7 +20,10 @@ pub fn request_id_from_headers(headers: &HeaderMap) -> Result<RequestId> {
 }
 
 pub fn client_request_id_from_headers_optional(headers: &HeaderMap) -> Option<String> {
-    headers.get_as_str(CLIENT_REQUEST_ID).map(|s| s.to_owned())
+    headers
+        .get(CLIENT_REQUEST_ID)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_owned())
 }
 
 pub fn last_modified_from_headers_optional(headers: &HeaderMap) -> Result<Option<DateTime<Utc>>> {
