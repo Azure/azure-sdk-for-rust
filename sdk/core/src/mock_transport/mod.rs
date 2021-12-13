@@ -1,11 +1,11 @@
 mod bytes_response;
 mod mock_transaction;
-mod mock_transport_player_policy;
-mod mock_transport_recorder_policy;
+mod player_policy;
+mod recorder_policy;
 
 use mock_transaction::MockTransaction;
-use mock_transport_player_policy::MockTransportPlayerPolicy;
-use mock_transport_recorder_policy::MockTransportRecorderPolicy;
+use player_policy::MockTransportPlayerPolicy;
+use recorder_policy::MockTransportRecorderPolicy;
 use std::sync::Arc;
 
 pub const TESTING_MODE_KEY: &str = "TESTING_MODE";
@@ -38,7 +38,7 @@ pub(crate) enum MockFrameworkError {
     MismatchedRequestBody(Vec<u8>, Vec<u8>),
 }
 
-// Replace the default transport policy at runtime 
+// Replace the default transport policy at runtime
 //
 // Replacement happens if these two conditions are met:
 // 1. The mock_transport_framework is enabled
