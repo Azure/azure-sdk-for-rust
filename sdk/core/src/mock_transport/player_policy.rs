@@ -1,4 +1,4 @@
-use super::bytes_response::BytesResponse;
+use super::mock_response::MockResponse;
 use super::mock_transaction::MockTransaction;
 use crate::policies::{Policy, PolicyResult};
 use crate::{Context, Request, Response, TransportOptions};
@@ -48,7 +48,7 @@ impl Policy for MockTransportPlayerPolicy {
         };
 
         let expected_request: Request = serde_json::from_str(&expected_request)?;
-        let expected_response = serde_json::from_str::<BytesResponse>(&expected_response)?;
+        let expected_response = serde_json::from_str::<MockResponse>(&expected_response)?;
 
         let expected_uri = expected_request.uri().to_string();
         let actual_uri = request

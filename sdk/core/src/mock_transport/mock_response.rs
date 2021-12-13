@@ -6,25 +6,25 @@ use std::collections::BTreeMap;
 use crate::{collect_pinned_stream, BytesStream, Response};
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct BytesResponse {
+pub(crate) struct MockResponse {
     status: StatusCode,
     headers: HeaderMap,
     body: Bytes,
 }
 
-impl From<BytesResponse> for Response {
-    fn from(bytes_response: BytesResponse) -> Self {
-        let bytes_stream: crate::BytesStream = bytes_response.body.into();
+impl From<MockResponse> for Response {
+    fn from(mock_response: MockResponse) -> Self {
+        let bytes_stream: crate::BytesStream = mock_response.body.into();
 
         Self::new(
-            bytes_response.status,
-            bytes_response.headers,
+            mock_response.status,
+            mock_response.headers,
             Box::pin(bytes_stream),
         )
     }
 }
 
-impl BytesResponse {
+impl MockResponse {
     pub(crate) fn new(status: StatusCode, headers: HeaderMap, body: Bytes) -> Self {
         Self {
             status,
@@ -44,19 +44,19 @@ impl BytesResponse {
             header_map.clone(),
             Box::pin(BytesStream::new(response_bytes.clone())),
         );
-        let bytes_response = BytesResponse::new(status_code, header_map, response_bytes);
+        let mock_response = MockResponse::new(status_code, header_map, response_bytes);
 
-        Ok((response, bytes_response))
+        Ok((response, mock_response))
     }
 }
 
-impl<'de> Deserialize<'de> for BytesResponse {
+impl<'de> Deserialize<'de> for MockResponse {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::de::Deserializer<'de>,
     {
         use serde::de::Error;
-        let r = SerializedBytesResponse::deserialize(deserializer)?;
+        let r = SerializedMockResponse::deserialize(deserializer)?;
         let mut headers = HeaderMap::new();
         for (n, v) in r.headers.iter() {
             let name = header::HeaderName::from_lowercase(n.as_bytes()).map_err(Error::custom)?;
@@ -70,7 +70,7 @@ impl<'de> Deserialize<'de> for BytesResponse {
     }
 }
 
-impl Serialize for BytesResponse {
+impl Serialize for MockResponse {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::ser::Serializer,
@@ -81,7 +81,7 @@ impl Serialize for BytesResponse {
         }
         let status = self.status.as_u16();
         let body = base64::encode(&self.body as &[u8]);
-        let s = SerializedBytesResponse {
+        let s = SerializedMockResponse {
             status,
             headers,
             body,
@@ -91,7 +91,7 @@ impl Serialize for BytesResponse {
 }
 
 #[derive(Serialize, Deserialize)]
-pub(crate) struct SerializedBytesResponse {
+pub(crate) struct SerializedMockResponse {
     status: u16,
     headers: BTreeMap<String, String>,
     body: String,

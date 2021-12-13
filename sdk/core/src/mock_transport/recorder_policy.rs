@@ -1,4 +1,4 @@
-use super::bytes_response::BytesResponse;
+use super::mock_response::MockResponse;
 use super::MockTransaction;
 use crate::policies::{Policy, PolicyResult};
 use crate::{Context, Request, Response, TransportOptions};
@@ -58,8 +58,8 @@ impl Policy for MockTransportRecorderPolicy {
 
         // we need to duplicate the response because we are about to consume the response stream.
         // We replace the HTTP stream with a memory-backed stream.
-        let (response, bytes_response) = BytesResponse::duplicate(response).await?;
-        let response_contents = serde_json::to_string(&bytes_response).unwrap();
+        let (response, mock_response) = MockResponse::duplicate(response).await?;
+        let response_contents = serde_json::to_string(&mock_response).unwrap();
         {
             let mut response_contents_stream = std::fs::File::create(&response_path).unwrap();
             response_contents_stream

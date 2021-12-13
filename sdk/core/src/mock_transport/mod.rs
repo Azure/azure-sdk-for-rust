@@ -1,4 +1,5 @@
-mod bytes_response;
+mod mock_request;
+mod mock_response;
 mod mock_transaction;
 mod player_policy;
 mod recorder_policy;
@@ -16,8 +17,6 @@ pub const TESTING_MODE_RECORD: &str = "RECORD";
 #[cfg(feature = "mock_transport_framework")]
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum MockFrameworkError {
-    #[error("the mock testing framework has not been initialized")]
-    UninitializedTransaction,
     #[error("{0}: {1}")]
     IOError(String, std::io::Error),
     #[error("{0}")]
