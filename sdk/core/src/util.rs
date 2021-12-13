@@ -1,8 +1,6 @@
 //! An assortment of helper utilities.
 
-use bytes::Bytes;
-use http::header::{AsHeaderName, HeaderMap, HeaderName, HeaderValue};
-use http::{self, request::Builder};
+use http::header::{AsHeaderName, HeaderMap, HeaderValue};
 use serde::{
     de::{self, DeserializeOwned, Deserializer},
     Deserialize,
@@ -41,56 +39,6 @@ pub trait HeaderMapExt {
 impl HeaderMapExt for HeaderMap {
     fn get_header<K: AsHeaderName>(&self, key: K) -> Option<&HeaderValue> {
         self.get(key)
-    }
-}
-
-pub trait RequestBuilderExt {
-    fn set_header<K, V>(self, key: K, value: V) -> Self
-    where
-        HeaderName: TryFrom<K>,
-        <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
-        HeaderValue: TryFrom<V>,
-        <HeaderValue as TryFrom<V>>::Error: Into<http::Error>,
-        Self: Sized;
-
-    fn header_formatted<K, D: Display>(self, key: K, value: D) -> Self
-    where
-        HeaderName: TryFrom<K>,
-        <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
-        Self: Sized,
-    {
-        self.set_header(key, &format(value))
-    }
-
-    fn header_static<K>(self, key: K, value: &'static str) -> Self
-    where
-        HeaderName: TryFrom<K>,
-        <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
-        Self: Sized,
-    {
-        self.set_header(key, HeaderValue::from_static(value))
-    }
-
-    fn header_bytes<K, B: Into<Bytes>>(self, key: K, value: B) -> Self
-    where
-        HeaderName: TryFrom<K>,
-        <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
-        Self: Sized,
-    {
-        self.set_header(key, &value.into() as &[u8])
-    }
-}
-
-impl RequestBuilderExt for Builder {
-    fn set_header<K, V>(self, key: K, value: V) -> Self
-    where
-        HeaderName: TryFrom<K>,
-        <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
-        HeaderValue: TryFrom<V>,
-        <HeaderValue as TryFrom<V>>::Error: Into<http::Error>,
-        Self: Sized,
-    {
-        self.header(key, value)
     }
 }
 
