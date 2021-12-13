@@ -47,7 +47,7 @@ impl std::fmt::Display for EndpointProtocol {
 ///
 /// The key are a subset of what is defined in the
 /// [.NET SDK](https://github.com/Azure/azure-storage-net/blob/ed89733dfb170707d65b7b8b0be36cb5bd6512e4/Lib/Common/CloudStorageAccount.cs#L63-L261).
-#[derive(Debug)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct ConnectionString<'a> {
     /// Name of the storage account.
     pub account_name: Option<&'a str>,
@@ -79,48 +79,6 @@ pub struct ConnectionString<'a> {
     pub file_endpoint: Option<&'a str>,
     /// Custom file storage secondary endpoint.
     pub file_secondary_endpoint: Option<&'a str>,
-}
-
-impl<'a> Default for ConnectionString<'a> {
-    fn default() -> Self {
-        Self {
-            account_name: None,
-            account_key: None,
-            sas: None,
-            default_endpoints_protocol: None,
-            endpoint_suffix: None,
-            use_development_storage: None,
-            development_storage_proxy_uri: None,
-            blob_endpoint: None,
-            blob_secondary_endpoint: None,
-            table_endpoint: None,
-            table_secondary_endpoint: None,
-            queue_endpoint: None,
-            queue_secondary_endpoint: None,
-            file_endpoint: None,
-            file_secondary_endpoint: None,
-        }
-    }
-}
-
-impl<'a> PartialEq for ConnectionString<'a> {
-    fn eq(&self, other: &Self) -> bool {
-        self.account_name == other.account_name
-            && self.account_key == other.account_key
-            && self.sas == other.sas
-            && self.default_endpoints_protocol == other.default_endpoints_protocol
-            && self.endpoint_suffix == other.endpoint_suffix
-            && self.use_development_storage == other.use_development_storage
-            && self.development_storage_proxy_uri == other.development_storage_proxy_uri
-            && self.blob_endpoint == other.blob_endpoint
-            && self.blob_secondary_endpoint == other.blob_secondary_endpoint
-            && self.table_endpoint == other.table_endpoint
-            && self.table_secondary_endpoint == other.table_secondary_endpoint
-            && self.queue_endpoint == other.queue_endpoint
-            && self.queue_secondary_endpoint == other.queue_secondary_endpoint
-            && self.file_endpoint == other.file_endpoint
-            && self.file_secondary_endpoint == other.file_secondary_endpoint
-    }
 }
 
 impl<'a> ConnectionString<'a> {

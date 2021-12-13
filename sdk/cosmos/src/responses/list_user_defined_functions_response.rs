@@ -49,6 +49,7 @@ impl std::convert::TryFrom<Response<bytes::Bytes>> for ListUserDefinedFunctionsR
             #[serde(rename = "UserDefinedFunctions")]
             user_defined_functions: Vec<UserDefinedFunction>,
             #[serde(rename = "_count")]
+            #[allow(unused)]
             count: u32,
         }
         let response: Response = serde_json::from_slice(body)?;

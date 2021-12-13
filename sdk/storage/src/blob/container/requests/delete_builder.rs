@@ -9,6 +9,7 @@ pub struct DeleteBuilder<'a> {
     container_client: &'a ContainerClient,
     lease_id: Option<&'a LeaseId>,
     client_request_id: Option<ClientRequestId<'a>>,
+    #[allow(unused)]
     timeout: Option<Timeout>,
 }
 

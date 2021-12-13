@@ -1,3 +1,4 @@
+use azure_core::prelude::*;
 use azure_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde_json::Value;
@@ -73,8 +74,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         client
             .clone()
             .into_document_client(id.clone(), &partition_key)?
-            .delete_document()
-            .execute()
+            .delete_document(Context::new(), DeleteDocumentOptions::new())
             .await?;
     }
 

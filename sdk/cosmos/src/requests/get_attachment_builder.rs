@@ -49,7 +49,7 @@ impl<'a, 'b> GetAttachmentBuilder<'a, 'b> {
             req,
         );
 
-        let req = req.body(bytes::Bytes::from_static(EMPTY_BODY))?;
+        let req = req.body(EMPTY_BODY)?;
 
         debug!("req == {:#?}", req);
 

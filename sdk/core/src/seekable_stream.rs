@@ -5,6 +5,8 @@ use futures::io::AsyncRead;
 use futures::stream::Stream;
 use futures::task::Poll;
 
+/// Enable a type implementing `AsyncRead` to be consumed as if it were
+/// a `Stream` of `Bytes`.
 #[async_trait]
 pub trait SeekableStream:
     AsyncRead + Unpin + std::fmt::Debug + Send + Sync + dyn_clone::DynClone

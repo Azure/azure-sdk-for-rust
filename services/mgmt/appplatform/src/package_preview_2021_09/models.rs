@@ -526,8 +526,8 @@ pub struct CustomPersistentDiskProperties {
     pub type_: custom_persistent_disk_properties::Type,
     #[serde(rename = "mountPath")]
     pub mount_path: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub readonly: Option<bool>,
+    #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
+    pub read_only: Option<bool>,
     #[serde(rename = "mountOptions", default, skip_serializing_if = "Vec::is_empty")]
     pub mount_options: Vec<String>,
 }
@@ -702,6 +702,8 @@ pub struct DeploymentSettings {
     pub environment_variables: Option<serde_json::Value>,
     #[serde(rename = "runtimeVersion", default, skip_serializing_if = "Option::is_none")]
     pub runtime_version: Option<deployment_settings::RuntimeVersion>,
+    #[serde(rename = "containerProbeSettings", default, skip_serializing_if = "Option::is_none")]
+    pub container_probe_settings: Option<deployment_settings::ContainerProbeSettings>,
 }
 pub mod deployment_settings {
     use super::*;
@@ -713,6 +715,11 @@ pub mod deployment_settings {
         Java11,
         #[serde(rename = "NetCore_31")]
         NetCore31,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct ContainerProbeSettings {
+        #[serde(rename = "disableProbe", default, skip_serializing_if = "Option::is_none")]
+        pub disable_probe: Option<bool>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -990,7 +997,7 @@ pub mod supported_runtime_version {
     pub enum Platform {
         Java,
         #[serde(rename = ".NET Core")]
-        U2eNetCore,
+        NetCore,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

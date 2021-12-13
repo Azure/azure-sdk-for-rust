@@ -1,5 +1,5 @@
 use super::{ClientSecretCredential, TokenCredential, TokenCredentialOptions};
-use azure_core::TokenResponse;
+use azure_core::auth::TokenResponse;
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
 const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";
@@ -21,6 +21,7 @@ const AZURE_CLIENT_CERTIFICATE_PATH_ENV_KEY: &str = "AZURE_CLIENT_CERTIFICATE_PA
 /// This credential ultimately uses a `ClientSecretCredential` to perform the authentication using
 /// these details.
 /// Please consult the documentation of that class for more details.
+#[derive(Clone, Debug, Default)]
 pub struct EnvironmentCredential {
     options: TokenCredentialOptions,
 }
@@ -28,14 +29,6 @@ pub struct EnvironmentCredential {
 impl EnvironmentCredential {
     pub fn new(options: TokenCredentialOptions) -> Self {
         Self { options }
-    }
-}
-
-impl Default for EnvironmentCredential {
-    fn default() -> Self {
-        Self {
-            options: TokenCredentialOptions::default(),
-        }
     }
 }
 
@@ -97,11 +90,11 @@ impl TokenCredential for EnvironmentCredential {
 }
 
 #[async_trait::async_trait]
-impl azure_core::TokenCredential for EnvironmentCredential {
+impl azure_core::auth::TokenCredential for EnvironmentCredential {
     async fn get_token(
         &self,
         resource: &str,
-    ) -> Result<azure_core::TokenResponse, azure_core::Error> {
+    ) -> Result<azure_core::auth::TokenResponse, azure_core::Error> {
         TokenCredential::get_token(self, resource)
             .await
             .map_err(|error| azure_core::Error::GetTokenError(Box::new(error)))

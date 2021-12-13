@@ -32,11 +32,8 @@ async fn create_and_delete_document() {
     let client = setup::initialize().unwrap();
 
     client
-        .create_database(
-            azure_core::Context::new(),
-            DATABASE_NAME,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(DATABASE_NAME)
+        .into_future()
         .await
         .unwrap();
 
@@ -98,7 +95,10 @@ async fn create_and_delete_document() {
     }
 
     // delete document
-    document_client.delete_document().execute().await.unwrap();
+    document_client
+        .delete_document(Context::new(), DeleteDocumentOptions::new())
+        .await
+        .unwrap();
 
     let documents = collection_client
         .list_documents()
@@ -123,11 +123,8 @@ async fn query_documents() {
     let client = setup::initialize().unwrap();
 
     client
-        .create_database(
-            azure_core::Context::new(),
-            DATABASE_NAME,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(DATABASE_NAME)
+        .into_future()
         .await
         .unwrap();
     let database_client = client.into_database_client(DATABASE_NAME);
@@ -200,11 +197,8 @@ async fn replace_document() {
     let client = setup::initialize().unwrap();
 
     client
-        .create_database(
-            azure_core::Context::new(),
-            DATABASE_NAME,
-            CreateDatabaseOptions::new(),
-        )
+        .create_database(DATABASE_NAME)
+        .into_future()
         .await
         .unwrap();
     let database_client = client.into_database_client(DATABASE_NAME);
@@ -252,12 +246,15 @@ async fn replace_document() {
         .clone()
         .into_document_client(document_data.id.clone(), &document_data.id)
         .unwrap()
-        .replace_document()
-        .consistency_level(ConsistencyLevel::from(&documents))
-        .if_match_condition(IfMatchCondition::Match(
-            &documents.documents[0].document_attributes.etag(),
-        ))
-        .execute(&document_data)
+        .replace_document(
+            Context::new(),
+            &document_data,
+            ReplaceDocumentOptions::new()
+                .consistency_level(ConsistencyLevel::from(&documents))
+                .if_match_condition(IfMatchCondition::Match(
+                    &documents.documents[0].document_attributes.etag(),
+                )),
+        )
         .await
         .unwrap();
 

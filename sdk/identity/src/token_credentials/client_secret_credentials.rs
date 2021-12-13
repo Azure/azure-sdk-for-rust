@@ -1,5 +1,5 @@
 use super::TokenCredential;
-use azure_core::TokenResponse;
+use azure_core::auth::TokenResponse;
 use chrono::Utc;
 use oauth2::{
     basic::{BasicClient, BasicErrorResponseType},
@@ -35,7 +35,7 @@ impl TokenCredentialOptions {
     }
 
     /// The authority host to use for authentication requests.  The default is
-    /// "https://login.microsoftonline.com".
+    /// `https://login.microsoftonline.com`.
     pub fn authority_host(&self) -> &str {
         &self.authority_host
     }
@@ -56,7 +56,7 @@ pub mod authority_hosts {
 pub mod tenant_ids {
     /// The tenant ID for multi-tenant apps
     ///
-    /// https://docs.microsoft.com/azure/active-directory/develop/howto-convert-app-to-be-multi-tenant
+    /// <https://docs.microsoft.com/azure/active-directory/develop/howto-convert-app-to-be-multi-tenant>
     pub const TENANT_ID_COMMON: &str = "common";
     /// The tenant ID for Active Directory Federated Services
     pub const TENANT_ID_ADFS: &str = "adfs";
@@ -65,7 +65,7 @@ pub mod tenant_ids {
 /// Enables authentication to Azure Active Directory using a client secret that was generated for an App Registration.
 ///
 /// More information on how to configure a client secret can be found here:
-/// https://docs.microsoft.com/azure/active-directory/develop/quickstart-configure-app-access-web-apis#add-credentials-to-your-web-application
+/// <https://docs.microsoft.com/azure/active-directory/develop/quickstart-configure-app-access-web-apis#add-credentials-to-your-web-application>
 pub struct ClientSecretCredential {
     tenant_id: String,
     client_id: oauth2::ClientId,
@@ -174,11 +174,11 @@ impl TokenCredential for ClientSecretCredential {
 }
 
 #[async_trait::async_trait]
-impl azure_core::TokenCredential for ClientSecretCredential {
+impl azure_core::auth::TokenCredential for ClientSecretCredential {
     async fn get_token(
         &self,
         resource: &str,
-    ) -> Result<azure_core::TokenResponse, azure_core::Error> {
+    ) -> Result<azure_core::auth::TokenResponse, azure_core::Error> {
         TokenCredential::get_token(self, resource)
             .await
             .map_err(|error| azure_core::Error::GetTokenError(Box::new(error)))

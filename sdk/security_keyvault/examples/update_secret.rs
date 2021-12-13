@@ -1,5 +1,5 @@
 use azure_identity::token_credentials::{ClientSecretCredential, TokenCredentialOptions};
-use azure_security_keyvault::{KeyClient, RecoveryLevel};
+use azure_security_keyvault::KeyClient;
 use chrono::prelude::*;
 use chrono::Duration;
 use std::env;
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Update secret recovery level to `Purgeable`.
     client
-        .update_secret_recovery_level(&secret_name, &secret_version, RecoveryLevel::Purgeable)
+        .update_secret_recovery_level(&secret_name, &secret_version, "Purgeable".into())
         .await?;
 
     // Update secret to expire in two weeks.

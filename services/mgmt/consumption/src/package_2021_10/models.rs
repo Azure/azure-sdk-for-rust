@@ -819,6 +819,12 @@ pub struct LegacyReservationTransactionProperties {
     pub current_enrollment: Option<String>,
     #[serde(rename = "billingFrequency", default, skip_serializing_if = "Option::is_none")]
     pub billing_frequency: Option<String>,
+    #[serde(rename = "billingMonth", default, skip_serializing_if = "Option::is_none")]
+    pub billing_month: Option<i32>,
+    #[serde(rename = "monetaryCommitment", default, skip_serializing_if = "Option::is_none")]
+    pub monetary_commitment: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub overage: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationTransaction {
@@ -976,6 +982,8 @@ pub struct Notification {
     pub contact_groups: Vec<String>,
     #[serde(rename = "thresholdType", default, skip_serializing_if = "Option::is_none")]
     pub threshold_type: Option<notification::ThresholdType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locale: Option<notification::Locale>,
 }
 pub mod notification {
     use super::*;
@@ -988,6 +996,52 @@ pub mod notification {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ThresholdType {
         Actual,
+        Forecasted,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Locale {
+        #[serde(rename = "en-us")]
+        EnUs,
+        #[serde(rename = "ja-jp")]
+        JaJp,
+        #[serde(rename = "zh-cn")]
+        ZhCn,
+        #[serde(rename = "de-de")]
+        DeDe,
+        #[serde(rename = "es-es")]
+        EsEs,
+        #[serde(rename = "fr-fr")]
+        FrFr,
+        #[serde(rename = "it-it")]
+        ItIt,
+        #[serde(rename = "ko-kr")]
+        KoKr,
+        #[serde(rename = "pt-br")]
+        PtBr,
+        #[serde(rename = "ru-ru")]
+        RuRu,
+        #[serde(rename = "zh-tw")]
+        ZhTw,
+        #[serde(rename = "cs-cz")]
+        CsCz,
+        #[serde(rename = "pl-pl")]
+        PlPl,
+        #[serde(rename = "tr-tr")]
+        TrTr,
+        #[serde(rename = "da-dk")]
+        DaDk,
+        #[serde(rename = "en-gb")]
+        EnGb,
+        #[serde(rename = "hu-hu")]
+        HuHu,
+        #[serde(rename = "nb-no")]
+        NbNo,
+        #[serde(rename = "nl-nl")]
+        NlNl,
+        #[serde(rename = "pt-pt")]
+        PtPt,
+        #[serde(rename = "sv-se")]
+        SvSe,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1072,7 +1126,7 @@ pub struct ChargesListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChargeSummary {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     pub kind: charge_summary::Kind,
 }
 pub mod charge_summary {
@@ -1216,7 +1270,7 @@ pub struct Events {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSummary {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventProperties>,
 }
@@ -1292,7 +1346,7 @@ pub struct Lots {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LotSummary {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LotProperties>,
 }

@@ -6,7 +6,7 @@ on:
     - cron: "0 0 * * *"
 
 env:
-  RUSTFLAGS: --deny warnings --allow unused_attributes
+  RUSTFLAGS: -Dwarnings
   CARGO_INCREMENTAL: 0
 
 jobs:

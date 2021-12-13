@@ -8,24 +8,20 @@ const OUTPUT_FOLDER: &str = "../svc";
 const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
-    "deviceupdate",            // missing field `authorizationUrl`
-    "digitaltwins",            // missing field `scopes`
-    "machinelearningservices", // untagged enum
-    "servicefabric",           // currently generates `async` member names
-    "hdinsight",               // job_id appears multiple times?
+    "machinelearningservices", // need to box inner errors
+    "hdinsight",               // job_id appears multiple times https://github.com/Azure/azure-sdk-for-rust/issues/503
     "videoanalyzer",           // no operations
     "mediaservices",           // no operations
-    "marketplacecatalog",      // BadRequest400 uses models::String?
 ];
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
-    ("agrifood", "package-2021-03-31-preview"), // untagged enum?
-    ("attestation", "package-2018-09-01"),      // uses models::String?
-    ("containerregistry", "package-2019-08"),   // untagged enum
-    ("containerregistry", "package-2019-07"),   // untagged enum
-    ("purview", "package-2021-05-01-preview"),  // untagged enum
-    ("maps", "package-preview-2.0"),            // string \"200Async\", expected length 3"
-    ("maps", "package-1.0-preview"),            // "invalid value: string \"201Async\"
+    ("agrifood", "package-2021-03-31-preview"), // duplicate params https://github.com/Azure/azure-sdk-for-rust/issues/501
+    ("purview", "package-2021-05-01-preview"),  // need to box types
+    ("maps", "package-preview-2.0"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
+    ("maps", "package-1.0-preview"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
+    ("servicefabric", "6.2"),                   // invalid model TimeBasedBackupScheduleDescription
+    ("servicefabric", "6.3"),                   // invalid model TimeBasedBackupScheduleDescription
+    ("servicefabric", "6.4"),                   // invalid model TimeBasedBackupScheduleDescription
     ("storagedatalake", "package-2018-11"),     // "invalid value: string \"ErrorResponse\", expected length 3"
     ("storagedatalake", "package-2018-06-preview"),
     ("storagedatalake", "package-2019-10"),
@@ -98,7 +94,39 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
         "../../../azure-rest-api-specs/specification/datalake-analytics/data-plane/Microsoft.DataLakeAnalytics/preview/2017-09-01-preview/job.json",
         "JobInnerError",
         "innerError"
-    )
+    ),
+    // deviceupdate
+    (
+        "../../../azure-rest-api-specs/specification/deviceupdate/data-plane/Microsoft.DeviceUpdate/preview/2020-09-01/deviceupdate.json",
+        "Error",
+        "innerError"
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/deviceupdate/data-plane/Microsoft.DeviceUpdate/preview/2020-09-01/deviceupdate.json",
+        "InnerError",
+        "innerError"
+    ),
+    // digitaltwins
+    (
+        "../../../azure-rest-api-specs/specification/digitaltwins/data-plane/Microsoft.DigitalTwins/preview/2020-05-31-preview/digitaltwins.json",
+        "Error",
+        "innererror"
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/digitaltwins/data-plane/Microsoft.DigitalTwins/preview/2020-05-31-preview/digitaltwins.json",
+        "InnerError",
+        "innererror"
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/digitaltwins/data-plane/Microsoft.DigitalTwins/stable/2020-10-31/digitaltwins.json",
+        "Error",
+        "innererror"
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/digitaltwins/data-plane/Microsoft.DigitalTwins/stable/2020-10-31/digitaltwins.json",
+        "InnerError",
+        "innererror"
+    ),
 ];
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

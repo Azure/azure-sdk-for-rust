@@ -2167,6 +2167,38 @@ pub struct SaveConfigurationParameterProperties {
     pub force: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiSchemaCollection {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ApiSchemaContract>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiSchemaContract {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ApiSchemaContractProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiSchemaContractProperties {
+    #[serde(rename = "contentType")]
+    pub content_type: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub document: Option<ApiSchemaDocumentProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiSchemaDocumentProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub definitions: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub components: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SchemaCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SchemaContract>,
@@ -2184,20 +2216,27 @@ pub struct SchemaContract {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SchemaContractProperties {
-    #[serde(rename = "contentType")]
-    pub content_type: String,
+    #[serde(rename = "schemaType")]
+    pub schema_type: schema_contract_properties::SchemaType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub document: Option<SchemaDocumentProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SchemaDocumentProperties {
+    pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub definitions: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub components: Option<serde_json::Value>,
+    pub document: Option<SchemaDocumentProperties>,
 }
+pub mod schema_contract_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SchemaType {
+        #[serde(rename = "xml")]
+        Xml,
+        #[serde(rename = "json")]
+        Json,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SchemaDocumentProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

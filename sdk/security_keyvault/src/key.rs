@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display};
 
-use azure_core::TokenCredential;
+use azure_core::auth::TokenCredential;
 use base64::{CharacterSet, Config};
 use chrono::serde::ts_seconds_option;
 use chrono::{DateTime, Utc};
@@ -111,7 +111,7 @@ pub struct JsonWebKey {
     /// Key identifier.
     #[serde(rename = "kid")]
     id: Option<String>,
-    /// JsonWebKey Key Type (kty), as defined in https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40.
+    /// JsonWebKey Key Type (kty), as defined in <https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40>.
     #[serde(rename = "kty")]
     key_type: String,
     /// RSA modulus.
@@ -522,7 +522,7 @@ mod tests {
     use serde_json::json;
 
     use crate::client::API_VERSION;
-    use crate::mock_client;
+    use crate::mock_key_client;
     use crate::tests::MockCredential;
 
     fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
@@ -574,7 +574,7 @@ mod tests {
             .create();
 
         let creds = MockCredential;
-        let mut client = mock_client!(&"test-keyvault", &creds,);
+        let mut client = mock_key_client!(&"test-keyvault", &creds,);
 
         let key = client
             .get_key("test-key", Some("78deebed173b48e48f55abf87ed4cf71"))
@@ -605,7 +605,7 @@ mod tests {
             tags.to_owned().unwrap().get("purpose").unwrap(),
             "unit test"
         );
-        assert_eq!(true, enabled.unwrap());
+        assert!(enabled.unwrap());
         assert!(diff(time_created, created_on.unwrap()) < Duration::seconds(1));
         assert!(diff(time_updated, updated_on.unwrap()) < Duration::seconds(1));
     }
@@ -626,7 +626,7 @@ mod tests {
             .create();
 
         let creds = MockCredential;
-        let mut client = mock_client!(&"test-keyvault", &creds,);
+        let mut client = mock_key_client!(&"test-keyvault", &creds,);
 
         let res = client
             .sign(
@@ -667,7 +667,7 @@ mod tests {
             .create();
 
         let creds = MockCredential;
-        let mut client = mock_client!(&"test-keyvault", &creds,);
+        let mut client = mock_key_client!(&"test-keyvault", &creds,);
 
         let decrypt_parameters = DecryptParameters {
             ciphertext: base64::decode("dvDmrSBpjRjtYg").unwrap(),

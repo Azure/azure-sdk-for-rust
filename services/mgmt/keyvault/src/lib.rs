@@ -6,95 +6,44 @@
 #[cfg(feature = "package-preview-2021-06")]
 pub mod package_preview_2021_06;
 #[cfg(all(feature = "package-preview-2021-06", not(feature = "no-default-version")))]
-pub use package_preview_2021_06::{models, operations};
+pub use package_preview_2021_06::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-preview-2021-04")]
 pub mod package_preview_2021_04;
 #[cfg(all(feature = "package-preview-2021-04", not(feature = "no-default-version")))]
-pub use package_preview_2021_04::{models, operations};
+pub use package_preview_2021_04::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-preview-2021-04-full")]
 pub mod package_preview_2021_04_full;
 #[cfg(all(feature = "package-preview-2021-04-full", not(feature = "no-default-version")))]
-pub use package_preview_2021_04_full::{models, operations};
+pub use package_preview_2021_04_full::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-preview-2020-04")]
 pub mod package_preview_2020_04;
 #[cfg(all(feature = "package-preview-2020-04", not(feature = "no-default-version")))]
-pub use package_preview_2020_04::{models, operations};
+pub use package_preview_2020_04::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-preview-2020-04-full")]
 pub mod package_preview_2020_04_full;
 #[cfg(all(feature = "package-preview-2020-04-full", not(feature = "no-default-version")))]
-pub use package_preview_2020_04_full::{models, operations};
+pub use package_preview_2020_04_full::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-2019-09")]
 pub mod package_2019_09;
 #[cfg(all(feature = "package-2019-09", not(feature = "no-default-version")))]
-pub use package_2019_09::{models, operations};
+pub use package_2019_09::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-2018-02-14-preview")]
 pub mod package_2018_02_14_preview;
 #[cfg(all(feature = "package-2018-02-14-preview", not(feature = "no-default-version")))]
-pub use package_2018_02_14_preview::{models, operations};
+pub use package_2018_02_14_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-2018-02")]
 pub mod package_2018_02;
 #[cfg(all(feature = "package-2018-02", not(feature = "no-default-version")))]
-pub use package_2018_02::{models, operations};
+pub use package_2018_02::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-2016-10")]
 pub mod package_2016_10;
 #[cfg(all(feature = "package-2016-10", not(feature = "no-default-version")))]
-pub use package_2016_10::{models, operations};
+pub use package_2016_10::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-2015-06")]
 pub mod package_2015_06;
 #[cfg(all(feature = "package-2015-06", not(feature = "no-default-version")))]
-pub use package_2015_06::{models, operations};
+pub use package_2015_06::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "profile-hybrid-2020-09-01")]
 pub mod profile_hybrid_2020_09_01;
-use azure_core::setters;
 #[cfg(all(feature = "profile-hybrid-2020-09-01", not(feature = "no-default-version")))]
-pub use profile_hybrid_2020_09_01::{models, operations};
-pub fn config(
-    http_client: std::sync::Arc<dyn azure_core::HttpClient>,
-    token_credential: Box<dyn azure_core::TokenCredential>,
-) -> OperationConfigBuilder {
-    OperationConfigBuilder {
-        http_client,
-        base_path: None,
-        token_credential,
-        token_credential_resource: None,
-    }
-}
-pub struct OperationConfigBuilder {
-    http_client: std::sync::Arc<dyn azure_core::HttpClient>,
-    base_path: Option<String>,
-    token_credential: Box<dyn azure_core::TokenCredential>,
-    token_credential_resource: Option<String>,
-}
-impl OperationConfigBuilder {
-    setters! { base_path : String => Some (base_path) , token_credential_resource : String => Some (token_credential_resource) , }
-    pub fn build(self) -> OperationConfig {
-        OperationConfig {
-            http_client: self.http_client,
-            base_path: self.base_path.unwrap_or_else(|| "https://management.azure.com".to_owned()),
-            token_credential: Some(self.token_credential),
-            token_credential_resource: self
-                .token_credential_resource
-                .unwrap_or_else(|| "https://management.azure.com/".to_owned()),
-        }
-    }
-}
-pub struct OperationConfig {
-    http_client: std::sync::Arc<dyn azure_core::HttpClient>,
-    base_path: String,
-    token_credential: Option<Box<dyn azure_core::TokenCredential>>,
-    token_credential_resource: String,
-}
-impl OperationConfig {
-    pub fn http_client(&self) -> &dyn azure_core::HttpClient {
-        self.http_client.as_ref()
-    }
-    pub fn base_path(&self) -> &str {
-        self.base_path.as_str()
-    }
-    pub fn token_credential(&self) -> Option<&dyn azure_core::TokenCredential> {
-        self.token_credential.as_deref()
-    }
-    pub fn token_credential_resource(&self) -> &str {
-        self.token_credential_resource.as_str()
-    }
-}
+pub use profile_hybrid_2020_09_01::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

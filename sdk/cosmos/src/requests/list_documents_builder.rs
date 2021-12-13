@@ -70,7 +70,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
         let req = azure_core::headers::add_mandatory_header(&self.a_im, req);
         let req = azure_core::headers::add_optional_header(&self.partition_range_id, req);
 
-        let req = req.body(bytes::Bytes::from_static(EMPTY_BODY))?;
+        let req = req.body(EMPTY_BODY)?;
 
         Ok(self
             .collection_client

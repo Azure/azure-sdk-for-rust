@@ -30,15 +30,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // 1024 G, 512 H and 2048 I
     let mut buf: Vec<u8> = Vec::with_capacity(1024 * 4);
-    for _ in 0..1024 {
-        buf.push(71);
-    }
-    for _ in 0..512 {
-        buf.push(72);
-    }
-    for _ in 0..2048 {
-        buf.push(73);
-    }
+    buf.extend([71; 1024]);
+    buf.extend([72; 512]);
+    buf.extend([73; 2048]);
 
     let content = std::str::from_utf8(&buf)?.to_owned();
     println!("content == {}", content);

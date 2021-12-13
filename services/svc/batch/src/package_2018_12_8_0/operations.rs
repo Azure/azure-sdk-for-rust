@@ -2,69 +2,292 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, models::*, API_VERSION};
+use super::{models, API_VERSION};
+#[derive(Clone)]
+pub struct Client {
+    endpoint: String,
+    credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
+    scopes: Vec<String>,
+    pipeline: azure_core::Pipeline,
+}
+#[derive(Clone)]
+pub struct ClientBuilder {
+    credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
+    endpoint: Option<String>,
+    scopes: Option<Vec<String>>,
+}
+pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+impl ClientBuilder {
+    pub fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            scopes: None,
+        }
+    }
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+    pub fn scopes(mut self, scopes: &[&str]) -> Self {
+        self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
+        self
+    }
+    pub fn build(self) -> Client {
+        let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        Client::new(endpoint, self.credential, scopes)
+    }
+}
+impl Client {
+    pub(crate) fn endpoint(&self) -> &str {
+        self.endpoint.as_str()
+    }
+    pub(crate) fn token_credential(&self) -> &dyn azure_core::auth::TokenCredential {
+        self.credential.as_ref()
+    }
+    pub(crate) fn scopes(&self) -> Vec<&str> {
+        self.scopes.iter().map(String::as_str).collect()
+    }
+    pub(crate) async fn send(&self, request: impl Into<azure_core::Request>) -> Result<azure_core::Response, azure_core::Error> {
+        let mut context = azure_core::Context::default();
+        let mut request = request.into();
+        self.pipeline.send(&mut context, &mut request).await
+    }
+    pub fn new(
+        endpoint: impl Into<String>,
+        credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
+        scopes: Vec<String>,
+    ) -> Self {
+        let endpoint = endpoint.into();
+        let pipeline = azure_core::Pipeline::new(
+            option_env!("CARGO_PKG_NAME"),
+            option_env!("CARGO_PKG_VERSION"),
+            azure_core::ClientOptions::default(),
+            Vec::new(),
+            Vec::new(),
+        );
+        Self {
+            endpoint,
+            credential,
+            scopes,
+            pipeline,
+        }
+    }
+    pub fn account(&self) -> account::Client {
+        account::Client(self.clone())
+    }
+    pub fn application(&self) -> application::Client {
+        application::Client(self.clone())
+    }
+    pub fn certificate(&self) -> certificate::Client {
+        certificate::Client(self.clone())
+    }
+    pub fn compute_node(&self) -> compute_node::Client {
+        compute_node::Client(self.clone())
+    }
+    pub fn file(&self) -> file::Client {
+        file::Client(self.clone())
+    }
+    pub fn job(&self) -> job::Client {
+        job::Client(self.clone())
+    }
+    pub fn job_schedule(&self) -> job_schedule::Client {
+        job_schedule::Client(self.clone())
+    }
+    pub fn pool(&self) -> pool::Client {
+        pool::Client(self.clone())
+    }
+    pub fn task(&self) -> task::Client {
+        task::Client(self.clone())
+    }
+}
+#[non_exhaustive]
+#[derive(Debug, thiserror :: Error)]
+#[allow(non_camel_case_types)]
+pub enum Error {
+    #[error(transparent)]
+    Application_List(#[from] application::list::Error),
+    #[error(transparent)]
+    Application_Get(#[from] application::get::Error),
+    #[error(transparent)]
+    Pool_ListUsageMetrics(#[from] pool::list_usage_metrics::Error),
+    #[error(transparent)]
+    Account_ListNodeAgentSkus(#[from] account::list_node_agent_skus::Error),
+    #[error(transparent)]
+    Account_ListPoolNodeCounts(#[from] account::list_pool_node_counts::Error),
+    #[error(transparent)]
+    Pool_GetAllLifetimeStatistics(#[from] pool::get_all_lifetime_statistics::Error),
+    #[error(transparent)]
+    Job_GetAllLifetimeStatistics(#[from] job::get_all_lifetime_statistics::Error),
+    #[error(transparent)]
+    Certificate_List(#[from] certificate::list::Error),
+    #[error(transparent)]
+    Certificate_Add(#[from] certificate::add::Error),
+    #[error(transparent)]
+    Certificate_CancelDeletion(#[from] certificate::cancel_deletion::Error),
+    #[error(transparent)]
+    Certificate_Get(#[from] certificate::get::Error),
+    #[error(transparent)]
+    Certificate_Delete(#[from] certificate::delete::Error),
+    #[error(transparent)]
+    File_GetFromTask(#[from] file::get_from_task::Error),
+    #[error(transparent)]
+    File_DeleteFromTask(#[from] file::delete_from_task::Error),
+    #[error(transparent)]
+    File_GetPropertiesFromTask(#[from] file::get_properties_from_task::Error),
+    #[error(transparent)]
+    File_GetFromComputeNode(#[from] file::get_from_compute_node::Error),
+    #[error(transparent)]
+    File_DeleteFromComputeNode(#[from] file::delete_from_compute_node::Error),
+    #[error(transparent)]
+    File_GetPropertiesFromComputeNode(#[from] file::get_properties_from_compute_node::Error),
+    #[error(transparent)]
+    File_ListFromTask(#[from] file::list_from_task::Error),
+    #[error(transparent)]
+    File_ListFromComputeNode(#[from] file::list_from_compute_node::Error),
+    #[error(transparent)]
+    JobSchedule_Get(#[from] job_schedule::get::Error),
+    #[error(transparent)]
+    JobSchedule_Update(#[from] job_schedule::update::Error),
+    #[error(transparent)]
+    JobSchedule_Patch(#[from] job_schedule::patch::Error),
+    #[error(transparent)]
+    JobSchedule_Delete(#[from] job_schedule::delete::Error),
+    #[error(transparent)]
+    JobSchedule_Exists(#[from] job_schedule::exists::Error),
+    #[error(transparent)]
+    JobSchedule_Disable(#[from] job_schedule::disable::Error),
+    #[error(transparent)]
+    JobSchedule_Enable(#[from] job_schedule::enable::Error),
+    #[error(transparent)]
+    JobSchedule_Terminate(#[from] job_schedule::terminate::Error),
+    #[error(transparent)]
+    JobSchedule_List(#[from] job_schedule::list::Error),
+    #[error(transparent)]
+    JobSchedule_Add(#[from] job_schedule::add::Error),
+    #[error(transparent)]
+    Job_Get(#[from] job::get::Error),
+    #[error(transparent)]
+    Job_Update(#[from] job::update::Error),
+    #[error(transparent)]
+    Job_Patch(#[from] job::patch::Error),
+    #[error(transparent)]
+    Job_Delete(#[from] job::delete::Error),
+    #[error(transparent)]
+    Job_Disable(#[from] job::disable::Error),
+    #[error(transparent)]
+    Job_Enable(#[from] job::enable::Error),
+    #[error(transparent)]
+    Job_Terminate(#[from] job::terminate::Error),
+    #[error(transparent)]
+    Job_List(#[from] job::list::Error),
+    #[error(transparent)]
+    Job_Add(#[from] job::add::Error),
+    #[error(transparent)]
+    Job_ListFromJobSchedule(#[from] job::list_from_job_schedule::Error),
+    #[error(transparent)]
+    Job_ListPreparationAndReleaseTaskStatus(#[from] job::list_preparation_and_release_task_status::Error),
+    #[error(transparent)]
+    Job_GetTaskCounts(#[from] job::get_task_counts::Error),
+    #[error(transparent)]
+    Pool_List(#[from] pool::list::Error),
+    #[error(transparent)]
+    Pool_Add(#[from] pool::add::Error),
+    #[error(transparent)]
+    Pool_Get(#[from] pool::get::Error),
+    #[error(transparent)]
+    Pool_Patch(#[from] pool::patch::Error),
+    #[error(transparent)]
+    Pool_Delete(#[from] pool::delete::Error),
+    #[error(transparent)]
+    Pool_Exists(#[from] pool::exists::Error),
+    #[error(transparent)]
+    Pool_DisableAutoScale(#[from] pool::disable_auto_scale::Error),
+    #[error(transparent)]
+    Pool_EnableAutoScale(#[from] pool::enable_auto_scale::Error),
+    #[error(transparent)]
+    Pool_EvaluateAutoScale(#[from] pool::evaluate_auto_scale::Error),
+    #[error(transparent)]
+    Pool_Resize(#[from] pool::resize::Error),
+    #[error(transparent)]
+    Pool_StopResize(#[from] pool::stop_resize::Error),
+    #[error(transparent)]
+    Pool_UpdateProperties(#[from] pool::update_properties::Error),
+    #[error(transparent)]
+    Pool_RemoveNodes(#[from] pool::remove_nodes::Error),
+    #[error(transparent)]
+    Task_List(#[from] task::list::Error),
+    #[error(transparent)]
+    Task_Add(#[from] task::add::Error),
+    #[error(transparent)]
+    Task_AddCollection(#[from] task::add_collection::Error),
+    #[error(transparent)]
+    Task_Get(#[from] task::get::Error),
+    #[error(transparent)]
+    Task_Update(#[from] task::update::Error),
+    #[error(transparent)]
+    Task_Delete(#[from] task::delete::Error),
+    #[error(transparent)]
+    Task_ListSubtasks(#[from] task::list_subtasks::Error),
+    #[error(transparent)]
+    Task_Terminate(#[from] task::terminate::Error),
+    #[error(transparent)]
+    Task_Reactivate(#[from] task::reactivate::Error),
+    #[error(transparent)]
+    ComputeNode_AddUser(#[from] compute_node::add_user::Error),
+    #[error(transparent)]
+    ComputeNode_UpdateUser(#[from] compute_node::update_user::Error),
+    #[error(transparent)]
+    ComputeNode_DeleteUser(#[from] compute_node::delete_user::Error),
+    #[error(transparent)]
+    ComputeNode_Get(#[from] compute_node::get::Error),
+    #[error(transparent)]
+    ComputeNode_Reboot(#[from] compute_node::reboot::Error),
+    #[error(transparent)]
+    ComputeNode_Reimage(#[from] compute_node::reimage::Error),
+    #[error(transparent)]
+    ComputeNode_DisableScheduling(#[from] compute_node::disable_scheduling::Error),
+    #[error(transparent)]
+    ComputeNode_EnableScheduling(#[from] compute_node::enable_scheduling::Error),
+    #[error(transparent)]
+    ComputeNode_GetRemoteLoginSettings(#[from] compute_node::get_remote_login_settings::Error),
+    #[error(transparent)]
+    ComputeNode_GetRemoteDesktop(#[from] compute_node::get_remote_desktop::Error),
+    #[error(transparent)]
+    ComputeNode_UploadBatchServiceLogs(#[from] compute_node::upload_batch_service_logs::Error),
+    #[error(transparent)]
+    ComputeNode_List(#[from] compute_node::list::Error),
+}
 pub mod application {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<ApplicationListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/applications", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ApplicationListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+    use super::{models, API_VERSION};
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Lists all of the applications available in the specified account."]
+        pub fn list(&self) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        #[doc = "Gets information about the specified application."]
+        pub fn get(&self, application_id: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                application_id: application_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
             }
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -73,76 +296,106 @@ pub mod application {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        application_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<ApplicationSummary, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/applications/{}", operation_config.base_path(), application_id);
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ApplicationSummary =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/applications", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ApplicationListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -151,97 +404,329 @@ pub mod application {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-}
-pub mod pool {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list_usage_metrics(
-        operation_config: &crate::OperationConfig,
-        starttime: Option<&str>,
-        endtime: Option<&str>,
-        filter: Option<&str>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<PoolListUsageMetricsResult, list_usage_metrics::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/poolusagemetrics", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list_usage_metrics::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_usage_metrics::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) application_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(starttime) = starttime {
-            url.query_pairs_mut().append_pair("starttime", starttime);
-        }
-        if let Some(endtime) = endtime {
-            url.query_pairs_mut().append_pair("endtime", endtime);
-        }
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_usage_metrics::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_usage_metrics::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PoolListUsageMetricsResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_usage_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_usage_metrics::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_usage_metrics::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ApplicationSummary, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/applications/{}", self.client.endpoint(), &self.application_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ApplicationSummary =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
+}
+pub mod pool {
+    use super::{models, API_VERSION};
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Lists the usage metrics, aggregated by pool across individual time intervals, for the specified account."]
+        pub fn list_usage_metrics(&self) -> list_usage_metrics::Builder {
+            list_usage_metrics::Builder {
+                client: self.0.clone(),
+                starttime: None,
+                endtime: None,
+                filter: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Gets lifetime summary statistics for all of the pools in the specified account."]
+        pub fn get_all_lifetime_statistics(&self) -> get_all_lifetime_statistics::Builder {
+            get_all_lifetime_statistics::Builder {
+                client: self.0.clone(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Lists all of the pools in the specified account."]
+        pub fn list(&self) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                filter: None,
+                select: None,
+                expand: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Adds a pool to the specified account."]
+        pub fn add(&self, pool: impl Into<models::PoolAddParameter>) -> add::Builder {
+            add::Builder {
+                client: self.0.clone(),
+                pool: pool.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        pub fn get(&self, pool_id: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                select: None,
+                expand: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Updates the properties of the specified pool."]
+        pub fn patch(&self, pool_id: impl Into<String>, pool_patch_parameter: impl Into<models::PoolPatchParameter>) -> patch::Builder {
+            patch::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                pool_patch_parameter: pool_patch_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Deletes a pool from the specified account."]
+        pub fn delete(&self, pool_id: impl Into<String>) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        pub fn exists(&self, pool_id: impl Into<String>) -> exists::Builder {
+            exists::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Disables automatic scaling for a pool."]
+        pub fn disable_auto_scale(&self, pool_id: impl Into<String>) -> disable_auto_scale::Builder {
+            disable_auto_scale::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Enables automatic scaling for a pool."]
+        pub fn enable_auto_scale(
+            &self,
+            pool_id: impl Into<String>,
+            pool_enable_auto_scale_parameter: impl Into<models::PoolEnableAutoScaleParameter>,
+        ) -> enable_auto_scale::Builder {
+            enable_auto_scale::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                pool_enable_auto_scale_parameter: pool_enable_auto_scale_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Gets the result of evaluating an automatic scaling formula on the pool."]
+        pub fn evaluate_auto_scale(
+            &self,
+            pool_id: impl Into<String>,
+            pool_evaluate_auto_scale_parameter: impl Into<models::PoolEvaluateAutoScaleParameter>,
+        ) -> evaluate_auto_scale::Builder {
+            evaluate_auto_scale::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                pool_evaluate_auto_scale_parameter: pool_evaluate_auto_scale_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Changes the number of compute nodes that are assigned to a pool."]
+        pub fn resize(&self, pool_id: impl Into<String>, pool_resize_parameter: impl Into<models::PoolResizeParameter>) -> resize::Builder {
+            resize::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                pool_resize_parameter: pool_resize_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Stops an ongoing resize operation on the pool."]
+        pub fn stop_resize(&self, pool_id: impl Into<String>) -> stop_resize::Builder {
+            stop_resize::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Updates the properties of the specified pool."]
+        pub fn update_properties(
+            &self,
+            pool_id: impl Into<String>,
+            pool_update_properties_parameter: impl Into<models::PoolUpdatePropertiesParameter>,
+        ) -> update_properties::Builder {
+            update_properties::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                pool_update_properties_parameter: pool_update_properties_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Removes compute nodes from the specified pool."]
+        pub fn remove_nodes(
+            &self,
+            pool_id: impl Into<String>,
+            node_remove_parameter: impl Into<models::NodeRemoveParameter>,
+        ) -> remove_nodes::Builder {
+            remove_nodes::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_remove_parameter: node_remove_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+    }
     pub mod list_usage_metrics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -250,80 +735,132 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_all_lifetime_statistics(
-        operation_config: &crate::OperationConfig,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<PoolStatistics, get_all_lifetime_statistics::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/lifetimepoolstats", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(get_all_lifetime_statistics::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_all_lifetime_statistics::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) starttime: Option<String>,
+            pub(crate) endtime: Option<String>,
+            pub(crate) filter: Option<String>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_all_lifetime_statistics::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_all_lifetime_statistics::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PoolStatistics = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_all_lifetime_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn starttime(mut self, starttime: impl Into<String>) -> Self {
+                self.starttime = Some(starttime.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_all_lifetime_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_all_lifetime_statistics::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn endtime(mut self, endtime: impl Into<String>) -> Self {
+                self.endtime = Some(endtime.into());
+                self
+            }
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::PoolListUsageMetricsResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/poolusagemetrics", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(starttime) = &self.starttime {
+                        url.query_pairs_mut().append_pair("starttime", starttime);
+                    }
+                    if let Some(endtime) = &self.endtime {
+                        url.query_pairs_mut().append_pair("endtime", endtime);
+                    }
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PoolListUsageMetricsResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_all_lifetime_statistics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -332,91 +869,98 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudPoolListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudPoolListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PoolStatistics, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/lifetimepoolstats", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PoolStatistics =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -425,72 +969,130 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add(
-        operation_config: &crate::OperationConfig,
-        pool: &PoolAddParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), add::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(add::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) filter: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) expand: Option<String>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(pool).map_err(add::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(add::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(add::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudPoolListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudPoolListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -499,100 +1101,95 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        select: Option<&str>,
-        expand: Option<&str>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<CloudPool, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool: models::PoolAddParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudPool =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.pool).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -601,89 +1198,147 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn patch(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        pool_patch_parameter: &PoolPatchParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), patch::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(patch::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(patch::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) select: Option<String>,
+            pub(crate) expand: Option<String>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(pool_patch_parameter).map_err(patch::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(patch::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(patch::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(patch::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudPool, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudPool =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -692,87 +1347,128 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) pool_patch_parameter: models::PoolPatchParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.pool_patch_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -781,88 +1477,126 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn exists(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), exists::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(exists::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::HEAD);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(exists::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(exists::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(exists::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            http::StatusCode::NOT_FOUND => Err(exists::Error::NotFound404 {}),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| exists::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(exists::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod exists {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -873,75 +1607,127 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn disable_auto_scale(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), disable_auto_scale::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/disableautoscale", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(disable_auto_scale::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(disable_auto_scale::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(disable_auto_scale::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(disable_auto_scale::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| disable_auto_scale::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(disable_auto_scale::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::HEAD);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod disable_auto_scale {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -950,92 +1736,95 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn enable_auto_scale(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        pool_enable_auto_scale_parameter: &PoolEnableAutoScaleParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), enable_auto_scale::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/enableautoscale", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(enable_auto_scale::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(enable_auto_scale::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(pool_enable_auto_scale_parameter).map_err(enable_auto_scale::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(enable_auto_scale::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(enable_auto_scale::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| enable_auto_scale::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(enable_auto_scale::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/disableautoscale", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod enable_auto_scale {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1044,81 +1833,128 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn evaluate_auto_scale(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        pool_evaluate_auto_scale_parameter: &PoolEvaluateAutoScaleParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<AutoScaleRun, evaluate_auto_scale::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/evaluateautoscale", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(evaluate_auto_scale::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(evaluate_auto_scale::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) pool_enable_auto_scale_parameter: models::PoolEnableAutoScaleParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(pool_evaluate_auto_scale_parameter).map_err(evaluate_auto_scale::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(evaluate_auto_scale::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(evaluate_auto_scale::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: AutoScaleRun = serde_json::from_slice(rsp_body)
-                    .map_err(|source| evaluate_auto_scale::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| evaluate_auto_scale::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(evaluate_auto_scale::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/enableautoscale", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.pool_enable_auto_scale_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod evaluate_auto_scale {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1127,89 +1963,101 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn resize(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        pool_resize_parameter: &PoolResizeParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), resize::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/resize", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(resize::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(resize::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) pool_evaluate_auto_scale_parameter: models::PoolEvaluateAutoScaleParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(pool_resize_parameter).map_err(resize::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(resize::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(resize::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| resize::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(resize::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AutoScaleRun, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/evaluateautoscale", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.pool_evaluate_auto_scale_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AutoScaleRun =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod resize {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1218,91 +2066,128 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn stop_resize(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), stop_resize::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/stopresize", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(stop_resize::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(stop_resize::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) pool_resize_parameter: models::PoolResizeParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(stop_resize::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(stop_resize::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| stop_resize::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(stop_resize::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/resize", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.pool_resize_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod stop_resize {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1311,76 +2196,127 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update_properties(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        pool_update_properties_parameter: &PoolUpdatePropertiesParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), update_properties::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/updateproperties", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(update_properties::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update_properties::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(pool_update_properties_parameter).map_err(update_properties::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update_properties::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(update_properties::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| update_properties::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update_properties::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/stopresize", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod update_properties {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1389,92 +2325,96 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn remove_nodes(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_remove_parameter: &NodeRemoveParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), remove_nodes::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/removenodes", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(remove_nodes::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(remove_nodes::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) pool_update_properties_parameter: models::PoolUpdatePropertiesParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(node_remove_parameter).map_err(remove_nodes::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(remove_nodes::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(remove_nodes::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| remove_nodes::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(remove_nodes::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/updateproperties", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.pool_update_properties_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod remove_nodes {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1483,89 +2423,157 @@ pub mod pool {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-}
-pub mod account {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list_node_agent_skus(
-        operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<AccountListNodeAgentSkusResult, list_node_agent_skus::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/nodeagentskus", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list_node_agent_skus::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_node_agent_skus::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_remove_parameter: models::NodeRemoveParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_node_agent_skus::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_node_agent_skus::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: AccountListNodeAgentSkusResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_node_agent_skus::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_node_agent_skus::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_node_agent_skus::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/removenodes", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.node_remove_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
+}
+pub mod account {
+    use super::{models, API_VERSION};
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Lists all node agent SKUs supported by the Azure Batch service."]
+        pub fn list_node_agent_skus(&self) -> list_node_agent_skus::Builder {
+            list_node_agent_skus::Builder {
+                client: self.0.clone(),
+                filter: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        pub fn list_pool_node_counts(&self) -> list_pool_node_counts::Builder {
+            list_pool_node_counts::Builder {
+                client: self.0.clone(),
+                filter: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+    }
     pub mod list_node_agent_skus {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1574,88 +2582,116 @@ pub mod account {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_pool_node_counts(
-        operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<PoolNodeCountsListResult, list_pool_node_counts::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/nodecounts", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list_pool_node_counts::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_pool_node_counts::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) filter: Option<String>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_pool_node_counts::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_pool_node_counts::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: PoolNodeCountsListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_pool_node_counts::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_pool_node_counts::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_pool_node_counts::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::AccountListNodeAgentSkusResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/nodeagentskus", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::AccountListNodeAgentSkusResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod list_pool_node_counts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1664,83 +2700,313 @@ pub mod account {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-}
-pub mod job {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get_all_lifetime_statistics(
-        operation_config: &crate::OperationConfig,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<JobStatistics, get_all_lifetime_statistics::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/lifetimejobstats", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(get_all_lifetime_statistics::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_all_lifetime_statistics::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) filter: Option<String>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_all_lifetime_statistics::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_all_lifetime_statistics::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: JobStatistics = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_all_lifetime_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_all_lifetime_statistics::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_all_lifetime_statistics::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PoolNodeCountsListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/nodecounts", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::PoolNodeCountsListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
+}
+pub mod job {
+    use super::{models, API_VERSION};
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Gets lifetime summary statistics for all of the jobs in the specified account."]
+        pub fn get_all_lifetime_statistics(&self) -> get_all_lifetime_statistics::Builder {
+            get_all_lifetime_statistics::Builder {
+                client: self.0.clone(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Gets information about the specified job."]
+        pub fn get(&self, job_id: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                select: None,
+                expand: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Updates the properties of the specified job."]
+        pub fn update(&self, job_id: impl Into<String>, job_update_parameter: impl Into<models::JobUpdateParameter>) -> update::Builder {
+            update::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                job_update_parameter: job_update_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Updates the properties of the specified job."]
+        pub fn patch(&self, job_id: impl Into<String>, job_patch_parameter: impl Into<models::JobPatchParameter>) -> patch::Builder {
+            patch::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                job_patch_parameter: job_patch_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Deletes a job."]
+        pub fn delete(&self, job_id: impl Into<String>) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Disables the specified job, preventing new tasks from running."]
+        pub fn disable(
+            &self,
+            job_id: impl Into<String>,
+            job_disable_parameter: impl Into<models::JobDisableParameter>,
+        ) -> disable::Builder {
+            disable::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                job_disable_parameter: job_disable_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Enables the specified job, allowing new tasks to run."]
+        pub fn enable(&self, job_id: impl Into<String>) -> enable::Builder {
+            enable::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Terminates the specified job, marking it as completed."]
+        pub fn terminate(&self, job_id: impl Into<String>) -> terminate::Builder {
+            terminate::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                job_terminate_parameter: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Lists all of the jobs in the specified account."]
+        pub fn list(&self) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                filter: None,
+                select: None,
+                expand: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Adds a job to the specified account."]
+        pub fn add(&self, job: impl Into<models::JobAddParameter>) -> add::Builder {
+            add::Builder {
+                client: self.0.clone(),
+                job: job.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Lists the jobs that have been created under the specified job schedule."]
+        pub fn list_from_job_schedule(&self, job_schedule_id: impl Into<String>) -> list_from_job_schedule::Builder {
+            list_from_job_schedule::Builder {
+                client: self.0.clone(),
+                job_schedule_id: job_schedule_id.into(),
+                filter: None,
+                select: None,
+                expand: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Lists the execution status of the Job Preparation and Job Release task for the specified job across the compute nodes where the job has run."]
+        pub fn list_preparation_and_release_task_status(
+            &self,
+            job_id: impl Into<String>,
+        ) -> list_preparation_and_release_task_status::Builder {
+            list_preparation_and_release_task_status::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                filter: None,
+                select: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Gets the task counts for the specified job."]
+        pub fn get_task_counts(&self, job_id: impl Into<String>) -> get_task_counts::Builder {
+            get_task_counts::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+    }
     pub mod get_all_lifetime_statistics {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1749,100 +3015,98 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        select: Option<&str>,
-        expand: Option<&str>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<CloudJob, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}", operation_config.base_path(), job_id);
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudJob =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::JobStatistics, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/lifetimejobstats", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::JobStatistics =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1851,89 +3115,147 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        job_update_parameter: &JobUpdateParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}", operation_config.base_path(), job_id);
-        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) select: Option<String>,
+            pub(crate) expand: Option<String>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(job_update_parameter).map_err(update::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJob, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}", self.client.endpoint(), &self.job_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudJob =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1942,89 +3264,128 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn patch(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        job_patch_parameter: &JobPatchParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), patch::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}", operation_config.base_path(), job_id);
-        let mut url = url::Url::parse(url_str).map_err(patch::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(patch::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) job_update_parameter: models::JobUpdateParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(job_patch_parameter).map_err(patch::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(patch::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(patch::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(patch::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}", self.client.endpoint(), &self.job_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.job_update_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2033,87 +3394,128 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}", operation_config.base_path(), job_id);
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) job_patch_parameter: models::JobPatchParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}", self.client.endpoint(), &self.job_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.job_patch_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2122,92 +3524,126 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn disable(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        job_disable_parameter: &JobDisableParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), disable::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/disable", operation_config.base_path(), job_id);
-        let mut url = url::Url::parse(url_str).map_err(disable::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(disable::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(job_disable_parameter).map_err(disable::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(disable::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(disable::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| disable::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(disable::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}", self.client.endpoint(), &self.job_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod disable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2216,88 +3652,128 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn enable(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), enable::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/enable", operation_config.base_path(), job_id);
-        let mut url = url::Url::parse(url_str).map_err(enable::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(enable::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) job_disable_parameter: models::JobDisableParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(enable::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(enable::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| enable::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(enable::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/disable", self.client.endpoint(), &self.job_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.job_disable_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod enable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2306,96 +3782,127 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn terminate(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        job_terminate_parameter: Option<&JobTerminateParameter>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), terminate::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/terminate", operation_config.base_path(), job_id);
-        let mut url = url::Url::parse(url_str).map_err(terminate::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(terminate::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = if let Some(job_terminate_parameter) = job_terminate_parameter {
-            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-            azure_core::to_json(job_terminate_parameter).map_err(terminate::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(terminate::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(terminate::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| terminate::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(terminate::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/enable", self.client.endpoint(), &self.job_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod terminate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2404,91 +3911,136 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudJobListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) job_terminate_parameter: Option<models::JobTerminateParameter>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudJobListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn job_terminate_parameter(mut self, job_terminate_parameter: impl Into<models::JobTerminateParameter>) -> Self {
+                self.job_terminate_parameter = Some(job_terminate_parameter.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/terminate", self.client.endpoint(), &self.job_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = if let Some(job_terminate_parameter) = &self.job_terminate_parameter {
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        azure_core::to_json(job_terminate_parameter).map_err(Error::Serialize)?
+                    } else {
+                        azure_core::EMPTY_BODY
+                    };
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2497,72 +4049,130 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add(
-        operation_config: &crate::OperationConfig,
-        job: &JobAddParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), add::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(add::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) filter: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) expand: Option<String>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(job).map_err(add::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(add::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(add::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudJobListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2571,97 +4181,95 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_from_job_schedule(
-        operation_config: &crate::OperationConfig,
-        job_schedule_id: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudJobListResult, list_from_job_schedule::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobschedules/{}/jobs", operation_config.base_path(), job_schedule_id);
-        let mut url = url::Url::parse(url_str).map_err(list_from_job_schedule::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_from_job_schedule::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job: models::JobAddParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_from_job_schedule::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_from_job_schedule::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudJobListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_from_job_schedule::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_from_job_schedule::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_from_job_schedule::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.job).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod list_from_job_schedule {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2670,97 +4278,131 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_preparation_and_release_task_status(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudJobListPreparationAndReleaseTaskStatusResult, list_preparation_and_release_task_status::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/jobs/{}/jobpreparationandreleasetaskstatus",
-            operation_config.base_path(),
-            job_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(list_preparation_and_release_task_status::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_preparation_and_release_task_status::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_schedule_id: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) expand: Option<String>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_preparation_and_release_task_status::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_preparation_and_release_task_status::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudJobListPreparationAndReleaseTaskStatusResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_preparation_and_release_task_status::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_preparation_and_release_task_status::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_preparation_and_release_task_status::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobschedules/{}/jobs", self.client.endpoint(), &self.job_schedule_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudJobListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod list_preparation_and_release_task_status {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2769,79 +4411,130 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_task_counts(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<TaskCounts, get_task_counts::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/taskcounts", operation_config.base_path(), job_id);
-        let mut url = url::Url::parse(url_str).map_err(get_task_counts::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_task_counts::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_task_counts::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_task_counts::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: TaskCounts = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_task_counts::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_task_counts::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_task_counts::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobListPreparationAndReleaseTaskStatusResult, Error>>
+            {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/jobs/{}/jobpreparationandreleasetaskstatus",
+                        self.client.endpoint(),
+                        &self.job_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudJobListPreparationAndReleaseTaskStatusResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_task_counts {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2850,90 +4543,165 @@ pub mod job {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-}
-pub mod certificate {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        select: Option<&str>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<CertificateListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/certificates", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CertificateListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TaskCounts, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/taskcounts", self.client.endpoint(), &self.job_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TaskCounts =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
+}
+pub mod certificate {
+    use super::{models, API_VERSION};
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Lists all of the certificates that have been added to the specified account."]
+        pub fn list(&self) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                filter: None,
+                select: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Adds a certificate to the specified account."]
+        pub fn add(&self, certificate: impl Into<models::CertificateAddParameter>) -> add::Builder {
+            add::Builder {
+                client: self.0.clone(),
+                certificate: certificate.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Cancels a failed deletion of a certificate from the specified account."]
+        pub fn cancel_deletion(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> cancel_deletion::Builder {
+            cancel_deletion::Builder {
+                client: self.0.clone(),
+                thumbprint_algorithm: thumbprint_algorithm.into(),
+                thumbprint: thumbprint.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        pub fn get(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                thumbprint_algorithm: thumbprint_algorithm.into(),
+                thumbprint: thumbprint.into(),
+                select: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Deletes a certificate from the specified account."]
+        pub fn delete(&self, thumbprint_algorithm: impl Into<String>, thumbprint: impl Into<String>) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                thumbprint_algorithm: thumbprint_algorithm.into(),
+                thumbprint: thumbprint.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+    }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2942,72 +4710,122 @@ pub mod certificate {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add(
-        operation_config: &crate::OperationConfig,
-        certificate: &CertificateAddParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), add::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/certificates", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(add::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) filter: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(certificate).map_err(add::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(add::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(add::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CertificateListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/certificates", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CertificateListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3016,81 +4834,95 @@ pub mod certificate {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn cancel_deletion(
-        operation_config: &crate::OperationConfig,
-        thumbprint_algorithm: &str,
-        thumbprint: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), cancel_deletion::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/certificates(thumbprintAlgorithm={},thumbprint={})/canceldelete",
-            operation_config.base_path(),
-            thumbprint_algorithm,
-            thumbprint
-        );
-        let mut url = url::Url::parse(url_str).map_err(cancel_deletion::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(cancel_deletion::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) certificate: models::CertificateAddParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(cancel_deletion::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(cancel_deletion::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| cancel_deletion::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(cancel_deletion::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/certificates", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.certificate).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod cancel_deletion {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3099,86 +4931,101 @@ pub mod certificate {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        thumbprint_algorithm: &str,
-        thumbprint: &str,
-        select: Option<&str>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<Certificate, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
-            operation_config.base_path(),
-            thumbprint_algorithm,
-            thumbprint
-        );
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) thumbprint_algorithm: String,
+            pub(crate) thumbprint: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: Certificate =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/certificates(thumbprintAlgorithm={},thumbprint={})/canceldelete",
+                        self.client.endpoint(),
+                        &self.thumbprint_algorithm,
+                        &self.thumbprint
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3187,77 +5034,113 @@ pub mod certificate {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        thumbprint_algorithm: &str,
-        thumbprint: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
-            operation_config.base_path(),
-            thumbprint_algorithm,
-            thumbprint
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) thumbprint_algorithm: String,
+            pub(crate) thumbprint: String,
+            pub(crate) select: Option<String>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Certificate, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
+                        self.client.endpoint(),
+                        &self.thumbprint_algorithm,
+                        &self.thumbprint
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Certificate =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3266,102 +5149,252 @@ pub mod certificate {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-}
-pub mod file {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get_from_task(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task_id: &str,
-        file_path: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        ocp_range: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<serde_json::Value, get_from_task::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/jobs/{}/tasks/{}/files/{}",
-            operation_config.base_path(),
-            job_id,
-            task_id,
-            file_path
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_from_task::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_from_task::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) thumbprint_algorithm: String,
+            pub(crate) thumbprint: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(ocp_range) = ocp_range {
-            req_builder = req_builder.header("ocp-range", ocp_range);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_from_task::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_from_task::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_from_task::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get_from_task::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_from_task::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/certificates(thumbprintAlgorithm={},thumbprint={})",
+                        self.client.endpoint(),
+                        &self.thumbprint_algorithm,
+                        &self.thumbprint
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
+}
+pub mod file {
+    use super::{models, API_VERSION};
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn get_from_task(
+            &self,
+            job_id: impl Into<String>,
+            task_id: impl Into<String>,
+            file_path: impl Into<String>,
+        ) -> get_from_task::Builder {
+            get_from_task::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task_id: task_id.into(),
+                file_path: file_path.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                ocp_range: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Deletes the specified task file from the compute node where the task ran."]
+        pub fn delete_from_task(
+            &self,
+            job_id: impl Into<String>,
+            task_id: impl Into<String>,
+            file_path: impl Into<String>,
+        ) -> delete_from_task::Builder {
+            delete_from_task::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task_id: task_id.into(),
+                file_path: file_path.into(),
+                recursive: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        pub fn get_properties_from_task(
+            &self,
+            job_id: impl Into<String>,
+            task_id: impl Into<String>,
+            file_path: impl Into<String>,
+        ) -> get_properties_from_task::Builder {
+            get_properties_from_task::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task_id: task_id.into(),
+                file_path: file_path.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        pub fn get_from_compute_node(
+            &self,
+            pool_id: impl Into<String>,
+            node_id: impl Into<String>,
+            file_path: impl Into<String>,
+        ) -> get_from_compute_node::Builder {
+            get_from_compute_node::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                file_path: file_path.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                ocp_range: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Deletes the specified file from the compute node."]
+        pub fn delete_from_compute_node(
+            &self,
+            pool_id: impl Into<String>,
+            node_id: impl Into<String>,
+            file_path: impl Into<String>,
+        ) -> delete_from_compute_node::Builder {
+            delete_from_compute_node::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                file_path: file_path.into(),
+                recursive: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        pub fn get_properties_from_compute_node(
+            &self,
+            pool_id: impl Into<String>,
+            node_id: impl Into<String>,
+            file_path: impl Into<String>,
+        ) -> get_properties_from_compute_node::Builder {
+            get_properties_from_compute_node::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                file_path: file_path.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Lists the files in a task's directory on its compute node."]
+        pub fn list_from_task(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> list_from_task::Builder {
+            list_from_task::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task_id: task_id.into(),
+                filter: None,
+                recursive: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Lists all of the files in task directories on the specified compute node."]
+        pub fn list_from_compute_node(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> list_from_compute_node::Builder {
+            list_from_compute_node::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                filter: None,
+                recursive: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+    }
     pub mod get_from_task {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3370,86 +5403,131 @@ pub mod file {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete_from_task(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task_id: &str,
-        file_path: &str,
-        recursive: Option<bool>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), delete_from_task::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/jobs/{}/tasks/{}/files/{}",
-            operation_config.base_path(),
-            job_id,
-            task_id,
-            file_path
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_from_task::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_from_task::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task_id: String,
+            pub(crate) file_path: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) ocp_range: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(recursive) = recursive {
-            url.query_pairs_mut().append_pair("recursive", recursive.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete_from_task::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_from_task::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| delete_from_task::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_from_task::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn ocp_range(mut self, ocp_range: impl Into<String>) -> Self {
+                self.ocp_range = Some(ocp_range.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/jobs/{}/tasks/{}/files/{}",
+                        self.client.endpoint(),
+                        &self.job_id,
+                        &self.task_id,
+                        &self.file_path
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(ocp_range) = &self.ocp_range {
+                        req_builder = req_builder.header("ocp-range", ocp_range);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete_from_task {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3458,92 +5536,110 @@ pub mod file {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_properties_from_task(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task_id: &str,
-        file_path: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), get_properties_from_task::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/jobs/{}/tasks/{}/files/{}",
-            operation_config.base_path(),
-            job_id,
-            task_id,
-            file_path
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_properties_from_task::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::HEAD);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_properties_from_task::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task_id: String,
+            pub(crate) file_path: String,
+            pub(crate) recursive: Option<bool>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_properties_from_task::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_properties_from_task::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_properties_from_task::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_properties_from_task::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn recursive(mut self, recursive: bool) -> Self {
+                self.recursive = Some(recursive);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/jobs/{}/tasks/{}/files/{}",
+                        self.client.endpoint(),
+                        &self.job_id,
+                        &self.task_id,
+                        &self.file_path
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(recursive) = &self.recursive {
+                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_properties_from_task {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3552,101 +5648,118 @@ pub mod file {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_from_compute_node(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        file_path: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        ocp_range: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<serde_json::Value, get_from_compute_node::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/pools/{}/nodes/{}/files/{}",
-            operation_config.base_path(),
-            pool_id,
-            node_id,
-            file_path
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_from_compute_node::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_from_compute_node::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task_id: String,
+            pub(crate) file_path: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(ocp_range) = ocp_range {
-            req_builder = req_builder.header("ocp-range", ocp_range);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_from_compute_node::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_from_compute_node::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_from_compute_node::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_from_compute_node::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_from_compute_node::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/jobs/{}/tasks/{}/files/{}",
+                        self.client.endpoint(),
+                        &self.job_id,
+                        &self.task_id,
+                        &self.file_path
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::HEAD);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_from_compute_node {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3655,88 +5768,131 @@ pub mod file {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete_from_compute_node(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        file_path: &str,
-        recursive: Option<bool>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), delete_from_compute_node::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/pools/{}/nodes/{}/files/{}",
-            operation_config.base_path(),
-            pool_id,
-            node_id,
-            file_path
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_from_compute_node::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_from_compute_node::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) file_path: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) ocp_range: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(recursive) = recursive {
-            url.query_pairs_mut().append_pair("recursive", recursive.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(delete_from_compute_node::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_from_compute_node::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| delete_from_compute_node::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_from_compute_node::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn ocp_range(mut self, ocp_range: impl Into<String>) -> Self {
+                self.ocp_range = Some(ocp_range.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/pools/{}/nodes/{}/files/{}",
+                        self.client.endpoint(),
+                        &self.pool_id,
+                        &self.node_id,
+                        &self.file_path
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(ocp_range) = &self.ocp_range {
+                        req_builder = req_builder.header("ocp-range", ocp_range);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete_from_compute_node {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3745,92 +5901,110 @@ pub mod file {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_properties_from_compute_node(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        file_path: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), get_properties_from_compute_node::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/pools/{}/nodes/{}/files/{}",
-            operation_config.base_path(),
-            pool_id,
-            node_id,
-            file_path
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_properties_from_compute_node::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::HEAD);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_properties_from_compute_node::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) file_path: String,
+            pub(crate) recursive: Option<bool>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_properties_from_compute_node::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_properties_from_compute_node::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_properties_from_compute_node::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_properties_from_compute_node::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn recursive(mut self, recursive: bool) -> Self {
+                self.recursive = Some(recursive);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/pools/{}/nodes/{}/files/{}",
+                        self.client.endpoint(),
+                        &self.pool_id,
+                        &self.node_id,
+                        &self.file_path
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(recursive) = &self.recursive {
+                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_properties_from_compute_node {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3839,92 +6013,118 @@ pub mod file {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_from_task(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task_id: &str,
-        filter: Option<&str>,
-        recursive: Option<bool>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<NodeFileListResult, list_from_task::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/tasks/{}/files", operation_config.base_path(), job_id, task_id);
-        let mut url = url::Url::parse(url_str).map_err(list_from_task::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_from_task::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) file_path: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(recursive) = recursive {
-            url.query_pairs_mut().append_pair("recursive", recursive.to_string().as_str());
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_from_task::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_from_task::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: NodeFileListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_from_task::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_from_task::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_from_task::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/pools/{}/nodes/{}/files/{}",
+                        self.client.endpoint(),
+                        &self.pool_id,
+                        &self.node_id,
+                        &self.file_path
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::HEAD);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod list_from_task {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -3933,94 +6133,124 @@ pub mod file {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_from_compute_node(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        filter: Option<&str>,
-        recursive: Option<bool>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<NodeFileListResult, list_from_compute_node::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/nodes/{}/files", operation_config.base_path(), pool_id, node_id);
-        let mut url = url::Url::parse(url_str).map_err(list_from_compute_node::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_from_compute_node::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task_id: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) recursive: Option<bool>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(recursive) = recursive {
-            url.query_pairs_mut().append_pair("recursive", recursive.to_string().as_str());
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(list_from_compute_node::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_from_compute_node::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: NodeFileListResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_from_compute_node::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| list_from_compute_node::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_from_compute_node::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn recursive(mut self, recursive: bool) -> Self {
+                self.recursive = Some(recursive);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NodeFileListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/tasks/{}/files", self.client.endpoint(), &self.job_id, &self.task_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(recursive) = &self.recursive {
+                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::NodeFileListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod list_from_compute_node {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4029,103 +6259,286 @@ pub mod file {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-}
-pub mod job_schedule {
-    use super::{models, models::*, API_VERSION};
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        job_schedule_id: &str,
-        select: Option<&str>,
-        expand: Option<&str>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<CloudJobSchedule, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobschedules/{}", operation_config.base_path(), job_schedule_id);
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) recursive: Option<bool>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudJobSchedule =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn recursive(mut self, recursive: bool) -> Self {
+                self.recursive = Some(recursive);
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::NodeFileListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/nodes/{}/files", self.client.endpoint(), &self.pool_id, &self.node_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(recursive) = &self.recursive {
+                        url.query_pairs_mut().append_pair("recursive", &recursive.to_string());
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::NodeFileListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
+}
+pub mod job_schedule {
+    use super::{models, API_VERSION};
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn get(&self, job_schedule_id: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                job_schedule_id: job_schedule_id.into(),
+                select: None,
+                expand: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Updates the properties of the specified job schedule."]
+        pub fn update(
+            &self,
+            job_schedule_id: impl Into<String>,
+            job_schedule_update_parameter: impl Into<models::JobScheduleUpdateParameter>,
+        ) -> update::Builder {
+            update::Builder {
+                client: self.0.clone(),
+                job_schedule_id: job_schedule_id.into(),
+                job_schedule_update_parameter: job_schedule_update_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Updates the properties of the specified job schedule."]
+        pub fn patch(
+            &self,
+            job_schedule_id: impl Into<String>,
+            job_schedule_patch_parameter: impl Into<models::JobSchedulePatchParameter>,
+        ) -> patch::Builder {
+            patch::Builder {
+                client: self.0.clone(),
+                job_schedule_id: job_schedule_id.into(),
+                job_schedule_patch_parameter: job_schedule_patch_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Deletes a job schedule from the specified account."]
+        pub fn delete(&self, job_schedule_id: impl Into<String>) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                job_schedule_id: job_schedule_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Checks the specified job schedule exists."]
+        pub fn exists(&self, job_schedule_id: impl Into<String>) -> exists::Builder {
+            exists::Builder {
+                client: self.0.clone(),
+                job_schedule_id: job_schedule_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Disables a job schedule."]
+        pub fn disable(&self, job_schedule_id: impl Into<String>) -> disable::Builder {
+            disable::Builder {
+                client: self.0.clone(),
+                job_schedule_id: job_schedule_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Enables a job schedule."]
+        pub fn enable(&self, job_schedule_id: impl Into<String>) -> enable::Builder {
+            enable::Builder {
+                client: self.0.clone(),
+                job_schedule_id: job_schedule_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Terminates a job schedule."]
+        pub fn terminate(&self, job_schedule_id: impl Into<String>) -> terminate::Builder {
+            terminate::Builder {
+                client: self.0.clone(),
+                job_schedule_id: job_schedule_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Lists all of the job schedules in the specified account."]
+        pub fn list(&self) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                filter: None,
+                select: None,
+                expand: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Adds a job schedule to the specified account."]
+        pub fn add(&self, cloud_job_schedule: impl Into<models::JobScheduleAddParameter>) -> add::Builder {
+            add::Builder {
+                client: self.0.clone(),
+                cloud_job_schedule: cloud_job_schedule.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+    }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4134,89 +6547,147 @@ pub mod job_schedule {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update(
-        operation_config: &crate::OperationConfig,
-        job_schedule_id: &str,
-        job_schedule_update_parameter: &JobScheduleUpdateParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobschedules/{}", operation_config.base_path(), job_schedule_id);
-        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_schedule_id: String,
+            pub(crate) select: Option<String>,
+            pub(crate) expand: Option<String>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(job_schedule_update_parameter).map_err(update::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobSchedule, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudJobSchedule =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4225,89 +6696,128 @@ pub mod job_schedule {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn patch(
-        operation_config: &crate::OperationConfig,
-        job_schedule_id: &str,
-        job_schedule_patch_parameter: &JobSchedulePatchParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), patch::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobschedules/{}", operation_config.base_path(), job_schedule_id);
-        let mut url = url::Url::parse(url_str).map_err(patch::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PATCH);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(patch::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_schedule_id: String,
+            pub(crate) job_schedule_update_parameter: models::JobScheduleUpdateParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(job_schedule_patch_parameter).map_err(patch::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(patch::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(patch::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| patch::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(patch::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.job_schedule_update_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod patch {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4316,87 +6826,128 @@ pub mod job_schedule {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        job_schedule_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobschedules/{}", operation_config.base_path(), job_schedule_id);
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_schedule_id: String,
+            pub(crate) job_schedule_patch_parameter: models::JobSchedulePatchParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PATCH);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.job_schedule_patch_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4405,88 +6956,126 @@ pub mod job_schedule {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn exists(
-        operation_config: &crate::OperationConfig,
-        job_schedule_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), exists::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobschedules/{}", operation_config.base_path(), job_schedule_id);
-        let mut url = url::Url::parse(url_str).map_err(exists::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::HEAD);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(exists::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_schedule_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(exists::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(exists::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            http::StatusCode::NOT_FOUND => Err(exists::Error::NotFound404 {}),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| exists::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(exists::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod exists {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -4497,91 +7086,127 @@ pub mod job_schedule {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn disable(
-        operation_config: &crate::OperationConfig,
-        job_schedule_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), disable::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobschedules/{}/disable", operation_config.base_path(), job_schedule_id);
-        let mut url = url::Url::parse(url_str).map_err(disable::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(disable::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_schedule_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(disable::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(disable::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| disable::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(disable::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobschedules/{}", self.client.endpoint(), &self.job_schedule_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::HEAD);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        http::StatusCode::NOT_FOUND => Err(Error::NotFound404 {}),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod disable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4590,88 +7215,127 @@ pub mod job_schedule {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn enable(
-        operation_config: &crate::OperationConfig,
-        job_schedule_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), enable::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobschedules/{}/enable", operation_config.base_path(), job_schedule_id);
-        let mut url = url::Url::parse(url_str).map_err(enable::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(enable::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_schedule_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(enable::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(enable::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| enable::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(enable::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobschedules/{}/disable", self.client.endpoint(), &self.job_schedule_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod enable {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4680,91 +7344,127 @@ pub mod job_schedule {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn terminate(
-        operation_config: &crate::OperationConfig,
-        job_schedule_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), terminate::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobschedules/{}/terminate", operation_config.base_path(), job_schedule_id);
-        let mut url = url::Url::parse(url_str).map_err(terminate::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(terminate::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_schedule_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(terminate::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(terminate::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| terminate::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(terminate::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobschedules/{}/enable", self.client.endpoint(), &self.job_schedule_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod terminate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4773,91 +7473,127 @@ pub mod job_schedule {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudJobScheduleListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobschedules", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_schedule_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudJobScheduleListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobschedules/{}/terminate", self.client.endpoint(), &self.job_schedule_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4866,72 +7602,132 @@ pub mod job_schedule {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add(
-        operation_config: &crate::OperationConfig,
-        timeout: Option<i32>,
-        cloud_job_schedule: &JobScheduleAddParameter,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), add::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobschedules", operation_config.base_path(),);
-        let mut url = url::Url::parse(url_str).map_err(add::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) filter: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) expand: Option<String>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(cloud_job_schedule).map_err(add::Error::SerializeError)?;
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(add::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(add::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudJobScheduleListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobschedules", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudJobScheduleListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -4940,95 +7736,244 @@ pub mod job_schedule {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) cloud_job_schedule: models::JobScheduleAddParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+        }
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobschedules", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.cloud_job_schedule).map_err(Error::Serialize)?;
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }
 pub mod task {
-    use super::{models, models::*, API_VERSION};
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
-        expand: Option<&str>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudTaskListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/tasks", operation_config.base_path(), job_id);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-        }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudTaskListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+    use super::{models, API_VERSION};
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Lists all of the tasks that are associated with the specified job."]
+        pub fn list(&self, job_id: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                filter: None,
+                select: None,
+                expand: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
-                })
+        }
+        #[doc = "Adds a task to the specified job."]
+        pub fn add(&self, job_id: impl Into<String>, task: impl Into<models::TaskAddParameter>) -> add::Builder {
+            add::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task: task.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Adds a collection of tasks to the specified job."]
+        pub fn add_collection(
+            &self,
+            job_id: impl Into<String>,
+            task_collection: impl Into<models::TaskAddCollectionParameter>,
+        ) -> add_collection::Builder {
+            add_collection::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task_collection: task_collection.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Gets information about the specified task."]
+        pub fn get(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task_id: task_id.into(),
+                select: None,
+                expand: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        pub fn update(
+            &self,
+            job_id: impl Into<String>,
+            task_id: impl Into<String>,
+            task_update_parameter: impl Into<models::TaskUpdateParameter>,
+        ) -> update::Builder {
+            update::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task_id: task_id.into(),
+                task_update_parameter: task_update_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Deletes a task from the specified job."]
+        pub fn delete(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> delete::Builder {
+            delete::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task_id: task_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Lists all of the subtasks that are associated with the specified multi-instance task."]
+        pub fn list_subtasks(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> list_subtasks::Builder {
+            list_subtasks::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task_id: task_id.into(),
+                select: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Terminates the specified task."]
+        pub fn terminate(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> terminate::Builder {
+            terminate::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task_id: task_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
+            }
+        }
+        #[doc = "Reactivates a task, allowing it to run again even if its retry count has been exhausted."]
+        pub fn reactivate(&self, job_id: impl Into<String>, task_id: impl Into<String>) -> reactivate::Builder {
+            reactivate::Builder {
+                client: self.0.clone(),
+                job_id: job_id.into(),
+                task_id: task_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+                if_match: None,
+                if_none_match: None,
+                if_modified_since: None,
+                if_unmodified_since: None,
             }
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5037,73 +7982,131 @@ pub mod task {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task: &TaskAddParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), add::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/tasks", operation_config.base_path(), job_id);
-        let mut url = url::Url::parse(url_str).map_err(add::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) expand: Option<String>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(task).map_err(add::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(add::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(add::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| add::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudTaskListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/tasks", self.client.endpoint(), &self.job_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudTaskListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod add {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5112,81 +8115,96 @@ pub mod task {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn add_collection(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task_collection: &TaskAddCollectionParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<TaskAddCollectionResult, add_collection::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/addtaskcollection", operation_config.base_path(), job_id);
-        let mut url = url::Url::parse(url_str).map_err(add_collection::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add_collection::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task: models::TaskAddParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(task_collection).map_err(add_collection::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(add_collection::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(add_collection::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: TaskAddCollectionResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| add_collection::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| add_collection::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add_collection::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/tasks", self.client.endpoint(), &self.job_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.task).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod add_collection {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5195,101 +8213,101 @@ pub mod task {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task_id: &str,
-        select: Option<&str>,
-        expand: Option<&str>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<CloudTask, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/tasks/{}", operation_config.base_path(), job_id, task_id);
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task_collection: models::TaskAddCollectionParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(expand) = expand {
-            url.query_pairs_mut().append_pair("$expand", expand);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudTask =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TaskAddCollectionResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/addtaskcollection", self.client.endpoint(), &self.job_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.task_collection).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TaskAddCollectionResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5298,90 +8316,148 @@ pub mod task {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task_id: &str,
-        task_update_parameter: &TaskUpdateParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), update::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/tasks/{}", operation_config.base_path(), job_id, task_id);
-        let mut url = url::Url::parse(url_str).map_err(update::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task_id: String,
+            pub(crate) select: Option<String>,
+            pub(crate) expand: Option<String>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(task_update_parameter).map_err(update::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(update::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| update::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudTask, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(expand) = &self.expand {
+                        url.query_pairs_mut().append_pair("$expand", expand);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudTask =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod update {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5390,88 +8466,129 @@ pub mod task {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), delete::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/tasks/{}", operation_config.base_path(), job_id, task_id);
-        let mut url = url::Url::parse(url_str).map_err(delete::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task_id: String,
+            pub(crate) task_update_parameter: models::TaskUpdateParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(delete::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.task_update_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5480,84 +8597,127 @@ pub mod task {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list_subtasks(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task_id: &str,
-        select: Option<&str>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<CloudTaskListSubtasksResult, list_subtasks::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/tasks/{}/subtasksinfo", operation_config.base_path(), job_id, task_id);
-        let mut url = url::Url::parse(url_str).map_err(list_subtasks::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list_subtasks::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list_subtasks::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(list_subtasks::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: CloudTaskListSubtasksResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_subtasks::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list_subtasks::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list_subtasks::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/tasks/{}", self.client.endpoint(), &self.job_id, &self.task_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod list_subtasks {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5566,92 +8726,115 @@ pub mod task {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn terminate(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), terminate::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/tasks/{}/terminate", operation_config.base_path(), job_id, task_id);
-        let mut url = url::Url::parse(url_str).map_err(terminate::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(terminate::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task_id: String,
+            pub(crate) select: Option<String>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(terminate::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(terminate::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| terminate::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(terminate::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::CloudTaskListSubtasksResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/jobs/{}/tasks/{}/subtasksinfo",
+                        self.client.endpoint(),
+                        &self.job_id,
+                        &self.task_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::CloudTaskListSubtasksResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod terminate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5660,92 +8843,128 @@ pub mod task {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn reactivate(
-        operation_config: &crate::OperationConfig,
-        job_id: &str,
-        task_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        if_match: Option<&str>,
-        if_none_match: Option<&str>,
-        if_modified_since: Option<&str>,
-        if_unmodified_since: Option<&str>,
-    ) -> std::result::Result<(), reactivate::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/jobs/{}/tasks/{}/reactivate", operation_config.base_path(), job_id, task_id);
-        let mut url = url::Url::parse(url_str).map_err(reactivate::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(reactivate::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        if let Some(if_match) = if_match {
-            req_builder = req_builder.header("If-Match", if_match);
-        }
-        if let Some(if_none_match) = if_none_match {
-            req_builder = req_builder.header("If-None-Match", if_none_match);
-        }
-        if let Some(if_modified_since) = if_modified_since {
-            req_builder = req_builder.header("If-Modified-Since", if_modified_since);
-        }
-        if let Some(if_unmodified_since) = if_unmodified_since {
-            req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(reactivate::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(reactivate::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::NO_CONTENT => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| reactivate::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(reactivate::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/jobs/{}/tasks/{}/terminate", self.client.endpoint(), &self.job_id, &self.task_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod reactivate {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5754,80 +8973,319 @@ pub mod task {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-}
-pub mod compute_node {
-    use super::{models, models::*, API_VERSION};
-    pub async fn add_user(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        user: &ComputeNodeUser,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), add_user::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/nodes/{}/users", operation_config.base_path(), pool_id, node_id);
-        let mut url = url::Url::parse(url_str).map_err(add_user::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(add_user::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) job_id: String,
+            pub(crate) task_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+            pub(crate) if_match: Option<String>,
+            pub(crate) if_none_match: Option<String>,
+            pub(crate) if_modified_since: Option<String>,
+            pub(crate) if_unmodified_since: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(user).map_err(add_user::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(add_user::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(add_user::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::CREATED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| add_user::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(add_user::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
+                self.if_modified_since = Some(if_modified_since.into());
+                self
+            }
+            pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
+                self.if_unmodified_since = Some(if_unmodified_since.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/jobs/{}/tasks/{}/reactivate",
+                        self.client.endpoint(),
+                        &self.job_id,
+                        &self.task_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    if let Some(if_match) = &self.if_match {
+                        req_builder = req_builder.header("If-Match", if_match);
+                    }
+                    if let Some(if_none_match) = &self.if_none_match {
+                        req_builder = req_builder.header("If-None-Match", if_none_match);
+                    }
+                    if let Some(if_modified_since) = &self.if_modified_since {
+                        req_builder = req_builder.header("If-Modified-Since", if_modified_since);
+                    }
+                    if let Some(if_unmodified_since) = &self.if_unmodified_since {
+                        req_builder = req_builder.header("If-Unmodified-Since", if_unmodified_since);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::NO_CONTENT => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
+}
+pub mod compute_node {
+    use super::{models, API_VERSION};
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Adds a user account to the specified compute node."]
+        pub fn add_user(
+            &self,
+            pool_id: impl Into<String>,
+            node_id: impl Into<String>,
+            user: impl Into<models::ComputeNodeUser>,
+        ) -> add_user::Builder {
+            add_user::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                user: user.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Updates the password and expiration time of a user account on the specified compute node."]
+        pub fn update_user(
+            &self,
+            pool_id: impl Into<String>,
+            node_id: impl Into<String>,
+            user_name: impl Into<String>,
+            node_update_user_parameter: impl Into<models::NodeUpdateUserParameter>,
+        ) -> update_user::Builder {
+            update_user::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                user_name: user_name.into(),
+                node_update_user_parameter: node_update_user_parameter.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Deletes a user account from the specified compute node."]
+        pub fn delete_user(
+            &self,
+            pool_id: impl Into<String>,
+            node_id: impl Into<String>,
+            user_name: impl Into<String>,
+        ) -> delete_user::Builder {
+            delete_user::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                user_name: user_name.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Gets information about the specified compute node."]
+        pub fn get(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                select: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Restarts the specified compute node."]
+        pub fn reboot(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> reboot::Builder {
+            reboot::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                node_reboot_parameter: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Reinstalls the operating system on the specified compute node."]
+        pub fn reimage(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> reimage::Builder {
+            reimage::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                node_reimage_parameter: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Disables task scheduling on the specified compute node."]
+        pub fn disable_scheduling(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> disable_scheduling::Builder {
+            disable_scheduling::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                node_disable_scheduling_parameter: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Enables task scheduling on the specified compute node."]
+        pub fn enable_scheduling(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> enable_scheduling::Builder {
+            enable_scheduling::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Gets the settings required for remote login to a compute node."]
+        pub fn get_remote_login_settings(
+            &self,
+            pool_id: impl Into<String>,
+            node_id: impl Into<String>,
+        ) -> get_remote_login_settings::Builder {
+            get_remote_login_settings::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Gets the Remote Desktop Protocol file for the specified compute node."]
+        pub fn get_remote_desktop(&self, pool_id: impl Into<String>, node_id: impl Into<String>) -> get_remote_desktop::Builder {
+            get_remote_desktop::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Upload Azure Batch service log files from the specified compute node to Azure Blob Storage."]
+        pub fn upload_batch_service_logs(
+            &self,
+            pool_id: impl Into<String>,
+            node_id: impl Into<String>,
+            upload_batch_service_logs_configuration: impl Into<models::UploadBatchServiceLogsConfiguration>,
+        ) -> upload_batch_service_logs::Builder {
+            upload_batch_service_logs::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                node_id: node_id.into(),
+                upload_batch_service_logs_configuration: upload_batch_service_logs_configuration.into(),
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+        #[doc = "Lists the compute nodes in the specified pool."]
+        pub fn list(&self, pool_id: impl Into<String>) -> list::Builder {
+            list::Builder {
+                client: self.0.clone(),
+                pool_id: pool_id.into(),
+                filter: None,
+                select: None,
+                maxresults: None,
+                timeout: None,
+                client_request_id: None,
+                return_client_request_id: None,
+                ocp_date: None,
+            }
+        }
+    }
     pub mod add_user {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5836,84 +9294,97 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn update_user(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        user_name: &str,
-        node_update_user_parameter: &NodeUpdateUserParameter,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), update_user::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/pools/{}/nodes/{}/users/{}",
-            operation_config.base_path(),
-            pool_id,
-            node_id,
-            user_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(update_user::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::PUT);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(update_user::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) user: models::ComputeNodeUser,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body = azure_core::to_json(node_update_user_parameter).map_err(update_user::Error::SerializeError)?;
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(update_user::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(update_user::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| update_user::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(update_user::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/nodes/{}/users", self.client.endpoint(), &self.pool_id, &self.node_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.user).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::CREATED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod update_user {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -5922,82 +9393,104 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn delete_user(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        user_name: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), delete_user::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/pools/{}/nodes/{}/users/{}",
-            operation_config.base_path(),
-            pool_id,
-            node_id,
-            user_name
-        );
-        let mut url = url::Url::parse(url_str).map_err(delete_user::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::DELETE);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(delete_user::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) user_name: String,
+            pub(crate) node_update_user_parameter: models::NodeUpdateUserParameter,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(delete_user::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(delete_user::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| delete_user::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(delete_user::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/pools/{}/nodes/{}/users/{}",
+                        self.client.endpoint(),
+                        &self.pool_id,
+                        &self.node_id,
+                        &self.user_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::PUT);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.node_update_user_parameter).map_err(Error::Serialize)?;
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod delete_user {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6006,81 +9499,102 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        select: Option<&str>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<ComputeNode, get::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/nodes/{}", operation_config.base_path(), pool_id, node_id);
-        let mut url = url::Url::parse(url_str).map_err(get::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) user_name: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(get::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ComputeNode =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| get::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/pools/{}/nodes/{}/users/{}",
+                        self.client.endpoint(),
+                        &self.pool_id,
+                        &self.node_id,
+                        &self.user_name
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::DELETE);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6089,78 +9603,108 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn reboot(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        node_reboot_parameter: Option<&NodeRebootParameter>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), reboot::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/nodes/{}/reboot", operation_config.base_path(), pool_id, node_id);
-        let mut url = url::Url::parse(url_str).map_err(reboot::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(reboot::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) select: Option<String>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = if let Some(node_reboot_parameter) = node_reboot_parameter {
-            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-            azure_core::to_json(node_reboot_parameter).map_err(reboot::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(reboot::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(reboot::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| reboot::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(reboot::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ComputeNode, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/nodes/{}", self.client.endpoint(), &self.pool_id, &self.node_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ComputeNode =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod reboot {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6169,81 +9713,105 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn reimage(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        node_reimage_parameter: Option<&NodeReimageParameter>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), reimage::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/nodes/{}/reimage", operation_config.base_path(), pool_id, node_id);
-        let mut url = url::Url::parse(url_str).map_err(reimage::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(reimage::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) node_reboot_parameter: Option<models::NodeRebootParameter>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = if let Some(node_reimage_parameter) = node_reimage_parameter {
-            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-            azure_core::to_json(node_reimage_parameter).map_err(reimage::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(reimage::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(reimage::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::ACCEPTED => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| reimage::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(reimage::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn node_reboot_parameter(mut self, node_reboot_parameter: impl Into<models::NodeRebootParameter>) -> Self {
+                self.node_reboot_parameter = Some(node_reboot_parameter.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/nodes/{}/reboot", self.client.endpoint(), &self.pool_id, &self.node_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = if let Some(node_reboot_parameter) = &self.node_reboot_parameter {
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        azure_core::to_json(node_reboot_parameter).map_err(Error::Serialize)?
+                    } else {
+                        azure_core::EMPTY_BODY
+                    };
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod reimage {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6252,86 +9820,105 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn disable_scheduling(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        node_disable_scheduling_parameter: Option<&NodeDisableSchedulingParameter>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), disable_scheduling::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/pools/{}/nodes/{}/disablescheduling",
-            operation_config.base_path(),
-            pool_id,
-            node_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(disable_scheduling::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(disable_scheduling::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) node_reimage_parameter: Option<models::NodeReimageParameter>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        let req_body = if let Some(node_disable_scheduling_parameter) = node_disable_scheduling_parameter {
-            req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-            azure_core::to_json(node_disable_scheduling_parameter).map_err(disable_scheduling::Error::SerializeError)?
-        } else {
-            bytes::Bytes::from_static(azure_core::EMPTY_BODY)
-        };
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(disable_scheduling::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(disable_scheduling::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| disable_scheduling::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(disable_scheduling::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn node_reimage_parameter(mut self, node_reimage_parameter: impl Into<models::NodeReimageParameter>) -> Self {
+                self.node_reimage_parameter = Some(node_reimage_parameter.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/nodes/{}/reimage", self.client.endpoint(), &self.pool_id, &self.node_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = if let Some(node_reimage_parameter) = &self.node_reimage_parameter {
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        azure_core::to_json(node_reimage_parameter).map_err(Error::Serialize)?
+                    } else {
+                        azure_core::EMPTY_BODY
+                    };
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod disable_scheduling {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6340,81 +9927,113 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn enable_scheduling(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<(), enable_scheduling::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/pools/{}/nodes/{}/enablescheduling",
-            operation_config.base_path(),
-            pool_id,
-            node_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(enable_scheduling::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(enable_scheduling::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) node_disable_scheduling_parameter: Option<models::NodeDisableSchedulingParameter>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(enable_scheduling::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(enable_scheduling::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => Ok(()),
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| enable_scheduling::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(enable_scheduling::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+        impl Builder {
+            pub fn node_disable_scheduling_parameter(
+                mut self,
+                node_disable_scheduling_parameter: impl Into<models::NodeDisableSchedulingParameter>,
+            ) -> Self {
+                self.node_disable_scheduling_parameter = Some(node_disable_scheduling_parameter.into());
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/pools/{}/nodes/{}/disablescheduling",
+                        self.client.endpoint(),
+                        &self.pool_id,
+                        &self.node_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    let req_body = if let Some(node_disable_scheduling_parameter) = &self.node_disable_scheduling_parameter {
+                        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                        azure_core::to_json(node_disable_scheduling_parameter).map_err(Error::Serialize)?
+                    } else {
+                        azure_core::EMPTY_BODY
+                    };
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod enable_scheduling {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6423,87 +10042,101 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_remote_login_settings(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<ComputeNodeGetRemoteLoginSettingsResult, get_remote_login_settings::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/pools/{}/nodes/{}/remoteloginsettings",
-            operation_config.base_path(),
-            pool_id,
-            node_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(get_remote_login_settings::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_remote_login_settings::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(get_remote_login_settings::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_remote_login_settings::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ComputeNodeGetRemoteLoginSettingsResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_remote_login_settings::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_remote_login_settings::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_remote_login_settings::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/pools/{}/nodes/{}/enablescheduling",
+                        self.client.endpoint(),
+                        &self.pool_id,
+                        &self.node_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => Ok(()),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_remote_login_settings {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6512,80 +10145,108 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn get_remote_desktop(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<serde_json::Value, get_remote_desktop::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/nodes/{}/rdp", operation_config.base_path(), pool_id, node_id);
-        let mut url = url::Url::parse(url_str).map_err(get_remote_desktop::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(get_remote_desktop::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(get_remote_desktop::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(get_remote_desktop::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: serde_json::Value = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_remote_desktop::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| get_remote_desktop::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(get_remote_desktop::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ComputeNodeGetRemoteLoginSettingsResult, Error>>
+            {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/pools/{}/nodes/{}/remoteloginsettings",
+                        self.client.endpoint(),
+                        &self.pool_id,
+                        &self.node_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ComputeNodeGetRemoteLoginSettingsResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod get_remote_desktop {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6594,90 +10255,100 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn upload_batch_service_logs(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        node_id: &str,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-        upload_batch_service_logs_configuration: &UploadBatchServiceLogsConfiguration,
-    ) -> std::result::Result<UploadBatchServiceLogsResult, upload_batch_service_logs::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!(
-            "{}/pools/{}/nodes/{}/uploadbatchservicelogs",
-            operation_config.base_path(),
-            pool_id,
-            node_id
-        );
-        let mut url = url::Url::parse(url_str).map_err(upload_batch_service_logs::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::POST);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(upload_batch_service_logs::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
-        let req_body =
-            azure_core::to_json(upload_batch_service_logs_configuration).map_err(upload_batch_service_logs::Error::SerializeError)?;
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder
-            .body(req_body)
-            .map_err(upload_batch_service_logs::Error::BuildRequestError)?;
-        let rsp = http_client
-            .execute_request(req)
-            .await
-            .map_err(upload_batch_service_logs::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: UploadBatchServiceLogsResult = serde_json::from_slice(rsp_body)
-                    .map_err(|source| upload_batch_service_logs::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError = serde_json::from_slice(rsp_body)
-                    .map_err(|source| upload_batch_service_logs::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(upload_batch_service_logs::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<serde_json::Value, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/nodes/{}/rdp", self.client.endpoint(), &self.pool_id, &self.node_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: serde_json::Value =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod upload_batch_service_logs {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6686,88 +10357,109 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
         }
-    }
-    pub async fn list(
-        operation_config: &crate::OperationConfig,
-        pool_id: &str,
-        filter: Option<&str>,
-        select: Option<&str>,
-        maxresults: Option<i32>,
-        timeout: Option<i32>,
-        client_request_id: Option<&str>,
-        return_client_request_id: Option<bool>,
-        ocp_date: Option<&str>,
-    ) -> std::result::Result<ComputeNodeListResult, list::Error> {
-        let http_client = operation_config.http_client();
-        let url_str = &format!("{}/pools/{}/nodes", operation_config.base_path(), pool_id);
-        let mut url = url::Url::parse(url_str).map_err(list::Error::ParseUrlError)?;
-        let mut req_builder = http::request::Builder::new();
-        req_builder = req_builder.method(http::Method::GET);
-        if let Some(token_credential) = operation_config.token_credential() {
-            let token_response = token_credential
-                .get_token(operation_config.token_credential_resource())
-                .await
-                .map_err(list::Error::GetTokenError)?;
-            req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) node_id: String,
+            pub(crate) upload_batch_service_logs_configuration: models::UploadBatchServiceLogsConfiguration,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
         }
-        url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-        if let Some(filter) = filter {
-            url.query_pairs_mut().append_pair("$filter", filter);
-        }
-        if let Some(select) = select {
-            url.query_pairs_mut().append_pair("$select", select);
-        }
-        if let Some(maxresults) = maxresults {
-            url.query_pairs_mut().append_pair("maxresults", maxresults.to_string().as_str());
-        }
-        if let Some(timeout) = timeout {
-            url.query_pairs_mut().append_pair("timeout", timeout.to_string().as_str());
-        }
-        if let Some(client_request_id) = client_request_id {
-            req_builder = req_builder.header("client-request-id", client_request_id);
-        }
-        if let Some(return_client_request_id) = return_client_request_id {
-            req_builder = req_builder.header("return-client-request-id", return_client_request_id.to_string());
-        }
-        if let Some(ocp_date) = ocp_date {
-            req_builder = req_builder.header("ocp-date", ocp_date);
-        }
-        let req_body = bytes::Bytes::from_static(azure_core::EMPTY_BODY);
-        req_builder = req_builder.uri(url.as_str());
-        let req = req_builder.body(req_body).map_err(list::Error::BuildRequestError)?;
-        let rsp = http_client.execute_request(req).await.map_err(list::Error::ExecuteRequestError)?;
-        match rsp.status() {
-            http::StatusCode::OK => {
-                let rsp_body = rsp.body();
-                let rsp_value: ComputeNodeListResult =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Ok(rsp_value)
+        impl Builder {
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
             }
-            status_code => {
-                let rsp_body = rsp.body();
-                let rsp_value: BatchError =
-                    serde_json::from_slice(rsp_body).map_err(|source| list::Error::DeserializeError(source, rsp_body.clone()))?;
-                Err(list::Error::DefaultResponse {
-                    status_code,
-                    value: rsp_value,
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::UploadBatchServiceLogsResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!(
+                        "{}/pools/{}/nodes/{}/uploadbatchservicelogs",
+                        self.client.endpoint(),
+                        &self.pool_id,
+                        &self.node_id
+                    );
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    req_builder = req_builder.header("content-type", "application/json; odata=minimalmetadata");
+                    let req_body = azure_core::to_json(&self.upload_batch_service_logs_configuration).map_err(Error::Serialize)?;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::UploadBatchServiceLogsResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
                 })
             }
         }
     }
     pub mod list {
-        use super::{models, models::*, API_VERSION};
+        use super::{models, API_VERSION};
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -6776,17 +10468,119 @@ pub mod compute_node {
                 value: models::BatchError,
             },
             #[error("Failed to parse request URL: {0}")]
-            ParseUrlError(url::ParseError),
+            ParseUrl(url::ParseError),
             #[error("Failed to build request: {0}")]
-            BuildRequestError(http::Error),
-            #[error("Failed to execute request: {0}")]
-            ExecuteRequestError(azure_core::HttpError),
+            BuildRequest(http::Error),
             #[error("Failed to serialize request body: {0}")]
-            SerializeError(serde_json::Error),
-            #[error("Failed to deserialize response: {0}, body: {1:?}")]
-            DeserializeError(serde_json::Error, bytes::Bytes),
+            Serialize(serde_json::Error),
             #[error("Failed to get access token: {0}")]
-            GetTokenError(azure_core::Error),
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) pool_id: String,
+            pub(crate) filter: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) maxresults: Option<i32>,
+            pub(crate) timeout: Option<i32>,
+            pub(crate) client_request_id: Option<String>,
+            pub(crate) return_client_request_id: Option<bool>,
+            pub(crate) ocp_date: Option<String>,
+        }
+        impl Builder {
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            pub fn maxresults(mut self, maxresults: i32) -> Self {
+                self.maxresults = Some(maxresults);
+                self
+            }
+            pub fn timeout(mut self, timeout: i32) -> Self {
+                self.timeout = Some(timeout);
+                self
+            }
+            pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
+                self.client_request_id = Some(client_request_id.into());
+                self
+            }
+            pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
+                self.return_client_request_id = Some(return_client_request_id);
+                self
+            }
+            pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
+                self.ocp_date = Some(ocp_date.into());
+                self
+            }
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ComputeNodeListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/pools/{}/nodes", self.client.endpoint(), &self.pool_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    if let Some(filter) = &self.filter {
+                        url.query_pairs_mut().append_pair("$filter", filter);
+                    }
+                    if let Some(select) = &self.select {
+                        url.query_pairs_mut().append_pair("$select", select);
+                    }
+                    if let Some(maxresults) = &self.maxresults {
+                        url.query_pairs_mut().append_pair("maxresults", &maxresults.to_string());
+                    }
+                    if let Some(timeout) = &self.timeout {
+                        url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                    }
+                    if let Some(client_request_id) = &self.client_request_id {
+                        req_builder = req_builder.header("client-request-id", client_request_id);
+                    }
+                    if let Some(return_client_request_id) = &self.return_client_request_id {
+                        req_builder = req_builder.header("return-client-request-id", &return_client_request_id.to_string());
+                    }
+                    if let Some(ocp_date) = &self.ocp_date {
+                        req_builder = req_builder.header("ocp-date", ocp_date);
+                    }
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ComputeNodeListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::BatchError =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
         }
     }
 }

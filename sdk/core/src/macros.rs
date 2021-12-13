@@ -1,6 +1,6 @@
 /// Creates setter methods
 ///
-/// The methods created are of the form `with_$name` that takes an argument of type `$typ`
+/// The methods created are of the form `$name` that takes an argument of type `$typ`
 /// and sets the field $name to result of calling `$transform` with the value of the argument.
 ///
 /// In other words. The following macro call:
@@ -144,31 +144,6 @@ macro_rules! create_enum {
             }
         }
     )
-}
-
-#[macro_export]
-macro_rules! response_from_headers {
-    ($cn:ident, $($fh:path => $na:ident: $typ:ty),+) => {
-        use http::HeaderMap;
-
-        #[derive(Debug, Clone, PartialEq)]
-        pub struct $cn {
-             $(pub $na: $typ),+,
-        }
-
-        impl $cn {
-            pub(crate) fn from_headers(headers: &HeaderMap) -> Result<$cn, $crate::Error> {
-               $(
-                    let $na = $fh(headers)?;
-                )+
-
-                Ok($cn {
-                    $($na,)+
-                })
-            }
-
-        }
-    };
 }
 
 #[cfg(test)]

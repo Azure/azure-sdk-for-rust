@@ -25,8 +25,6 @@ hyper-rustls = { version = "0.22", optional = true }
 log = "0.4"
 oauth2 = "4.0"
 rand = "0.8"
-# Add dependency to getrandom to enable WASM support
-getrandom = { version = "0.2", features = ["js"] }
 reqwest = { version = "0.11", features = ["stream"], default_features=false, optional = true }
 serde = "1.0"
 serde_derive = "1.0"
@@ -34,6 +32,10 @@ serde_json = "1.0"
 thiserror = "1.0"
 url = "2.2"
 uuid = { version = "0.8" }
+
+# Add dependency to getrandom to enable WASM support
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
 
 [build-dependencies]
 rustc_version = "0.4"
