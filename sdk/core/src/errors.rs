@@ -217,7 +217,6 @@ pub enum TraversingError {
     ParsingError(#[from] ParsingError),
 }
 
-
 /// Extract the headers and body from a `hyper` HTTP response.
 #[cfg(feature = "enable_hyper")]
 #[inline]
