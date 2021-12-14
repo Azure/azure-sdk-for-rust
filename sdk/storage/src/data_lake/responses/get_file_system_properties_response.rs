@@ -1,6 +1,7 @@
+use crate::core::headers::CommonStorageResponseHeaders;
 use crate::{data_lake::util::*, Properties};
 use azure_core::{
-    headers::{etag_from_headers, last_modified_from_headers, CommonStorageResponseHeaders},
+    headers::{etag_from_headers, last_modified_from_headers},
     Etag,
 };
 use bytes::Bytes;

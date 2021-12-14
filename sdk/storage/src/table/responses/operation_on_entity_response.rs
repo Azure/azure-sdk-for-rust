@@ -1,7 +1,5 @@
-use azure_core::{
-    headers::{etag_from_headers, CommonStorageResponseHeaders},
-    Etag,
-};
+use crate::core::headers::CommonStorageResponseHeaders;
+use azure_core::{headers::etag_from_headers, Etag};
 use bytes::Bytes;
 use http::Response;
 use std::convert::{TryFrom, TryInto};

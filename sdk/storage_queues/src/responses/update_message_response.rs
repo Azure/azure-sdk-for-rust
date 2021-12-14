@@ -1,6 +1,5 @@
-use azure_core::headers::{
-    get_str_from_headers, rfc2822_from_headers_mandatory, CommonStorageResponseHeaders,
-};
+use azure_core::headers::{get_str_from_headers, rfc2822_from_headers_mandatory};
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use http::response::Response;

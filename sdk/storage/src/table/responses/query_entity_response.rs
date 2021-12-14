@@ -1,5 +1,5 @@
+use crate::core::headers::CommonStorageResponseHeaders;
 use crate::ContinuationNextPartitionAndRowKey;
-use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
 use serde::de::DeserializeOwned;

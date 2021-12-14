@@ -1,5 +1,5 @@
-use azure_core::headers::CommonStorageResponseHeaders;
 use azure_core::prelude::*;
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::response::Response;
 use std::convert::TryInto;

@@ -1,7 +1,8 @@
+use crate::core::headers::CommonStorageResponseHeaders;
 use crate::core::util::HeaderMapExt;
 use crate::EntityWithMetadata;
 use azure_core::{
-    headers::{etag_from_headers, get_str_from_headers, CommonStorageResponseHeaders},
+    headers::{etag_from_headers, get_str_from_headers},
     Etag,
 };
 use bytes::Bytes;

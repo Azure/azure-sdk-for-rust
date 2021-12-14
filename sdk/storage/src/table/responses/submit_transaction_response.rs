@@ -1,4 +1,5 @@
-use azure_core::{headers::CommonStorageResponseHeaders, Etag};
+use crate::core::headers::CommonStorageResponseHeaders;
+use azure_core::Etag;
 use bytes::Bytes;
 use http::{Response, StatusCode};
 use std::convert::{TryFrom, TryInto};
