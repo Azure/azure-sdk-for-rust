@@ -1,6 +1,6 @@
 use azure_core::{
     headers::{etag_from_headers, CommonStorageResponseHeaders},
-    prelude::Etag,
+    Etag,
 };
 use bytes::Bytes;
 use http::Response;

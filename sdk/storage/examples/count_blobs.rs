@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use futures::stream::StreamExt;
@@ -15,7 +14,7 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let http_client = new_http_client();
+    let http_client = azure_core::new_http_client();
     let container =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
             .as_storage_client()

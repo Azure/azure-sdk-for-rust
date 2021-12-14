@@ -1,4 +1,4 @@
-use azure_core::{headers::CommonStorageResponseHeaders, prelude::Etag};
+use azure_core::{headers::CommonStorageResponseHeaders, Etag};
 use bytes::Bytes;
 use http::{Response, StatusCode};
 use std::convert::{TryFrom, TryInto};

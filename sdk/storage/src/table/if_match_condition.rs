@@ -1,5 +1,4 @@
-use azure_core::prelude::Etag;
-use azure_core::AddAsHeader;
+use azure_core::{AddAsHeader, Etag};
 use http::header::IF_MATCH;
 use http::request::Builder;
 

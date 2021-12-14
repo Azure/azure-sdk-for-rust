@@ -52,7 +52,7 @@ pub use models::*;
 pub use options::*;
 pub use pageable::*;
 pub use pipeline::Pipeline;
-pub use policies::{Policy, PolicyResult};
+pub use policies::*;
 pub use request::*;
 pub use response::*;
 pub use seekable_stream::*;

@@ -19,7 +19,7 @@ async fn put_append_blob() {
     let container_name: &'static str = "rust-upload-test";
     let _data = b"abcdef";
 
-    let http_client = new_http_client();
+    let http_client = azure_core::new_http_client();
 
     let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
         .as_storage_client();

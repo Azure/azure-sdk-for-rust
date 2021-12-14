@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use chrono::{Duration, Utc};
@@ -30,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(4)
         .expect("please specify destination blob name as fourth command line parameter");
 
-    let http_client = new_http_client();
+    let http_client = azure_core::new_http_client();
 
     let source_storage_account_client = StorageAccountClient::new_access_key(
         http_client.clone(),

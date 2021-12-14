@@ -1,4 +1,4 @@
-use azure_core::prelude::Etag;
+use azure_core::Etag;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use http::Response;

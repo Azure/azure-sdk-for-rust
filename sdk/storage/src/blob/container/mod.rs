@@ -4,13 +4,11 @@ pub mod responses;
 
 use super::IncompleteVector;
 use crate::parsing_xml::{cast_must, cast_optional, traverse};
-use azure_core::{
-    headers::{
-        BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE,
-        LEASE_STATUS, META_PREFIX,
-    },
-    lease::{LeaseDuration, LeaseState, LeaseStatus},
+use azure_core::headers::{
+    BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE,
+    LEASE_STATUS, META_PREFIX,
 };
+use azure_core::{LeaseDuration, LeaseState, LeaseStatus};
 use chrono::{DateTime, Utc};
 use http::request::Builder;
 use http::{header, HeaderMap};

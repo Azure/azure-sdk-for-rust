@@ -128,7 +128,7 @@ impl StorageAccountClient {
 
     /// Create a new client using the default HttpClient and the default emulator endpoints.
     pub fn new_emulator_default() -> Arc<Self> {
-        let http_client = new_http_client();
+        let http_client = azure_core::new_http_client();
         let blob_storage_url = Url::parse("http://127.0.0.1:10000").unwrap();
         let queue_storage_url = Url::parse("http://127.0.0.1:10001").unwrap();
         let table_storage_url = Url::parse("http://127.0.0.1:10002").unwrap();
