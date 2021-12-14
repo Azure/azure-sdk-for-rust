@@ -55,10 +55,7 @@ impl ListDatabases {
                 let response = match this
                     .client
                     .pipeline()
-                    .send(
-                        &mut ctx.clone().insert(ResourceType::Databases),
-                        &mut request,
-                    )
+                    .send(ctx.clone().insert(ResourceType::Databases), &mut request)
                     .await
                 {
                     Ok(r) => r,
