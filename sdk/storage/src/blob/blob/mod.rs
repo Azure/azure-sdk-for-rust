@@ -12,6 +12,7 @@ mod block_list;
 pub use self::block_list::BlockList;
 pub mod requests;
 pub mod responses;
+use crate::core::util::HeaderMapExt;
 use crate::headers::CONTENT_CRC64;
 use crate::{
     headers::{CONTENT_MD5, COPY_ID},
@@ -27,7 +28,6 @@ use azure_core::{
     lease::{LeaseDuration, LeaseState, LeaseStatus},
     parsing::from_azure_time,
     prelude::*,
-    util::HeaderMapExt,
 };
 use chrono::{DateTime, Utc};
 use http::header;

@@ -65,7 +65,13 @@ impl Response {
 
     /// Consume the HTTP response and read the HTTP body into a string.
     pub async fn into_body_string(self) -> String {
-        pinned_stream_into_utf8_string(self.body).await
+        let body = collect_pinned_stream(self.body)
+            .await
+            .unwrap_or_else(|_| Bytes::from_static("<INVALID BODY>".as_bytes()));
+        let body = std::str::from_utf8(&body)
+            .unwrap_or("<NON-UTF8 BODY>")
+            .to_owned();
+        body
     }
 }
 
@@ -89,18 +95,4 @@ pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> Result<By
     }
 
     Ok(final_result.into())
-}
-
-/// Collects a `PinnedStream` into a utf8 String
-///
-/// If the stream cannot be collected or is not utf8, a placeholder string
-/// will be returned.
-pub async fn pinned_stream_into_utf8_string(stream: PinnedStream) -> String {
-    let body = collect_pinned_stream(stream)
-        .await
-        .unwrap_or_else(|_| Bytes::from_static("<INVALID BODY>".as_bytes()));
-    let body = std::str::from_utf8(&body)
-        .unwrap_or("<NON-UTF8 BODY>")
-        .to_owned();
-    body
 }
