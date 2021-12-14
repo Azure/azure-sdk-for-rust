@@ -1,6 +1,6 @@
 #[cfg(not(target_arch = "wasm32"))]
 use crate::policies::TransportPolicy;
-use crate::policies::{CustomHeadersInjectorPolicy, Policy, TelemetryPolicy};
+use crate::policies::{CustomHeadersPolicy, Policy, TelemetryPolicy};
 use crate::{ClientOptions, Context, Error, HttpClient, Request, Response};
 use std::sync::Arc;
 
@@ -64,7 +64,7 @@ impl Pipeline {
         let telemetry_policy = TelemetryPolicy::new(crate_name, crate_version, &options.telemetry);
         pipeline.push(Arc::new(telemetry_policy));
 
-        pipeline.push(Arc::new(CustomHeadersInjectorPolicy::default()));
+        pipeline.push(Arc::new(CustomHeadersPolicy::default()));
 
         let retry_policy = options.retry.to_policy();
         pipeline.push(retry_policy);
