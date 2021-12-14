@@ -6,7 +6,7 @@ use crate::{
     },
 };
 use azure_core::headers::*;
-use azure_core::prelude::*;
+use azure_core::HttpClient;
 use bytes::Bytes;
 use http::{
     header::*,
@@ -413,7 +413,7 @@ impl StorageAccountClient {
         let request = if let Some(request_body) = request_body {
             request.body(request_body)
         } else {
-            request.body(EMPTY_BODY)
+            request.body(azure_core::EMPTY_BODY)
         }?;
 
         debug!("using request == {:#?}", request);

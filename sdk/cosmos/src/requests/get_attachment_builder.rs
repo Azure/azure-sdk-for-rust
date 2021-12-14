@@ -49,7 +49,7 @@ impl<'a, 'b> GetAttachmentBuilder<'a, 'b> {
             req,
         );
 
-        let req = req.body(EMPTY_BODY)?;
+        let req = req.body(azure_core::EMPTY_BODY)?;
 
         debug!("req == {:#?}", req);
 
