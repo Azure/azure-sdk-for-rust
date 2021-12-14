@@ -3,33 +3,73 @@ use crate::prelude::*;
 use crate::resources::Database;
 use crate::ResourceQuota;
 
-use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
-use azure_core::{collect_pinned_stream, prelude::*, Request, Response};
+use azure_core::headers::{
+    self, continuation_token_from_headers_optional, session_token_from_headers,
+};
+use azure_core::{collect_pinned_stream, prelude::*, Response};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct ListDatabasesOptions {
+pub struct ListDatabases {
+    client: CosmosClient,
     consistency_level: Option<ConsistencyLevel>,
     max_item_count: MaxItemCount,
+    context: Option<Context>,
 }
 
-impl ListDatabasesOptions {
-    pub fn new() -> Self {
+impl ListDatabases {
+    pub fn new(client: CosmosClient) -> Self {
         Self {
+            client,
             consistency_level: None,
             max_item_count: MaxItemCount::new(-1),
+            context: None,
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
+        context: Context => Some(context),
     }
 
-    pub async fn decorate_request(&self, request: &mut Request) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        azure_core::headers::add_mandatory_header2(&self.max_item_count, request)?;
-        Ok(())
+    pub fn into_stream(self) -> Pageable<ListDatabasesResponse> {
+        let make_request = move |continuation: Option<String>| {
+            let this = self.clone();
+            let ctx = self.context.clone().unwrap_or_default();
+            async move {
+                let mut request = this
+                    .client
+                    .prepare_request_pipeline("dbs", http::Method::GET);
+
+                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
+                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
+
+                if let Some(c) = continuation {
+                    match http::HeaderValue::from_str(c.as_str()) {
+                        Ok(h) => request.headers_mut().append(headers::CONTINUATION, h),
+                        Err(e) => return Err(azure_core::Error::Other(Box::new(e))),
+                    };
+                }
+
+                let response = match this
+                    .client
+                    .pipeline()
+                    .send(ctx.clone().insert(ResourceType::Databases), &mut request)
+                    .await
+                {
+                    Ok(r) => r,
+                    Err(e) => return Err(e),
+                };
+
+                match ListDatabasesResponse::try_from(response).await {
+                    Ok(r) => Ok(r),
+                    Err(e) => Err(azure_core::Error::Other(Box::new(e))),
+                }
+            }
+        };
+
+        Pageable::new(make_request)
     }
 }
 
@@ -51,8 +91,6 @@ pub struct ListDatabasesResponse {
 }
 
 impl ListDatabasesResponse {
-    // TODO: To remove pragma when list_databases has been re-enabled
-    #[allow(dead_code)]
     pub(crate) async fn try_from(response: Response) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
@@ -84,6 +122,12 @@ impl ListDatabasesResponse {
             continuation_token: continuation_token_from_headers_optional(&headers)?,
             gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
         })
+    }
+}
+
+impl Continuable for ListDatabasesResponse {
+    fn continuation(&self) -> Option<String> {
+        self.continuation_token.clone()
     }
 }
 

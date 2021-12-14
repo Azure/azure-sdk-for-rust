@@ -1,6 +1,7 @@
 //! The Azure Core prelude.
 
 pub use crate::etag::Etag;
+pub use crate::pageable::*;
 pub use crate::policies::CustomHeaders;
 pub use crate::request_options::*;
 pub use crate::{

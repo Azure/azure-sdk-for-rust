@@ -6,12 +6,7 @@ use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::{ReadonlyString, TimeNonce};
 
-use azure_core::prelude::Continuation;
-use azure_core::Pipeline;
-use azure_core::{AddAsHeader, ClientOptions, HttpClient};
-use azure_core::{Context, Request};
-use futures::stream::unfold;
-use futures::Stream;
+use azure_core::{ClientOptions, HttpClient, Pipeline, Request};
 use http::request::Builder as RequestBuilder;
 use http::{header, HeaderValue};
 
@@ -173,74 +168,8 @@ impl CosmosClient {
     }
 
     /// List all databases
-    pub fn list_databases(
-        &self,
-        ctx: Context,
-        options: ListDatabasesOptions,
-    ) -> impl Stream<Item = crate::Result<ListDatabasesResponse>> + '_ {
-        macro_rules! r#try {
-            ($expr:expr $(,)?) => {
-                match $expr {
-                    Result::Ok(val) => val,
-                    Result::Err(err) => {
-                        return Some((Err(err.into()), State::Done));
-                    }
-                }
-            };
-        }
-
-        #[derive(Debug, Clone, PartialEq)]
-        enum State {
-            Init,
-            Continuation(String),
-            Done,
-        }
-
-        unfold(State::Init, move |state: State| {
-            let this = self.clone();
-            let ctx = ctx.clone();
-            let options = options.clone();
-            async move {
-                let response = match state {
-                    State::Init => {
-                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
-
-                        r#try!(options.decorate_request(&mut request).await);
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(ctx.clone().insert(ResourceType::Databases), &mut request)
-                                .await
-                        );
-
-                        ListDatabasesResponse::try_from(response).await
-                    }
-                    State::Continuation(continuation_token) => {
-                        let continuation = Continuation::new(continuation_token.as_str());
-                        let mut request = this.prepare_request_pipeline("dbs", http::Method::GET);
-
-                        r#try!(options.decorate_request(&mut request).await);
-                        r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(ctx.clone().insert(ResourceType::Databases), &mut request)
-                                .await
-                        );
-                        ListDatabasesResponse::try_from(response).await
-                    }
-                    State::Done => return None,
-                };
-
-                let response = r#try!(response);
-
-                let next_state = response
-                    .continuation_token
-                    .clone()
-                    .map(State::Continuation)
-                    .unwrap_or(State::Done);
-
-                Some((Ok(response), next_state))
-            }
-        })
+    pub fn list_databases(&self) -> ListDatabases {
+        ListDatabases::new(self.clone())
     }
 
     /// Convert into a [`DatabaseClient`]

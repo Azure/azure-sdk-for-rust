@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // an error (for example, the given key is not valid) you will receive a
     // specific azure_cosmos::Error. In this example we will look for a specific database
     // so we chain a filter operation.
-    let db = Box::pin(client.list_databases(Context::new(), ListDatabasesOptions::new()))
+    let db = Box::pin(client.list_databases().into_stream())
         .next()
         .await
         .unwrap()?
@@ -70,7 +70,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Some(db) => db,
         None => {
             client
-                .create_database(Context::new(), DATABASE, CreateDatabaseOptions::new())
+                .create_database(DATABASE)
+                .into_future()
                 .await?
                 .database
         }
@@ -81,12 +82,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // we will create it. The collection creation is more complex and
     // has many options (such as indexing and so on).
     let collection = {
-        let collections = client
-            .clone()
-            .into_database_client(database.id.clone())
-            .list_collections()
-            .execute()
-            .await?;
+        let collections = Box::pin(
+            client
+                .clone()
+                .into_database_client(database.id.clone())
+                .list_collections(Context::new(), ListCollectionsOptions::new()),
+        )
+        .next()
+        .await
+        .unwrap()?;
 
         if let Some(collection) = collections
             .collections
@@ -169,12 +173,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // the etag received in the previous get_document. The etag is an opaque value that
         // changes every time the document is updated. If the passed etag is different in
         // CosmosDB it means something else updated the document before us!
+        let options = ReplaceDocumentOptions::new()
+            .if_match_condition(IfMatchCondition::Match(&document.etag));
         let replace_document_response = collection_client
             .clone()
             .into_document_client(doc.id.clone(), &doc.id)?
-            .replace_document()
-            .if_match_condition(IfMatchCondition::Match(&document.etag))
-            .execute(&doc)
+            .replace_document(Context::new(), &doc, options)
             .await?;
         println!(
             "replace_document_response == {:#?}",
@@ -194,8 +198,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // And then we delete the database.
     client
         .into_database_client(database.id)
-        .delete_database()
-        .execute()
+        .delete_database(Context::new(), DeleteDatabaseOptions::new())
         .await?;
     println!("database deleted");
 
