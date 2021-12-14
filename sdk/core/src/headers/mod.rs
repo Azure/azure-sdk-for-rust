@@ -7,10 +7,7 @@ use http::request::Builder;
 use http::HeaderMap;
 use std::convert::TryFrom;
 
-pub use http::header::{IF_MODIFIED_SINCE, USER_AGENT};
 pub use utilities::*;
-
-pub const MS_DATE: &str = "x-ms-date";
 
 #[derive(Debug, Clone)]
 pub struct CommonStorageResponseHeaders {
@@ -129,6 +126,7 @@ pub const LEASE_STATUS: &str = "x-ms-lease-status";
 pub const LEASE_TIME: &str = "x-ms-lease-time";
 pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
 pub const META_PREFIX: &str = "x-ms-meta-";
+pub const MS_DATE: &str = "x-ms-date";
 pub const NAMESPACE_ENABLED: &str = "x-ms-namespace-enabled";
 pub const PAGE_WRITE: &str = "x-ms-page-write";
 pub const PROPERTIES: &str = "x-ms-properties";

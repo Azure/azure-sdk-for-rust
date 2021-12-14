@@ -1,4 +1,5 @@
-use crate::{headers, AddAsHeader};
+use crate::AddAsHeader;
+use http::header::USER_AGENT;
 use http::request::Builder;
 
 #[derive(Debug, Clone, Copy)]
@@ -12,7 +13,7 @@ impl<'a> UserAgent<'a> {
 
 impl<'a> AddAsHeader for UserAgent<'a> {
     fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::USER_AGENT, self.0)
+        builder.header(USER_AGENT, self.0)
     }
 
     fn add_as_header2(
@@ -21,7 +22,7 @@ impl<'a> AddAsHeader for UserAgent<'a> {
     ) -> Result<(), crate::errors::HTTPHeaderError> {
         request
             .headers_mut()
-            .append(headers::USER_AGENT, http::HeaderValue::from_str(self.0)?);
+            .append(USER_AGENT, http::HeaderValue::from_str(self.0)?);
 
         Ok(())
     }
