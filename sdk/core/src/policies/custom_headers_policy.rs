@@ -13,10 +13,10 @@ impl From<HeaderMap> for CustomHeaders {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct CustomHeadersInjectorPolicy {}
+pub struct CustomHeadersPolicy {}
 
 #[async_trait::async_trait]
-impl Policy for CustomHeadersInjectorPolicy {
+impl Policy for CustomHeadersPolicy {
     async fn send(
         &self,
         ctx: &Context,

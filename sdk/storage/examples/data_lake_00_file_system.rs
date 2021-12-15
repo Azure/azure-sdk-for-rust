@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_identity::token_credentials::DefaultAzureCredential;
 use azure_identity::token_credentials::TokenCredential;
 use azure_storage::core::prelude::*;
@@ -77,7 +76,7 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
     let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
-    let http_client = new_http_client();
+    let http_client = azure_core::new_http_client();
 
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);

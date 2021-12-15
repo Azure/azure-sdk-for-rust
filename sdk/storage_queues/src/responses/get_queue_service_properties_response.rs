@@ -1,5 +1,5 @@
 use crate::QueueServiceProperties;
-use azure_core::headers::CommonStorageResponseHeaders;
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::core::xml::read_xml;
 use bytes::Bytes;
 use http::response::Response;

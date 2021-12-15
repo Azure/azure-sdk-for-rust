@@ -6,6 +6,7 @@ use crate::shared_access_signature::{
     SasToken,
 };
 use azure_core::prelude::*;
+use azure_core::HttpClient;
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};

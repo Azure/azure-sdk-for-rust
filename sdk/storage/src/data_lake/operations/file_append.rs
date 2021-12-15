@@ -1,4 +1,4 @@
-use azure_core::headers::CommonStorageResponseHeaders;
+use crate::core::headers::CommonStorageResponseHeaders;
 use azure_core::prelude::IfMatchCondition;
 use azure_core::prelude::{ContentLength, ContentType};
 use bytes::Bytes;

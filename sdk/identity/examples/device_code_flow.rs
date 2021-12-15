@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_identity::device_code_flow::{self, DeviceCodeResponse};
 use azure_identity::refresh_token;
 use azure_storage::core::prelude::*;
@@ -77,7 +76,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // this example we are creating an Azure Storage client
     // using the access token.
 
-    let http_client = new_http_client();
+    let http_client = azure_core::new_http_client();
     let storage_client = StorageAccountClient::new_bearer_token(
         http_client.clone(),
         &storage_account_name,

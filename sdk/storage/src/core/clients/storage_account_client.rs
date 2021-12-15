@@ -6,7 +6,7 @@ use crate::{
     },
 };
 use azure_core::headers::*;
-use azure_core::prelude::*;
+use azure_core::HttpClient;
 use bytes::Bytes;
 use http::{
     header::*,
@@ -128,7 +128,7 @@ impl StorageAccountClient {
 
     /// Create a new client using the default HttpClient and the default emulator endpoints.
     pub fn new_emulator_default() -> Arc<Self> {
-        let http_client = new_http_client();
+        let http_client = azure_core::new_http_client();
         let blob_storage_url = Url::parse("http://127.0.0.1:10000").unwrap();
         let queue_storage_url = Url::parse("http://127.0.0.1:10001").unwrap();
         let table_storage_url = Url::parse("http://127.0.0.1:10002").unwrap();
@@ -413,7 +413,7 @@ impl StorageAccountClient {
         let request = if let Some(request_body) = request_body {
             request.body(request_body)
         } else {
-            request.body(EMPTY_BODY)
+            request.body(azure_core::EMPTY_BODY)
         }?;
 
         debug!("using request == {:#?}", request);

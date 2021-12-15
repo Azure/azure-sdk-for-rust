@@ -1,10 +1,10 @@
-mod custom_headers_injector_policy;
+mod custom_headers_policy;
 mod retry_policies;
 mod telemetry_policy;
 mod transport;
 
 use crate::{Context, Request, Response};
-pub use custom_headers_injector_policy::{CustomHeaders, CustomHeadersInjectorPolicy};
+pub use custom_headers_policy::{CustomHeaders, CustomHeadersPolicy};
 pub use retry_policies::*;
 use std::error::Error;
 use std::sync::Arc;

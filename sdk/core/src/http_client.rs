@@ -157,9 +157,8 @@ impl HttpClient for reqwest::Client {
             reqwest_request = reqwest_request.header(header.0, header.1);
         }
 
-        // We clone the body since we need to give ownership of it to
-        // Reqwest.
-        let body = request.clone_body();
+        // We clone the body since we need to give ownership of it to Reqwest.
+        let body = request.body().clone();
 
         let reqwest_request = match body {
             Body::Bytes(bytes) => reqwest_request

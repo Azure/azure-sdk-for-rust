@@ -24,11 +24,8 @@ use azure_core::headers::{
     COPY_STATUS_DESCRIPTION, CREATION_TIME, LEASE_DURATION, LEASE_STATE, LEASE_STATUS, META_PREFIX,
     SERVER_ENCRYPTED,
 };
-use azure_core::{
-    lease::{LeaseDuration, LeaseState, LeaseStatus},
-    parsing::from_azure_time,
-    prelude::*,
-};
+use azure_core::parsing::from_azure_time;
+use azure_core::{Etag, LeaseDuration, LeaseState, LeaseStatus};
 use chrono::{DateTime, Utc};
 use http::header;
 use std::{collections::HashMap, convert::TryInto, str::FromStr};

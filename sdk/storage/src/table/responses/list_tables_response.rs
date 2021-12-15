@@ -1,5 +1,5 @@
+use crate::core::headers::CommonStorageResponseHeaders;
 use crate::{table::prelude::*, ContinuationNextTableName};
-use azure_core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
 use std::convert::{TryFrom, TryInto};

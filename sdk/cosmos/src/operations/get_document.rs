@@ -4,8 +4,9 @@ use crate::resources::Document;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::prelude::*;
-use azure_core::SessionToken;
-use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
+use azure_core::{
+    collect_pinned_stream, Request as HttpRequest, Response as HttpResponse, SessionToken,
+};
 use chrono::{DateTime, Utc};
 use http::{HeaderMap, StatusCode};
 use serde::de::DeserializeOwned;
@@ -37,7 +38,7 @@ impl<'a> GetDocumentOptions<'a> {
         azure_core::headers::add_optional_header2(&self.if_modified_since, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
 
-        request.set_body(EMPTY_BODY.into());
+        request.set_body(azure_core::EMPTY_BODY.into());
 
         Ok(())
     }

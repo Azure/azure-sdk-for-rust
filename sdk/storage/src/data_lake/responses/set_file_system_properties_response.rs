@@ -1,6 +1,7 @@
+use crate::core::headers::CommonStorageResponseHeaders;
 use azure_core::{
-    headers::{etag_from_headers, last_modified_from_headers, CommonStorageResponseHeaders},
-    prelude::Etag,
+    headers::{etag_from_headers, last_modified_from_headers},
+    Etag,
 };
 use bytes::Bytes;
 use chrono::{DateTime, Utc};

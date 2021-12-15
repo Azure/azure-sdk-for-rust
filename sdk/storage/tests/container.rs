@@ -1,5 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::prelude::*;
 use azure_storage::blob::container::PublicAccess;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
@@ -74,7 +73,7 @@ fn initialize() -> Arc<StorageAccountClient> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let http_client = new_http_client();
+    let http_client = azure_core::new_http_client();
 
     StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
 }

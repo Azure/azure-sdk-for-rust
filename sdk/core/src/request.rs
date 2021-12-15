@@ -59,11 +59,6 @@ impl Request {
     pub fn set_body(&mut self, body: Body) {
         self.body = body;
     }
-
-    /// Clones the internal body and gives it back to the caller.
-    pub fn clone_body(&self) -> Body {
-        self.body.clone()
-    }
 }
 
 /// Temporary hack to convert preexisting requests into the new format. It
@@ -78,11 +73,4 @@ impl From<http::Request<bytes::Bytes>> for Request {
             body: Body::Bytes(body),
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct Parts {
-    pub uri: Uri,
-    pub method: Method,
-    pub headers: HeaderMap,
 }

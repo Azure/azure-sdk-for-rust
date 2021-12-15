@@ -1,2 +1,5 @@
-pub(crate) mod etag;
-pub mod lease;
+mod etag;
+mod lease;
+
+pub use etag::Etag;
+pub use lease::*;

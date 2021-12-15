@@ -1,4 +1,4 @@
-use azure_core::headers::CommonStorageResponseHeaders;
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::core::xml::read_xml;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};

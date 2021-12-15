@@ -1,5 +1,6 @@
-use crate::{headers, AddAsHeader};
+use crate::AddAsHeader;
 use chrono::{DateTime, Utc};
+use http::header::IF_MODIFIED_SINCE;
 use http::request::Builder;
 
 #[derive(Debug, Clone, Copy)]
@@ -13,7 +14,7 @@ impl<'a> IfModifiedSince<'a> {
 
 impl AddAsHeader for IfModifiedSince<'_> {
     fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::IF_MODIFIED_SINCE, self.0.to_rfc2822())
+        builder.header(IF_MODIFIED_SINCE, self.0.to_rfc2822())
     }
 
     fn add_as_header2(
@@ -21,7 +22,7 @@ impl AddAsHeader for IfModifiedSince<'_> {
         request: &mut crate::Request,
     ) -> Result<(), crate::errors::HTTPHeaderError> {
         request.headers_mut().append(
-            headers::IF_MODIFIED_SINCE,
+            IF_MODIFIED_SINCE,
             http::HeaderValue::from_str(&self.0.to_rfc2822())?,
         );
 

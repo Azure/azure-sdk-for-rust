@@ -6,7 +6,7 @@ use crate::ResourceQuota;
 use azure_core::headers::{
     self, continuation_token_from_headers_optional, session_token_from_headers,
 };
-use azure_core::{collect_pinned_stream, prelude::*, Response};
+use azure_core::{collect_pinned_stream, prelude::*, Pageable, Response};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]

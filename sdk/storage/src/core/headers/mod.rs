@@ -1,5 +1,32 @@
 use crate::{ConsistencyCRC64, ConsistencyMD5};
+use azure_core::headers::*;
+use azure_core::{Error, RequestId};
+use chrono::{DateTime, Utc};
 use http::HeaderMap;
+use std::convert::TryFrom;
+
+#[derive(Debug, Clone)]
+pub struct CommonStorageResponseHeaders {
+    pub request_id: RequestId,
+    pub client_request_id: Option<String>,
+    pub version: String,
+    pub date: DateTime<Utc>,
+    pub server: String,
+}
+
+impl TryFrom<&HeaderMap> for CommonStorageResponseHeaders {
+    type Error = Error;
+
+    fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
+        Ok(Self {
+            request_id: request_id_from_headers(headers)?,
+            client_request_id: client_request_id_from_headers_optional(headers),
+            version: version_from_headers(headers)?.to_owned(),
+            date: date_from_headers(headers)?,
+            server: server_from_headers(headers)?.to_owned(),
+        })
+    }
+}
 
 pub const CONTENT_CRC64: &str = "x-ms-content-crc64";
 pub const CONTENT_MD5: &str = "Content-MD5";

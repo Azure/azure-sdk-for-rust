@@ -1,6 +1,6 @@
 use crate::QueueStoredAccessPolicy;
-use azure_core::headers::CommonStorageResponseHeaders;
 use azure_core::PermissionError;
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use azure_storage::StoredAccessPolicyList;
 use bytes::Bytes;
 use http::response::Response;

@@ -12,7 +12,7 @@ pub mod shared_access_signature;
 pub use self::connection_string::{ConnectionString, EndpointProtocol};
 pub use self::connection_string_builder::ConnectionStringBuilder;
 pub use self::into_azure_path::IntoAzurePath;
-pub(crate) mod headers;
+pub mod headers;
 pub use copy_id::{copy_id_from_headers, CopyId};
 pub use copy_progress::CopyProgress;
 pub(crate) mod parsing_xml;

@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate log;
 
-use azure_core::prelude::*;
 use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
 use std::error::Error;
@@ -23,7 +22,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(4)
         .expect("please specify the bearer token as fourth command line parameter");
 
-    let http_client = new_http_client();
+    let http_client = azure_core::new_http_client();
 
     let storage_account_client =
         StorageAccountClient::new_bearer_token(http_client.clone(), &account, bearer_token);
