@@ -29,6 +29,7 @@ mod request_options;
 mod response;
 mod seekable_stream;
 mod sleep;
+pub mod error;
 
 pub mod auth;
 pub mod headers;
