@@ -48,7 +48,7 @@ where
         .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))?;
 
     if !response.status().is_success() {
-        return Err(DeviceCodeError::InvalidResponse(
+        return Err(DeviceCodeError::UnsuccessfulResponse(
             response.status().as_u16(),
             response.text().await.ok(),
         ));

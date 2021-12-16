@@ -64,7 +64,7 @@ pub enum DeviceCodeError {
     InvalidTenantId(String),
     /// The HTTP response returned an unsuccessful HTTP status code
     #[error("the http response was unsuccesful with status {0}: {}", .1.as_deref().unwrap_or("<NO UTF-8 BODY>"))]
-    InvalidResponse(u16, Option<String>),
+    UnsuccessfulResponse(u16, Option<String>),
     /// The response body could not be turned into a device code response
     #[error("the http response body could not be turned into a device code response: {0}")]
     InvalidResponseBody(String),
