@@ -4,24 +4,25 @@
 //!
 //! You can learn more about this authorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code).
 mod device_code_responses;
-use crate::Error;
-use async_timer::timer::new_timer;
+
 pub use device_code_responses::*;
+
+use async_timer::timer::new_timer;
 use futures::stream::unfold;
-use log::debug;
 use oauth2::ClientId;
 use serde::Deserialize;
+use url::form_urlencoded;
+
 use std::borrow::Cow;
 use std::convert::TryInto;
 use std::time::Duration;
-use url::form_urlencoded;
 
 pub async fn start<'a, 'b, T>(
     client: &'a reqwest::Client,
     tenant_id: T,
     client_id: &'a ClientId,
     scopes: &'b [&'b str],
-) -> Result<DeviceCodePhaseOneResponse<'a>, Error>
+) -> Result<DeviceCodePhaseOneResponse<'a>, DeviceCodeError>
 where
     T: Into<Cow<'a, str>>,
 {
@@ -32,45 +33,48 @@ where
 
     let tenant_id = tenant_id.into();
 
-    debug!("encoded ==> {}", encoded);
-
     let url = url::Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode",
         tenant_id
     ))
     .map_err(|_| DeviceCodeError::InvalidTenantId(tenant_id.clone().into_owned()))?;
 
-    client
+    let response = client
         .post(url)
         .header("ContentType", "application/x-www-form-urlencoded")
         .body(encoded)
         .send()
         .await
-        .map_err(DeviceCodeError::ReqwestError)?
+        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))?;
+
+    if !response.status().is_success() {
+        return Err(DeviceCodeError::InvalidResponse(
+            response.status().as_u16(),
+            response.text().await.ok(),
+        ));
+    }
+    let s = response
         .text()
         .await
-        .map(|s| -> Result<DeviceCodePhaseOneResponse, Error> {
-            serde_json::from_str::<DeviceCodePhaseOneResponse>(&s)
-                // we need to capture some variables that will be useful in
-                // the second phase (the client, the tenant_id and the client_id)
-                .map(|device_code_reponse| {
-                    Ok(DeviceCodePhaseOneResponse {
-                        device_code: device_code_reponse.device_code,
-                        user_code: device_code_reponse.user_code,
-                        verification_uri: device_code_reponse.verification_uri,
-                        expires_in: device_code_reponse.expires_in,
-                        interval: device_code_reponse.interval,
-                        message: device_code_reponse.message,
-                        client: Some(client),
-                        tenant_id,
-                        client_id: client_id.as_str().to_string(),
-                    })
-                })
-                .map_err(|_| DeviceCodeError::BadResponse(s))?
-            // TODO The HTTP status code should be checked to deserialize an error response.
-            // serde_json::from_str::<crate::errors::ErrorResponse>(&s).map(Error::ErrorResponse)
+        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))?;
+
+    serde_json::from_str::<DeviceCodePhaseOneResponse>(&s)
+        // we need to capture some variables that will be useful in
+        // the second phase (the client, the tenant_id and the client_id)
+        .map(|device_code_reponse| {
+            Ok(DeviceCodePhaseOneResponse {
+                device_code: device_code_reponse.device_code,
+                user_code: device_code_reponse.user_code,
+                verification_uri: device_code_reponse.verification_uri,
+                expires_in: device_code_reponse.expires_in,
+                interval: device_code_reponse.interval,
+                message: device_code_reponse.message,
+                client: Some(client),
+                tenant_id,
+                client_id: client_id.as_str().to_string(),
+            })
         })
-        .map_err(|e| DeviceCodeError::ReqwestError(e))?
+        .map_err(|_| DeviceCodeError::InvalidResponseBody(s))?
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -81,17 +85,14 @@ pub struct DeviceCodePhaseOneResponse<'a> {
     expires_in: u64,
     interval: u64,
     message: String,
-    // the skipped fields below do not come
-    // from the Azure answer. They will be added
-    // manually after deserialization
+    // The skipped fields below do not come from the Azure answer.
+    // They will be added manually after deserialization
     #[serde(skip)]
     client: Option<&'a reqwest::Client>,
     #[serde(skip)]
     tenant_id: Cow<'a, str>,
-    // we store the ClientId as string instead of
-    // the original type because it does not
-    // implement Default and it's in another
-    // create
+    // We store the ClientId as string instead of the original type, because it
+    // does not implement Default, and it's in another crate
     #[serde(skip)]
     client_id: String,
 }
@@ -103,7 +104,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
 
     pub fn stream<'b>(
         &'b self,
-    ) -> impl futures::Stream<Item = Result<DeviceCodeResponse, DeviceCodeError>> + 'b + '_ {
+    ) -> impl futures::Stream<Item = Result<DeviceCodeResponse, DeviceCodeError>> + 'b {
         #[derive(Debug, Clone, PartialEq)]
         enum NextState {
             Continue,
@@ -118,12 +119,10 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                         self.tenant_id,
                     );
 
-                    // throttle down as specified by Azure. This could be
+                    // Throttle down as specified by Azure. This could be
                     // smarter: we could calculate the elapsed time since the
-                    // last poll and wait only the delta. For now we do not
-                    // need such precision.
+                    // last poll and wait only the delta.
                     new_timer(Duration::from_secs(self.interval)).await;
-                    debug!("posting to {}", &uri);
 
                     let mut encoded = form_urlencoded::Serializer::new(String::new());
                     let encoded = encoded
@@ -140,22 +139,24 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                         .body(encoded)
                         .send()
                         .await
-                        .map_err(DeviceCodeError::ReqwestError)
+                        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))
                     {
                         Ok(result) => result,
                         Err(error) => return Some((Err(error), NextState::Finish)),
                     };
-                    debug!("result (raw) ==> {:?}", result);
 
-                    let result = match result.text().await.map_err(DeviceCodeError::ReqwestError) {
+                    let result = match result
+                        .text()
+                        .await
+                        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))
+                    {
                         Ok(result) => result,
                         Err(error) => return Some((Err(error), NextState::Finish)),
                     };
-                    debug!("result (as text) ==> {}", result);
 
-                    // here either we get an error response from Azure
+                    // Here either we get an error response from Azure
                     // or we get a success. A success can be either "Pending" or
-                    // "Completed". We finish the loop only on "Completed" (ie Success)
+                    // "Completed". We finish the loop only on "Completed"
                     match result.try_into() {
                         Ok(device_code_response) => {
                             let next_state = match &device_code_response {

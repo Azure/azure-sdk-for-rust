@@ -44,24 +44,33 @@ impl DeviceCodeAuthorization {
     }
 }
 
+/// Errors when performing the device code flow
 #[derive(Error, Debug)]
 pub enum DeviceCodeError {
-    #[error("Authorization declined")]
+    /// The authorization response returned a "declined" response
+    #[error("authorization declined: {0}")]
     AuthorizationDeclined(DeviceCodeErrorResponse),
-    #[error("Bad verification code")]
+    /// The authorization response returned a "bad verification" response
+    #[error("bad verification code: {0}")]
     BadVerificationCode(DeviceCodeErrorResponse),
-    #[error("Expired token")]
+    /// The authorization response returned a "expired" response
+    #[error("expired token: {0}")]
     ExpiredToken(DeviceCodeErrorResponse),
-    #[error("Invalid tenant id: {0}")]
-    InvalidTenantId(String),
-    #[error("Response was unexpected: {0}")]
-    BadResponse(String),
-    #[error("Unrecognized error: {0}")]
+    /// The authorization response returned an unrecognized error
+    #[error("unrecognized device code error response error kind: {0}")]
     UnrecognizedError(DeviceCodeErrorResponse),
-    #[error("Unhandled error: {0}. {1}")]
-    UnhandledError(String, String),
-    #[error("Reqwest error: {0}")]
-    ReqwestError(reqwest::Error),
+    /// The supplied tenant id could not be url encoded
+    #[error("the supplied tenant id could not be url encoded: {0}")]
+    InvalidTenantId(String),
+    /// The HTTP response returned an unsuccessful HTTP status code
+    #[error("the http response was unsuccesful with status {0}: {}", .1.as_deref().unwrap_or("<NO UTF-8 BODY>"))]
+    InvalidResponse(u16, Option<String>),
+    /// The response body could not be turned into a device code response
+    #[error("the http response body could not be turned into a device code response: {0}")]
+    InvalidResponseBody(String),
+    /// An error occurred when trying to make a request
+    #[error("an error occurred when trying to make a request: {0}")]
+    RequestError(Box<dyn std::error::Error + Send + Sync>),
 }
 
 #[derive(Debug, Clone)]
@@ -105,7 +114,7 @@ impl TryInto<DeviceCodeResponse> for String {
                         }
                     }
                     // If we cannot, we bail out giving the full error as string
-                    Err(error) => Err(DeviceCodeError::UnhandledError(error.to_string(), self)),
+                    Err(_) => Err(DeviceCodeError::InvalidResponseBody(self)),
                 }
             }
         }

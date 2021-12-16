@@ -1,4 +1,4 @@
-//! Authorize using the client credentials flow
+//! Authorize using the OAuth 2.0 client credentials flow
 //!
 //! For example:
 //!
@@ -39,7 +39,6 @@
 
 mod login_response;
 
-use crate::Error;
 use login_response::LoginResponse;
 use url::form_urlencoded;
 
@@ -50,7 +49,7 @@ pub async fn perform(
     client_secret: &oauth2::ClientSecret,
     scopes: &[&str],
     tenant_id: &str,
-) -> Result<LoginResponse, Error> {
+) -> Result<LoginResponse, ClientCredentialError> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
         .append_pair("client_id", client_id.as_str())
         .append_pair("scope", &scopes.join(" "))
@@ -76,8 +75,7 @@ pub async fn perform(
         return Err(ClientCredentialError::InvalidResponse(
             response.status().as_u16(),
             response.text().await.ok(),
-        )
-        .into());
+        ));
     }
 
     let b = response
@@ -85,10 +83,11 @@ pub async fn perform(
         .await
         .map_err(|e| ClientCredentialError::RequestError(Box::new(e)))?;
 
-    Ok(serde_json::from_str::<LoginResponse>(&b)
-        .map_err(|_| ClientCredentialError::InvalidResponseBody(b))?)
+    serde_json::from_str::<LoginResponse>(&b)
+        .map_err(|_| ClientCredentialError::InvalidResponseBody(b))
 }
 
+/// Errors when performing the client credential flow
 #[derive(thiserror::Error, Debug)]
 pub enum ClientCredentialError {
     #[error("The http response was unsuccesful with status {0}: {}", .1.as_deref().unwrap_or("<NO UTF-8 BODY>"))]
