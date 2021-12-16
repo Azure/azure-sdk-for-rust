@@ -34,6 +34,7 @@ impl ListDatabases {
     }
 
     pub fn into_stream(self) -> Pageable<ListDatabasesResponse> {
+        use azure_core::error::ResultExt;
         let make_request = move |continuation: Option<String>| {
             let this = self.clone();
             let ctx = self.context.clone().unwrap_or_default();
@@ -42,30 +43,43 @@ impl ListDatabases {
                     .client
                     .prepare_request_pipeline("dbs", http::Method::GET);
 
-                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
-                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
+                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)
+                    .with_context(azure_core::error::ErrorKind::Encoding, || {
+                        format!(
+                            "could not encode '{:?}' as an http header",
+                            this.consistency_level
+                        )
+                    })?;
+                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)
+                    .with_context(azure_core::error::ErrorKind::Encoding, || {
+                        format!(
+                            "could not encode '{:?}' as an http header",
+                            this.max_item_count
+                        )
+                    })?;
 
                 if let Some(c) = continuation {
-                    match http::HeaderValue::from_str(c.as_str()) {
-                        Ok(h) => request.headers_mut().append(headers::CONTINUATION, h),
-                        Err(e) => return Err(azure_core::Error::Other(Box::new(e))),
-                    };
+                    let h = http::HeaderValue::from_str(c.as_str())
+                        .with_context(azure_core::error::ErrorKind::Encoding, || {
+                            format!("could not encode '{:?}' as an http header", c)
+                        })?;
+                    request.headers_mut().append(headers::CONTINUATION, h);
                 }
 
-                let response = match this
+                let response = this
                     .client
                     .pipeline()
                     .send(ctx.clone().insert(ResourceType::Databases), &mut request)
                     .await
-                {
-                    Ok(r) => r,
-                    Err(e) => return Err(e),
-                };
+                    .context(
+                        azure_core::error::ErrorKind::Other,
+                        "error when running pipeline",
+                    )?;
 
-                match ListDatabasesResponse::try_from(response).await {
-                    Ok(r) => Ok(r),
-                    Err(e) => Err(azure_core::Error::Other(Box::new(e))),
-                }
+                ListDatabasesResponse::try_from(response).await.context(
+                    azure_core::error::ErrorKind::Other,
+                    "error converting from response to ListDatabasesResponse",
+                )
             }
         };
 

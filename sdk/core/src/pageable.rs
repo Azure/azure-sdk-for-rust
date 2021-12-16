@@ -17,13 +17,13 @@ macro_rules! r#try {
 /// Internally uses the Azure specific continuation header to
 /// make repeated requests to Azure yielding a new page each time.
 pub struct Pageable<T> {
-    stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, crate::Error>>>>,
+    stream: std::pin::Pin<Box<dyn Stream<Item = crate::error::Result<T>>>>,
 }
 
 impl<T: Continuable> Pageable<T> {
     pub fn new<F>(make_request: impl Fn(Option<String>) -> F + Clone + 'static) -> Self
     where
-        F: std::future::Future<Output = Result<T, crate::Error>> + 'static,
+        F: std::future::Future<Output = crate::error::Result<T>> + 'static,
     {
         let stream = unfold(State::Init, move |state: State| {
             let make_request = make_request.clone();
@@ -51,7 +51,7 @@ impl<T: Continuable> Pageable<T> {
 }
 
 impl<T> Stream for Pageable<T> {
-    type Item = Result<T, crate::Error>;
+    type Item = crate::error::Result<T>;
 
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,
