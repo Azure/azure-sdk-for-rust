@@ -102,9 +102,9 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
         &self.message
     }
 
-    pub fn stream<'b>(
-        &'b self,
-    ) -> impl futures::Stream<Item = Result<DeviceCodeResponse, DeviceCodeError>> + 'b {
+    pub fn stream(
+        &self,
+    ) -> impl futures::Stream<Item = Result<DeviceCodeResponse, DeviceCodeError>> + '_ {
         #[derive(Debug, Clone, PartialEq)]
         enum NextState {
             Continue,
