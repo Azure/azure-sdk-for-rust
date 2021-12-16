@@ -61,19 +61,31 @@ pub async fn perform(
     let url = url::Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
-    ))?;
+    ))
+    .map_err(|_| ClientCredentialError::InvalidTenantId(tenant_id.to_owned()))?;
 
-    client
+    let s = client
         .post(url)
         .header("ContentType", "Application / WwwFormUrlEncoded")
         .body(encoded)
         .send()
-        .await?
+        .await
+        .map_err(|e| ClientCredentialError::ReqwestError(e))?
         .text()
         .await
-        .map(|s| -> Result<LoginResponse, Error> {
-            Ok(serde_json::from_str::<LoginResponse>(&s)?)
-        })?
+        .map_err(|e| ClientCredentialError::ReqwestError(e))?;
     // TODO The HTTP status code should be checked to deserialize an error response.
-    // serde_json::from_str::<crate::errors::ErrorResponse>(&s).map(Error::ErrorResponse)
+
+    Ok(serde_json::from_str::<LoginResponse>(&s)
+        .map_err(|_| ClientCredentialError::InvalidResponse(s))?)
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ClientCredentialError {
+    #[error("Invalid client credential response: {0}")]
+    InvalidResponse(String),
+    #[error("Invalid tenant id: {0}")]
+    InvalidTenantId(String),
+    #[error("Reqwest error: {0}")]
+    ReqwestError(reqwest::Error),
 }

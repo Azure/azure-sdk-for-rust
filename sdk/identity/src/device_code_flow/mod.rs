@@ -37,14 +37,16 @@ where
     let url = url::Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode",
         tenant_id
-    ))?;
+    ))
+    .map_err(|_| DeviceCodeError::InvalidTenantId(tenant_id.clone().into_owned()))?;
 
     client
         .post(url)
         .header("ContentType", "application/x-www-form-urlencoded")
         .body(encoded)
         .send()
-        .await?
+        .await
+        .map_err(DeviceCodeError::ReqwestError)?
         .text()
         .await
         .map(|s| -> Result<DeviceCodePhaseOneResponse, Error> {
@@ -63,10 +65,12 @@ where
                         tenant_id,
                         client_id: client_id.as_str().to_string(),
                     })
-                })?
+                })
+                .map_err(|_| DeviceCodeError::BadResponse(s))?
             // TODO The HTTP status code should be checked to deserialize an error response.
             // serde_json::from_str::<crate::errors::ErrorResponse>(&s).map(Error::ErrorResponse)
-        })?
+        })
+        .map_err(|e| DeviceCodeError::ReqwestError(e))?
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -52,6 +52,10 @@ pub enum DeviceCodeError {
     BadVerificationCode(DeviceCodeErrorResponse),
     #[error("Expired token")]
     ExpiredToken(DeviceCodeErrorResponse),
+    #[error("Invalid tenant id: {0}")]
+    InvalidTenantId(String),
+    #[error("Response was unexpected: {0}")]
+    BadResponse(String),
     #[error("Unrecognized error: {0}")]
     UnrecognizedError(DeviceCodeErrorResponse),
     #[error("Unhandled error: {0}. {1}")]
