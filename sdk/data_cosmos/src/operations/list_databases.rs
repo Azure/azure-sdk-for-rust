@@ -3,6 +3,8 @@ use crate::prelude::*;
 use crate::resources::Database;
 use crate::ResourceQuota;
 
+use azure_core::error::ErrorKind;
+use azure_core::error::ResultExt;
 use azure_core::headers::{
     self, continuation_token_from_headers_optional, session_token_from_headers,
 };
@@ -34,7 +36,6 @@ impl ListDatabases {
     }
 
     pub fn into_stream(self) -> Pageable<ListDatabasesResponse> {
-        use azure_core::error::ResultExt;
         let make_request = move |continuation: Option<String>| {
             let this = self.clone();
             let ctx = self.context.clone().unwrap_or_default();
@@ -44,14 +45,14 @@ impl ListDatabases {
                     .prepare_request_pipeline("dbs", http::Method::GET);
 
                 azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)
-                    .with_context(azure_core::error::ErrorKind::Encoding, || {
+                    .with_context(ErrorKind::Serialization, || {
                         format!(
                             "could not encode '{:?}' as an http header",
                             this.consistency_level
                         )
                     })?;
                 azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)
-                    .with_context(azure_core::error::ErrorKind::Encoding, || {
+                    .with_context(ErrorKind::Serialization, || {
                         format!(
                             "could not encode '{:?}' as an http header",
                             this.max_item_count
@@ -60,7 +61,7 @@ impl ListDatabases {
 
                 if let Some(c) = continuation {
                     let h = http::HeaderValue::from_str(c.as_str())
-                        .with_context(azure_core::error::ErrorKind::Encoding, || {
+                        .with_context(ErrorKind::Serialization, || {
                             format!("could not encode '{:?}' as an http header", c)
                         })?;
                     request.headers_mut().append(headers::CONTINUATION, h);
@@ -71,15 +72,9 @@ impl ListDatabases {
                     .pipeline()
                     .send(ctx.clone().insert(ResourceType::Databases), &mut request)
                     .await
-                    .context(
-                        azure_core::error::ErrorKind::Other,
-                        "error when running pipeline",
-                    )?;
+                    .context(ErrorKind::Other, "error when running pipeline")?;
 
-                ListDatabasesResponse::try_from(response).await.context(
-                    azure_core::error::ErrorKind::Other,
-                    "error converting from response to ListDatabasesResponse",
-                )
+                ListDatabasesResponse::try_from(response).await
             }
         };
 
@@ -105,9 +100,11 @@ pub struct ListDatabasesResponse {
 }
 
 impl ListDatabasesResponse {
-    pub(crate) async fn try_from(response: Response) -> crate::Result<Self> {
+    pub(crate) async fn try_from(response: Response) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let body: bytes::Bytes = collect_pinned_stream(pinned_stream)
+            .await
+            .context(ErrorKind::Io, "failed to collect stream")?;
 
         #[derive(Deserialize, Debug)]
         pub struct Response {
@@ -121,21 +118,28 @@ impl ListDatabasesResponse {
 
         let response: Response = serde_json::from_slice(&body)?;
 
-        Ok(Self {
-            rid: response.rid,
-            databases: response.databases,
-            count: response.count,
-            charge: request_charge_from_headers(&headers)?,
-            activity_id: activity_id_from_headers(&headers)?,
-            session_token: session_token_from_headers(&headers)?,
-            last_state_change: last_state_change_from_headers(&headers)?,
-            resource_quota: resource_quota_from_headers(&headers)?,
-            resource_usage: resource_usage_from_headers(&headers)?,
-            schema_version: schema_version_from_headers(&headers)?.to_owned(),
-            service_version: service_version_from_headers(&headers)?.to_owned(),
-            continuation_token: continuation_token_from_headers_optional(&headers)?,
-            gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
-        })
+        let res = || {
+            crate::Result::Ok(Self {
+                rid: response.rid,
+                databases: response.databases,
+                count: response.count,
+                charge: request_charge_from_headers(&headers)?,
+                activity_id: activity_id_from_headers(&headers)?,
+                session_token: session_token_from_headers(&headers)?,
+                last_state_change: last_state_change_from_headers(&headers)?,
+                resource_quota: resource_quota_from_headers(&headers)?,
+                resource_usage: resource_usage_from_headers(&headers)?,
+                schema_version: schema_version_from_headers(&headers)?.to_owned(),
+                service_version: service_version_from_headers(&headers)?.to_owned(),
+                continuation_token: continuation_token_from_headers_optional(&headers)?,
+                gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
+            })
+        };
+
+        res().context(
+            ErrorKind::Deserialization,
+            "error converting headers to ListDatabasesResponse",
+        )
     }
 }
 

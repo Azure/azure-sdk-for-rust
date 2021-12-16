@@ -75,6 +75,28 @@ impl From<ErrorKind> for Error {
     }
 }
 
+impl From<std::io::Error> for Error {
+    fn from(error: std::io::Error) -> Self {
+        Self {
+            context: Context::Custom(Custom {
+                kind: ErrorKind::Io,
+                error: Box::new(error),
+            }),
+        }
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(error: serde_json::Error) -> Self {
+        Self {
+            context: Context::Custom(Custom {
+                kind: ErrorKind::Deserialization,
+                error: Box::new(error),
+            }),
+        }
+    }
+}
+
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.context {
@@ -108,7 +130,9 @@ enum Context {
 #[derive(Copy, Clone, Debug)]
 pub enum ErrorKind {
     HttpStatus { status: u16 },
-    Encoding,
+    Io,
+    Serialization,
+    Deserialization,
     Other,
 }
 
@@ -116,7 +140,9 @@ impl Display for ErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ErrorKind::HttpStatus { status } => write!(f, "HttpStatus({})", status),
-            ErrorKind::Encoding => write!(f, "Encoding"),
+            ErrorKind::Io => write!(f, "Io"),
+            ErrorKind::Serialization => write!(f, "Serialization"),
+            ErrorKind::Deserialization => write!(f, "Deserialization"),
             ErrorKind::Other => write!(f, "Other"),
         }
     }
