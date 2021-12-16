@@ -64,28 +64,39 @@ pub async fn perform(
     ))
     .map_err(|_| ClientCredentialError::InvalidTenantId(tenant_id.to_owned()))?;
 
-    let s = client
+    let response = client
         .post(url)
         .header("ContentType", "Application / WwwFormUrlEncoded")
         .body(encoded)
         .send()
         .await
-        .map_err(|e| ClientCredentialError::ReqwestError(e))?
+        .map_err(|e| ClientCredentialError::RequestError(Box::new(e)))?;
+
+    if !response.status().is_success() {
+        return Err(ClientCredentialError::InvalidResponse(
+            response.status().as_u16(),
+            response.text().await.ok(),
+        )
+        .into());
+    }
+
+    let b = response
         .text()
         .await
-        .map_err(|e| ClientCredentialError::ReqwestError(e))?;
-    // TODO The HTTP status code should be checked to deserialize an error response.
+        .map_err(|e| ClientCredentialError::RequestError(Box::new(e)))?;
 
-    Ok(serde_json::from_str::<LoginResponse>(&s)
-        .map_err(|_| ClientCredentialError::InvalidResponse(s))?)
+    Ok(serde_json::from_str::<LoginResponse>(&b)
+        .map_err(|_| ClientCredentialError::InvalidResponseBody(b))?)
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum ClientCredentialError {
-    #[error("Invalid client credential response: {0}")]
-    InvalidResponse(String),
-    #[error("Invalid tenant id: {0}")]
+    #[error("The http response was unsuccesful with status {0}: {}", .1.as_deref().unwrap_or("<NO UTF-8 BODY>"))]
+    InvalidResponse(u16, Option<String>),
+    #[error("The http response body could not be turned into a client credential response: {0}")]
+    InvalidResponseBody(String),
+    #[error("The supplied tenant id could not be url encoded: {0}")]
     InvalidTenantId(String),
-    #[error("Reqwest error: {0}")]
-    ReqwestError(reqwest::Error),
+    #[error("An error occurred when trying to make a request: {0}")]
+    RequestError(Box<dyn std::error::Error + Send + Sync>),
 }
