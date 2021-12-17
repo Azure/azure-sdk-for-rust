@@ -17,6 +17,7 @@ mod macros;
 mod bytes_stream;
 mod constants;
 mod context;
+pub mod error;
 mod errors;
 mod http_client;
 mod models;
@@ -29,7 +30,6 @@ mod request_options;
 mod response;
 mod seekable_stream;
 mod sleep;
-pub mod error;
 
 pub mod auth;
 pub mod headers;

@@ -1,7 +1,10 @@
-use std::{borrow::Cow, fmt::Display};
+use std::borrow::Cow;
+use std::fmt::{Debug, Display};
 
+/// A convience alias for `Result` where the error type is hard coded to `Error`
 pub type Result<T> = std::result::Result<T, Error>;
 
+/// A convenient way to create a new error using the normal formatting infrastructure
 #[macro_export]
 macro_rules! format_err {
     ($kind:expr, $msg:literal $(,)?) => {{
@@ -17,12 +20,14 @@ macro_rules! format_err {
     }};
 }
 
+/// An error encountered from interfacing with Azure
 #[derive(Debug)]
 pub struct Error {
     context: Context,
 }
 
 impl Error {
+    /// Create a new `Error` based on a specific error kind and an underlying error cause
     pub fn new<E>(kind: ErrorKind, error: E) -> Self
     where
         E: Into<Box<dyn std::error::Error + Send + Sync>>,
@@ -35,6 +40,7 @@ impl Error {
         }
     }
 
+    /// Create an `Error` based on an error kind and some sort of message
     pub fn with_message<C>(kind: ErrorKind, message: C) -> Self
     where
         C: Into<Cow<'static, str>>,
@@ -47,6 +53,7 @@ impl Error {
         }
     }
 
+    /// Get the `ErrorKind` of this `Error`
     pub fn kind(&self) -> ErrorKind {
         match self.context {
             Context::Simple(kind) => kind,
@@ -110,23 +117,9 @@ impl Display for Error {
     }
 }
 
-#[derive(Debug)]
-struct Custom {
-    kind: ErrorKind,
-    error: Box<dyn std::error::Error + Send + Sync>,
-}
-
-#[derive(Debug)]
-enum Context {
-    Simple(ErrorKind),
-    Message {
-        kind: ErrorKind,
-        message: Cow<'static, str>,
-    },
-    Custom(Custom),
-    Full(Custom, Cow<'static, str>),
-}
-
+/// The kind of error
+///
+/// The classification of error is intentionally fairly coarse.
 #[derive(Copy, Clone, Debug)]
 pub enum ErrorKind {
     HttpStatus { status: u16 },
@@ -148,6 +141,9 @@ impl Display for ErrorKind {
     }
 }
 
+/// An extention to the `Result` type that easy allows creating `Error` values from exsiting errors
+///
+/// This trait should not be implemented on custom types and is meant for usage with `Result`
 pub trait ResultExt<T> {
     fn context<C>(self, kind: ErrorKind, message: C) -> Result<T>
     where
@@ -188,5 +184,44 @@ where
         C: Into<Cow<'static, str>>,
     {
         self.context(kind, f())
+    }
+}
+
+#[derive(Debug)]
+enum Context {
+    Simple(ErrorKind),
+    Message {
+        kind: ErrorKind,
+        message: Cow<'static, str>,
+    },
+    Custom(Custom),
+    Full(Custom, Cow<'static, str>),
+}
+
+#[derive(Debug)]
+struct Custom {
+    kind: ErrorKind,
+    error: Box<dyn std::error::Error + Send + Sync>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io;
+
+    #[derive(thiserror::Error, Debug)]
+    enum IntermediateError {
+        #[error("an intermediate error occurred")]
+        Io(#[from] std::io::Error),
+    }
+
+    #[test]
+    fn errors_display_properly() {
+        let inner = io::Error::new(io::ErrorKind::BrokenPipe, "There was an error");
+        let inner: IntermediateError = inner.into();
+        let inner = io::Error::new(io::ErrorKind::ConnectionAborted, inner);
+        let error = Error::new(ErrorKind::Io, inner);
+        let display = format!("{}", error);
+        assert_eq!(display, "Io: an intermediate error occurred");
     }
 }
