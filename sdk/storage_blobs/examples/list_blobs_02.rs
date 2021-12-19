@@ -28,19 +28,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 }
 
 async fn create_container_and_list(
-    storage: std::sync::Arc<StorageClient>,
+    storage_client: std::sync::Arc<StorageClient>,
     container_name: &str,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let container = storage.as_container_client(container_name);
+    let container_client = storage_client.as_container_client(container_name);
 
-    container.create().execute().await?;
+    container_client.create().execute().await?;
 
     // list empty container
-    let iv = container.list_blobs().execute().await?;
+    let iv = container_client.list_blobs().execute().await?;
     println!("List blob returned {} blobs.", iv.blobs.blobs.len());
 
     for i in 0..3 {
-        container
+        container_client
             .as_blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
@@ -50,10 +50,10 @@ async fn create_container_and_list(
     }
 
     // list full container
-    let iv = container.list_blobs().execute().await?;
+    let iv = container_client.list_blobs().execute().await?;
     println!("List blob returned {} blobs.", iv.blobs.blobs.len());
 
-    container.delete().execute().await?;
+    container_client.delete().execute().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

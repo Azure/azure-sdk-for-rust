@@ -30,9 +30,7 @@ fn code() -> Result<(), Box<dyn Error + Sync + Send>> {
 
     let storage_account_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-
     let container_client = storage_account_client.as_container_client(&container_name);
-
     let blob_client = container_client.as_blob_client(&blob_name);
 
     let sas = storage_account_client
