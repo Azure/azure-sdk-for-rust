@@ -89,11 +89,11 @@ impl BlobClient {
         SetBlobMetadataBuilder::new(self)
     }
 
-    pub fn update_page<'a>(
-        &'a self,
+    pub fn update_page(
+        &self,
         ba512_range: BA512Range,
         content: impl Into<Bytes>,
-    ) -> UpdatePageBuilder<'a> {
+    ) -> UpdatePageBuilder {
         UpdatePageBuilder::new(self, ba512_range, content)
     }
 
@@ -133,19 +133,19 @@ impl BlobClient {
         PutBlockListBuilder::new(self, block_list)
     }
 
-    pub fn put_block_blob<'a>(&'a self, body: impl Into<Bytes>) -> PutBlockBlobBuilder<'a> {
+    pub fn put_block_blob(&self, body: impl Into<Bytes>) -> PutBlockBlobBuilder {
         PutBlockBlobBuilder::new(self, body.into())
     }
 
-    pub fn append_block<'a>(&'a self, body: impl Into<Bytes>) -> AppendBlockBuilder<'a> {
+    pub fn append_block(&self, body: impl Into<Bytes>) -> AppendBlockBuilder {
         AppendBlockBuilder::new(self, body.into())
     }
 
-    pub fn put_block<'a>(
-        &'a self,
+    pub fn put_block(
+        &self,
         block_id: impl Into<BlockId>,
         body: impl Into<Bytes>,
-    ) -> PutBlockBuilder<'a> {
+    ) -> PutBlockBuilder {
         PutBlockBuilder::new(self, block_id, body)
     }
 

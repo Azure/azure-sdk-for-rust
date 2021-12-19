@@ -69,11 +69,11 @@ impl BlobLeaseClient {
         ChangeLeaseBuilder::new(self, proposed_lease_id)
     }
 
-    pub fn release<'a>(&'a self) -> ReleaseLeaseBuilder {
+    pub fn release(&self) -> ReleaseLeaseBuilder {
         ReleaseLeaseBuilder::new(self)
     }
 
-    pub fn renew<'a>(&'a self) -> RenewLeaseBuilder {
+    pub fn renew(&self) -> RenewLeaseBuilder {
         RenewLeaseBuilder::new(self)
     }
 
