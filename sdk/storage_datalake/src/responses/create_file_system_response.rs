@@ -1,9 +1,9 @@
-use crate::core::headers::CommonStorageResponseHeaders;
-use crate::data_lake::util::*;
+use crate::util::*;
 use azure_core::{
     headers::{etag_from_headers, last_modified_from_headers},
     Etag,
 };
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use http::Response;

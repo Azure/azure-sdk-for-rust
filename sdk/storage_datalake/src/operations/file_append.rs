@@ -1,16 +1,17 @@
-use crate::core::headers::CommonStorageResponseHeaders;
-use azure_core::prelude::ContentLength;
 use azure_core::prelude::IfMatchCondition;
+use azure_core::prelude::{ContentLength, ContentType};
+use azure_storage::core::headers::CommonStorageResponseHeaders;
+use bytes::Bytes;
 use std::convert::TryInto;
 
 use azure_core::{Request as HttpRequest, Response as HttpResponse};
 
 #[derive(Debug, Clone, Default)]
-pub struct FileDeleteOptions<'a> {
+pub struct FileAppendOptions<'a> {
     if_match_condition: Option<IfMatchCondition<'a>>,
 }
 
-impl<'a> FileDeleteOptions<'a> {
+impl<'a> FileAppendOptions<'a> {
     pub fn new() -> Self {
         Self {
             if_match_condition: None,
@@ -21,20 +22,29 @@ impl<'a> FileDeleteOptions<'a> {
         if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
     }
 
-    pub(crate) fn decorate_request(&self, req: &mut HttpRequest) -> Result<(), crate::Error> {
+    pub(crate) fn decorate_request(
+        &self,
+        req: &mut HttpRequest,
+        bytes: Bytes,
+    ) -> Result<(), crate::Error> {
         azure_core::headers::add_optional_header2(&self.if_match_condition, req)?;
-        azure_core::headers::add_mandatory_header2(&ContentLength::new(0), req)?; // Length is required for creating files
+        azure_core::headers::add_mandatory_header2(
+            &ContentType::new("application/octet-stream"),
+            req,
+        )?;
+        azure_core::headers::add_mandatory_header2(&ContentLength::new(bytes.len() as i32), req)?;
+        req.set_body(bytes.into());
 
         Ok(())
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct FileDeleteResponse {
+pub struct FileAppendResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
 }
 
-impl FileDeleteResponse {
+impl FileAppendResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 

@@ -1,7 +1,7 @@
-use crate::core::headers::CommonStorageResponseHeaders;
-use crate::data_lake::file_system::FileSystemList;
-use crate::data_lake::FileSystem;
+use crate::file_system::FileSystemList;
+use crate::FileSystem;
 use azure_core::prelude::NextMarker;
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
 use std::convert::{TryFrom, TryInto};

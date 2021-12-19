@@ -1,5 +1,5 @@
-use crate::data_lake::clients::DataLakeClient;
-use crate::data_lake::responses::*;
+use crate::clients::DataLakeClient;
+use crate::responses::*;
 use azure_core::prelude::*;
 use azure_core::{headers::add_optional_header, AppendToUrlQuery};
 use futures::stream::{unfold, Stream};

@@ -2,7 +2,7 @@ use azure_core::prelude::*;
 use azure_identity::token_credentials::DefaultAzureCredential;
 use azure_identity::token_credentials::TokenCredential;
 use azure_storage::core::prelude::*;
-use azure_storage::data_lake::prelude::*;
+use azure_storage_datalake::prelude::*;
 use chrono::Utc;
 use std::error::Error;
 

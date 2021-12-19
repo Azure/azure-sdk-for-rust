@@ -40,13 +40,12 @@ azure_identity = { path = "../identity" }
 reqwest = "0.11"
 
 [features]
-default = ["account", "data_lake", "enable_reqwest"]
-test_e2e = ["account", "data_lake"]
+default = ["account", "enable_reqwest"]
+test_e2e = ["account"]
 mock_transport_framework = [ "azure_core/mock_transport_framework"]
-test_integration = ["account", "data_lake"]
+test_integration = ["account"]
 account = []
 azurite_workaround = []
-data_lake = []
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 
@@ -54,15 +53,3 @@ enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 [[example]]
 name="account00"
 required-features = ["account"]
-[[example]]
-name="data_lake_00_file_system"
-required-features=["data_lake"]
-[[example]]
-name="data_lake_01_file_create_delete"
-required-features=["data_lake"]
-[[example]]
-name="data_lake_02_file_upload"
-required-features=["data_lake"]
-[[example]]
-name="data_lake_03_file_rename"
-required-features=["data_lake"]

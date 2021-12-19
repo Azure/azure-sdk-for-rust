@@ -1,6 +1,6 @@
-use crate::core::headers::CommonStorageResponseHeaders;
 use azure_core::headers::{etag_from_headers, last_modified_from_headers};
 use azure_core::prelude::*;
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
