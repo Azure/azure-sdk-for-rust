@@ -30,3 +30,6 @@ url = "2.2"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
+
+[features]
+test_e2e = []
