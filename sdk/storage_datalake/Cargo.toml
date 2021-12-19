@@ -32,3 +32,6 @@ url = "2.2"
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
 azure_identity = { path = "../identity", version = "0.1.0" }
+
+[features]
+test_e2e = []
