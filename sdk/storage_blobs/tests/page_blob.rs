@@ -2,8 +2,8 @@
 #[macro_use]
 extern crate log;
 use azure_core::prelude::*;
-use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
+use azure_storage_blobs::prelude::*;
 use std::sync::Arc;
 
 #[tokio::test]
@@ -12,10 +12,11 @@ async fn put_page_blob() {
     let container_name: &'static str = "rust-upload-test";
 
     let storage = initialize().as_storage_client();
+    let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if storage
+    if blob_service
         .list_containers()
         .execute()
         .await

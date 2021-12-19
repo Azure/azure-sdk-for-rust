@@ -3,12 +3,12 @@
 extern crate log;
 
 use azure_core::prelude::*;
-use azure_storage::blob::{
+use azure_storage::core::prelude::*;
+use azure_storage_blobs::{
     blob::BlockListType,
     container::{Container, PublicAccess},
     prelude::*,
 };
-use azure_storage::core::prelude::*;
 use bytes::Bytes;
 use chrono::{FixedOffset, Utc};
 use std::ops::Add;
@@ -23,6 +23,7 @@ async fn create_and_delete_container() {
     let name: &'static str = "azuresdkrustetoets";
 
     let storage_client = initialize().as_storage_client();
+    let blob_service = storage_client.as_blob_service_client();
     let container = storage_client.as_container_client(name);
 
     container
@@ -70,7 +71,7 @@ async fn create_and_delete_container() {
     let res = container.get_properties().execute().await.unwrap();
     assert!(res.container.public_access == PublicAccess::None);
 
-    let list = storage_client
+    let list = blob_service
         .list_containers()
         .prefix(name)
         .execute()
@@ -202,13 +203,14 @@ async fn put_and_get_block_list() {
 #[tokio::test]
 async fn list_containers() {
     let storage = initialize().as_storage_client();
+    let blob_service = storage.as_blob_service_client();
     trace!("running list_containers");
 
     let mut next_marker = None;
 
     loop {
         let ret = {
-            let builder = storage
+            let builder = blob_service
                 .list_containers()
                 .max_results(std::num::NonZeroU32::new(2u32).unwrap());
             if let Some(nm) = next_marker {
@@ -234,10 +236,11 @@ async fn put_block_blob() {
     let data = Bytes::from_static(b"abcdef");
 
     let storage = initialize().as_storage_client();
+    let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if storage
+    if blob_service
         .list_containers()
         .execute()
         .await
@@ -275,10 +278,11 @@ async fn copy_blob() {
     let data = Bytes::from_static(b"abcdef");
 
     let storage = initialize().as_storage_client();
+    let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if storage
+    if blob_service
         .list_containers()
         .execute()
         .await
@@ -335,10 +339,11 @@ async fn put_block_blob_and_get_properties() {
     let data = Bytes::from_static(b"abcdef");
 
     let storage = initialize().as_storage_client();
+    let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if storage
+    if blob_service
         .list_containers()
         .execute()
         .await

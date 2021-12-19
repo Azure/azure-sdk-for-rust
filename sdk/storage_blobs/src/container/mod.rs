@@ -9,15 +9,6 @@ use azure_core::headers::{
 };
 use azure_core::{LeaseDuration, LeaseState, LeaseStatus};
 use azure_storage::parsing_xml::{cast_must, cast_optional, traverse};
-// use azure_core::incompletevector::IncompleteVector;
-// use azure_core::{
-//     headers::{
-//         BLOB_PUBLIC_ACCESS, HAS_IMMUTABILITY_POLICY, HAS_LEGAL_HOLD, LEASE_DURATION, LEASE_STATE,
-//         LEASE_STATUS, META_PREFIX,
-//     },
-//     lease::{LeaseDuration, LeaseState, LeaseStatus},
-// };
-// use azure_storage::core::parsing_xml::{cast_must, cast_optional, traverse};
 use chrono::{DateTime, Utc};
 use http::request::Builder;
 use http::{header, HeaderMap};

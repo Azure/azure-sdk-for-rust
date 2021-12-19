@@ -3,9 +3,9 @@
 extern crate log;
 
 use azure_core::prelude::*;
-use azure_storage::blob::container::PublicAccess;
-use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
+use azure_storage_blobs::container::PublicAccess;
+use azure_storage_blobs::prelude::*;
 use bytes::Bytes;
 
 #[tokio::test]
@@ -23,10 +23,11 @@ async fn put_append_blob() {
 
     let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
         .as_storage_client();
+    let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(blob_name);
 
-    if storage
+    if blob_service
         .list_containers()
         .execute()
         .await

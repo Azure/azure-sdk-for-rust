@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_storage::blob::prelude::*;
 use azure_storage::core::prelude::*;
+use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
 use std::time::Duration;
 
@@ -18,9 +18,10 @@ async fn stream_list_blobs() {
 
     let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
         .as_storage_client();
+    let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
 
-    let iv = storage.list_containers().execute().await.unwrap();
+    let iv = blob_service.list_containers().execute().await.unwrap();
 
     if iv
         .incomplete_vector
