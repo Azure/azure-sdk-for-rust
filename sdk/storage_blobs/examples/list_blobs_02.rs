@@ -15,14 +15,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("please specify a non-existing container name as command line parameter");
 
     let http_client = azure_core::new_http_client();
-    let storage_account =
+    let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
             .as_storage_client();
 
-    create_container_and_list(storage_account, &container_name).await?;
+    create_container_and_list(storage_client, &container_name).await?;
 
-    let storage_account = StorageAccountClient::new_emulator_default().as_storage_client();
-    create_container_and_list(storage_account, &container_name).await?;
+    let storage_client = StorageAccountClient::new_emulator_default().as_storage_client();
+    create_container_and_list(storage_client, &container_name).await?;
 
     Ok(())
 }

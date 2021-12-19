@@ -16,13 +16,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("please specify container name as command line parameter");
 
     let http_client = azure_core::new_http_client();
-    let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
-        .as_storage_client();
-    let blob_service = storage.as_blob_service_client();
-    let container = storage.as_container_client(container_name);
+    let storage_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+            .as_storage_client();
+    let blob_service_client = storage_client.as_blob_service_client();
+    let container_client = storage_client.as_container_client(container_name);
 
     let max_results = NonZeroU32::new(3).unwrap();
-    let iv = blob_service
+    let iv = blob_service_client
         .list_containers()
         .max_results(max_results)
         .execute()
@@ -35,7 +36,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("\t{}", cont.name);
     }
 
-    let iv = container
+    let iv = container_client
         .list_blobs()
         .max_results(max_results)
         .execute()

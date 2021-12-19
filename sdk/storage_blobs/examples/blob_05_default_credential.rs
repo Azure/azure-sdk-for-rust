@@ -27,20 +27,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
 
     let http_client = azure_core::new_http_client();
-
-    let storage_account_client = StorageAccountClient::new_bearer_token(
+    let blob_client = StorageAccountClient::new_bearer_token(
         http_client.clone(),
         &account,
         bearer_token.token.secret(),
-    );
-    let storage_client = storage_account_client.as_storage_client();
-    let blob = storage_client
-        .as_container_client(&container)
-        .as_blob_client(&blob);
+    )
+    .as_container_client(&container)
+    .as_blob_client(&blob);
 
     trace!("Requesting blob");
 
-    let response = blob.get().execute().await?;
+    let response = blob_client.get().execute().await?;
 
     let s_content = String::from_utf8(response.data.to_vec())?;
     println!("blob == {:?}", blob);

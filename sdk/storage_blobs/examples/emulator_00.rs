@@ -8,17 +8,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // this is how you use the emulator.
     let storage_account = StorageAccountClient::new_emulator_default().as_storage_client();
-    let container = storage_account.as_container_client("emulcont");
+    let container_client = storage_account.as_container_client("emulcont");
 
     // create container
-    let res = container
+    let res = container_client
         .create()
         .public_access(PublicAccess::None)
         .execute()
         .await?;
     println!("{:?}", res);
 
-    let res = container
+    let res = container_client
         .list_blobs()
         .include_metadata(true)
         .execute()

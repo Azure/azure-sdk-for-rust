@@ -37,7 +37,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         &source_master_key,
     );
     let source_blob = source_storage_account_client
-        .as_storage_client()
         .as_container_client(&source_container_name)
         .as_blob_client(&source_blob_name);
 
@@ -46,7 +45,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         &destination_account,
         &destination_master_key,
     )
-    .as_storage_client()
     .as_container_client(&destination_container_name)
     .as_blob_client(&destination_blob_name);
 

@@ -26,16 +26,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let http_client = azure_core::new_http_client();
 
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-    let storage_client = storage_account_client.as_storage_client();
-    let blob = storage_client
-        .as_container_client(&container_name)
-        .as_blob_client(file_name);
+    let blob_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+            .as_container_client(&container_name)
+            .as_blob_client(file_name);
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
 
-    let _response = blob
+    let _response = blob_client
         .put_block_blob(string)
         .content_type("text/plain")
         .execute()
@@ -49,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // http overhead will be less but it also means you will have to wait for more
     // time before receiving anything. In this example we use a very small chunk size
     // just to make sure to loop at least twice.
-    let mut stream = Box::pin(blob.get().stream(128));
+    let mut stream = Box::pin(blob_client.get().stream(128));
 
     let result = Rc::new(RefCell::new(Vec::new()));
 
@@ -90,7 +88,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         returned_string
     );
 
-    blob.delete()
+    blob_client
+        .delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
         .execute()
         .await?;

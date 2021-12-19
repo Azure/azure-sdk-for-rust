@@ -18,10 +18,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("please specify container name as command line parameter");
 
     let http_client = azure_core::new_http_client();
-    let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
-        .as_storage_client();
-    let blob_service = storage.as_blob_service_client();
-    let container = storage.as_container_client(&container_name);
+    let storage_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+            .as_storage_client();
+    let blob_service = storage_client.as_blob_service_client();
+    let container_client = storage_client.as_container_client(&container_name);
 
     let iv = blob_service.list_containers().execute().await?;
 
@@ -34,7 +35,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     }
 
     // create the container
-    container
+    container_client
         .create()
         .public_access(PublicAccess::None)
         .timeout(Duration::from_secs(100))
@@ -44,7 +45,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create 10 blobs
     for i in 0..10u8 {
-        container
+        container_client
             .as_blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
@@ -53,7 +54,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("\tAdded blob {}", i);
     }
 
-    let iv = container
+    let iv = container_client
         .list_blobs()
         .max_results(NonZeroU32::new(3u32).unwrap())
         .execute()
@@ -65,7 +66,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     }
 
     let mut stream = Box::pin(
-        container
+        container_client
             .list_blobs()
             .max_results(NonZeroU32::new(3u32).unwrap())
             .stream(),
@@ -83,7 +84,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         cnt += 1;
     }
 
-    container.delete().execute().await?;
+    container_client.delete().execute().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

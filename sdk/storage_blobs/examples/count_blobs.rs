@@ -15,13 +15,12 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         .expect("please specify container name as command line parameter");
 
     let http_client = azure_core::new_http_client();
-    let container =
+    let container_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
-            .as_storage_client()
             .as_container_client(&container);
 
     let mut count: usize = 0;
-    let mut list_blobs = Box::pin(container.list_blobs().stream());
+    let mut list_blobs = Box::pin(container_client.list_blobs().stream());
     while let Some(list_blobs_response) = list_blobs.next().await {
         let list_blobs_response = list_blobs_response?;
         count += list_blobs_response.blobs.blobs.len();

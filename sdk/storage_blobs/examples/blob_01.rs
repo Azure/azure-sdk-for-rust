@@ -17,13 +17,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("please specify container name as command line parameter");
 
     let http_client = azure_core::new_http_client();
-    let storage_account =
+    let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
             .as_storage_client();
-    let container = storage_account.as_container_client(&container_name);
-    let blob = container.as_blob_client("SorgeniaReorganizeRebuildIndexes.zip");
+    let container_client = storage_client.as_container_client(&container_name);
+    let blob_client = container_client.as_blob_client("SorgeniaReorganizeRebuildIndexes.zip");
 
-    let _res = container
+    let _res = container_client
         .list_blobs()
         .include_copy(true)
         .include_deleted(true)
@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .execute()
         .await?;
 
-    let result = blob.get().execute().await?;
+    let result = blob_client.get().execute().await?;
 
     println!("{:?}", result);
 

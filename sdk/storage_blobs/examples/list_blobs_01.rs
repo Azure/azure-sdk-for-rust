@@ -18,13 +18,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("please specify container name as command line parameter");
 
     let http_client = azure_core::new_http_client();
-    let storage_account =
+    let storage_client =
         StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
             .as_storage_client();
-    let blob_service = storage_account.as_blob_service_client();
-    let container = storage_account.as_container_client(&container_name);
+    let blob_service_client = storage_client.as_blob_service_client();
+    let container_client = storage_client.as_container_client(&container_name);
 
-    let iv = blob_service.list_containers().execute().await?;
+    let iv = blob_service_client.list_containers().execute().await?;
 
     if iv
         .incomplete_vector
@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     }
 
     // create the container
-    container
+    container_client
         .create()
         .public_access(PublicAccess::None)
         .timeout(Duration::from_secs(100))
@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("Checking that container is empty");
 
-    let iv = container
+    let iv = container_client
         .list_blobs()
         .max_results(NonZeroU32::new(100u32).unwrap())
         .delimiter("/")
@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create 4 root blobs
     for i in 0..4u8 {
-        container
+        container_client
             .as_blob_client(format!("blob_at_root{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
@@ -68,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create 3 firstfolder/ blobs
     for i in 0..3u8 {
-        container
+        container_client
             .as_blob_client(format!("firstfolder/blob_at_1stfolder{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
@@ -78,7 +78,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create 3 secondroot/ blobs
     for i in 0..3u8 {
-        container
+        container_client
             .as_blob_client(format!("secondroot/blobsd{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
@@ -88,7 +88,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create 2 firstfolder/secondfolder blobs
     for i in 0..2u8 {
-        container
+        container_client
             .as_blob_client(format!("firstfolder/secondfolder/blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
@@ -98,7 +98,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create 4 firstfolder/thirdfolder blobs
     for i in 0..4u8 {
-        container
+        container_client
             .as_blob_client(format!("firstfolder/thirdfolder/blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
@@ -108,7 +108,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create 4 firstfolder/fourthfolder blobs
     for i in 0..5u8 {
-        container
+        container_client
             .as_blob_client(format!(
                 "firstfolder/thirdfolder/fourthfolder/blob{}.txt",
                 i
@@ -119,7 +119,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .await?;
     }
 
-    let iv = container
+    let iv = container_client
         .list_blobs()
         .max_results(NonZeroU32::new(100u32).unwrap())
         .delimiter("/")
@@ -134,7 +134,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     iv.blobs.blobs.iter().for_each(|b| println!("\t{}", b.name));
     assert_eq!(iv.blobs.blobs.len(), 4);
 
-    let iv = container
+    let iv = container_client
         .list_blobs()
         .max_results(NonZeroU32::new(100u32).unwrap())
         .prefix("firstfolder/")
@@ -151,7 +151,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     assert_eq!(iv.blobs.blobs.len(), 3);
 
     let mut stream = Box::pin(
-        container
+        container_client
             .list_blobs()
             .max_results(NonZeroU32::new(5u32).unwrap())
             .stream(),
@@ -171,7 +171,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         cnt += 1;
     }
 
-    container.delete().execute().await?;
+    container_client.delete().execute().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

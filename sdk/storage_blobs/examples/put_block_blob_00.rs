@@ -26,12 +26,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let http_client = azure_core::new_http_client();
 
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-    let storage_client = storage_account_client.as_storage_client();
-    let blob = storage_client
-        .as_container_client(&container)
-        .as_blob_client(&blob_name);
+    let blob_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+            .as_container_client(&container)
+            .as_blob_client(&blob_name);
 
     let data = Bytes::from_static(b"something");
 
@@ -43,7 +41,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // The builder supports many more optional
     // parameters (such as LeaseID, or ContentDisposition, MD5 etc...)
     // so make sure to check with the documentation.
-    let res = blob
+    let res = blob_client
         .put_block_blob(data.clone())
         .content_type("text/plain")
         .hash(&hash)
@@ -59,13 +57,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .blocks
         .push(BlobBlockType::new_uncommitted("pollastro"));
 
-    let res = blob.put_block("satanasso", data.clone()).execute().await?;
+    let res = blob_client
+        .put_block("satanasso", data.clone())
+        .execute()
+        .await?;
     println!("2-put_block {:?}", res);
 
-    let res = blob.put_block("pollastro", data).execute().await?;
+    let res = blob_client.put_block("pollastro", data).execute().await?;
     println!("3-put_block {:?}", res);
 
-    let ret = blob
+    let ret = blob_client
         .get_block_list()
         .block_list_type(BlockListType::All)
         .execute()
@@ -76,21 +77,21 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let bl = ret.block_with_size_list.into();
     println!("bl == {:?}", bl);
 
-    let res = blob.put_block_list(&bl).execute().await?;
+    let res = blob_client.put_block_list(&bl).execute().await?;
     println!("PutBlockList == {:?}", res);
 
-    let res = blob
+    let res = blob_client
         .acquire_lease(Duration::from_secs(60))
         .execute()
         .await?;
     println!("Acquire lease == {:?}", res);
 
-    let lease = blob.as_blob_lease_client(res.lease_id);
+    let lease = blob_client.as_blob_lease_client(res.lease_id);
 
     let res = lease.renew().execute().await?;
     println!("Renew lease == {:?}", res);
 
-    let res = blob
+    let res = blob_client
         .break_lease()
         .lease_break_period(Duration::from_secs(15))
         .execute()
@@ -100,7 +101,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let res = lease.release().execute().await?;
     println!("Release lease == {:?}", res);
 
-    let res = blob
+    let res = blob_client
         .delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
         .execute()

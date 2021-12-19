@@ -25,14 +25,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let http_client = azure_core::new_http_client();
 
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-    let storage_client = storage_account_client.as_storage_client();
-    let blob = storage_client
-        .as_container_client(&container_name)
-        .as_blob_client(file_name);
+    let blob_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+            .as_container_client(&container_name)
+            .as_blob_client(file_name);
 
-    let mut stream = Box::pin(get_blob_stream(&blob));
+    let mut stream = Box::pin(get_blob_stream(&blob_client));
 
     while let Some(res) = stream.next().await {
         println!("{:?}", res.unwrap());
@@ -42,9 +40,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 
 fn get_blob_stream<'a>(
-    blob: &'a BlobClient,
+    blob_client: &'a BlobClient,
 ) -> impl futures::Stream<Item = Result<GetBlobResponse, Box<dyn std::error::Error + Send + Sync>>> + 'a
 {
-    let stream = blob.get().stream(1024);
+    let stream = blob_client.get().stream(1024);
     stream
 }

@@ -18,13 +18,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("please specify container name as command line parameter");
 
     let http_client = azure_core::new_http_client();
-
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-    let storage_client = storage_account_client.as_storage_client();
-    let blob = storage_client
-        .as_container_client(&container_name)
-        .as_blob_client("test1");
+    let blob_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
+            .as_container_client(&container_name)
+            .as_blob_client("test1");
 
     // this example fills a 1 KB file with ASCII text and
     // sends it in chunks of 256 bytes (4 chunks).
@@ -47,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         block_ids.push(block_id.clone());
         let hash = md5::compute(slice.clone()).into();
 
-        let put_block_response = blob
+        let put_block_response = blob_client
             .put_block(block_id, slice)
             .hash(&hash)
             .execute()
@@ -61,14 +58,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         block_list.blocks.push(BlobBlockType::new_uncommitted(id));
     }
 
-    let res = blob
+    let res = blob_client
         .put_block_list(&block_list)
         .content_md5(md5::compute(data))
         .execute()
         .await?;
     println!("PutBlockList == {:?}", res);
 
-    let retrieved_blob = blob.get().execute().await?;
+    let retrieved_blob = blob_client.get().execute().await?;
     println!("retrieved_blob == {:?}", retrieved_blob);
 
     let s = String::from_utf8(retrieved_blob.data.to_vec())?;
