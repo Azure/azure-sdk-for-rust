@@ -1,7 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::prelude::*;
-use azure_messaging_queues::prelude::*;
 use azure_storage::core::prelude::*;
+use azure_storage_queues::prelude::*;
 use chrono::Utc;
 use std::error::Error;
 use std::time::Duration;
