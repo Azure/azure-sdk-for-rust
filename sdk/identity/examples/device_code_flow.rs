@@ -78,17 +78,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // using the access token.
 
     let http_client = azure_core::new_http_client();
-    let storage_account = StorageAccountClient::new_bearer_token(
+    let storage_account_client = StorageAccountClient::new_bearer_token(
         http_client.clone(),
         &storage_account_name,
         authorization.access_token().secret() as &str,
-    )
-    .as_storage_client();
-    let blob_service = storage_account.as_blob_service_client();
+    );
+    let blob_service_client = storage_account_client.as_blob_service_client();
 
     // now we enumerate the containers in the
     // specified storage account.
-    let containers = blob_service.list_containers().execute().await?;
+    let containers = blob_service_client.list_containers().execute().await?;
     println!("\nList containers completed succesfully: {:?}", containers);
 
     // now let's refresh the token, if available

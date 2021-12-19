@@ -2,7 +2,9 @@ use crate::container::requests::*;
 use crate::prelude::PublicAccess;
 use azure_core::prelude::*;
 use azure_core::HttpClient;
-use azure_storage::core::clients::{StorageAccountClient, StorageClient, StorageCredentials};
+use azure_storage::core::clients::{
+    AsStorageClient, StorageAccountClient, StorageClient, StorageCredentials,
+};
 use azure_storage::shared_access_signature::{
     service_sas::{BlobSharedAccessSignatureBuilder, BlobSignedResource, SetResources},
     SasToken,
@@ -19,6 +21,12 @@ pub trait AsContainerClient<CN: Into<String>> {
 impl<CN: Into<String>> AsContainerClient<CN> for Arc<StorageClient> {
     fn as_container_client(&self, container_name: CN) -> Arc<ContainerClient> {
         ContainerClient::new(self.clone(), container_name.into())
+    }
+}
+
+impl<CN: Into<String>> AsContainerClient<CN> for Arc<StorageAccountClient> {
+    fn as_container_client(&self, container_name: CN) -> Arc<ContainerClient> {
+        self.as_storage_client().as_container_client(container_name)
     }
 }
 
