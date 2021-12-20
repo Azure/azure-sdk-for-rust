@@ -15,10 +15,10 @@ pub use self::into_azure_path::IntoAzurePath;
 pub mod headers;
 pub use copy_id::{copy_id_from_headers, CopyId};
 pub use copy_progress::CopyProgress;
-pub(crate) mod parsing_xml;
+pub mod parsing_xml;
 mod stored_access_policy;
 pub use errors::{Error, Result};
-pub(crate) mod util;
+pub mod util;
 pub mod xml;
 
 #[derive(Debug, Clone, Eq, PartialEq, Copy, Serialize, Deserialize)]

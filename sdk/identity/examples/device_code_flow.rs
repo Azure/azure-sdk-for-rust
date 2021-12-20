@@ -1,6 +1,7 @@
 use azure_identity::device_code_flow::{self, DeviceCodeResponse};
 use azure_identity::refresh_token;
 use azure_storage::core::prelude::*;
+use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
 use oauth2::ClientId;
 use std::env;
@@ -77,16 +78,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // using the access token.
 
     let http_client = azure_core::new_http_client();
-    let storage_client = StorageAccountClient::new_bearer_token(
+    let storage_account_client = StorageAccountClient::new_bearer_token(
         http_client.clone(),
         &storage_account_name,
         authorization.access_token().secret() as &str,
-    )
-    .as_storage_client();
+    );
+    let blob_service_client = storage_account_client.as_blob_service_client();
 
     // now we enumerate the containers in the
     // specified storage account.
-    let containers = storage_client.list_containers().execute().await?;
+    let containers = blob_service_client.list_containers().execute().await?;
     println!("\nList containers completed succesfully: {:?}", containers);
 
     // now let's refresh the token, if available

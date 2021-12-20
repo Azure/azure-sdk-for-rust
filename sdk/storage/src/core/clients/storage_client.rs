@@ -51,10 +51,7 @@ impl StorageClient {
         Ok(url)
     }
 
-    pub(crate) fn blob_url_with_segments<'a, I>(
-        &'a self,
-        segments: I,
-    ) -> Result<url::Url, url::ParseError>
+    pub fn blob_url_with_segments<'a, I>(&'a self, segments: I) -> Result<url::Url, url::ParseError>
     where
         I: IntoIterator<Item = &'a str>,
     {
@@ -86,11 +83,6 @@ impl StorageClient {
 
     pub fn find_blobs_by_tags(&self) -> crate::account::requests::FindBlobsByTagsBuilder {
         crate::account::requests::FindBlobsByTagsBuilder::new(self)
-    }
-
-    #[cfg(feature = "blob")]
-    pub fn list_containers(&self) -> crate::container::requests::ListContainersBuilder {
-        crate::container::requests::ListContainersBuilder::new(self)
     }
 
     #[allow(dead_code)]
