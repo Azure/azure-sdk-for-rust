@@ -1,4 +1,4 @@
-//! Authorize using the client credentials flow
+//! Authorize using the OAuth 2.0 client credentials flow
 //!
 //! For example:
 //!
@@ -39,7 +39,6 @@
 
 mod login_response;
 
-use crate::Error;
 use login_response::LoginResponse;
 use url::form_urlencoded;
 
@@ -50,7 +49,7 @@ pub async fn perform(
     client_secret: &oauth2::ClientSecret,
     scopes: &[&str],
     tenant_id: &str,
-) -> Result<LoginResponse, Error> {
+) -> Result<LoginResponse, ClientCredentialError> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
         .append_pair("client_id", client_id.as_str())
         .append_pair("scope", &scopes.join(" "))
@@ -61,19 +60,46 @@ pub async fn perform(
     let url = url::Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
-    ))?;
+    ))
+    .map_err(|_| ClientCredentialError::InvalidTenantId(tenant_id.to_owned()))?;
 
-    client
+    let response = client
         .post(url)
         .header("ContentType", "Application / WwwFormUrlEncoded")
         .body(encoded)
         .send()
-        .await?
+        .await
+        .map_err(|e| ClientCredentialError::RequestError(Box::new(e)))?;
+
+    if !response.status().is_success() {
+        return Err(ClientCredentialError::UnsuccessfulResponse(
+            response.status().as_u16(),
+            response.text().await.ok(),
+        ));
+    }
+
+    let b = response
         .text()
         .await
-        .map(|s| -> Result<LoginResponse, Error> {
-            Ok(serde_json::from_str::<LoginResponse>(&s)?)
-        })?
-    // TODO The HTTP status code should be checked to deserialize an error response.
-    // serde_json::from_str::<crate::errors::ErrorResponse>(&s).map(Error::ErrorResponse)
+        .map_err(|e| ClientCredentialError::RequestError(Box::new(e)))?;
+
+    serde_json::from_str::<LoginResponse>(&b)
+        .map_err(|_| ClientCredentialError::InvalidResponseBody(b))
+}
+
+/// Errors when performing the client credential flow
+#[derive(thiserror::Error, Debug)]
+pub enum ClientCredentialError {
+    /// The http response was unsuccessful
+    #[error("The http response was unsuccessful with status {0}: {}", .1.as_deref().unwrap_or("<NO UTF-8 BODY>"))]
+    UnsuccessfulResponse(u16, Option<String>),
+    /// The http response body was could not be turned into a client credential response
+    #[error("The http response body could not be turned into a client credential response: {0}")]
+    InvalidResponseBody(String),
+    /// The tenant id could not be url encoded
+    #[error("The supplied tenant id could not be url encoded: {0}")]
+    InvalidTenantId(String),
+    /// An error occurred when trying to make a request
+    #[error("An error occurred when trying to make a request: {0}")]
+    RequestError(Box<dyn std::error::Error + Send + Sync>),
 }

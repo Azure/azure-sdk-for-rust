@@ -1,9 +1,6 @@
 //! Refresh token utilities
 
-use crate::{
-    errors::ErrorToken,
-    traits::{BearerToken, ExtExpiresIn, RefreshToken},
-};
+use crate::errors::ErrorToken;
 use log::debug;
 use oauth2::{AccessToken, ClientId, ClientSecret};
 use serde::Deserialize;
@@ -91,6 +88,32 @@ pub struct RefreshTokenResponse {
     refresh_token: AccessToken,
 }
 
+impl RefreshTokenResponse {
+    pub fn token_type(&self) -> &str {
+        &self.token_type
+    }
+
+    pub fn scopes(&self) -> &[String] {
+        &self.scopes
+    }
+
+    pub fn expires_in(&self) -> u64 {
+        self.expires_in
+    }
+
+    pub fn access_token(&self) -> &AccessToken {
+        &self.access_token
+    }
+
+    pub fn refresh_token(&self) -> &AccessToken {
+        &self.refresh_token
+    }
+
+    pub fn ext_expires_in(&self) -> u64 {
+        self.ext_expires_in
+    }
+}
+
 mod deserialize {
     use serde::Deserializer;
     pub fn split<'de, D>(scope: D) -> Result<Vec<String>, D::Error>
@@ -107,35 +130,5 @@ impl TryInto<RefreshTokenResponse> for String {
 
     fn try_into(self) -> Result<RefreshTokenResponse, Self::Error> {
         serde_json::from_str::<RefreshTokenResponse>(&self)
-    }
-}
-
-impl BearerToken for RefreshTokenResponse {
-    fn token_type(&self) -> &str {
-        &self.token_type
-    }
-
-    fn scopes(&self) -> &[String] {
-        &self.scopes
-    }
-
-    fn expires_in(&self) -> u64 {
-        self.expires_in
-    }
-
-    fn access_token(&self) -> &AccessToken {
-        &self.access_token
-    }
-}
-
-impl RefreshToken for RefreshTokenResponse {
-    fn refresh_token(&self) -> &AccessToken {
-        &self.refresh_token
-    }
-}
-
-impl ExtExpiresIn for RefreshTokenResponse {
-    fn ext_expires_in(&self) -> u64 {
-        self.ext_expires_in
     }
 }

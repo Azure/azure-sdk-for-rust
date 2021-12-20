@@ -2,7 +2,6 @@
 //!
 //! You can learn more about the OAuth2 authorization code flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).
 
-use log::debug;
 use oauth2::basic::BasicClient;
 use oauth2::reqwest::async_http_client;
 use oauth2::{ClientId, ClientSecret};
@@ -93,7 +92,6 @@ impl AuthorizationCodeFlow {
             .request_async(async_http_client)
             .await?;
 
-        debug!("\nMS Graph returned the following token:\n{:?}\n", token);
         Ok(token)
     }
 }
