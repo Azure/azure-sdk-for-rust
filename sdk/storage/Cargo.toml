@@ -40,7 +40,6 @@ azure_identity = { path = "../identity" }
 reqwest = "0.11"
 
 [features]
-<<<<<<< HEAD
 default = ["account", "data_lake", "enable_reqwest"]
 test_e2e = ["account", "data_lake"]
 mock_transport_framework = [ "azure_core/mock_transport_framework"]
