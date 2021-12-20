@@ -344,7 +344,7 @@ impl StorageAccountClient {
         &self.storage_credentials
     }
 
-    pub(crate) fn prepare_request(
+    pub fn prepare_request(
         &self,
         url: &str,
         method: &Method,

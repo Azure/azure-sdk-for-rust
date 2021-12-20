@@ -40,21 +40,17 @@ azure_identity = { path = "../identity" }
 reqwest = "0.11"
 
 [features]
-default = ["account", "table", "data_lake", "enable_reqwest"]
-test_e2e = ["account", "table", "data_lake"]
+default = ["account", "data_lake", "enable_reqwest"]
+test_e2e = ["account", "data_lake"]
 mock_transport_framework = [ "azure_core/mock_transport_framework"]
-test_integration = ["account", "table", "data_lake"]
+test_integration = ["account", "data_lake"]
 account = []
 azurite_workaround = []
-table = []
 data_lake = []
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 
 # This section specifies the required features for the examples.
-[[example]]
-name="table_00"
-required-features = ["table"]
 [[example]]
 name="account00"
 required-features = ["account"]

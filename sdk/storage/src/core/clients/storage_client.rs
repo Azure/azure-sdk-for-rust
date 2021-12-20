@@ -32,7 +32,7 @@ impl StorageClient {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn http_client(&self) -> &dyn azure_core::HttpClient {
+    pub fn http_client(&self) -> &dyn azure_core::HttpClient {
         self.storage_account_client.http_client()
     }
 
