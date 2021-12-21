@@ -28,7 +28,6 @@ serde-xml-rs = "0.4"
 url = "2.2"
 uuid = { version = "0.8", features = ["v4"] }
 bytes = "1.0"
-md5 = "0.7"
 RustyXML = "0.3"
 thiserror = "1.0"
 once_cell = "1.7"
