@@ -16,11 +16,7 @@ pub use self::core::{Error, Result};
 #[cfg(feature = "account")]
 pub mod account;
 pub mod core;
-#[cfg(feature = "data_lake")]
-pub mod data_lake;
-
 pub use crate::core::*;
+
 #[cfg(feature = "account")]
 pub use account::*;
-#[cfg(feature = "data_lake")]
-pub use data_lake::*;

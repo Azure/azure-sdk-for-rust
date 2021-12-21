@@ -1,4 +1,4 @@
-use crate::core::headers::CommonStorageResponseHeaders;
+use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use http::Response;
 use std::convert::{TryFrom, TryInto};

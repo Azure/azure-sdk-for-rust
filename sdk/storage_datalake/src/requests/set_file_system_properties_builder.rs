@@ -1,35 +1,45 @@
-use crate::data_lake::clients::FileSystemClient;
-use crate::data_lake::responses::*;
+use crate::responses::*;
+use crate::{clients::FileSystemClient, Properties};
 use azure_core::prelude::*;
-use azure_core::{headers::add_optional_header, AppendToUrlQuery};
+use azure_core::{
+    headers::add_optional_header, headers::add_optional_header_ref, AppendToUrlQuery,
+};
 use http::method::Method;
 use http::status::StatusCode;
 use std::convert::TryInto;
 
 #[derive(Debug, Clone)]
-pub struct GetFileSystemPropertiesBuilder<'a> {
+pub struct SetFileSystemPropertiesBuilder<'a> {
     file_system_client: &'a FileSystemClient,
+    if_modified_since_condition: Option<IfModifiedSinceCondition>,
     client_request_id: Option<ClientRequestId<'a>>,
     timeout: Option<Timeout>,
+    properties: Option<&'a Properties<'a, 'a>>,
 }
 
-impl<'a> GetFileSystemPropertiesBuilder<'a> {
-    pub(crate) fn new(file_system_client: &'a FileSystemClient) -> Self {
+impl<'a> SetFileSystemPropertiesBuilder<'a> {
+    pub(crate) fn new(
+        file_system_client: &'a FileSystemClient,
+        properties: Option<&'a Properties<'a, 'a>>,
+    ) -> Self {
         Self {
             file_system_client,
+            if_modified_since_condition: None,
             client_request_id: None,
             timeout: None,
+            properties,
         }
     }
 
     setters! {
+        if_modified_since_condition: IfModifiedSinceCondition => Some(if_modified_since_condition),
         client_request_id: ClientRequestId<'a> => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 
     pub async fn execute(
         &self,
-    ) -> Result<GetFileSystemPropertiesResponse, Box<dyn std::error::Error + Sync + Send>> {
+    ) -> Result<SetFileSystemPropertiesResponse, Box<dyn std::error::Error + Sync + Send>> {
         // we clone this so we can add custom
         // query parameters
         let mut url = self.file_system_client.url().clone();
@@ -41,8 +51,10 @@ impl<'a> GetFileSystemPropertiesBuilder<'a> {
 
         let request = self.file_system_client.prepare_request(
             url.as_str(),
-            &Method::HEAD,
+            &Method::PATCH,
             &|mut request| {
+                request = add_optional_header(&self.if_modified_since_condition, request);
+                request = add_optional_header_ref(&self.properties, request);
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },

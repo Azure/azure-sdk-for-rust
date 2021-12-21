@@ -1,8 +1,8 @@
-use crate::core::prelude::*;
-use crate::data_lake::authorization_policy::AuthorizationPolicy;
-use crate::data_lake::clients::FileSystemClient;
-use crate::data_lake::requests::*;
+use crate::authorization_policy::AuthorizationPolicy;
+use crate::clients::FileSystemClient;
+use crate::requests::*;
 use azure_core::{ClientOptions, HttpClient, Pipeline};
+use azure_storage::core::prelude::*;
 use bytes::Bytes;
 use http::method::Method;
 use http::request::{Builder, Request};
