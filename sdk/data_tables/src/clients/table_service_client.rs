@@ -1,111 +1,142 @@
-use crate::requests::ListTablesBuilder;
-use azure_storage::core::clients::{StorageAccountClient, StorageClient};
-use bytes::Bytes;
-use http::method::Method;
-use http::request::{Builder, Request};
+use crate::{
+    authorization::{authorization_policy::AuthorizationPolicy, AuthorizationToken},
+    operations::{
+        create_table::CreateTableBuilder, delete_table::DeleteTableBuilder,
+        query_tables::QueryTablesBuilder,
+    },
+};
+use azure_core::{
+    headers::{MS_DATE, VERSION},
+    ClientOptions, Pipeline,
+};
+use chrono::Utc;
+use http::{request::Builder, HeaderValue, Method};
 use std::sync::Arc;
-use url::Url;
 
-pub trait AsTableServiceClient {
-    fn as_table_service_client(&self) -> Result<Arc<TableServiceClient>, url::ParseError>;
-}
-
-impl AsTableServiceClient for Arc<StorageClient> {
-    fn as_table_service_client(&self) -> Result<Arc<TableServiceClient>, url::ParseError> {
-        TableServiceClient::new(self.clone())
-    }
-}
+const PORT: u16 = 10002;
+const ADDRESS: &str = "127.0.0.1";
+const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
+const EMULATOR_KEY: &str =
+    "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
 #[derive(Debug, Clone)]
 pub struct TableServiceClient {
-    storage_client: Arc<StorageClient>,
-    url: Url,
+    cloud_location: CloudLocation,
+    pipeline: Pipeline,
+}
+
+/// Create a Pipeline from TableOptions
+fn pipeline_from_options(options: ClientOptions, token: AuthorizationToken) -> Pipeline {
+    let policy = Arc::new(AuthorizationPolicy::new(token));
+    Pipeline::new(
+        option_env!("CARGO_PKG_NAME"),
+        option_env!("CARGO_PKG_VERSION"),
+        options,
+        Vec::new(),
+        vec![policy],
+    )
 }
 
 impl TableServiceClient {
-    pub(crate) fn new(storage_client: Arc<StorageClient>) -> Result<Arc<Self>, url::ParseError> {
-        let mut url = storage_client
-            .storage_account_client()
-            .table_storage_url()
-            .to_owned();
-        url.path_segments_mut()
-            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)?
-            .push("Tables");
-
-        Ok(Arc::new(Self {
-            storage_client,
-            url,
-        }))
+    /// Create a new `TableClient`
+    pub fn new(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
+        Self {
+            cloud_location: CloudLocation::Public(account.into()),
+            pipeline: pipeline_from_options(ClientOptions::default(), auth_token),
+        }
     }
 
-    pub fn list(&self) -> ListTablesBuilder {
-        ListTablesBuilder::new(self)
+    pub fn new_china(account: impl Into<String>, auth_token: AuthorizationToken) -> Self {
+        Self {
+            cloud_location: CloudLocation::China(account.into()),
+            pipeline: pipeline_from_options(ClientOptions::default(), auth_token),
+        }
     }
 
-    pub(crate) fn url(&self) -> &Url {
-        &self.url
+    pub fn new_custom(
+        account: impl Into<String>,
+        auth_token: AuthorizationToken,
+        uri: impl Into<String>,
+    ) -> Self {
+        Self {
+            pipeline: pipeline_from_options(ClientOptions::default(), auth_token),
+            cloud_location: CloudLocation::Custom {
+                account: account.into(),
+                uri: uri.into(),
+            },
+        }
     }
 
-    pub(crate) fn storage_account_client(&self) -> &StorageAccountClient {
-        self.storage_client.storage_account_client()
+    /// Create a new `TableClient` for Azure storage emulator
+    pub fn emulator() -> Self {
+        Self::new_custom(
+            self::EMULATOR_ACCOUNT,
+            AuthorizationToken::SharedKeyToken {
+                account: self::EMULATOR_ACCOUNT.to_string(),
+                key: self::EMULATOR_KEY.to_string(),
+            },
+            format!(
+                "http://{}:{}/{}",
+                self::ADDRESS,
+                self::PORT,
+                self::EMULATOR_ACCOUNT
+            ),
+        )
     }
 
-    pub(crate) fn http_client(&self) -> &dyn azure_core::HttpClient {
-        self.storage_client.http_client()
+    /// The Query Tables operation returns a list of tables under the specified account.
+    pub fn delete_table(&self, table_name: impl Into<String>) -> DeleteTableBuilder {
+        DeleteTableBuilder::new(self, table_name.into())
     }
 
-    pub(crate) fn prepare_request(
-        &self,
-        url: &str,
-        method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
-        request_body: Option<Bytes>,
-    ) -> crate::Result<(Request<Bytes>, url::Url)> {
-        self.storage_client
-            .storage_account_client()
-            .prepare_request(
-                url,
-                method,
-                http_header_adder,
-                azure_storage::core::clients::ServiceType::Table,
-                request_body,
-            )
+    /// The Create Table operation creates a new table in a storage account.
+    pub fn create_table(&self, table_name: impl Into<String>) -> CreateTableBuilder {
+        CreateTableBuilder::new(self, table_name.into())
+    }
+
+    /// The Query Tables operation returns a list of tables under the specified account.
+    pub fn query_tables(&self) -> QueryTablesBuilder {
+        QueryTablesBuilder::new(self)
+    }
+
+    pub(crate) fn pipeline_request(&self, method: Method, uri_path: &str) -> Builder {
+        let timestamp = Utc::now().format("%a, %d %h %Y %T GMT").to_string();
+        Builder::new()
+            .method(method)
+            .uri(format!("{}/{}", self.cloud_location.uri(), uri_path))
+            .header(VERSION, HeaderValue::from_static("2019-12-12"))
+            .header(MS_DATE, HeaderValue::from_str(&timestamp).unwrap())
+            .header("content-type", HeaderValue::from_static("application/json"))
+    }
+
+    /// Get a reference to the table client's pipeline.
+    pub fn pipeline(&self) -> &Pipeline {
+        &self.pipeline
     }
 }
 
-#[cfg(test)]
-#[cfg(feature = "test_integration")]
-mod integration_tests {
-    use super::*;
-    use crate::{core::prelude::*, table::clients::AsTableClient};
-    use futures::StreamExt;
+/// The cloud with which you want to interact.
+#[derive(Debug, Clone)]
+pub enum CloudLocation {
+    /// Azure public cloud
+    Public(String),
+    /// Azure China cloud
+    China(String),
+    /// A custom base URL
+    Custom { account: String, uri: String },
+}
 
-    fn get_emulator_client() -> Arc<StorageClient> {
-        StorageAccountClient::new_emulator_default().as_storage_client()
-    }
-
-    #[tokio::test]
-    async fn test_list() {
-        let storage_account = get_emulator_client();
-        let table_client = storage_account
-            .as_table_service_client()
-            .expect("a table service client");
-
-        println!("Create a table in the storage account");
-        let table = table_client.as_table_client("TableServiceClientList");
-        match table.create().execute().await {
-            _ => {}
-        }
-
-        println!("Check that the table is listed correctly");
-        let mut stream = Box::pin(table_client.list().stream());
-        while let Some(result) = stream.next().await {
-            let result = result.expect("the request should succeed");
-            let has_table = result
-                .tables
-                .iter()
-                .any(|t| t.name == "TableServiceClientList");
-            assert!(has_table, "the table should be present in the tables list");
+impl CloudLocation {
+    /// the base URL for a given cloud location
+    fn uri(&self) -> String {
+        match self {
+            CloudLocation::China(account) => {
+                format!("https://{}.table.core.chinacloudapi.cn", account)
+            }
+            CloudLocation::Public(account) => {
+                format!("https://{}.table.core.windows.net", account)
+            }
+            CloudLocation::Custom { uri, .. } => uri.clone(),
         }
     }
 }

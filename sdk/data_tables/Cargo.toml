@@ -27,6 +27,10 @@ serde_json = "1.0"
 serde-xml-rs = "0.5"
 uuid = { version = "1.0", features = ["v4"] }
 url = "2.2"
+md5 = "0.7"
+ring = "0.16"
+base64 = "0.13"
+async-trait = "0.1.52"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
@@ -36,3 +40,6 @@ default = ["enable_reqwest"]
 test_e2e = []
 enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls", "azure_storage/enable_reqwest_rustls"]
+
+[[example]]
+name = "table_service_client00"
