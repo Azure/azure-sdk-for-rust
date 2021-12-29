@@ -55,11 +55,8 @@ pub struct X509ThumbPrint {
 /// AuthenticationType of a module or device.
 #[derive(Serialize, Debug, Deserialize, PartialEq)]
 pub enum AuthenticationType {
-    /// Authentication using certificate
-    #[serde(rename = "certificate")]
-    Certificate,
     /// Authentication using a certificate authority.
-    #[serde(rename = "Authority")]
+    #[serde(rename = "certificateAuthority")]
     Authority,
     /// The device or module is not authenticated.
     #[serde(rename = "none")]
