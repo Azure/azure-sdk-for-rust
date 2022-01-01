@@ -253,6 +253,11 @@ pub struct ConnectionCreateOrUpdateProperties {
     pub field_definition_values: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectionTypeAssociationProperty {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionCreateOrUpdateParameters {
     pub name: String,
     pub properties: ConnectionCreateOrUpdateProperties,
@@ -297,11 +302,6 @@ pub struct ConnectionUpdateParameters {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectionUpdateProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConnectionTypeAssociationProperty {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FieldDefinition {
@@ -420,17 +420,17 @@ pub struct DscCompilationJobCreateParameters {
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DscConfigurationAssociationProperty {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DscCompilationJobCreateProperties {
     pub configuration: DscConfigurationAssociationProperty,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
     #[serde(rename = "incrementNodeConfigurationBuild", default, skip_serializing_if = "Option::is_none")]
     pub increment_node_configuration_build: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DscConfigurationAssociationProperty {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DscCompilationJobProperties {
@@ -511,13 +511,6 @@ pub struct Job {
     pub properties: Option<JobProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Job>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runbook: Option<RunbookAssociationProperty>,
@@ -572,14 +565,21 @@ pub mod job_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunbookAssociationProperty {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleAssociationProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunbookAssociationProperty {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+pub struct JobListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Job>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCreateParameters {
@@ -672,15 +672,6 @@ pub struct DscConfigurationCreateOrUpdateParameters {
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DscConfigurationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DscConfiguration>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
-    pub total_count: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DscConfigurationCreateOrUpdateProperties {
     #[serde(rename = "logVerbose", default, skip_serializing_if = "Option::is_none")]
     pub log_verbose: Option<bool>,
@@ -691,6 +682,15 @@ pub struct DscConfigurationCreateOrUpdateProperties {
     pub parameters: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DscConfigurationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DscConfiguration>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_count: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DscConfigurationParameter {
@@ -846,6 +846,23 @@ pub struct DscNodeReport {
     pub raw_errors: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DscMetaConfiguration {
+    #[serde(rename = "configurationModeFrequencyMins", default, skip_serializing_if = "Option::is_none")]
+    pub configuration_mode_frequency_mins: Option<i32>,
+    #[serde(rename = "rebootNodeIfNeeded", default, skip_serializing_if = "Option::is_none")]
+    pub reboot_node_if_needed: Option<bool>,
+    #[serde(rename = "configurationMode", default, skip_serializing_if = "Option::is_none")]
+    pub configuration_mode: Option<String>,
+    #[serde(rename = "actionAfterReboot", default, skip_serializing_if = "Option::is_none")]
+    pub action_after_reboot: Option<String>,
+    #[serde(rename = "certificateId", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_id: Option<String>,
+    #[serde(rename = "refreshFrequencyMins", default, skip_serializing_if = "Option::is_none")]
+    pub refresh_frequency_mins: Option<i32>,
+    #[serde(rename = "allowModuleOverwrite", default, skip_serializing_if = "Option::is_none")]
+    pub allow_module_overwrite: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DscReportResourceNavigation {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
@@ -887,23 +904,6 @@ pub struct DscReportResource {
     pub duration_in_seconds: Option<f64>,
     #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
     pub start_date: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DscMetaConfiguration {
-    #[serde(rename = "configurationModeFrequencyMins", default, skip_serializing_if = "Option::is_none")]
-    pub configuration_mode_frequency_mins: Option<i32>,
-    #[serde(rename = "rebootNodeIfNeeded", default, skip_serializing_if = "Option::is_none")]
-    pub reboot_node_if_needed: Option<bool>,
-    #[serde(rename = "configurationMode", default, skip_serializing_if = "Option::is_none")]
-    pub configuration_mode: Option<String>,
-    #[serde(rename = "actionAfterReboot", default, skip_serializing_if = "Option::is_none")]
-    pub action_after_reboot: Option<String>,
-    #[serde(rename = "certificateId", default, skip_serializing_if = "Option::is_none")]
-    pub certificate_id: Option<String>,
-    #[serde(rename = "refreshFrequencyMins", default, skip_serializing_if = "Option::is_none")]
-    pub refresh_frequency_mins: Option<i32>,
-    #[serde(rename = "allowModuleOverwrite", default, skip_serializing_if = "Option::is_none")]
-    pub allow_module_overwrite: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentRegistration {
@@ -1328,6 +1328,21 @@ pub mod runbook_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunbookDraft {
+    #[serde(rename = "inEdit", default, skip_serializing_if = "Option::is_none")]
+    pub in_edit: Option<bool>,
+    #[serde(rename = "draftContentLink", default, skip_serializing_if = "Option::is_none")]
+    pub draft_content_link: Option<ContentLink>,
+    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
+    pub creation_time: Option<String>,
+    #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<serde_json::Value>,
+    #[serde(rename = "outputTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub output_types: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Runbook {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
@@ -1464,21 +1479,6 @@ pub mod runbook_draft_undo_edit_result {
         GatewayTimeout,
         HttpVersionNotSupported,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunbookDraft {
-    #[serde(rename = "inEdit", default, skip_serializing_if = "Option::is_none")]
-    pub in_edit: Option<bool>,
-    #[serde(rename = "draftContentLink", default, skip_serializing_if = "Option::is_none")]
-    pub draft_content_link: Option<ContentLink>,
-    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
-    pub creation_time: Option<String>,
-    #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<serde_json::Value>,
-    #[serde(rename = "outputTypes", default, skip_serializing_if = "Vec::is_empty")]
-    pub output_types: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunbookParameter {
@@ -1694,6 +1694,19 @@ pub struct Variable {
     pub properties: Option<VariableProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VariableProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(rename = "isEncrypted", default, skip_serializing_if = "Option::is_none")]
+    pub is_encrypted: Option<bool>,
+    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
+    pub creation_time: Option<String>,
+    #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VariableListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Variable>,
@@ -1711,19 +1724,6 @@ pub struct VariableUpdateParameters {
 pub struct VariableUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VariableProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    #[serde(rename = "isEncrypted", default, skip_serializing_if = "Option::is_none")]
-    pub is_encrypted: Option<bool>,
-    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
-    pub creation_time: Option<String>,
-    #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }

@@ -83,16 +83,16 @@ pub struct AscOperation {
     pub properties: Option<AscOperationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AscOperationProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub output: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AscOperationProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Cache {
@@ -156,6 +156,8 @@ pub mod cache {
         pub name: Option<String>,
     }
 }
+pub type UrlString = String;
+pub type ResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -174,43 +176,36 @@ pub mod cache_identity {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CacheNetworkSettings {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mtu: Option<i64>,
-    #[serde(rename = "utilityAddresses", default, skip_serializing_if = "Vec::is_empty")]
-    pub utility_addresses: Vec<String>,
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CacheEncryptionSettings {
-    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
-    pub key_encryption_key: Option<KeyVaultKeyReference>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CacheSecuritySettings {
-    #[serde(rename = "rootSquash", default, skip_serializing_if = "Option::is_none")]
-    pub root_squash: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultKeyReference {
-    #[serde(rename = "keyUrl")]
-    pub key_url: String,
-    #[serde(rename = "sourceVault")]
-    pub source_vault: key_vault_key_reference::SourceVault,
-}
-pub mod key_vault_key_reference {
+pub mod system_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct SourceVault {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub id: Option<String>,
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CachesListResult {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Cache>,
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheHealth {
@@ -258,6 +253,45 @@ pub mod cache_upgrade_status {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CacheNetworkSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mtu: Option<i64>,
+    #[serde(rename = "utilityAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    pub utility_addresses: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CacheEncryptionSettings {
+    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
+    pub key_encryption_key: Option<KeyVaultKeyReference>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultKeyReference {
+    #[serde(rename = "keyUrl")]
+    pub key_url: String,
+    #[serde(rename = "sourceVault")]
+    pub source_vault: key_vault_key_reference::SourceVault,
+}
+pub mod key_vault_key_reference {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct SourceVault {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub id: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CacheSecuritySettings {
+    #[serde(rename = "rootSquash", default, skip_serializing_if = "Option::is_none")]
+    pub root_squash: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CachesListResult {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Cache>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UnknownProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageTarget {
@@ -265,19 +299,6 @@ pub struct StorageTarget {
     pub storage_target_resource: StorageTargetResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageTargetProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageTargetResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<ResourceName>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageTargetProperties {
@@ -316,11 +337,6 @@ pub mod storage_target_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Nfs3TargetProperties {
-    #[serde(flatten)]
-    pub storage_target_properties: StorageTargetProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Nfs3Target {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
@@ -328,26 +344,43 @@ pub struct Nfs3Target {
     pub usage_model: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClfsTargetProperties {
-    #[serde(flatten)]
-    pub storage_target_properties: StorageTargetProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClfsTarget {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<UrlString>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UnknownTargetProperties {
-    #[serde(flatten)]
-    pub storage_target_properties: StorageTargetProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UnknownTarget {
     #[serde(rename = "unknownMap", default, skip_serializing_if = "Option::is_none")]
     pub unknown_map: Option<UnknownProperties>,
 }
-pub type ResourceName = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageTargetResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<ResourceName>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Nfs3TargetProperties {
+    #[serde(flatten)]
+    pub storage_target_properties: StorageTargetProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClfsTargetProperties {
+    #[serde(flatten)]
+    pub storage_target_properties: StorageTargetProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UnknownTargetProperties {
+    #[serde(flatten)]
+    pub storage_target_properties: StorageTargetProperties,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSku {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
@@ -417,7 +450,6 @@ pub struct StorageTargetsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageTarget>,
 }
-pub type UrlString = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -471,36 +503,4 @@ pub struct MetricDimension {
     pub internal_name: Option<String>,
     #[serde(rename = "toBeExportedForShoebox", default, skip_serializing_if = "Option::is_none")]
     pub to_be_exported_for_shoebox: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
 }

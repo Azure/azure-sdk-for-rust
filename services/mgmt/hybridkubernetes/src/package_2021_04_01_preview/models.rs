@@ -114,20 +114,6 @@ pub mod connected_cluster_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CredentialResults {
-    #[serde(rename = "hybridConnectionConfig", default, skip_serializing_if = "Option::is_none")]
-    pub hybrid_connection_config: Option<HybridConnectionConfig>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub kubeconfigs: Vec<CredentialResult>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CredentialResult {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConnectedClusterProvisioningState {
     Succeeded,
     Failed,
@@ -136,39 +122,6 @@ pub enum ConnectedClusterProvisioningState {
     Updating,
     Deleting,
     Accepted,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConnectedClusterPatch {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ConnectedClusterPatchProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConnectedClusterPatchProperties {
-    #[serde(rename = "privateLinkState", default, skip_serializing_if = "Option::is_none")]
-    pub private_link_state: Option<connected_cluster_patch_properties::PrivateLinkState>,
-    #[serde(rename = "privateLinkScopeResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub private_link_scope_resource_id: Option<String>,
-}
-pub mod connected_cluster_patch_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PrivateLinkState {
-        Enabled,
-        Disabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HybridConnectionConfig {
-    #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
-    pub expiration_time: Option<i64>,
-    #[serde(rename = "hybridConnectionName", default, skip_serializing_if = "Option::is_none")]
-    pub hybrid_connection_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub relay: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
@@ -200,6 +153,53 @@ pub mod system_data {
         Application,
         ManagedIdentity,
         Key,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CredentialResults {
+    #[serde(rename = "hybridConnectionConfig", default, skip_serializing_if = "Option::is_none")]
+    pub hybrid_connection_config: Option<HybridConnectionConfig>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub kubeconfigs: Vec<CredentialResult>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HybridConnectionConfig {
+    #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
+    pub expiration_time: Option<i64>,
+    #[serde(rename = "hybridConnectionName", default, skip_serializing_if = "Option::is_none")]
+    pub hybrid_connection_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub relay: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CredentialResult {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectedClusterPatch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ConnectedClusterPatchProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectedClusterPatchProperties {
+    #[serde(rename = "privateLinkState", default, skip_serializing_if = "Option::is_none")]
+    pub private_link_state: Option<connected_cluster_patch_properties::PrivateLinkState>,
+    #[serde(rename = "privateLinkScopeResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub private_link_scope_resource_id: Option<String>,
+}
+pub mod connected_cluster_patch_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PrivateLinkState {
+        Enabled,
+        Disabled,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

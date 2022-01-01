@@ -15,6 +15,36 @@ pub struct GuestConfigurationAssignment {
     pub properties: Option<GuestConfigurationAssignmentProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GuestConfigurationAssignmentProperties {
+    #[serde(rename = "guestConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub guest_configuration: Option<GuestConfigurationNavigation>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<guest_configuration_assignment_properties::ProvisioningState>,
+    #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
+    pub compliance_status: Option<guest_configuration_assignment_properties::ComplianceStatus>,
+    #[serde(rename = "complianceReason", default, skip_serializing_if = "Option::is_none")]
+    pub compliance_reason: Option<String>,
+    #[serde(rename = "latestReportId", default, skip_serializing_if = "Option::is_none")]
+    pub latest_report_id: Option<String>,
+    #[serde(rename = "assignmentHash", default, skip_serializing_if = "Option::is_none")]
+    pub assignment_hash: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+}
+pub mod guest_configuration_assignment_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Succeeded,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ComplianceStatus {
+        Compliant,
+        NotCompliant,
+        Pending,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestConfigurationNavigation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<guest_configuration_navigation::Kind>,
@@ -44,36 +74,6 @@ pub struct ConfigurationParameter {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestConfigurationAssignmentProperties {
-    #[serde(rename = "guestConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub guest_configuration: Option<GuestConfigurationNavigation>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<guest_configuration_assignment_properties::ProvisioningState>,
-    #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
-    pub compliance_status: Option<guest_configuration_assignment_properties::ComplianceStatus>,
-    #[serde(rename = "complianceReason", default, skip_serializing_if = "Option::is_none")]
-    pub compliance_reason: Option<String>,
-    #[serde(rename = "latestReportId", default, skip_serializing_if = "Option::is_none")]
-    pub latest_report_id: Option<String>,
-    #[serde(rename = "assignmentHash", default, skip_serializing_if = "Option::is_none")]
-    pub assignment_hash: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-}
-pub mod guest_configuration_assignment_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Succeeded,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ComplianceStatus {
-        Compliant,
-        NotCompliant,
-        Pending,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestConfigurationAssignmentReportList {

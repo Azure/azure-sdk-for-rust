@@ -63,6 +63,22 @@ pub mod job_details {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CostEstimate {
+    #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
+    pub currency_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub events: Vec<UsageEvent>,
+    #[serde(rename = "estimatedTotal", default, skip_serializing_if = "Option::is_none")]
+    pub estimated_total: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorData {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobDetails {
     #[serde(rename = "containerName")]
     pub container_name: String,
@@ -157,15 +173,6 @@ pub mod quota {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CostEstimate {
-    #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
-    pub currency_code: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub events: Vec<UsageEvent>,
-    #[serde(rename = "estimatedTotal", default, skip_serializing_if = "Option::is_none")]
-    pub estimated_total: Option<f64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageEvent {
     #[serde(rename = "dimensionId", default, skip_serializing_if = "Option::is_none")]
     pub dimension_id: Option<String>,
@@ -184,13 +191,6 @@ pub struct UsageEvent {
 pub struct RestError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorData>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorData {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
 }
 pub type PatchRequest = Vec<JsonPatchDocument>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

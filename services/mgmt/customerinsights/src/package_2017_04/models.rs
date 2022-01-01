@@ -91,6 +91,15 @@ pub mod entity_type_definition {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ProvisioningState {
+    Provisioning,
+    Succeeded,
+    Expiring,
+    Deleting,
+    HumanIntervention,
+    Failed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProfileEnumValidValuesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<i64>,
@@ -227,6 +236,16 @@ pub mod connector {
         Deleting,
         Failed,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ConnectorType {
+    None,
+    #[serde(rename = "CRM")]
+    Crm,
+    AzureBlob,
+    Salesforce,
+    ExchangeOnline,
+    Outbound,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectorMappingErrorManagement {
@@ -1010,6 +1029,13 @@ pub mod role_assignment {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceSetDescription {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub elements: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub exceptions: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleAssignmentResourceFormat>,
@@ -1022,13 +1048,6 @@ pub struct RoleAssignmentResourceFormat {
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignment>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceSetDescription {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub elements: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub exceptions: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssignmentPrincipal {
@@ -1083,25 +1102,6 @@ pub enum PermissionTypes {
     Read,
     Write,
     Manage,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ProvisioningState {
-    Provisioning,
-    Succeeded,
-    Expiring,
-    Deleting,
-    HumanIntervention,
-    Failed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ConnectorType {
-    None,
-    #[serde(rename = "CRM")]
-    Crm,
-    AzureBlob,
-    Salesforce,
-    ExchangeOnline,
-    Outbound,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SuggestRelationshipLinksResponse {

@@ -516,11 +516,26 @@ pub struct ManagedClusterAgentPoolProfileProperties {
     pub gpu_instance_profile: Option<GpuInstanceProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterAgentPoolProfile {
-    #[serde(flatten)]
-    pub managed_cluster_agent_pool_profile_properties: ManagedClusterAgentPoolProfileProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+pub enum OsDiskType {
+    Managed,
+    Ephemeral,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum KubeletDiskType {
+    #[serde(rename = "OS")]
+    Os,
+    Temporary,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OsType {
+    Linux,
+    Windows,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Ossku {
+    Ubuntu,
+    #[serde(rename = "CBLMariner")]
+    CblMariner,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AgentPoolType {
@@ -533,16 +548,156 @@ pub enum AgentPoolMode {
     User,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AgentPoolUpgradeSettings {
+    #[serde(rename = "maxSurge", default, skip_serializing_if = "Option::is_none")]
+    pub max_surge: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PowerState {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<power_state::Code>,
+}
+pub mod power_state {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Code {
+        Running,
+        Stopped,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ScaleSetPriority {
+    Spot,
+    Regular,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ScaleSetEvictionPolicy {
+    Delete,
+    Deallocate,
+}
+pub type SpotMaxPrice = f64;
+pub type ProximityPlacementGroupId = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KubeletConfig {
+    #[serde(rename = "cpuManagerPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub cpu_manager_policy: Option<String>,
+    #[serde(rename = "cpuCfsQuota", default, skip_serializing_if = "Option::is_none")]
+    pub cpu_cfs_quota: Option<bool>,
+    #[serde(rename = "cpuCfsQuotaPeriod", default, skip_serializing_if = "Option::is_none")]
+    pub cpu_cfs_quota_period: Option<String>,
+    #[serde(rename = "imageGcHighThreshold", default, skip_serializing_if = "Option::is_none")]
+    pub image_gc_high_threshold: Option<i32>,
+    #[serde(rename = "imageGcLowThreshold", default, skip_serializing_if = "Option::is_none")]
+    pub image_gc_low_threshold: Option<i32>,
+    #[serde(rename = "topologyManagerPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub topology_manager_policy: Option<String>,
+    #[serde(rename = "allowedUnsafeSysctls", default, skip_serializing_if = "Vec::is_empty")]
+    pub allowed_unsafe_sysctls: Vec<String>,
+    #[serde(rename = "failSwapOn", default, skip_serializing_if = "Option::is_none")]
+    pub fail_swap_on: Option<bool>,
+    #[serde(rename = "containerLogMaxSizeMB", default, skip_serializing_if = "Option::is_none")]
+    pub container_log_max_size_mb: Option<i32>,
+    #[serde(rename = "containerLogMaxFiles", default, skip_serializing_if = "Option::is_none")]
+    pub container_log_max_files: Option<i32>,
+    #[serde(rename = "podMaxPids", default, skip_serializing_if = "Option::is_none")]
+    pub pod_max_pids: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LinuxOsConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sysctls: Option<SysctlConfig>,
+    #[serde(rename = "transparentHugePageEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub transparent_huge_page_enabled: Option<String>,
+    #[serde(rename = "transparentHugePageDefrag", default, skip_serializing_if = "Option::is_none")]
+    pub transparent_huge_page_defrag: Option<String>,
+    #[serde(rename = "swapFileSizeMB", default, skip_serializing_if = "Option::is_none")]
+    pub swap_file_size_mb: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SysctlConfig {
+    #[serde(rename = "netCoreSomaxconn", default, skip_serializing_if = "Option::is_none")]
+    pub net_core_somaxconn: Option<i32>,
+    #[serde(rename = "netCoreNetdevMaxBacklog", default, skip_serializing_if = "Option::is_none")]
+    pub net_core_netdev_max_backlog: Option<i32>,
+    #[serde(rename = "netCoreRmemDefault", default, skip_serializing_if = "Option::is_none")]
+    pub net_core_rmem_default: Option<i32>,
+    #[serde(rename = "netCoreRmemMax", default, skip_serializing_if = "Option::is_none")]
+    pub net_core_rmem_max: Option<i32>,
+    #[serde(rename = "netCoreWmemDefault", default, skip_serializing_if = "Option::is_none")]
+    pub net_core_wmem_default: Option<i32>,
+    #[serde(rename = "netCoreWmemMax", default, skip_serializing_if = "Option::is_none")]
+    pub net_core_wmem_max: Option<i32>,
+    #[serde(rename = "netCoreOptmemMax", default, skip_serializing_if = "Option::is_none")]
+    pub net_core_optmem_max: Option<i32>,
+    #[serde(rename = "netIpv4TcpMaxSynBacklog", default, skip_serializing_if = "Option::is_none")]
+    pub net_ipv4_tcp_max_syn_backlog: Option<i32>,
+    #[serde(rename = "netIpv4TcpMaxTwBuckets", default, skip_serializing_if = "Option::is_none")]
+    pub net_ipv4_tcp_max_tw_buckets: Option<i32>,
+    #[serde(rename = "netIpv4TcpFinTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub net_ipv4_tcp_fin_timeout: Option<i32>,
+    #[serde(rename = "netIpv4TcpKeepaliveTime", default, skip_serializing_if = "Option::is_none")]
+    pub net_ipv4_tcp_keepalive_time: Option<i32>,
+    #[serde(rename = "netIpv4TcpKeepaliveProbes", default, skip_serializing_if = "Option::is_none")]
+    pub net_ipv4_tcp_keepalive_probes: Option<i32>,
+    #[serde(rename = "netIpv4TcpkeepaliveIntvl", default, skip_serializing_if = "Option::is_none")]
+    pub net_ipv4_tcpkeepalive_intvl: Option<i32>,
+    #[serde(rename = "netIpv4TcpTwReuse", default, skip_serializing_if = "Option::is_none")]
+    pub net_ipv4_tcp_tw_reuse: Option<bool>,
+    #[serde(rename = "netIpv4IpLocalPortRange", default, skip_serializing_if = "Option::is_none")]
+    pub net_ipv4_ip_local_port_range: Option<String>,
+    #[serde(rename = "netIpv4NeighDefaultGcThresh1", default, skip_serializing_if = "Option::is_none")]
+    pub net_ipv4_neigh_default_gc_thresh1: Option<i32>,
+    #[serde(rename = "netIpv4NeighDefaultGcThresh2", default, skip_serializing_if = "Option::is_none")]
+    pub net_ipv4_neigh_default_gc_thresh2: Option<i32>,
+    #[serde(rename = "netIpv4NeighDefaultGcThresh3", default, skip_serializing_if = "Option::is_none")]
+    pub net_ipv4_neigh_default_gc_thresh3: Option<i32>,
+    #[serde(rename = "netNetfilterNfConntrackMax", default, skip_serializing_if = "Option::is_none")]
+    pub net_netfilter_nf_conntrack_max: Option<i32>,
+    #[serde(rename = "netNetfilterNfConntrackBuckets", default, skip_serializing_if = "Option::is_none")]
+    pub net_netfilter_nf_conntrack_buckets: Option<i32>,
+    #[serde(rename = "fsInotifyMaxUserWatches", default, skip_serializing_if = "Option::is_none")]
+    pub fs_inotify_max_user_watches: Option<i32>,
+    #[serde(rename = "fsFileMax", default, skip_serializing_if = "Option::is_none")]
+    pub fs_file_max: Option<i32>,
+    #[serde(rename = "fsAioMaxNr", default, skip_serializing_if = "Option::is_none")]
+    pub fs_aio_max_nr: Option<i32>,
+    #[serde(rename = "fsNrOpen", default, skip_serializing_if = "Option::is_none")]
+    pub fs_nr_open: Option<i32>,
+    #[serde(rename = "kernelThreadsMax", default, skip_serializing_if = "Option::is_none")]
+    pub kernel_threads_max: Option<i32>,
+    #[serde(rename = "vmMaxMapCount", default, skip_serializing_if = "Option::is_none")]
+    pub vm_max_map_count: Option<i32>,
+    #[serde(rename = "vmSwappiness", default, skip_serializing_if = "Option::is_none")]
+    pub vm_swappiness: Option<i32>,
+    #[serde(rename = "vmVfsCachePressure", default, skip_serializing_if = "Option::is_none")]
+    pub vm_vfs_cache_pressure: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum GpuInstanceProfile {
+    #[serde(rename = "MIG1g")]
+    Mig1g,
+    #[serde(rename = "MIG2g")]
+    Mig2g,
+    #[serde(rename = "MIG3g")]
+    Mig3g,
+    #[serde(rename = "MIG4g")]
+    Mig4g,
+    #[serde(rename = "MIG7g")]
+    Mig7g,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterAgentPoolProfile {
+    #[serde(flatten)]
+    pub managed_cluster_agent_pool_profile_properties: ManagedClusterAgentPoolProfileProperties,
+    #[serde(flatten)]
+    pub serde_json_value: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentPoolListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AgentPool>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AgentPoolUpgradeSettings {
-    #[serde(rename = "maxSurge", default, skip_serializing_if = "Option::is_none")]
-    pub max_surge: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentPool {
@@ -576,6 +731,11 @@ pub struct ContainerServiceLinuxProfile {
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
     pub ssh: ContainerServiceSshConfiguration,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceSshConfiguration {
+    #[serde(rename = "publicKeys")]
+    pub public_keys: Vec<ContainerServiceSshPublicKey>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceNetworkProfile {
@@ -636,6 +796,39 @@ pub mod container_service_network_profile {
         Standard,
         #[serde(rename = "basic")]
         Basic,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterLoadBalancerProfile {
+    #[serde(rename = "managedOutboundIPs", default, skip_serializing_if = "Option::is_none")]
+    pub managed_outbound_i_ps: Option<managed_cluster_load_balancer_profile::ManagedOutboundIPs>,
+    #[serde(rename = "outboundIPPrefixes", default, skip_serializing_if = "Option::is_none")]
+    pub outbound_ip_prefixes: Option<managed_cluster_load_balancer_profile::OutboundIpPrefixes>,
+    #[serde(rename = "outboundIPs", default, skip_serializing_if = "Option::is_none")]
+    pub outbound_i_ps: Option<managed_cluster_load_balancer_profile::OutboundIPs>,
+    #[serde(rename = "effectiveOutboundIPs", default, skip_serializing_if = "Vec::is_empty")]
+    pub effective_outbound_i_ps: Vec<ResourceReference>,
+    #[serde(rename = "allocatedOutboundPorts", default, skip_serializing_if = "Option::is_none")]
+    pub allocated_outbound_ports: Option<i32>,
+    #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
+    pub idle_timeout_in_minutes: Option<i32>,
+}
+pub mod managed_cluster_load_balancer_profile {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct ManagedOutboundIPs {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub count: Option<i32>,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct OutboundIpPrefixes {
+        #[serde(rename = "publicIPPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+        pub public_ip_prefixes: Vec<ResourceReference>,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct OutboundIPs {
+        #[serde(rename = "publicIPs", default, skip_serializing_if = "Vec::is_empty")]
+        pub public_i_ps: Vec<ResourceReference>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -749,47 +942,9 @@ pub struct CommandResultProperties {
     pub reason: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterLoadBalancerProfile {
-    #[serde(rename = "managedOutboundIPs", default, skip_serializing_if = "Option::is_none")]
-    pub managed_outbound_i_ps: Option<managed_cluster_load_balancer_profile::ManagedOutboundIPs>,
-    #[serde(rename = "outboundIPPrefixes", default, skip_serializing_if = "Option::is_none")]
-    pub outbound_ip_prefixes: Option<managed_cluster_load_balancer_profile::OutboundIpPrefixes>,
-    #[serde(rename = "outboundIPs", default, skip_serializing_if = "Option::is_none")]
-    pub outbound_i_ps: Option<managed_cluster_load_balancer_profile::OutboundIPs>,
-    #[serde(rename = "effectiveOutboundIPs", default, skip_serializing_if = "Vec::is_empty")]
-    pub effective_outbound_i_ps: Vec<ResourceReference>,
-    #[serde(rename = "allocatedOutboundPorts", default, skip_serializing_if = "Option::is_none")]
-    pub allocated_outbound_ports: Option<i32>,
-    #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
-    pub idle_timeout_in_minutes: Option<i32>,
-}
-pub mod managed_cluster_load_balancer_profile {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct ManagedOutboundIPs {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub count: Option<i32>,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct OutboundIpPrefixes {
-        #[serde(rename = "publicIPPrefixes", default, skip_serializing_if = "Vec::is_empty")]
-        pub public_ip_prefixes: Vec<ResourceReference>,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct OutboundIPs {
-        #[serde(rename = "publicIPs", default, skip_serializing_if = "Vec::is_empty")]
-        pub public_i_ps: Vec<ResourceReference>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceSshConfiguration {
-    #[serde(rename = "publicKeys")]
-    pub public_keys: Vec<ContainerServiceSshPublicKey>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceSshPublicKey {
@@ -824,6 +979,36 @@ pub struct ManagedCluster {
     pub sku: Option<ManagedClusterSku>,
     #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub extended_location: Option<ExtendedLocation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterSku {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<managed_cluster_sku::Name>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<managed_cluster_sku::Tier>,
+}
+pub mod managed_cluster_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        Basic,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Tier {
+        Paid,
+        Free,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtendedLocation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<ExtendedLocationType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ExtendedLocationType {
+    EdgeZone,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterProperties {
@@ -939,16 +1124,52 @@ pub mod managed_cluster_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PowerState {
+pub struct ManagedClusterPodIdentityProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<power_state::Code>,
+    pub enabled: Option<bool>,
+    #[serde(rename = "allowNetworkPluginKubenet", default, skip_serializing_if = "Option::is_none")]
+    pub allow_network_plugin_kubenet: Option<bool>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Vec::is_empty")]
+    pub user_assigned_identities: Vec<ManagedClusterPodIdentity>,
+    #[serde(rename = "userAssignedIdentityExceptions", default, skip_serializing_if = "Vec::is_empty")]
+    pub user_assigned_identity_exceptions: Vec<ManagedClusterPodIdentityException>,
 }
-pub mod power_state {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterAadProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub managed: Option<bool>,
+    #[serde(rename = "enableAzureRBAC", default, skip_serializing_if = "Option::is_none")]
+    pub enable_azure_rbac: Option<bool>,
+    #[serde(rename = "adminGroupObjectIDs", default, skip_serializing_if = "Vec::is_empty")]
+    pub admin_group_object_i_ds: Vec<String>,
+    #[serde(rename = "clientAppID", default, skip_serializing_if = "Option::is_none")]
+    pub client_app_id: Option<String>,
+    #[serde(rename = "serverAppID", default, skip_serializing_if = "Option::is_none")]
+    pub server_app_id: Option<String>,
+    #[serde(rename = "serverAppSecret", default, skip_serializing_if = "Option::is_none")]
+    pub server_app_secret: Option<String>,
+    #[serde(rename = "tenantID", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterAutoUpgradeProfile {
+    #[serde(rename = "upgradeChannel", default, skip_serializing_if = "Option::is_none")]
+    pub upgrade_channel: Option<managed_cluster_auto_upgrade_profile::UpgradeChannel>,
+}
+pub mod managed_cluster_auto_upgrade_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Code {
-        Running,
-        Stopped,
+    pub enum UpgradeChannel {
+        #[serde(rename = "rapid")]
+        Rapid,
+        #[serde(rename = "stable")]
+        Stable,
+        #[serde(rename = "patch")]
+        Patch,
+        #[serde(rename = "node-image")]
+        NodeImage,
+        #[serde(rename = "none")]
+        None,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -959,6 +1180,17 @@ pub struct ManagedClusterApiServerAccessProfile {
     pub enable_private_cluster: Option<bool>,
     #[serde(rename = "privateDNSZone", default, skip_serializing_if = "Option::is_none")]
     pub private_dns_zone: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterHttpProxyConfig {
+    #[serde(rename = "httpProxy", default, skip_serializing_if = "Option::is_none")]
+    pub http_proxy: Option<String>,
+    #[serde(rename = "httpsProxy", default, skip_serializing_if = "Option::is_none")]
+    pub https_proxy: Option<String>,
+    #[serde(rename = "noProxy", default, skip_serializing_if = "Vec::is_empty")]
+    pub no_proxy: Vec<String>,
+    #[serde(rename = "trustedCa", default, skip_serializing_if = "Option::is_none")]
+    pub trusted_ca: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterIdentity {
@@ -1020,44 +1252,6 @@ pub struct ManagedClusterUpgradeProfileProperties {
     pub agent_pool_profiles: Vec<ManagedClusterPoolUpgradeProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterAutoUpgradeProfile {
-    #[serde(rename = "upgradeChannel", default, skip_serializing_if = "Option::is_none")]
-    pub upgrade_channel: Option<managed_cluster_auto_upgrade_profile::UpgradeChannel>,
-}
-pub mod managed_cluster_auto_upgrade_profile {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum UpgradeChannel {
-        #[serde(rename = "rapid")]
-        Rapid,
-        #[serde(rename = "stable")]
-        Stable,
-        #[serde(rename = "patch")]
-        Patch,
-        #[serde(rename = "node-image")]
-        NodeImage,
-        #[serde(rename = "none")]
-        None,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterAadProfile {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub managed: Option<bool>,
-    #[serde(rename = "enableAzureRBAC", default, skip_serializing_if = "Option::is_none")]
-    pub enable_azure_rbac: Option<bool>,
-    #[serde(rename = "adminGroupObjectIDs", default, skip_serializing_if = "Vec::is_empty")]
-    pub admin_group_object_i_ds: Vec<String>,
-    #[serde(rename = "clientAppID", default, skip_serializing_if = "Option::is_none")]
-    pub client_app_id: Option<String>,
-    #[serde(rename = "serverAppID", default, skip_serializing_if = "Option::is_none")]
-    pub server_app_id: Option<String>,
-    #[serde(rename = "serverAppSecret", default, skip_serializing_if = "Option::is_none")]
-    pub server_app_secret: Option<String>,
-    #[serde(rename = "tenantID", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAddonProfile {
     pub enabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1093,22 +1287,27 @@ pub mod managed_cluster_pod_identity {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<CloudErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudErrorBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<CloudErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterPodIdentityException {
     pub name: String,
     pub namespace: String,
     #[serde(rename = "podLabels")]
     pub pod_labels: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterPodIdentityProfile {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(rename = "allowNetworkPluginKubenet", default, skip_serializing_if = "Option::is_none")]
-    pub allow_network_plugin_kubenet: Option<bool>,
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Vec::is_empty")]
-    pub user_assigned_identities: Vec<ManagedClusterPodIdentity>,
-    #[serde(rename = "userAssignedIdentityExceptions", default, skip_serializing_if = "Vec::is_empty")]
-    pub user_assigned_identity_exceptions: Vec<ManagedClusterPodIdentityException>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterUpgradeProfile {
@@ -1157,29 +1356,6 @@ pub struct AgentPoolAvailableVersionsProperties {
     pub agent_pool_versions: Vec<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OsType {
-    Linux,
-    Windows,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Ossku {
-    Ubuntu,
-    #[serde(rename = "CBLMariner")]
-    CblMariner,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ScaleSetPriority {
-    Spot,
-    Regular,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ScaleSetEvictionPolicy {
-    Delete,
-    Deallocate,
-}
-pub type SpotMaxPrice = f64;
-pub type ProximityPlacementGroupId = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub kubeconfigs: Vec<CredentialResult>,
@@ -1190,41 +1366,6 @@ pub struct CredentialResult {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<CloudErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudErrorBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<CloudErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterSku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<managed_cluster_sku::Name>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<managed_cluster_sku::Tier>,
-}
-pub mod managed_cluster_sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        Basic,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Tier {
-        Paid,
-        Free,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionListResult {
@@ -1302,147 +1443,6 @@ pub struct PrivateLinkResource {
     pub required_members: Vec<String>,
     #[serde(rename = "privateLinkServiceID", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OsDiskType {
-    Managed,
-    Ephemeral,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum KubeletDiskType {
-    #[serde(rename = "OS")]
-    Os,
-    Temporary,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KubeletConfig {
-    #[serde(rename = "cpuManagerPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub cpu_manager_policy: Option<String>,
-    #[serde(rename = "cpuCfsQuota", default, skip_serializing_if = "Option::is_none")]
-    pub cpu_cfs_quota: Option<bool>,
-    #[serde(rename = "cpuCfsQuotaPeriod", default, skip_serializing_if = "Option::is_none")]
-    pub cpu_cfs_quota_period: Option<String>,
-    #[serde(rename = "imageGcHighThreshold", default, skip_serializing_if = "Option::is_none")]
-    pub image_gc_high_threshold: Option<i32>,
-    #[serde(rename = "imageGcLowThreshold", default, skip_serializing_if = "Option::is_none")]
-    pub image_gc_low_threshold: Option<i32>,
-    #[serde(rename = "topologyManagerPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub topology_manager_policy: Option<String>,
-    #[serde(rename = "allowedUnsafeSysctls", default, skip_serializing_if = "Vec::is_empty")]
-    pub allowed_unsafe_sysctls: Vec<String>,
-    #[serde(rename = "failSwapOn", default, skip_serializing_if = "Option::is_none")]
-    pub fail_swap_on: Option<bool>,
-    #[serde(rename = "containerLogMaxSizeMB", default, skip_serializing_if = "Option::is_none")]
-    pub container_log_max_size_mb: Option<i32>,
-    #[serde(rename = "containerLogMaxFiles", default, skip_serializing_if = "Option::is_none")]
-    pub container_log_max_files: Option<i32>,
-    #[serde(rename = "podMaxPids", default, skip_serializing_if = "Option::is_none")]
-    pub pod_max_pids: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinuxOsConfig {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sysctls: Option<SysctlConfig>,
-    #[serde(rename = "transparentHugePageEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub transparent_huge_page_enabled: Option<String>,
-    #[serde(rename = "transparentHugePageDefrag", default, skip_serializing_if = "Option::is_none")]
-    pub transparent_huge_page_defrag: Option<String>,
-    #[serde(rename = "swapFileSizeMB", default, skip_serializing_if = "Option::is_none")]
-    pub swap_file_size_mb: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SysctlConfig {
-    #[serde(rename = "netCoreSomaxconn", default, skip_serializing_if = "Option::is_none")]
-    pub net_core_somaxconn: Option<i32>,
-    #[serde(rename = "netCoreNetdevMaxBacklog", default, skip_serializing_if = "Option::is_none")]
-    pub net_core_netdev_max_backlog: Option<i32>,
-    #[serde(rename = "netCoreRmemDefault", default, skip_serializing_if = "Option::is_none")]
-    pub net_core_rmem_default: Option<i32>,
-    #[serde(rename = "netCoreRmemMax", default, skip_serializing_if = "Option::is_none")]
-    pub net_core_rmem_max: Option<i32>,
-    #[serde(rename = "netCoreWmemDefault", default, skip_serializing_if = "Option::is_none")]
-    pub net_core_wmem_default: Option<i32>,
-    #[serde(rename = "netCoreWmemMax", default, skip_serializing_if = "Option::is_none")]
-    pub net_core_wmem_max: Option<i32>,
-    #[serde(rename = "netCoreOptmemMax", default, skip_serializing_if = "Option::is_none")]
-    pub net_core_optmem_max: Option<i32>,
-    #[serde(rename = "netIpv4TcpMaxSynBacklog", default, skip_serializing_if = "Option::is_none")]
-    pub net_ipv4_tcp_max_syn_backlog: Option<i32>,
-    #[serde(rename = "netIpv4TcpMaxTwBuckets", default, skip_serializing_if = "Option::is_none")]
-    pub net_ipv4_tcp_max_tw_buckets: Option<i32>,
-    #[serde(rename = "netIpv4TcpFinTimeout", default, skip_serializing_if = "Option::is_none")]
-    pub net_ipv4_tcp_fin_timeout: Option<i32>,
-    #[serde(rename = "netIpv4TcpKeepaliveTime", default, skip_serializing_if = "Option::is_none")]
-    pub net_ipv4_tcp_keepalive_time: Option<i32>,
-    #[serde(rename = "netIpv4TcpKeepaliveProbes", default, skip_serializing_if = "Option::is_none")]
-    pub net_ipv4_tcp_keepalive_probes: Option<i32>,
-    #[serde(rename = "netIpv4TcpkeepaliveIntvl", default, skip_serializing_if = "Option::is_none")]
-    pub net_ipv4_tcpkeepalive_intvl: Option<i32>,
-    #[serde(rename = "netIpv4TcpTwReuse", default, skip_serializing_if = "Option::is_none")]
-    pub net_ipv4_tcp_tw_reuse: Option<bool>,
-    #[serde(rename = "netIpv4IpLocalPortRange", default, skip_serializing_if = "Option::is_none")]
-    pub net_ipv4_ip_local_port_range: Option<String>,
-    #[serde(rename = "netIpv4NeighDefaultGcThresh1", default, skip_serializing_if = "Option::is_none")]
-    pub net_ipv4_neigh_default_gc_thresh1: Option<i32>,
-    #[serde(rename = "netIpv4NeighDefaultGcThresh2", default, skip_serializing_if = "Option::is_none")]
-    pub net_ipv4_neigh_default_gc_thresh2: Option<i32>,
-    #[serde(rename = "netIpv4NeighDefaultGcThresh3", default, skip_serializing_if = "Option::is_none")]
-    pub net_ipv4_neigh_default_gc_thresh3: Option<i32>,
-    #[serde(rename = "netNetfilterNfConntrackMax", default, skip_serializing_if = "Option::is_none")]
-    pub net_netfilter_nf_conntrack_max: Option<i32>,
-    #[serde(rename = "netNetfilterNfConntrackBuckets", default, skip_serializing_if = "Option::is_none")]
-    pub net_netfilter_nf_conntrack_buckets: Option<i32>,
-    #[serde(rename = "fsInotifyMaxUserWatches", default, skip_serializing_if = "Option::is_none")]
-    pub fs_inotify_max_user_watches: Option<i32>,
-    #[serde(rename = "fsFileMax", default, skip_serializing_if = "Option::is_none")]
-    pub fs_file_max: Option<i32>,
-    #[serde(rename = "fsAioMaxNr", default, skip_serializing_if = "Option::is_none")]
-    pub fs_aio_max_nr: Option<i32>,
-    #[serde(rename = "fsNrOpen", default, skip_serializing_if = "Option::is_none")]
-    pub fs_nr_open: Option<i32>,
-    #[serde(rename = "kernelThreadsMax", default, skip_serializing_if = "Option::is_none")]
-    pub kernel_threads_max: Option<i32>,
-    #[serde(rename = "vmMaxMapCount", default, skip_serializing_if = "Option::is_none")]
-    pub vm_max_map_count: Option<i32>,
-    #[serde(rename = "vmSwappiness", default, skip_serializing_if = "Option::is_none")]
-    pub vm_swappiness: Option<i32>,
-    #[serde(rename = "vmVfsCachePressure", default, skip_serializing_if = "Option::is_none")]
-    pub vm_vfs_cache_pressure: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterHttpProxyConfig {
-    #[serde(rename = "httpProxy", default, skip_serializing_if = "Option::is_none")]
-    pub http_proxy: Option<String>,
-    #[serde(rename = "httpsProxy", default, skip_serializing_if = "Option::is_none")]
-    pub https_proxy: Option<String>,
-    #[serde(rename = "noProxy", default, skip_serializing_if = "Vec::is_empty")]
-    pub no_proxy: Vec<String>,
-    #[serde(rename = "trustedCa", default, skip_serializing_if = "Option::is_none")]
-    pub trusted_ca: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum GpuInstanceProfile {
-    #[serde(rename = "MIG1g")]
-    Mig1g,
-    #[serde(rename = "MIG2g")]
-    Mig2g,
-    #[serde(rename = "MIG3g")]
-    Mig3g,
-    #[serde(rename = "MIG4g")]
-    Mig4g,
-    #[serde(rename = "MIG7g")]
-    Mig7g,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ExtendedLocationType {
-    EdgeZone,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExtendedLocation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<ExtendedLocationType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OsOptionProperty {

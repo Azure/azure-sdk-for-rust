@@ -61,6 +61,11 @@ pub struct HealthAlertProperties {
     pub last_updated_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HealthAlertCriteria {
+    #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
+    pub all_of: Vec<HealthAlertCriterion>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthAlertResource {
     #[serde(flatten)]
     pub resource: Resource,
@@ -77,11 +82,6 @@ pub struct HealthAlertResourcePatch {
 pub struct HealthAlertResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HealthAlertResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HealthAlertCriteria {
-    #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
-    pub all_of: Vec<HealthAlertCriterion>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthAlertCriterion {

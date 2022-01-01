@@ -50,6 +50,32 @@ pub mod cluster_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OptimizedAutoscale {
+    pub version: i64,
+    #[serde(rename = "isEnabled")]
+    pub is_enabled: bool,
+    pub minimum: i64,
+    pub maximum: i64,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualNetworkConfiguration {
+    #[serde(rename = "subnetId")]
+    pub subnet_id: String,
+    #[serde(rename = "enginePublicIpId")]
+    pub engine_public_ip_id: String,
+    #[serde(rename = "dataManagementPublicIpId")]
+    pub data_management_public_ip_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultProperties {
+    #[serde(rename = "keyName")]
+    pub key_name: String,
+    #[serde(rename = "keyVersion")]
+    pub key_version: String,
+    #[serde(rename = "keyVaultUri")]
+    pub key_vault_uri: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrustedExternalTenant {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
@@ -62,6 +88,48 @@ pub struct AzureResourceSku {
     pub sku: Option<AzureSku>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<AzureCapacity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureSku {
+    pub name: azure_sku::Name,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i64>,
+    pub tier: azure_sku::Tier,
+}
+pub mod azure_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        #[serde(rename = "Standard_DS13_v2+1TB_PS")]
+        StandardDs13V21tbPs,
+        #[serde(rename = "Standard_DS13_v2+2TB_PS")]
+        StandardDs13V22tbPs,
+        #[serde(rename = "Standard_DS14_v2+3TB_PS")]
+        StandardDs14V23tbPs,
+        #[serde(rename = "Standard_DS14_v2+4TB_PS")]
+        StandardDs14V24tbPs,
+        #[serde(rename = "Standard_D13_v2")]
+        StandardD13V2,
+        #[serde(rename = "Standard_D14_v2")]
+        StandardD14V2,
+        #[serde(rename = "Standard_L8s")]
+        StandardL8s,
+        #[serde(rename = "Standard_L16s")]
+        StandardL16s,
+        #[serde(rename = "Standard_D11_v2")]
+        StandardD11V2,
+        #[serde(rename = "Standard_D12_v2")]
+        StandardD12V2,
+        #[serde(rename = "Standard_L4s")]
+        StandardL4s,
+        #[serde(rename = "Dev(No SLA)_Standard_D11_v2")]
+        DevNoSlaStandardD11V2,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Tier {
+        Basic,
+        Standard,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureCapacity {
@@ -109,66 +177,7 @@ pub struct SkuLocationInfoItem {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureSku {
-    pub name: azure_sku::Name,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i64>,
-    pub tier: azure_sku::Tier,
-}
-pub mod azure_sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        #[serde(rename = "Standard_DS13_v2+1TB_PS")]
-        StandardDs13V21tbPs,
-        #[serde(rename = "Standard_DS13_v2+2TB_PS")]
-        StandardDs13V22tbPs,
-        #[serde(rename = "Standard_DS14_v2+3TB_PS")]
-        StandardDs14V23tbPs,
-        #[serde(rename = "Standard_DS14_v2+4TB_PS")]
-        StandardDs14V24tbPs,
-        #[serde(rename = "Standard_D13_v2")]
-        StandardD13V2,
-        #[serde(rename = "Standard_D14_v2")]
-        StandardD14V2,
-        #[serde(rename = "Standard_L8s")]
-        StandardL8s,
-        #[serde(rename = "Standard_L16s")]
-        StandardL16s,
-        #[serde(rename = "Standard_D11_v2")]
-        StandardD11V2,
-        #[serde(rename = "Standard_D12_v2")]
-        StandardD12V2,
-        #[serde(rename = "Standard_L4s")]
-        StandardL4s,
-        #[serde(rename = "Dev(No SLA)_Standard_D11_v2")]
-        DevNoSlaStandardD11V2,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Tier {
-        Basic,
-        Standard,
-    }
-}
 pub type Zones = Vec<String>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OptimizedAutoscale {
-    pub version: i64,
-    #[serde(rename = "isEnabled")]
-    pub is_enabled: bool,
-    pub minimum: i64,
-    pub maximum: i64,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualNetworkConfiguration {
-    #[serde(rename = "subnetId")]
-    pub subnet_id: String,
-    #[serde(rename = "enginePublicIpId")]
-    pub engine_public_ip_id: String,
-    #[serde(rename = "dataManagementPublicIpId")]
-    pub data_management_public_ip_id: String,
-}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseStatistics {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -279,23 +288,6 @@ pub struct EventHubConnectionProperties {
     pub event_system_properties: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IotHubConnectionProperties {
-    #[serde(rename = "iotHubResourceId")]
-    pub iot_hub_resource_id: String,
-    #[serde(rename = "consumerGroup")]
-    pub consumer_group: String,
-    #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
-    pub table_name: Option<String>,
-    #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
-    pub mapping_rule_name: Option<String>,
-    #[serde(rename = "dataFormat", default, skip_serializing_if = "Option::is_none")]
-    pub data_format: Option<DataFormat>,
-    #[serde(rename = "eventSystemProperties", default, skip_serializing_if = "Vec::is_empty")]
-    pub event_system_properties: Vec<String>,
-    #[serde(rename = "sharedAccessPolicyName")]
-    pub shared_access_policy_name: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DataFormat {
     #[serde(rename = "MULTIJSON")]
     Multijson,
@@ -323,6 +315,23 @@ pub enum DataFormat {
     Tsve,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IotHubConnectionProperties {
+    #[serde(rename = "iotHubResourceId")]
+    pub iot_hub_resource_id: String,
+    #[serde(rename = "consumerGroup")]
+    pub consumer_group: String,
+    #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
+    pub table_name: Option<String>,
+    #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
+    pub mapping_rule_name: Option<String>,
+    #[serde(rename = "dataFormat", default, skip_serializing_if = "Option::is_none")]
+    pub data_format: Option<DataFormat>,
+    #[serde(rename = "eventSystemProperties", default, skip_serializing_if = "Vec::is_empty")]
+    pub event_system_properties: Vec<String>,
+    #[serde(rename = "sharedAccessPolicyName")]
+    pub shared_access_policy_name: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventGridConnectionProperties {
     #[serde(rename = "storageAccountResourceId")]
     pub storage_account_resource_id: String,
@@ -348,6 +357,25 @@ pub struct Cluster {
     pub identity: Option<Identity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Identity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type")]
+    pub type_: identity::Type,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+pub mod identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        None,
+        SystemAssigned,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpdate {
@@ -542,6 +570,17 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudErrorBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<CloudErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterCheckNameRequest {
     pub name: String,
     #[serde(rename = "type")]
@@ -610,17 +649,6 @@ pub struct ListResourceSkusResult {
     pub value: Vec<AzureResourceSku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudErrorBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<CloudErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
@@ -651,34 +679,6 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Identity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type")]
-    pub type_: identity::Type,
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
-}
-pub mod identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        None,
-        SystemAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultProperties {
-    #[serde(rename = "keyName")]
-    pub key_name: String,
-    #[serde(rename = "keyVersion")]
-    pub key_version: String,
-    #[serde(rename = "keyVaultUri")]
-    pub key_vault_uri: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

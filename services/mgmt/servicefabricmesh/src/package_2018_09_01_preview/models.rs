@@ -223,6 +223,10 @@ pub struct ApplicationScopedVolumeCreationParameters {
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ApplicationScopedVolumeKind {
+    ServiceFabricVolumeDisk,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk {
     #[serde(flatten)]
     pub application_scoped_volume_creation_parameters: ApplicationScopedVolumeCreationParameters,
@@ -237,10 +241,6 @@ pub mod application_scoped_volume_creation_parameters_service_fabric_volume_disk
         Medium,
         Large,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ApplicationScopedVolumeKind {
-    ServiceFabricVolumeDisk,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeResourceProperties {
@@ -363,20 +363,10 @@ pub struct HttpRouteConfig {
     pub destination: GatewayDestination,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HttpRouteMatchHeader {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<http_route_match_header::Type>,
-}
-pub mod http_route_match_header {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        #[serde(rename = "exact")]
-        Exact,
-    }
+pub struct HttpRouteMatchRule {
+    pub path: HttpRouteMatchPath,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub headers: Vec<HttpRouteMatchHeader>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpRouteMatchPath {
@@ -395,10 +385,20 @@ pub mod http_route_match_path {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HttpRouteMatchRule {
-    pub path: HttpRouteMatchPath,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub headers: Vec<HttpRouteMatchHeader>,
+pub struct HttpRouteMatchHeader {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<http_route_match_header::Type>,
+}
+pub mod http_route_match_header {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        #[serde(rename = "exact")]
+        Exact,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TcpConfig {
@@ -448,6 +448,15 @@ pub struct ApplicationProperties {
     pub unhealthy_evaluation: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiagnosticsDescription {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sinks: Vec<DiagnosticsSinkProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(rename = "defaultSinkRefs", default, skip_serializing_if = "Vec::is_empty")]
+    pub default_sink_refs: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureInternalMonitoringPipelineSinkDescription {
     #[serde(flatten)]
     pub diagnostics_sink_properties: DiagnosticsSinkProperties,
@@ -461,15 +470,6 @@ pub struct AzureInternalMonitoringPipelineSinkDescription {
     pub fluentd_config_url: Option<serde_json::Value>,
     #[serde(rename = "autoKeyConfigUrl", default, skip_serializing_if = "Option::is_none")]
     pub auto_key_config_url: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiagnosticsDescription {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sinks: Vec<DiagnosticsSinkProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(rename = "defaultSinkRefs", default, skip_serializing_if = "Vec::is_empty")]
-    pub default_sink_refs: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsRef {
@@ -547,6 +547,14 @@ pub struct AutoScalingPolicy {
     pub mechanism: AutoScalingMechanism,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutoScalingTrigger {
+    pub kind: AutoScalingTriggerKind,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AutoScalingTriggerKind {
+    AverageLoad,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingResourceMetric {
     #[serde(flatten)]
     pub auto_scaling_metric: AutoScalingMetric,
@@ -560,14 +568,6 @@ pub enum AutoScalingResourceMetricName {
     Cpu,
     #[serde(rename = "memoryInGB")]
     MemoryInGb,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingTrigger {
-    pub kind: AutoScalingTriggerKind,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum AutoScalingTriggerKind {
-    AverageLoad,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerCodePackageProperties {
@@ -600,19 +600,30 @@ pub struct ContainerCodePackageProperties {
     pub instance_view: Option<ContainerInstanceView>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerEvent {
+pub struct ImageRegistryCredential {
+    pub server: String,
+    pub username: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    pub password: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceRequirements {
+    pub requests: ResourceRequests,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<i64>,
-    #[serde(rename = "firstTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub first_timestamp: Option<String>,
-    #[serde(rename = "lastTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub last_timestamp: Option<String>,
+    pub limits: Option<ResourceLimits>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceRequests {
+    #[serde(rename = "memoryInGB")]
+    pub memory_in_gb: f64,
+    pub cpu: f64,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceLimits {
+    #[serde(rename = "memoryInGB", default, skip_serializing_if = "Option::is_none")]
+    pub memory_in_gb: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
+    pub cpu: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerInstanceView {
@@ -624,11 +635,6 @@ pub struct ContainerInstanceView {
     pub previous_state: Option<ContainerState>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub events: Vec<ContainerEvent>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerLabel {
-    pub name: String,
-    pub value: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerState {
@@ -644,6 +650,26 @@ pub struct ContainerState {
     pub detail_status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerEvent {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+    #[serde(rename = "firstTimestamp", default, skip_serializing_if = "Option::is_none")]
+    pub first_timestamp: Option<String>,
+    #[serde(rename = "lastTimestamp", default, skip_serializing_if = "Option::is_none")]
+    pub last_timestamp: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerLabel {
+    pub name: String,
+    pub value: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointProperties {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -657,13 +683,6 @@ pub struct EnvironmentVariable {
     pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageRegistryCredential {
-    pub server: String,
-    pub username: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperatingSystemType {
     Linux,
     Windows,
@@ -673,25 +692,6 @@ pub struct ReliableCollectionsRef {
     pub name: String,
     #[serde(rename = "doNotPersistState", default, skip_serializing_if = "Option::is_none")]
     pub do_not_persist_state: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceLimits {
-    #[serde(rename = "memoryInGB", default, skip_serializing_if = "Option::is_none")]
-    pub memory_in_gb: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cpu: Option<f64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceRequests {
-    #[serde(rename = "memoryInGB")]
-    pub memory_in_gb: f64,
-    pub cpu: f64,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceRequirements {
-    pub requests: ResourceRequests,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limits: Option<ResourceLimits>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceProperties {

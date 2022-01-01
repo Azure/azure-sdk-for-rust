@@ -64,6 +64,14 @@ pub struct ContinuousDataExport {
     pub sources: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Endpoint {
+    #[serde(rename = "type")]
+    pub type_: String,
+    #[serde(rename = "connectionString")]
+    pub connection_string: String,
+    pub name: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContinuousDataExportCollection {
     pub value: Vec<ContinuousDataExport>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -127,6 +135,41 @@ pub struct DeviceCredentials {
     pub tpm: Option<Tpm>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SymmetricKey {
+    #[serde(rename = "primaryKey")]
+    pub primary_key: String,
+    #[serde(rename = "secondaryKey")]
+    pub secondary_key: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X509 {
+    #[serde(rename = "clientCertificates", default, skip_serializing_if = "Option::is_none")]
+    pub client_certificates: Option<X509Certificates>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X509Certificates {
+    pub primary: X509Certificate,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secondary: Option<X509Certificate>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X509Certificate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub certificate: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<X509CertificateInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X509CertificateInfo {
+    #[serde(rename = "sha1Thumbprint")]
+    pub sha1_thumbprint: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Tpm {
+    #[serde(rename = "endorsementKey")]
+    pub endorsement_key: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -175,14 +218,6 @@ pub struct EmailUser {
     #[serde(flatten)]
     pub user: User,
     pub email: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Endpoint {
-    #[serde(rename = "type")]
-    pub type_: String,
-    #[serde(rename = "connectionString")]
-    pub connection_string: String,
-    pub name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubsEndpoint {
@@ -317,23 +352,11 @@ pub struct StorageEndpoint {
     pub endpoint: Endpoint,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SymmetricKey {
-    #[serde(rename = "primaryKey")]
-    pub primary_key: String,
-    #[serde(rename = "secondaryKey")]
-    pub secondary_key: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKeyAttestation {
     #[serde(flatten)]
     pub attestation: Attestation,
     #[serde(rename = "symmetricKey")]
     pub symmetric_key: SymmetricKey,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Tpm {
-    #[serde(rename = "endorsementKey")]
-    pub endorsement_key: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
@@ -357,31 +380,8 @@ pub struct UserCollection {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X509 {
-    #[serde(rename = "clientCertificates", default, skip_serializing_if = "Option::is_none")]
-    pub client_certificates: Option<X509Certificates>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Attestation {
     #[serde(flatten)]
     pub attestation: Attestation,
     pub x509: X509,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X509Certificate {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub certificate: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<X509CertificateInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X509CertificateInfo {
-    #[serde(rename = "sha1Thumbprint")]
-    pub sha1_thumbprint: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X509Certificates {
-    pub primary: X509Certificate,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub secondary: Option<X509Certificate>,
 }

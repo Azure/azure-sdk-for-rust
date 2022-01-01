@@ -11,6 +11,31 @@ pub struct Profile {
     pub properties: Option<ProfileProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<sku::Name>,
+}
+pub mod sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        #[serde(rename = "Standard_Verizon")]
+        StandardVerizon,
+        #[serde(rename = "Premium_Verizon")]
+        PremiumVerizon,
+        #[serde(rename = "Custom_Verizon")]
+        CustomVerizon,
+        #[serde(rename = "Standard_Akamai")]
+        StandardAkamai,
+        #[serde(rename = "Standard_ChinaCdn")]
+        StandardChinaCdn,
+        #[serde(rename = "Premium_ChinaCdn")]
+        PremiumChinaCdn,
+        #[serde(rename = "Standard_Microsoft")]
+        StandardMicrosoft,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProfileProperties {
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<profile_properties::ResourceState>,
@@ -127,6 +152,21 @@ pub mod endpoint_properties_update_parameters {
         pub description: Option<String>,
         pub rules: Vec<DeliveryRule>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum QueryStringCachingBehavior {
+    IgnoreQueryString,
+    BypassCaching,
+    UseQueryString,
+    NotSet,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OptimizationType {
+    GeneralWebDelivery,
+    GeneralMediaStreaming,
+    VideoOnDemandMediaStreaming,
+    LargeFileDownload,
+    DynamicSiteAcceleration,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRule {
@@ -511,6 +551,11 @@ pub struct CheckNameAvailabilityInput {
     pub type_: ResourceType,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ResourceType {
+    #[serde(rename = "Microsoft.Cdn/Profiles/Endpoints")]
+    MicrosoftCdnProfilesEndpoints,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityOutput {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
@@ -550,11 +595,6 @@ pub struct ResourceUsage {
     pub current_value: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ResourceType {
-    #[serde(rename = "Microsoft.Cdn/Profiles/Endpoints")]
-    MicrosoftCdnProfilesEndpoints,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -638,46 +678,6 @@ pub struct TrackedResource {
 pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum QueryStringCachingBehavior {
-    IgnoreQueryString,
-    BypassCaching,
-    UseQueryString,
-    NotSet,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<sku::Name>,
-}
-pub mod sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        #[serde(rename = "Standard_Verizon")]
-        StandardVerizon,
-        #[serde(rename = "Premium_Verizon")]
-        PremiumVerizon,
-        #[serde(rename = "Custom_Verizon")]
-        CustomVerizon,
-        #[serde(rename = "Standard_Akamai")]
-        StandardAkamai,
-        #[serde(rename = "Standard_ChinaCdn")]
-        StandardChinaCdn,
-        #[serde(rename = "Premium_ChinaCdn")]
-        PremiumChinaCdn,
-        #[serde(rename = "Standard_Microsoft")]
-        StandardMicrosoft,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OptimizationType {
-    GeneralWebDelivery,
-    GeneralMediaStreaming,
-    VideoOnDemandMediaStreaming,
-    LargeFileDownload,
-    DynamicSiteAcceleration,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {

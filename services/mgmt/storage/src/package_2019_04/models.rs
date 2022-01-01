@@ -901,13 +901,6 @@ pub struct ManagementPolicyDefinition {
     pub filters: Option<ManagementPolicyFilter>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementPolicyFilter {
-    #[serde(rename = "prefixMatch", default, skip_serializing_if = "Vec::is_empty")]
-    pub prefix_match: Vec<String>,
-    #[serde(rename = "blobTypes")]
-    pub blob_types: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementPolicyAction {
     #[serde(rename = "baseBlob", default, skip_serializing_if = "Option::is_none")]
     pub base_blob: Option<ManagementPolicyBaseBlob>,
@@ -924,19 +917,26 @@ pub struct ManagementPolicyBaseBlob {
     pub delete: Option<DateAfterModification>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementPolicySnapShot {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub delete: Option<DateAfterCreation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DateAfterModification {
     #[serde(rename = "daysAfterModificationGreaterThan")]
     pub days_after_modification_greater_than: f64,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementPolicySnapShot {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub delete: Option<DateAfterCreation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DateAfterCreation {
     #[serde(rename = "daysAfterCreationGreaterThan")]
     pub days_after_creation_greater_than: f64,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementPolicyFilter {
+    #[serde(rename = "prefixMatch", default, skip_serializing_if = "Vec::is_empty")]
+    pub prefix_match: Vec<String>,
+    #[serde(rename = "blobTypes")]
+    pub blob_types: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerProperties {
@@ -989,11 +989,13 @@ pub mod container_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobContainer {
-    #[serde(flatten)]
-    pub azure_entity_resource: AzureEntityResource,
+pub struct ImmutabilityPolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ContainerProperties>,
+    pub properties: Option<ImmutabilityPolicyProperty>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[serde(rename = "updateHistory", default, skip_serializing_if = "Vec::is_empty")]
+    pub update_history: Vec<UpdateHistoryProperty>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImmutabilityPolicyProperty {
@@ -1011,13 +1013,18 @@ pub mod immutability_policy_property {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImmutabilityPolicyProperties {
+pub struct LegalHoldProperties {
+    #[serde(rename = "hasLegalHold", default, skip_serializing_if = "Option::is_none")]
+    pub has_legal_hold: Option<bool>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<TagProperty>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobContainer {
+    #[serde(flatten)]
+    pub azure_entity_resource: AzureEntityResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ImmutabilityPolicyProperty>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-    #[serde(rename = "updateHistory", default, skip_serializing_if = "Vec::is_empty")]
-    pub update_history: Vec<UpdateHistoryProperty>,
+    pub properties: Option<ContainerProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImmutabilityPolicy {
@@ -1051,13 +1058,6 @@ pub mod update_history_property {
         #[serde(rename = "extend")]
         Extend,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LegalHoldProperties {
-    #[serde(rename = "hasLegalHold", default, skip_serializing_if = "Option::is_none")]
-    pub has_legal_hold: Option<bool>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<TagProperty>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagProperty {
@@ -1116,14 +1116,9 @@ pub mod blob_service_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobServiceItems {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<BlobServiceProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChangeFeed {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
+pub struct CorsRules {
+    #[serde(rename = "corsRules", default, skip_serializing_if = "Vec::is_empty")]
+    pub cors_rules: Vec<CorsRule>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeleteRetentionPolicy {
@@ -1133,9 +1128,14 @@ pub struct DeleteRetentionPolicy {
     pub days: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CorsRules {
-    #[serde(rename = "corsRules", default, skip_serializing_if = "Vec::is_empty")]
-    pub cors_rules: Vec<CorsRule>,
+pub struct ChangeFeed {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobServiceItems {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<BlobServiceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorsRule {
@@ -1208,6 +1208,15 @@ pub struct FileShare {
     pub properties: Option<FileShareProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileShareProperties {
+    #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
+    #[serde(rename = "shareQuota", default, skip_serializing_if = "Option::is_none")]
+    pub share_quota: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileShareItem {
     #[serde(flatten)]
     pub azure_entity_resource: AzureEntityResource,
@@ -1220,15 +1229,6 @@ pub struct FileShareItems {
     pub value: Vec<FileShareItem>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FileShareProperties {
-    #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
-    #[serde(rename = "shareQuota", default, skip_serializing_if = "Option::is_none")]
-    pub share_quota: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {

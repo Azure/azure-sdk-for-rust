@@ -71,6 +71,19 @@ pub struct NetworkSecurityGroupPropertiesFormat {
     pub provisioning_state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkInterfaceDnsSettings {
+    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    pub dns_servers: Vec<String>,
+    #[serde(rename = "appliedDnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    pub applied_dns_servers: Vec<String>,
+    #[serde(rename = "internalDnsNameLabel", default, skip_serializing_if = "Option::is_none")]
+    pub internal_dns_name_label: Option<String>,
+    #[serde(rename = "internalFqdn", default, skip_serializing_if = "Option::is_none")]
+    pub internal_fqdn: Option<String>,
+    #[serde(rename = "internalDomainNameSuffix", default, skip_serializing_if = "Option::is_none")]
+    pub internal_domain_name_suffix: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -504,19 +517,6 @@ pub enum TransportProtocol {
     Udp,
     Tcp,
     All,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkInterfaceDnsSettings {
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
-    pub dns_servers: Vec<String>,
-    #[serde(rename = "appliedDnsServers", default, skip_serializing_if = "Vec::is_empty")]
-    pub applied_dns_servers: Vec<String>,
-    #[serde(rename = "internalDnsNameLabel", default, skip_serializing_if = "Option::is_none")]
-    pub internal_dns_name_label: Option<String>,
-    #[serde(rename = "internalFqdn", default, skip_serializing_if = "Option::is_none")]
-    pub internal_fqdn: Option<String>,
-    #[serde(rename = "internalDomainNameSuffix", default, skip_serializing_if = "Option::is_none")]
-    pub internal_domain_name_suffix: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkInterfaceIpConfigurationListResult {

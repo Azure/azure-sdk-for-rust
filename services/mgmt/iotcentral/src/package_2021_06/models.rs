@@ -49,6 +49,20 @@ pub struct App {
     pub identity: Option<SystemAssignedServiceIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemAssignedServiceIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type")]
+    pub type_: SystemAssignedServiceIdentityType,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SystemAssignedServiceIdentityType {
+    None,
+    SystemAssigned,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -170,18 +184,4 @@ pub struct AppTemplatesResult {
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AppTemplate>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemAssignedServiceIdentity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type")]
-    pub type_: SystemAssignedServiceIdentityType,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SystemAssignedServiceIdentityType {
-    None,
-    SystemAssigned,
 }

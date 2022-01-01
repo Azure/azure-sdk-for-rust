@@ -570,6 +570,25 @@ pub mod capture_description {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Destination {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<destination::Properties>,
+}
+pub mod destination {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
+        pub storage_account_resource_id: Option<String>,
+        #[serde(rename = "blobContainer", default, skip_serializing_if = "Option::is_none")]
+        pub blob_container: Option<String>,
+        #[serde(rename = "archiveNameFormat", default, skip_serializing_if = "Option::is_none")]
+        pub archive_name_format: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Eventhub {
     #[serde(flatten)]
     pub resource: Resource,
@@ -617,25 +636,6 @@ pub struct EventHubListResult {
     pub value: Vec<Eventhub>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Destination {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<destination::Properties>,
-}
-pub mod destination {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Properties {
-        #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
-        pub storage_account_resource_id: Option<String>,
-        #[serde(rename = "blobContainer", default, skip_serializing_if = "Option::is_none")]
-        pub blob_container: Option<String>,
-        #[serde(rename = "archiveNameFormat", default, skip_serializing_if = "Option::is_none")]
-        pub archive_name_format: Option<String>,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MessagingRegions {

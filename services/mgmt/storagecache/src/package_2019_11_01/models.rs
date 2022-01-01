@@ -96,13 +96,8 @@ pub mod cache {
         pub name: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CachesListResult {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Cache>,
-}
+pub type UrlString = String;
+pub type ResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheHealth {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -149,6 +144,13 @@ pub mod cache_upgrade_status {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CachesListResult {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Cache>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UnknownProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Nfs3Target {
@@ -167,7 +169,6 @@ pub struct UnknownTarget {
     #[serde(rename = "unknownMap", default, skip_serializing_if = "Option::is_none")]
     pub unknown_map: Option<UnknownProperties>,
 }
-pub type ResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSku {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
@@ -287,7 +288,6 @@ pub struct StorageTargetsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageTarget>,
 }
-pub type UrlString = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]

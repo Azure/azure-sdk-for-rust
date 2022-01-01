@@ -461,6 +461,11 @@ pub struct ContainerServiceAgentPoolProfile {
     pub os_type: Option<OsType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OsType {
+    Linux,
+    Windows,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceWindowsProfile {
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
@@ -528,11 +533,6 @@ pub struct ContainerServiceProperties {
     pub linux_profile: ContainerServiceLinuxProfile,
     #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
     pub diagnostics_profile: Option<ContainerServiceDiagnosticsProfile>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OsType {
-    Linux,
-    Windows,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
@@ -661,6 +661,17 @@ pub struct ManagedClusterProperties {
     pub aad_profile: Option<ManagedClusterAadProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterAadProfile {
+    #[serde(rename = "clientAppID")]
+    pub client_app_id: String,
+    #[serde(rename = "serverAppID")]
+    pub server_app_id: String,
+    #[serde(rename = "serverAppSecret", default, skip_serializing_if = "Option::is_none")]
+    pub server_app_secret: Option<String>,
+    #[serde(rename = "tenantID", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorProfile {
     #[serde(rename = "orchestratorType")]
     pub orchestrator_type: String,
@@ -696,17 +707,6 @@ pub struct ManagedClusterUpgradeProfileProperties {
     pub control_plane_profile: ManagedClusterPoolUpgradeProfile,
     #[serde(rename = "agentPoolProfiles")]
     pub agent_pool_profiles: Vec<ManagedClusterPoolUpgradeProfile>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterAadProfile {
-    #[serde(rename = "clientAppID")]
-    pub client_app_id: String,
-    #[serde(rename = "serverAppID")]
-    pub server_app_id: String,
-    #[serde(rename = "serverAppSecret", default, skip_serializing_if = "Option::is_none")]
-    pub server_app_secret: Option<String>,
-    #[serde(rename = "tenantID", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAddonProfile {

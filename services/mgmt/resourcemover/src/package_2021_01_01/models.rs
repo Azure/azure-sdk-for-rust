@@ -68,6 +68,22 @@ pub struct MoveResourceStatus {
     pub errors: Option<MoveResourceError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MoveResourceError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MoveResourceErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MoveResourceErrorBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<MoveResourceErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResolutionType {
     Manual,
     Automatic,
@@ -95,13 +111,6 @@ pub struct MoveResourceDependency {
     pub is_optional: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MoveResourceDependencyOverride {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "targetId", default, skip_serializing_if = "Option::is_none")]
-    pub target_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManualResolutionProperties {
     #[serde(rename = "targetId", default, skip_serializing_if = "Option::is_none")]
     pub target_id: Option<String>,
@@ -110,6 +119,13 @@ pub struct ManualResolutionProperties {
 pub struct AutomaticResolutionProperties {
     #[serde(rename = "moveResourceId", default, skip_serializing_if = "Option::is_none")]
     pub move_resource_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MoveResourceDependencyOverride {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "targetId", default, skip_serializing_if = "Option::is_none")]
+    pub target_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveResourceProperties {
@@ -135,6 +151,13 @@ pub struct MoveResourceProperties {
     pub is_resolve_required: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errors: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceSettings {
+    #[serde(rename = "resourceType")]
+    pub resource_type: String,
+    #[serde(rename = "targetResourceName")]
+    pub target_resource_name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveResource {
@@ -338,29 +361,6 @@ pub struct OperationsDiscoveryCollection {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MoveResourceError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MoveResourceErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MoveResourceErrorBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<MoveResourceErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceSettings {
-    #[serde(rename = "resourceType")]
-    pub resource_type: String,
-    #[serde(rename = "targetResourceName")]
-    pub target_resource_name: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineResourceSettings {
     #[serde(flatten)]
     pub resource_settings: ResourceSettings,
@@ -402,6 +402,11 @@ pub struct SubnetResourceSettings {
     pub address_prefix: Option<String>,
     #[serde(rename = "networkSecurityGroup", default, skip_serializing_if = "Option::is_none")]
     pub network_security_group: Option<NsgReference>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NsgReference {
+    #[serde(flatten)]
+    pub azure_resource_reference: AzureResourceReference,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkResourceSettings {
@@ -451,11 +456,6 @@ pub struct LoadBalancerBackendAddressPoolReference {
 pub struct LoadBalancerNatRuleReference {
     #[serde(flatten)]
     pub proxy_resource_reference: ProxyResourceReference,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NsgReference {
-    #[serde(flatten)]
-    pub azure_resource_reference: AzureResourceReference,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PublicIpReference {

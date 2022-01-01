@@ -24,15 +24,6 @@ pub struct HealthMonitor {
     pub properties: Option<HealthMonitorProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthMonitorProperties {
     #[serde(rename = "monitorName", default, skip_serializing_if = "Option::is_none")]
     pub monitor_name: Option<String>,
@@ -56,6 +47,24 @@ pub struct HealthMonitorProperties {
     pub evidence: Option<serde_json::Value>,
     #[serde(rename = "monitorConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub monitor_configuration: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum HealthState {
+    Healthy,
+    Critical,
+    Warning,
+    Unknown,
+    Disabled,
+    None,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthMonitorStateChange {
@@ -84,15 +93,6 @@ pub struct HealthMonitorStateChangeProperties {
     pub evidence: Option<serde_json::Value>,
     #[serde(rename = "monitorConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub monitor_configuration: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum HealthState {
-    Healthy,
-    Critical,
-    Warning,
-    Unknown,
-    Disabled,
-    None,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationList {

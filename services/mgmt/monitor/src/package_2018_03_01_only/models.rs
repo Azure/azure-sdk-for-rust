@@ -22,13 +22,6 @@ pub struct ActionGroupResource {
     pub properties: Option<ActionGroup>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActionGroupList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ActionGroupResource>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroup {
     #[serde(rename = "groupShortName")]
     pub group_short_name: String,
@@ -53,12 +46,25 @@ pub struct ActionGroup {
     pub azure_function_receivers: Vec<AzureFunctionReceiver>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActionGroupList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ActionGroupResource>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailReceiver {
     pub name: String,
     #[serde(rename = "emailAddress")]
     pub email_address: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ReceiverStatus {
+    NotSpecified,
+    Enabled,
+    Disabled,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsReceiver {
@@ -135,12 +141,6 @@ pub struct AzureFunctionReceiver {
     pub http_trigger_url: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReceiverStatus {
-    NotSpecified,
-    Enabled,
-    Disabled,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnableRequest {
     #[serde(rename = "receiverName")]
     pub receiver_name: String,
@@ -195,6 +195,23 @@ pub struct MetricAlertProperties {
     pub last_updated_time: Option<String>,
     #[serde(rename = "isMigrated", default, skip_serializing_if = "Option::is_none")]
     pub is_migrated: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricAlertCriteria {
+    #[serde(rename = "odata.type")]
+    pub odata_type: metric_alert_criteria::OdataType,
+}
+pub mod metric_alert_criteria {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OdataType {
+        #[serde(rename = "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria")]
+        MicrosoftAzureMonitorSingleResourceMultipleMetricCriteria,
+        #[serde(rename = "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria")]
+        MicrosoftAzureMonitorMultipleResourceMultipleMetricCriteria,
+        #[serde(rename = "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria")]
+        MicrosoftAzureMonitorWebtestLocationAvailabilityCriteria,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertPropertiesPatch {
@@ -267,23 +284,6 @@ pub struct MetricAlertStatus {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetricAlertStatusProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricAlertCriteria {
-    #[serde(rename = "odata.type")]
-    pub odata_type: metric_alert_criteria::OdataType,
-}
-pub mod metric_alert_criteria {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OdataType {
-        #[serde(rename = "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria")]
-        MicrosoftAzureMonitorSingleResourceMultipleMetricCriteria,
-        #[serde(rename = "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria")]
-        MicrosoftAzureMonitorMultipleResourceMultipleMetricCriteria,
-        #[serde(rename = "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria")]
-        MicrosoftAzureMonitorWebtestLocationAvailabilityCriteria,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertSingleResourceMultipleMetricCriteria {

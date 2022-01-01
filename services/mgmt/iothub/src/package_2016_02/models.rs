@@ -80,6 +80,29 @@ pub mod iot_hub_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudToDeviceProperties {
+    #[serde(rename = "maxDeliveryCount", default, skip_serializing_if = "Option::is_none")]
+    pub max_delivery_count: Option<i32>,
+    #[serde(rename = "defaultTtlAsIso8601", default, skip_serializing_if = "Option::is_none")]
+    pub default_ttl_as_iso8601: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub feedback: Option<FeedbackProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FeedbackProperties {
+    #[serde(rename = "lockDurationAsIso8601", default, skip_serializing_if = "Option::is_none")]
+    pub lock_duration_as_iso8601: Option<String>,
+    #[serde(rename = "ttlAsIso8601", default, skip_serializing_if = "Option::is_none")]
+    pub ttl_as_iso8601: Option<String>,
+    #[serde(rename = "maxDeliveryCount", default, skip_serializing_if = "Option::is_none")]
+    pub max_delivery_count: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationsMonitoringProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub events: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubSkuInfo {
     pub name: iot_hub_sku_info::Name,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -133,20 +156,6 @@ pub struct MessagingEndpointProperties {
     pub max_delivery_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudToDeviceProperties {
-    #[serde(rename = "maxDeliveryCount", default, skip_serializing_if = "Option::is_none")]
-    pub max_delivery_count: Option<i32>,
-    #[serde(rename = "defaultTtlAsIso8601", default, skip_serializing_if = "Option::is_none")]
-    pub default_ttl_as_iso8601: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub feedback: Option<FeedbackProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationsMonitoringProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub events: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpFilterRule {
     #[serde(rename = "filterName")]
     pub filter_name: String,
@@ -161,15 +170,6 @@ pub mod ip_filter_rule {
         Accept,
         Reject,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FeedbackProperties {
-    #[serde(rename = "lockDurationAsIso8601", default, skip_serializing_if = "Option::is_none")]
-    pub lock_duration_as_iso8601: Option<String>,
-    #[serde(rename = "ttlAsIso8601", default, skip_serializing_if = "Option::is_none")]
-    pub ttl_as_iso8601: Option<String>,
-    #[serde(rename = "maxDeliveryCount", default, skip_serializing_if = "Option::is_none")]
-    pub max_delivery_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubDescription {

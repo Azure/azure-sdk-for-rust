@@ -72,6 +72,11 @@ pub struct KeyDescription {
     pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum KeyRank {
+    PrimaryKey,
+    SecondaryKey,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateKeyParameter {
     pub name: String,
     pub rank: KeyRank,
@@ -132,6 +137,11 @@ pub struct CheckNameAvailabilityResult {
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum CheckNameUnavailableReason {
+    Invalid,
+    AlreadyExists,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
@@ -180,14 +190,4 @@ pub struct SkuLocationInfoItem {
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum KeyRank {
-    PrimaryKey,
-    SecondaryKey,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum CheckNameUnavailableReason {
-    Invalid,
-    AlreadyExists,
 }

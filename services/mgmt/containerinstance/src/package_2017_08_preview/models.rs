@@ -50,19 +50,6 @@ pub struct ContainerState {
     pub detail_status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerEvent {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<i64>,
-    #[serde(rename = "firstTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub first_timestamp: Option<String>,
-    #[serde(rename = "lastTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub last_timestamp: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceRequirements {
     pub requests: ResourceRequests,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -80,6 +67,19 @@ pub struct ResourceLimits {
     pub memory_in_gb: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cpu: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerEvent {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+    #[serde(rename = "firstTimestamp", default, skip_serializing_if = "Option::is_none")]
+    pub first_timestamp: Option<String>,
+    #[serde(rename = "lastTimestamp", default, skip_serializing_if = "Option::is_none")]
+    pub last_timestamp: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFileVolume {

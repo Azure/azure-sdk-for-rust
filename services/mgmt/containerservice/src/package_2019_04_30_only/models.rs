@@ -173,6 +173,10 @@ pub struct OpenShiftManagedClusterIdentityProvider {
     pub provider: Option<OpenShiftManagedClusterBaseIdentityProvider>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OpenShiftManagedClusterBaseIdentityProvider {
+    pub kind: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAuthProfile {
     #[serde(rename = "identityProviders", default, skip_serializing_if = "Vec::is_empty")]
     pub identity_providers: Vec<OpenShiftManagedClusterIdentityProvider>,
@@ -206,10 +210,6 @@ pub struct OpenShiftManagedCluster {
     pub resource: Resource,
     #[serde(flatten)]
     pub serde_json_value: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OpenShiftManagedClusterBaseIdentityProvider {
-    pub kind: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAadIdentityProvider {

@@ -173,6 +173,10 @@ pub struct OpenShiftManagedClusterIdentityProvider {
     pub provider: Option<OpenShiftManagedClusterBaseIdentityProvider>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OpenShiftManagedClusterBaseIdentityProvider {
+    pub kind: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAuthProfile {
     #[serde(rename = "identityProviders", default, skip_serializing_if = "Vec::is_empty")]
     pub identity_providers: Vec<OpenShiftManagedClusterIdentityProvider>,
@@ -215,10 +219,6 @@ pub struct OpenShiftManagedCluster {
     pub resource: Resource,
     #[serde(flatten)]
     pub serde_json_value: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OpenShiftManagedClusterBaseIdentityProvider {
-    pub kind: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAadIdentityProvider {
@@ -833,16 +833,26 @@ pub struct ManagedClusterAgentPoolProfileProperties {
     pub node_taints: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AgentPoolType {
+    VirtualMachineScaleSets,
+    AvailabilitySet,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ScaleSetPriority {
+    Low,
+    Regular,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ScaleSetEvictionPolicy {
+    Delete,
+    Deallocate,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAgentPoolProfile {
     #[serde(flatten)]
     pub managed_cluster_agent_pool_profile_properties: ManagedClusterAgentPoolProfileProperties,
     #[serde(flatten)]
     pub serde_json_value: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum AgentPoolType {
-    VirtualMachineScaleSets,
-    AvailabilitySet,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentPoolListResult {
@@ -992,6 +1002,17 @@ pub struct ManagedClusterProperties {
     pub api_server_access_profile: Option<ManagedClusterApiServerAccessProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterAadProfile {
+    #[serde(rename = "clientAppID")]
+    pub client_app_id: String,
+    #[serde(rename = "serverAppID")]
+    pub server_app_id: String,
+    #[serde(rename = "serverAppSecret", default, skip_serializing_if = "Option::is_none")]
+    pub server_app_secret: Option<String>,
+    #[serde(rename = "tenantID", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterApiServerAccessProfile {
     #[serde(rename = "authorizedIPRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub authorized_ip_ranges: Vec<String>,
@@ -1046,17 +1067,6 @@ pub struct ManagedClusterUpgradeProfileProperties {
     pub agent_pool_profiles: Vec<ManagedClusterPoolUpgradeProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterAadProfile {
-    #[serde(rename = "clientAppID")]
-    pub client_app_id: String,
-    #[serde(rename = "serverAppID")]
-    pub server_app_id: String,
-    #[serde(rename = "serverAppSecret", default, skip_serializing_if = "Option::is_none")]
-    pub server_app_secret: Option<String>,
-    #[serde(rename = "tenantID", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAddonProfile {
     pub enabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1105,16 +1115,6 @@ pub struct AgentPoolAvailableVersions {
 pub struct AgentPoolAvailableVersionsProperties {
     #[serde(rename = "agentPoolVersions", default, skip_serializing_if = "Vec::is_empty")]
     pub agent_pool_versions: Vec<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ScaleSetPriority {
-    Low,
-    Regular,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ScaleSetEvictionPolicy {
-    Delete,
-    Deallocate,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialResults {

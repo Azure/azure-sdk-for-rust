@@ -195,20 +195,17 @@ pub struct KubernetesClusterProperties {
     pub service_principal: ServicePrincipalProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SystemServices {
-    Scoring,
-    Batch,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalProperties {
     #[serde(rename = "clientId")]
     pub client_id: String,
     pub secret: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationalizationClusterUpdateParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+pub struct AppInsightsCredentials {
+    #[serde(rename = "appId", default, skip_serializing_if = "Option::is_none")]
+    pub app_id: Option<String>,
+    #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GlobalServiceConfiguration {
@@ -267,6 +264,16 @@ pub mod auto_scale_configuration {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SystemServices {
+    Scoring,
+    Batch,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationalizationClusterUpdateParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationalizationClusterCredentials {
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccountCredentials>,
@@ -307,13 +314,6 @@ pub struct ContainerServiceCredentials {
     pub service_principal_configuration: Option<ServicePrincipalProperties>,
     #[serde(rename = "imagePullSecretName", default, skip_serializing_if = "Option::is_none")]
     pub image_pull_secret_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AppInsightsCredentials {
-    #[serde(rename = "appId", default, skip_serializing_if = "Option::is_none")]
-    pub app_id: Option<String>,
-    #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
-    pub api_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckUpdateResponse {

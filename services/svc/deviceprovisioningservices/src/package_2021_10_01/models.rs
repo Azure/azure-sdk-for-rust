@@ -123,6 +123,22 @@ pub mod device_registration_state {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TwinCollection {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<Metadata>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Metadata {
+    #[serde(rename = "lastUpdated", default, skip_serializing_if = "Option::is_none")]
+    pub last_updated: Option<String>,
+    #[serde(rename = "lastUpdatedVersion", default, skip_serializing_if = "Option::is_none")]
+    pub last_updated_version: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AttestationMechanism {
     #[serde(rename = "type")]
     pub type_: attestation_mechanism::Type,
@@ -148,32 +164,6 @@ pub mod attestation_mechanism {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeviceCapabilities {
-    #[serde(rename = "iotEdge")]
-    pub iot_edge: bool,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InitialTwin {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<TwinCollection>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<InitialTwinProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReprovisionPolicy {
-    #[serde(rename = "updateHubAssignment")]
-    pub update_hub_assignment: bool,
-    #[serde(rename = "migrateDeviceData")]
-    pub migrate_device_data: bool,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CustomAllocationDefinition {
-    #[serde(rename = "webhookUrl")]
-    pub webhook_url: String,
-    #[serde(rename = "apiVersion")]
-    pub api_version: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
     #[serde(rename = "endorsementKey")]
     pub endorsement_key: String,
@@ -190,30 +180,11 @@ pub struct X509Attestation {
     pub ca_references: Option<X509caReferences>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SymmetricKeyAttestation {
-    #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
-    pub primary_key: Option<String>,
-    #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
-    pub secondary_key: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InitialTwinProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub desired: Option<TwinCollection>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Certificates {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<X509CertificateWithInfo>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<X509CertificateWithInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X509caReferences {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub primary: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub secondary: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509CertificateWithInfo {
@@ -239,6 +210,51 @@ pub struct X509CertificateInfo {
     #[serde(rename = "serialNumber")]
     pub serial_number: String,
     pub version: i32,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X509caReferences {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secondary: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SymmetricKeyAttestation {
+    #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
+    pub primary_key: Option<String>,
+    #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_key: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeviceCapabilities {
+    #[serde(rename = "iotEdge")]
+    pub iot_edge: bool,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InitialTwin {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<TwinCollection>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<InitialTwinProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InitialTwinProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub desired: Option<TwinCollection>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReprovisionPolicy {
+    #[serde(rename = "updateHubAssignment")]
+    pub update_hub_assignment: bool,
+    #[serde(rename = "migrateDeviceData")]
+    pub migrate_device_data: bool,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomAllocationDefinition {
+    #[serde(rename = "webhookUrl")]
+    pub webhook_url: String,
+    #[serde(rename = "apiVersion")]
+    pub api_version: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnrollmentGroup {
@@ -363,20 +379,4 @@ pub struct BulkEnrollmentGroupOperationError {
     pub error_code: i32,
     #[serde(rename = "errorStatus")]
     pub error_status: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TwinCollection {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<Metadata>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Metadata {
-    #[serde(rename = "lastUpdated", default, skip_serializing_if = "Option::is_none")]
-    pub last_updated: Option<String>,
-    #[serde(rename = "lastUpdatedVersion", default, skip_serializing_if = "Option::is_none")]
-    pub last_updated_version: Option<i64>,
 }

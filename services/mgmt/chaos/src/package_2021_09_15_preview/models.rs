@@ -9,6 +9,7 @@ pub struct CapabilityListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<UrlNullable>,
 }
+pub type UrlNullable = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Capability {
     #[serde(flatten)]
@@ -74,7 +75,6 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-pub type UrlNullable = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]

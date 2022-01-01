@@ -67,6 +67,25 @@ pub struct UsagesProperties {
     pub properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UsagesObject {
+    pub value: i32,
+    #[serde(rename = "usagesType", default, skip_serializing_if = "Option::is_none")]
+    pub usages_type: Option<UsagesTypes>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum UsagesTypes {
+    Individual,
+    Combined,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceName {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
+    pub localized_value: Option<String>,
+}
+pub type ResourceTypesName = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsagesLimits {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CurrentUsagesBase>,
@@ -102,11 +121,13 @@ pub struct QuotaProperties {
     pub properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceName {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
-    pub localized_value: Option<String>,
+pub struct LimitJsonObject {
+    #[serde(rename = "limitObjectType")]
+    pub limit_object_type: LimitObjectTypes,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum LimitObjectTypes {
+    LimitValue,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuotaLimits {
@@ -145,29 +166,17 @@ pub struct SubRequest {
     pub limit: Option<LimitJsonObject>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum LimitObjectTypes {
-    LimitValue,
+pub enum QuotaRequestState {
+    Accepted,
+    Invalid,
+    Succeeded,
+    Failed,
+    InProgress,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum LimitTypes {
     Independent,
     Shared,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LimitJsonObject {
-    #[serde(rename = "limitObjectType")]
-    pub limit_object_type: LimitObjectTypes,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum UsagesTypes {
-    Individual,
-    Combined,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UsagesObject {
-    pub value: i32,
-    #[serde(rename = "usagesType", default, skip_serializing_if = "Option::is_none")]
-    pub usages_type: Option<UsagesTypes>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LimitObject {
@@ -189,6 +198,40 @@ pub struct QuotaRequestOneResourceSubmitResponse {
     pub properties: Option<QuotaRequestOneResourceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuotaRequestOneResourceProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<QuotaRequestState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(rename = "requestSubmitTime", default, skip_serializing_if = "Option::is_none")]
+    pub request_submit_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<LimitObject>,
+    #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
+    pub current_value: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<ResourceName>,
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<ResourceTypesName>,
+    #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
+    pub quota_period: Option<String>,
+    #[serde(rename = "isQuotaApplicable", default, skip_serializing_if = "Option::is_none")]
+    pub is_quota_applicable: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ServiceErrorDetail>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceErrorDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuotaRequestSubmitResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -198,6 +241,19 @@ pub struct QuotaRequestSubmitResponse {
     pub properties: Option<QuotaRequestProperties>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuotaRequestProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<QuotaRequestState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ServiceErrorDetail>,
+    #[serde(rename = "requestSubmitTime", default, skip_serializing_if = "Option::is_none")]
+    pub request_submit_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SubRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuotaRequestSubmitResponse202 {
@@ -248,55 +304,6 @@ pub struct QuotaRequestDetailsList {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QuotaRequestProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<QuotaRequestState>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ServiceErrorDetail>,
-    #[serde(rename = "requestSubmitTime", default, skip_serializing_if = "Option::is_none")]
-    pub request_submit_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SubRequest>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QuotaRequestOneResourceProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<QuotaRequestState>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(rename = "requestSubmitTime", default, skip_serializing_if = "Option::is_none")]
-    pub request_submit_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<LimitObject>,
-    #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
-    pub current_value: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<ResourceName>,
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<ResourceTypesName>,
-    #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
-    pub quota_period: Option<String>,
-    #[serde(rename = "isQuotaApplicable", default, skip_serializing_if = "Option::is_none")]
-    pub is_quota_applicable: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ServiceErrorDetail>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum QuotaRequestState {
-    Accepted,
-    Invalid,
-    Succeeded,
-    Failed,
-    InProgress,
-}
-pub type ResourceTypesName = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExceptionResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ServiceError>,
@@ -309,11 +316,4 @@ pub struct ServiceError {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ServiceErrorDetail>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceErrorDetail {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
 }

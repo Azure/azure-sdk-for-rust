@@ -190,6 +190,15 @@ pub struct Certificate {
     pub delete_certificate_error: Option<DeleteCertificateError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum CertificateState {
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "deleting")]
+    Deleting,
+    #[serde(rename = "deleteFailed")]
+    DeleteFailed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationPackageReference {
     #[serde(rename = "applicationId")]
     pub application_id: String,
@@ -314,19 +323,6 @@ pub struct ExitConditions {
     pub default: Option<ExitOptions>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExitCodeMapping {
-    pub code: i32,
-    #[serde(rename = "exitOptions")]
-    pub exit_options: ExitOptions,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExitCodeRangeMapping {
-    pub start: i32,
-    pub end: i32,
-    #[serde(rename = "exitOptions")]
-    pub exit_options: ExitOptions,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExitOptions {
     #[serde(
         rename = "jobAction",
@@ -363,6 +359,19 @@ pub mod exit_options {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExitCodeMapping {
+    pub code: i32,
+    #[serde(rename = "exitOptions")]
+    pub exit_options: ExitOptions,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExitCodeRangeMapping {
+    pub start: i32,
+    pub end: i32,
+    #[serde(rename = "exitOptions")]
+    pub exit_options: ExitOptions,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoUserSpecification {
     #[serde(
         default,
@@ -387,6 +396,13 @@ pub mod auto_user_specification {
         #[serde(rename = "pool")]
         Pool,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ElevationLevel {
+    #[serde(rename = "nonAdmin")]
+    NonAdmin,
+    #[serde(rename = "admin")]
+    Admin,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserIdentity {
@@ -597,6 +613,74 @@ pub struct PoolSpecification {
     pub metadata: Vec<MetadataItem>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudServiceConfiguration {
+    #[serde(rename = "osFamily")]
+    pub os_family: String,
+    #[serde(rename = "targetOSVersion", default, skip_serializing_if = "Option::is_none")]
+    pub target_os_version: Option<String>,
+    #[serde(rename = "currentOSVersion", default, skip_serializing_if = "Option::is_none")]
+    pub current_os_version: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineConfiguration {
+    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
+    pub image_reference: Option<ImageReference>,
+    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
+    pub os_disk: Option<OsDisk>,
+    #[serde(rename = "nodeAgentSKUId")]
+    pub node_agent_sku_id: String,
+    #[serde(rename = "windowsConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub windows_configuration: Option<WindowsConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageReference {
+    pub publisher: String,
+    pub offer: String,
+    pub sku: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OsDisk {
+    #[serde(rename = "imageUris")]
+    pub image_uris: Vec<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "case_insensitive_deserialize"
+    )]
+    pub caching: Option<os_disk::Caching>,
+}
+pub mod os_disk {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Caching {
+        #[serde(rename = "none")]
+        None,
+        #[serde(rename = "readOnly", alias = "readonly")]
+        ReadOnly,
+        #[serde(rename = "readWrite", alias = "readwrite")]
+        ReadWrite,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WindowsConfiguration {
+    #[serde(rename = "enableAutomaticUpdates", default, skip_serializing_if = "Option::is_none")]
+    pub enable_automatic_updates: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkConfiguration {
+    #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
+    pub subnet_id: Option<String>,
+    #[serde(rename = "endpointConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub endpoint_configuration: Option<PoolEndpointConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PoolEndpointConfiguration {
+    #[serde(rename = "inboundNATPools")]
+    pub inbound_nat_pools: Vec<InboundNatPool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoPoolSpecification {
     #[serde(rename = "autoPoolIdPrefix", default, skip_serializing_if = "Option::is_none")]
     pub auto_pool_id_prefix: Option<String>,
@@ -660,6 +744,20 @@ pub struct JobSpecification {
     pub pool_info: PoolInformation,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OnAllTasksComplete {
+    #[serde(rename = "noAction")]
+    NoAction,
+    #[serde(rename = "terminateJob")]
+    TerminateJob,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OnTaskFailure {
+    #[serde(rename = "noAction")]
+    NoAction,
+    #[serde(rename = "performExitOptionsJobAction")]
+    PerformExitOptionsJobAction,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecentJob {
@@ -750,6 +848,19 @@ pub struct CloudJobSchedule {
     pub stats: Option<JobScheduleStatistics>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum JobScheduleState {
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "completed")]
+    Completed,
+    #[serde(rename = "disabled")]
+    Disabled,
+    #[serde(rename = "terminating")]
+    Terminating,
+    #[serde(rename = "deleting")]
+    Deleting,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobScheduleAddParameter {
     pub id: String,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -777,6 +888,13 @@ pub struct JobSchedulingError {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<NameValuePair>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ErrorCategory {
+    #[serde(rename = "userError")]
+    UserError,
+    #[serde(rename = "serverError")]
+    ServerError,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobExecutionInformation {
@@ -858,6 +976,23 @@ pub struct CloudJob {
     pub execution_info: Option<JobExecutionInformation>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stats: Option<JobStatistics>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum JobState {
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "disabling")]
+    Disabling,
+    #[serde(rename = "disabled")]
+    Disabled,
+    #[serde(rename = "enabling")]
+    Enabling,
+    #[serde(rename = "terminating")]
+    Terminating,
+    #[serde(rename = "completed")]
+    Completed,
+    #[serde(rename = "deleting")]
+    Deleting,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobAddParameter {
@@ -951,6 +1086,13 @@ pub mod job_preparation_task_execution_information {
         #[serde(rename = "completed")]
         Completed,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum TaskExecutionResult {
+    #[serde(rename = "success")]
+    Success,
+    #[serde(rename = "failure")]
+    Failure,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobReleaseTaskExecutionInformation {
@@ -1050,69 +1192,6 @@ pub struct ResizeError {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<NameValuePair>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceConfiguration {
-    #[serde(rename = "osFamily")]
-    pub os_family: String,
-    #[serde(rename = "targetOSVersion", default, skip_serializing_if = "Option::is_none")]
-    pub target_os_version: Option<String>,
-    #[serde(rename = "currentOSVersion", default, skip_serializing_if = "Option::is_none")]
-    pub current_os_version: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageReference {
-    pub publisher: String,
-    pub offer: String,
-    pub sku: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OsDisk {
-    #[serde(rename = "imageUris")]
-    pub image_uris: Vec<String>,
-    #[serde(
-        default,
-        skip_serializing_if = "Option::is_none",
-        deserialize_with = "case_insensitive_deserialize"
-    )]
-    pub caching: Option<os_disk::Caching>,
-}
-pub mod os_disk {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Caching {
-        #[serde(rename = "none")]
-        None,
-        #[serde(rename = "readOnly", alias = "readonly")]
-        ReadOnly,
-        #[serde(rename = "readWrite", alias = "readwrite")]
-        ReadWrite,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WindowsConfiguration {
-    #[serde(rename = "enableAutomaticUpdates", default, skip_serializing_if = "Option::is_none")]
-    pub enable_automatic_updates: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineConfiguration {
-    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
-    pub image_reference: Option<ImageReference>,
-    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
-    pub os_disk: Option<OsDisk>,
-    #[serde(rename = "nodeAgentSKUId")]
-    pub node_agent_sku_id: String,
-    #[serde(rename = "windowsConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub windows_configuration: Option<WindowsConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkConfiguration {
-    #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
-    pub subnet_id: Option<String>,
-    #[serde(rename = "endpointConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub endpoint_configuration: Option<PoolEndpointConfiguration>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudPool {
@@ -1426,6 +1505,17 @@ pub struct CloudTask {
     pub authentication_token_settings: Option<AuthenticationTokenSettings>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum TaskState {
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "preparing")]
+    Preparing,
+    #[serde(rename = "running")]
+    Running,
+    #[serde(rename = "completed")]
+    Completed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskAddParameter {
     pub id: String,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -1487,6 +1577,22 @@ pub mod task_add_result {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BatchError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<ErrorMessage>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<BatchErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorMessage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lang: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskAddCollectionResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TaskAddResult>,
@@ -1528,6 +1634,15 @@ pub struct SubtaskInformation {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub result: Option<TaskExecutionResult>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SubtaskState {
+    #[serde(rename = "preparing")]
+    Preparing,
+    #[serde(rename = "running")]
+    Running,
+    #[serde(rename = "completed")]
+    Completed,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudTaskListSubtasksResult {
@@ -1690,9 +1805,9 @@ pub mod compute_node {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PoolEndpointConfiguration {
-    #[serde(rename = "inboundNATPools")]
-    pub inbound_nat_pools: Vec<InboundNatPool>,
+pub struct ComputeNodeEndpointConfiguration {
+    #[serde(rename = "inboundEndpoints")]
+    pub inbound_endpoints: Vec<InboundEndpoint>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InboundNatPool {
@@ -1735,11 +1850,6 @@ pub mod network_security_group_rule {
         #[serde(rename = "deny")]
         Deny,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComputeNodeEndpointConfiguration {
-    #[serde(rename = "inboundEndpoints")]
-    pub inbound_endpoints: Vec<InboundEndpoint>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InboundEndpoint {
@@ -1895,6 +2005,17 @@ pub struct PoolResizeParameter {
     pub node_deallocation_option: Option<ComputeNodeDeallocationOption>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ComputeNodeDeallocationOption {
+    #[serde(rename = "requeue")]
+    Requeue,
+    #[serde(rename = "terminate")]
+    Terminate,
+    #[serde(rename = "taskCompletion")]
+    TaskCompletion,
+    #[serde(rename = "retainedData")]
+    RetainedData,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PoolUpdatePropertiesParameter {
     #[serde(rename = "startTask", default, skip_serializing_if = "Option::is_none")]
     pub start_task: Option<StartTask>,
@@ -2044,127 +2165,6 @@ pub struct OutputFileUploadOptions {
     pub upload_condition: OutputFileUploadCondition,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorMessage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub lang: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BatchErrorDetail {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub key: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BatchError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<ErrorMessage>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub values: Vec<BatchErrorDetail>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum CertificateState {
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "deleting")]
-    Deleting,
-    #[serde(rename = "deleteFailed")]
-    DeleteFailed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ElevationLevel {
-    #[serde(rename = "nonAdmin")]
-    NonAdmin,
-    #[serde(rename = "admin")]
-    Admin,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum JobScheduleState {
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "completed")]
-    Completed,
-    #[serde(rename = "disabled")]
-    Disabled,
-    #[serde(rename = "terminating")]
-    Terminating,
-    #[serde(rename = "deleting")]
-    Deleting,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum JobState {
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "disabling")]
-    Disabling,
-    #[serde(rename = "disabled")]
-    Disabled,
-    #[serde(rename = "enabling")]
-    Enabling,
-    #[serde(rename = "terminating")]
-    Terminating,
-    #[serde(rename = "completed")]
-    Completed,
-    #[serde(rename = "deleting")]
-    Deleting,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OnAllTasksComplete {
-    #[serde(rename = "noAction")]
-    NoAction,
-    #[serde(rename = "terminateJob")]
-    TerminateJob,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OnTaskFailure {
-    #[serde(rename = "noAction")]
-    NoAction,
-    #[serde(rename = "performExitOptionsJobAction")]
-    PerformExitOptionsJobAction,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ErrorCategory {
-    #[serde(rename = "userError")]
-    UserError,
-    #[serde(rename = "serverError")]
-    ServerError,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum TaskState {
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "preparing")]
-    Preparing,
-    #[serde(rename = "running")]
-    Running,
-    #[serde(rename = "completed")]
-    Completed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SubtaskState {
-    #[serde(rename = "preparing")]
-    Preparing,
-    #[serde(rename = "running")]
-    Running,
-    #[serde(rename = "completed")]
-    Completed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ComputeNodeDeallocationOption {
-    #[serde(rename = "requeue")]
-    Requeue,
-    #[serde(rename = "terminate")]
-    Terminate,
-    #[serde(rename = "taskCompletion")]
-    TaskCompletion,
-    #[serde(rename = "retainedData")]
-    RetainedData,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OutputFileUploadCondition {
     #[serde(rename = "taskSuccess")]
     TaskSuccess,
@@ -2174,9 +2174,9 @@ pub enum OutputFileUploadCondition {
     TaskCompletion,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum TaskExecutionResult {
-    #[serde(rename = "success")]
-    Success,
-    #[serde(rename = "failure")]
-    Failure,
+pub struct BatchErrorDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
 }

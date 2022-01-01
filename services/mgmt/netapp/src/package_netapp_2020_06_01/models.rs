@@ -151,6 +151,15 @@ pub struct NetAppAccount {
     pub properties: Option<AccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceTags {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccountProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "activeDirectories", default, skip_serializing_if = "Vec::is_empty")]
+    pub active_directories: Vec<ActiveDirectory>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetAppAccountPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -164,13 +173,6 @@ pub struct NetAppAccountPatch {
     pub tags: Option<ResourceTags>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccountProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "activeDirectories", default, skip_serializing_if = "Vec::is_empty")]
-    pub active_directories: Vec<ActiveDirectory>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveDirectory {
@@ -311,8 +313,6 @@ pub struct Volume {
     pub properties: VolumeProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceTags {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeProperties {
     #[serde(rename = "fileSystemId", default, skip_serializing_if = "Option::is_none")]
     pub file_system_id: Option<String>,
@@ -384,37 +384,6 @@ pub mod volume_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExportPolicyRule {
-    #[serde(rename = "ruleIndex", default, skip_serializing_if = "Option::is_none")]
-    pub rule_index: Option<i32>,
-    #[serde(rename = "unixReadOnly", default, skip_serializing_if = "Option::is_none")]
-    pub unix_read_only: Option<bool>,
-    #[serde(rename = "unixReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub unix_read_write: Option<bool>,
-    #[serde(rename = "kerberos5ReadOnly", default, skip_serializing_if = "Option::is_none")]
-    pub kerberos5_read_only: Option<bool>,
-    #[serde(rename = "kerberos5ReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub kerberos5_read_write: Option<bool>,
-    #[serde(rename = "kerberos5iReadOnly", default, skip_serializing_if = "Option::is_none")]
-    pub kerberos5i_read_only: Option<bool>,
-    #[serde(rename = "kerberos5iReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub kerberos5i_read_write: Option<bool>,
-    #[serde(rename = "kerberos5pReadOnly", default, skip_serializing_if = "Option::is_none")]
-    pub kerberos5p_read_only: Option<bool>,
-    #[serde(rename = "kerberos5pReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub kerberos5p_read_write: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cifs: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub nfsv3: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub nfsv41: Option<bool>,
-    #[serde(rename = "allowedClients", default, skip_serializing_if = "Option::is_none")]
-    pub allowed_clients: Option<String>,
-    #[serde(rename = "hasRootAccess", default, skip_serializing_if = "Option::is_none")]
-    pub has_root_access: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeBackupProperties {
     #[serde(rename = "backupPolicyId", default, skip_serializing_if = "Option::is_none")]
     pub backup_policy_id: Option<String>,
@@ -461,6 +430,37 @@ pub mod replication_object {
 pub struct VolumeSnapshotProperties {
     #[serde(rename = "snapshotPolicyId", default, skip_serializing_if = "Option::is_none")]
     pub snapshot_policy_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExportPolicyRule {
+    #[serde(rename = "ruleIndex", default, skip_serializing_if = "Option::is_none")]
+    pub rule_index: Option<i32>,
+    #[serde(rename = "unixReadOnly", default, skip_serializing_if = "Option::is_none")]
+    pub unix_read_only: Option<bool>,
+    #[serde(rename = "unixReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub unix_read_write: Option<bool>,
+    #[serde(rename = "kerberos5ReadOnly", default, skip_serializing_if = "Option::is_none")]
+    pub kerberos5_read_only: Option<bool>,
+    #[serde(rename = "kerberos5ReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub kerberos5_read_write: Option<bool>,
+    #[serde(rename = "kerberos5iReadOnly", default, skip_serializing_if = "Option::is_none")]
+    pub kerberos5i_read_only: Option<bool>,
+    #[serde(rename = "kerberos5iReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub kerberos5i_read_write: Option<bool>,
+    #[serde(rename = "kerberos5pReadOnly", default, skip_serializing_if = "Option::is_none")]
+    pub kerberos5p_read_only: Option<bool>,
+    #[serde(rename = "kerberos5pReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub kerberos5p_read_write: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cifs: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nfsv3: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nfsv41: Option<bool>,
+    #[serde(rename = "allowedClients", default, skip_serializing_if = "Option::is_none")]
+    pub allowed_clients: Option<String>,
+    #[serde(rename = "hasRootAccess", default, skip_serializing_if = "Option::is_none")]
+    pub has_root_access: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicationStatus {
@@ -578,8 +578,6 @@ pub struct Snapshot {
     pub properties: Option<SnapshotProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SnapshotPatch {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotProperties {
     #[serde(rename = "snapshotId", default, skip_serializing_if = "Option::is_none")]
     pub snapshot_id: Option<String>,
@@ -588,6 +586,8 @@ pub struct SnapshotProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SnapshotPatch {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotPolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -604,6 +604,52 @@ pub struct SnapshotPolicyProperties {
     pub enabled: Option<bool>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HourlySchedule {
+    #[serde(rename = "snapshotsToKeep", default, skip_serializing_if = "Option::is_none")]
+    pub snapshots_to_keep: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minute: Option<i32>,
+    #[serde(rename = "usedBytes", default, skip_serializing_if = "Option::is_none")]
+    pub used_bytes: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DailySchedule {
+    #[serde(rename = "snapshotsToKeep", default, skip_serializing_if = "Option::is_none")]
+    pub snapshots_to_keep: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hour: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minute: Option<i32>,
+    #[serde(rename = "usedBytes", default, skip_serializing_if = "Option::is_none")]
+    pub used_bytes: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WeeklySchedule {
+    #[serde(rename = "snapshotsToKeep", default, skip_serializing_if = "Option::is_none")]
+    pub snapshots_to_keep: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub day: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hour: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minute: Option<i32>,
+    #[serde(rename = "usedBytes", default, skip_serializing_if = "Option::is_none")]
+    pub used_bytes: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MonthlySchedule {
+    #[serde(rename = "snapshotsToKeep", default, skip_serializing_if = "Option::is_none")]
+    pub snapshots_to_keep: Option<i32>,
+    #[serde(rename = "daysOfMonth", default, skip_serializing_if = "Option::is_none")]
+    pub days_of_month: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hour: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minute: Option<i32>,
+    #[serde(rename = "usedBytes", default, skip_serializing_if = "Option::is_none")]
+    pub used_bytes: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotPolicy {
@@ -659,52 +705,6 @@ pub struct SnapshotPolicyVolumeList {
     pub value: Vec<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HourlySchedule {
-    #[serde(rename = "snapshotsToKeep", default, skip_serializing_if = "Option::is_none")]
-    pub snapshots_to_keep: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub minute: Option<i32>,
-    #[serde(rename = "usedBytes", default, skip_serializing_if = "Option::is_none")]
-    pub used_bytes: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DailySchedule {
-    #[serde(rename = "snapshotsToKeep", default, skip_serializing_if = "Option::is_none")]
-    pub snapshots_to_keep: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub hour: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub minute: Option<i32>,
-    #[serde(rename = "usedBytes", default, skip_serializing_if = "Option::is_none")]
-    pub used_bytes: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WeeklySchedule {
-    #[serde(rename = "snapshotsToKeep", default, skip_serializing_if = "Option::is_none")]
-    pub snapshots_to_keep: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub day: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub hour: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub minute: Option<i32>,
-    #[serde(rename = "usedBytes", default, skip_serializing_if = "Option::is_none")]
-    pub used_bytes: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonthlySchedule {
-    #[serde(rename = "snapshotsToKeep", default, skip_serializing_if = "Option::is_none")]
-    pub snapshots_to_keep: Option<i32>,
-    #[serde(rename = "daysOfMonth", default, skip_serializing_if = "Option::is_none")]
-    pub days_of_month: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub hour: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub minute: Option<i32>,
-    #[serde(rename = "usedBytes", default, skip_serializing_if = "Option::is_none")]
-    pub used_bytes: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeRevert {
     #[serde(rename = "snapshotId", default, skip_serializing_if = "Option::is_none")]
     pub snapshot_id: Option<String>,
@@ -741,13 +741,6 @@ pub struct Backup {
     pub properties: BackupProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupPatch {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<ResourceTags>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BackupProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupProperties {
     #[serde(rename = "backupId", default, skip_serializing_if = "Option::is_none")]
     pub backup_id: Option<String>,
@@ -769,6 +762,13 @@ pub mod backup_properties {
         Manual,
         Scheduled,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupPatch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<ResourceTags>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BackupProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupPolicyProperties {

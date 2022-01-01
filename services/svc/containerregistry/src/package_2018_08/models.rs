@@ -20,6 +20,17 @@ pub struct RepositoryAttributes {
     pub changeable_attributes: Option<ChangeableAttributes>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChangeableAttributes {
+    #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub delete_enabled: Option<bool>,
+    #[serde(rename = "writeEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub write_enabled: Option<bool>,
+    #[serde(rename = "listEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub list_enabled: Option<bool>,
+    #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub read_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcrRepositoryTags {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
@@ -38,15 +49,6 @@ pub struct AcrTagAttributes {
     pub tag: Option<AcrTagAttributesBase>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TagAttributes {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub registry: Option<String>,
-    #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
-    pub image_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<TagAttributesTag>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcrTagAttributesBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -60,6 +62,20 @@ pub struct AcrTagAttributesBase {
     pub signed: Option<bool>,
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
     pub changeable_attributes: Option<ChangeableAttributes>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TagAttributes {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registry: Option<String>,
+    #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
+    pub image_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<TagAttributesTag>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TagAttributesTag {
+    #[serde(rename = "signatureRecord", default, skip_serializing_if = "Option::is_none")]
+    pub signature_record: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcrManifests {
@@ -186,22 +202,6 @@ pub struct AcrErrorInfo {
 pub struct ImageLayer {
     #[serde(rename = "blobSum", default, skip_serializing_if = "Option::is_none")]
     pub blob_sum: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChangeableAttributes {
-    #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub delete_enabled: Option<bool>,
-    #[serde(rename = "writeEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub write_enabled: Option<bool>,
-    #[serde(rename = "listEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub list_enabled: Option<bool>,
-    #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub read_enabled: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TagAttributesTag {
-    #[serde(rename = "signatureRecord", default, skip_serializing_if = "Option::is_none")]
-    pub signature_record: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManifestAttributesManifestReferences {

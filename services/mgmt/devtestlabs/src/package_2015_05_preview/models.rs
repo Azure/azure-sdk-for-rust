@@ -15,6 +15,8 @@ pub struct ArmTemplateInfo {
     pub parameters: Option<Object>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Object {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Artifact {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ArtifactProperties>,
@@ -28,6 +30,21 @@ pub struct Artifact {
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ArtifactProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "filePath", default, skip_serializing_if = "Option::is_none")]
+    pub file_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    #[serde(rename = "targetOsType", default, skip_serializing_if = "Option::is_none")]
+    pub target_os_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<Object>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArtifactDeploymentStatusProperties {
@@ -51,21 +68,6 @@ pub struct ArtifactParameterProperties {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ArtifactProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub title: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "filePath", default, skip_serializing_if = "Option::is_none")]
-    pub file_path: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub icon: Option<String>,
-    #[serde(rename = "targetOsType", default, skip_serializing_if = "Option::is_none")]
-    pub target_os_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<Object>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArtifactSource {
@@ -146,6 +148,13 @@ pub struct Cost {
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CostProperties {
+    #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
+    pub currency_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub costs: Vec<CostPerDayProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CostInsight {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CostInsightProperties>,
@@ -186,13 +195,6 @@ pub mod cost_per_day_properties {
         Reported,
         Projected,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CostProperties {
-    #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
-    pub currency_code: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub costs: Vec<CostPerDayProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomImage {
@@ -236,13 +238,6 @@ pub mod custom_image_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CustomImagePropertiesCustom {
-    #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
-    pub image_name: Option<String>,
-    #[serde(rename = "sysPrep", default, skip_serializing_if = "Option::is_none")]
-    pub sys_prep: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomImagePropertiesFromVm {
     #[serde(rename = "sourceVmId", default, skip_serializing_if = "Option::is_none")]
     pub source_vm_id: Option<String>,
@@ -252,6 +247,41 @@ pub struct CustomImagePropertiesFromVm {
     pub windows_os_info: Option<WindowsOsInfo>,
     #[serde(rename = "linuxOsInfo", default, skip_serializing_if = "Option::is_none")]
     pub linux_os_info: Option<LinuxOsInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WindowsOsInfo {
+    #[serde(rename = "windowsOsState", default, skip_serializing_if = "Option::is_none")]
+    pub windows_os_state: Option<windows_os_info::WindowsOsState>,
+}
+pub mod windows_os_info {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum WindowsOsState {
+        NonSysprepped,
+        SysprepRequested,
+        SysprepApplied,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LinuxOsInfo {
+    #[serde(rename = "linuxOsState", default, skip_serializing_if = "Option::is_none")]
+    pub linux_os_state: Option<linux_os_info::LinuxOsState>,
+}
+pub mod linux_os_info {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LinuxOsState {
+        NonDeprovisioned,
+        DeprovisionRequested,
+        DeprovisionApplied,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomImagePropertiesCustom {
+    #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
+    pub image_name: Option<String>,
+    #[serde(rename = "sysPrep", default, skip_serializing_if = "Option::is_none")]
+    pub sys_prep: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DayDetails {
@@ -310,6 +340,77 @@ pub struct FormulaProperties {
     pub provisioning_state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabVirtualMachine {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<LabVirtualMachineProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LabVirtualMachineProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+    #[serde(rename = "ownerObjectId", default, skip_serializing_if = "Option::is_none")]
+    pub owner_object_id: Option<String>,
+    #[serde(rename = "createdByUserId", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_user_id: Option<String>,
+    #[serde(rename = "createdByUser", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_user: Option<String>,
+    #[serde(rename = "computeId", default, skip_serializing_if = "Option::is_none")]
+    pub compute_id: Option<String>,
+    #[serde(rename = "customImageId", default, skip_serializing_if = "Option::is_none")]
+    pub custom_image_id: Option<String>,
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    #[serde(rename = "sshKey", default, skip_serializing_if = "Option::is_none")]
+    pub ssh_key: Option<String>,
+    #[serde(rename = "isAuthenticationWithSshKey", default, skip_serializing_if = "Option::is_none")]
+    pub is_authentication_with_ssh_key: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fqdn: Option<String>,
+    #[serde(rename = "labSubnetName", default, skip_serializing_if = "Option::is_none")]
+    pub lab_subnet_name: Option<String>,
+    #[serde(rename = "labVirtualNetworkId", default, skip_serializing_if = "Option::is_none")]
+    pub lab_virtual_network_id: Option<String>,
+    #[serde(rename = "disallowPublicIpAddress", default, skip_serializing_if = "Option::is_none")]
+    pub disallow_public_ip_address: Option<bool>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub artifacts: Vec<ArtifactInstallProperties>,
+    #[serde(rename = "artifactDeploymentStatus", default, skip_serializing_if = "Option::is_none")]
+    pub artifact_deployment_status: Option<ArtifactDeploymentStatusProperties>,
+    #[serde(rename = "galleryImageReference", default, skip_serializing_if = "Option::is_none")]
+    pub gallery_image_reference: Option<GalleryImageReference>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImageReference {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<String>,
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FormulaPropertiesFromVm {
     #[serde(rename = "labVmId", default, skip_serializing_if = "Option::is_none")]
     pub lab_vm_id: Option<String>,
@@ -343,19 +444,6 @@ pub struct GalleryImageProperties {
     pub icon: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImageReference {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub offer: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub publisher: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<String>,
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GenerateArmTemplateRequest {
@@ -428,80 +516,6 @@ pub struct LabVhd {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LabVirtualMachine {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<LabVirtualMachineProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LabVirtualMachineProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub notes: Option<String>,
-    #[serde(rename = "ownerObjectId", default, skip_serializing_if = "Option::is_none")]
-    pub owner_object_id: Option<String>,
-    #[serde(rename = "createdByUserId", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_user_id: Option<String>,
-    #[serde(rename = "createdByUser", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_user: Option<String>,
-    #[serde(rename = "computeId", default, skip_serializing_if = "Option::is_none")]
-    pub compute_id: Option<String>,
-    #[serde(rename = "customImageId", default, skip_serializing_if = "Option::is_none")]
-    pub custom_image_id: Option<String>,
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub size: Option<String>,
-    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
-    pub user_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
-    #[serde(rename = "sshKey", default, skip_serializing_if = "Option::is_none")]
-    pub ssh_key: Option<String>,
-    #[serde(rename = "isAuthenticationWithSshKey", default, skip_serializing_if = "Option::is_none")]
-    pub is_authentication_with_ssh_key: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub fqdn: Option<String>,
-    #[serde(rename = "labSubnetName", default, skip_serializing_if = "Option::is_none")]
-    pub lab_subnet_name: Option<String>,
-    #[serde(rename = "labVirtualNetworkId", default, skip_serializing_if = "Option::is_none")]
-    pub lab_virtual_network_id: Option<String>,
-    #[serde(rename = "disallowPublicIpAddress", default, skip_serializing_if = "Option::is_none")]
-    pub disallow_public_ip_address: Option<bool>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub artifacts: Vec<ArtifactInstallProperties>,
-    #[serde(rename = "artifactDeploymentStatus", default, skip_serializing_if = "Option::is_none")]
-    pub artifact_deployment_status: Option<ArtifactDeploymentStatusProperties>,
-    #[serde(rename = "galleryImageReference", default, skip_serializing_if = "Option::is_none")]
-    pub gallery_image_reference: Option<GalleryImageReference>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinuxOsInfo {
-    #[serde(rename = "linuxOsState", default, skip_serializing_if = "Option::is_none")]
-    pub linux_os_state: Option<linux_os_info::LinuxOsState>,
-}
-pub mod linux_os_info {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LinuxOsState {
-        NonDeprovisioned,
-        DeprovisionRequested,
-        DeprovisionApplied,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Object {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParameterInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -714,6 +728,13 @@ pub mod schedule_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WeekDetails {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub weekdays: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub time: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Subnet {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
@@ -819,25 +840,4 @@ pub struct VmCostProperties {
     pub resource_group_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cost: Option<f64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WeekDetails {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub weekdays: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub time: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WindowsOsInfo {
-    #[serde(rename = "windowsOsState", default, skip_serializing_if = "Option::is_none")]
-    pub windows_os_state: Option<windows_os_info::WindowsOsState>,
-}
-pub mod windows_os_info {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum WindowsOsState {
-        NonSysprepped,
-        SysprepRequested,
-        SysprepApplied,
-    }
 }

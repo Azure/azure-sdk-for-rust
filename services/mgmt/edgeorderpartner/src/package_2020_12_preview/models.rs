@@ -22,6 +22,63 @@ pub struct AdditionalOrderItemDetails {
     pub subscription: Option<SubscriptionDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StageDetails {
+    #[serde(rename = "stageStatus", default, skip_serializing_if = "Option::is_none")]
+    pub stage_status: Option<stage_details::StageStatus>,
+    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
+    pub stage_name: Option<stage_details::StageName>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+}
+pub mod stage_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StageStatus {
+        None,
+        InProgress,
+        Succeeded,
+        Failed,
+        Cancelled,
+        Cancelling,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StageName {
+        DeviceOrdered,
+        DevicePrepared,
+        PickedUp,
+        #[serde(rename = "AtAzureDC")]
+        AtAzureDc,
+        DataCopy,
+        Completed,
+        CompletedWithErrors,
+        Cancelled,
+        Aborted,
+        CompletedWithWarnings,
+        #[serde(rename = "ReadyToDispatchFromAzureDC")]
+        ReadyToDispatchFromAzureDc,
+        #[serde(rename = "ReadyToReceiveAtAzureDC")]
+        ReadyToReceiveAtAzureDc,
+        Placed,
+        InReview,
+        Confirmed,
+        ReadyForDispatch,
+        Shipped,
+        Delivered,
+        InUse,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    #[serde(rename = "quotaId", default, skip_serializing_if = "Option::is_none")]
+    pub quota_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BillingDetails {
     #[serde(rename = "billingType", default, skip_serializing_if = "Option::is_none")]
     pub billing_type: Option<String>,
@@ -106,6 +163,28 @@ pub struct InventoryProperties {
     pub details: Option<InventoryAdditionalDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OrderItemData {
+    #[serde(rename = "armId", default, skip_serializing_if = "Option::is_none")]
+    pub arm_id: Option<String>,
+    #[serde(rename = "orderItemType", default, skip_serializing_if = "Option::is_none")]
+    pub order_item_type: Option<order_item_data::OrderItemType>,
+}
+pub mod order_item_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OrderItemType {
+        Purchase,
+        Rental,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementResourceData {
+    #[serde(rename = "armId", default, skip_serializing_if = "Option::is_none")]
+    pub arm_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManageInventoryMetadataRequest {
     #[serde(rename = "inventoryMetadata")]
     pub inventory_metadata: String,
@@ -127,76 +206,6 @@ pub mod manage_link_request {
         Link,
         Unlink,
         Relink,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementResourceData {
-    #[serde(rename = "armId", default, skip_serializing_if = "Option::is_none")]
-    pub arm_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OrderItemData {
-    #[serde(rename = "armId", default, skip_serializing_if = "Option::is_none")]
-    pub arm_id: Option<String>,
-    #[serde(rename = "orderItemType", default, skip_serializing_if = "Option::is_none")]
-    pub order_item_type: Option<order_item_data::OrderItemType>,
-}
-pub mod order_item_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OrderItemType {
-        Purchase,
-        Rental,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StageDetails {
-    #[serde(rename = "stageStatus", default, skip_serializing_if = "Option::is_none")]
-    pub stage_status: Option<stage_details::StageStatus>,
-    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
-    pub stage_name: Option<stage_details::StageName>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-}
-pub mod stage_details {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StageStatus {
-        None,
-        InProgress,
-        Succeeded,
-        Failed,
-        Cancelled,
-        Cancelling,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StageName {
-        DeviceOrdered,
-        DevicePrepared,
-        PickedUp,
-        #[serde(rename = "AtAzureDC")]
-        AtAzureDc,
-        DataCopy,
-        Completed,
-        CompletedWithErrors,
-        Cancelled,
-        Aborted,
-        CompletedWithWarnings,
-        #[serde(rename = "ReadyToDispatchFromAzureDC")]
-        ReadyToDispatchFromAzureDc,
-        #[serde(rename = "ReadyToReceiveAtAzureDC")]
-        ReadyToReceiveAtAzureDc,
-        Placed,
-        InReview,
-        Confirmed,
-        ReadyForDispatch,
-        Shipped,
-        Delivered,
-        InUse,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -224,15 +233,6 @@ pub struct SpecificationDetails {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionDetails {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-    #[serde(rename = "quotaId", default, skip_serializing_if = "Option::is_none")]
-    pub quota_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {

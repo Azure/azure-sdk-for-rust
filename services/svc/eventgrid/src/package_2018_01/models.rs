@@ -545,26 +545,6 @@ pub struct DeviceLifeCycleEventProperties {
     pub twin: Option<DeviceTwinInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeviceConnectionStateEventProperties {
-    #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
-    pub device_id: Option<String>,
-    #[serde(rename = "moduleId", default, skip_serializing_if = "Option::is_none")]
-    pub module_id: Option<String>,
-    #[serde(rename = "hubName", default, skip_serializing_if = "Option::is_none")]
-    pub hub_name: Option<String>,
-    #[serde(rename = "deviceConnectionStateEventInfo", default, skip_serializing_if = "Option::is_none")]
-    pub device_connection_state_event_info: Option<DeviceConnectionStateEventInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeviceTelemetryEventProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub body: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
-    #[serde(rename = "systemProperties", default, skip_serializing_if = "Option::is_none")]
-    pub system_properties: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTwinInfo {
     #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<String>,
@@ -619,9 +599,29 @@ pub struct DeviceTwinMetadata {
     pub last_updated: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeviceConnectionStateEventProperties {
+    #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
+    pub device_id: Option<String>,
+    #[serde(rename = "moduleId", default, skip_serializing_if = "Option::is_none")]
+    pub module_id: Option<String>,
+    #[serde(rename = "hubName", default, skip_serializing_if = "Option::is_none")]
+    pub hub_name: Option<String>,
+    #[serde(rename = "deviceConnectionStateEventInfo", default, skip_serializing_if = "Option::is_none")]
+    pub device_connection_state_event_info: Option<DeviceConnectionStateEventInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceConnectionStateEventInfo {
     #[serde(rename = "sequenceNumber", default, skip_serializing_if = "Option::is_none")]
     pub sequence_number: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeviceTelemetryEventProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+    #[serde(rename = "systemProperties", default, skip_serializing_if = "Option::is_none")]
+    pub system_properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryImagePushedEventData {
@@ -661,17 +661,6 @@ pub struct ContainerRegistryEventData {
     pub source: Option<ContainerRegistryEventSource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerRegistryArtifactEventData {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<ContainerRegistryArtifactEventTarget>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryEventTarget {
     #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
     pub media_type: Option<String>,
@@ -687,23 +676,6 @@ pub struct ContainerRegistryEventTarget {
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerRegistryArtifactEventTarget {
-    #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
-    pub media_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub size: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub digest: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub repository: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryEventRequest {
@@ -729,6 +701,34 @@ pub struct ContainerRegistryEventSource {
     pub addr: Option<String>,
     #[serde(rename = "instanceID", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerRegistryArtifactEventData {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<ContainerRegistryArtifactEventTarget>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerRegistryArtifactEventTarget {
+    #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
+    pub media_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub digest: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repository: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusActiveMessagesAvailableWithNoListenersEventData {
@@ -1544,6 +1544,23 @@ pub struct WebAppUpdatedEventData {
     pub verb: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AppEventTypeDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<app_event_type_detail::Action>,
+}
+pub mod app_event_type_detail {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Action {
+        Restarted,
+        Stopped,
+        ChangedAppSettings,
+        Started,
+        Completed,
+        Failed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebBackupOperationStartedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -1766,23 +1783,6 @@ pub mod web_app_service_plan_updated_event_data {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AppEventTypeDetail {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<app_event_type_detail::Action>,
-}
-pub mod app_event_type_detail {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Action {
-        Restarted,
-        Stopped,
-        ChangedAppSettings,
-        Started,
-        Completed,
-        Failed,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppServicePlanEventTypeDetail {
     #[serde(rename = "stampKind", default, skip_serializing_if = "Option::is_none")]
     pub stamp_kind: Option<app_service_plan_event_type_detail::StampKind>,
@@ -1814,6 +1814,43 @@ pub enum AsyncStatus {
 pub struct AcsUserDisconnectedEventData {
     #[serde(rename = "userCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub user_communication_identifier: Option<CommunicationIdentifierModel>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CommunicationIdentifierModel {
+    #[serde(rename = "rawId", default, skip_serializing_if = "Option::is_none")]
+    pub raw_id: Option<String>,
+    #[serde(rename = "communicationUser", default, skip_serializing_if = "Option::is_none")]
+    pub communication_user: Option<CommunicationUserIdentifierModel>,
+    #[serde(rename = "phoneNumber", default, skip_serializing_if = "Option::is_none")]
+    pub phone_number: Option<PhoneNumberIdentifierModel>,
+    #[serde(rename = "microsoftTeamsUser", default, skip_serializing_if = "Option::is_none")]
+    pub microsoft_teams_user: Option<MicrosoftTeamsUserIdentifierModel>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CommunicationUserIdentifierModel {
+    pub id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PhoneNumberIdentifierModel {
+    pub value: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MicrosoftTeamsUserIdentifierModel {
+    #[serde(rename = "userId")]
+    pub user_id: String,
+    #[serde(rename = "isAnonymous", default, skip_serializing_if = "Option::is_none")]
+    pub is_anonymous: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cloud: Option<CommunicationCloudEnvironmentModel>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum CommunicationCloudEnvironmentModel {
+    #[serde(rename = "public")]
+    Public,
+    #[serde(rename = "dod")]
+    Dod,
+    #[serde(rename = "gcch")]
+    Gcch,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatMessageReceivedEventData {
@@ -1943,6 +1980,13 @@ pub struct AcsChatParticipantAddedToThreadWithUserEventData {
     pub participant_added: Option<AcsChatThreadParticipantProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcsChatThreadParticipantProperties {
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "participantCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
+    pub participant_communication_identifier: Option<CommunicationIdentifierModel>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatParticipantRemovedFromThreadWithUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
@@ -2015,6 +2059,11 @@ pub struct AcsRecordingFileStatusUpdatedEventData {
     pub session_end_reason: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcsRecordingStorageInfoProperties {
+    #[serde(rename = "recordingChunks", default, skip_serializing_if = "Vec::is_empty")]
+    pub recording_chunks: Vec<AcsRecordingChunkInfoProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsChatThreadEventBaseProperties {
     #[serde(flatten)]
     pub acs_chat_event_base_properties: AcsChatEventBaseProperties,
@@ -2083,13 +2132,6 @@ pub struct AcsChatEventBaseProperties {
     pub thread_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AcsChatThreadParticipantProperties {
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "participantCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub participant_communication_identifier: Option<CommunicationIdentifierModel>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsSmsEventBaseProperties {
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
@@ -2106,11 +2148,6 @@ pub struct AcsSmsDeliveryAttemptProperties {
     pub segments_succeeded: Option<i64>,
     #[serde(rename = "segmentsFailed", default, skip_serializing_if = "Option::is_none")]
     pub segments_failed: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AcsRecordingStorageInfoProperties {
-    #[serde(rename = "recordingChunks", default, skip_serializing_if = "Vec::is_empty")]
-    pub recording_chunks: Vec<AcsRecordingChunkInfoProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRecordingChunkInfoProperties {
@@ -2261,41 +2298,4 @@ pub struct ApiManagementApiReleaseUpdatedEventData {
 pub struct ApiManagementApiReleaseDeletedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CommunicationIdentifierModel {
-    #[serde(rename = "rawId", default, skip_serializing_if = "Option::is_none")]
-    pub raw_id: Option<String>,
-    #[serde(rename = "communicationUser", default, skip_serializing_if = "Option::is_none")]
-    pub communication_user: Option<CommunicationUserIdentifierModel>,
-    #[serde(rename = "phoneNumber", default, skip_serializing_if = "Option::is_none")]
-    pub phone_number: Option<PhoneNumberIdentifierModel>,
-    #[serde(rename = "microsoftTeamsUser", default, skip_serializing_if = "Option::is_none")]
-    pub microsoft_teams_user: Option<MicrosoftTeamsUserIdentifierModel>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CommunicationUserIdentifierModel {
-    pub id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PhoneNumberIdentifierModel {
-    pub value: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MicrosoftTeamsUserIdentifierModel {
-    #[serde(rename = "userId")]
-    pub user_id: String,
-    #[serde(rename = "isAnonymous", default, skip_serializing_if = "Option::is_none")]
-    pub is_anonymous: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cloud: Option<CommunicationCloudEnvironmentModel>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum CommunicationCloudEnvironmentModel {
-    #[serde(rename = "public")]
-    Public,
-    #[serde(rename = "dod")]
-    Dod,
-    #[serde(rename = "gcch")]
-    Gcch,
 }

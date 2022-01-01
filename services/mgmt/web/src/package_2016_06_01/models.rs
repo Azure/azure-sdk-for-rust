@@ -91,6 +91,8 @@ pub struct ResourceDefinition {
     pub tags: Option<TagsDictionary>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TagsDictionary {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionGatewayInstallationDefinition {
     #[serde(flatten)]
     pub resource_definition: ResourceDefinition,
@@ -152,6 +154,48 @@ pub struct CustomApiPropertiesDefinition {
     pub wsdl_definition: Option<WsdlDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiResourceBackendService {
+    #[serde(rename = "serviceUrl", default, skip_serializing_if = "Option::is_none")]
+    pub service_url: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiResourceDefinitions {
+    #[serde(rename = "originalSwaggerUrl", default, skip_serializing_if = "Option::is_none")]
+    pub original_swagger_url: Option<String>,
+    #[serde(rename = "modifiedSwaggerUrl", default, skip_serializing_if = "Option::is_none")]
+    pub modified_swagger_url: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ApiType {
+    NotSpecified,
+    Rest,
+    Soap,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WsdlDefinition {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub service: Option<WsdlService>,
+    #[serde(rename = "importMethod", default, skip_serializing_if = "Option::is_none")]
+    pub import_method: Option<WsdlImportMethod>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WsdlService {
+    #[serde(rename = "qualifiedName")]
+    pub qualified_name: String,
+    #[serde(rename = "endpointQualifiedNames", default, skip_serializing_if = "Vec::is_empty")]
+    pub endpoint_qualified_names: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum WsdlImportMethod {
+    NotSpecified,
+    SoapToRest,
+    SoapPassThrough,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionParameter {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connection_parameter::Type>,
@@ -207,48 +251,6 @@ pub struct ApiOAuthSettingsParameter {
     pub options: Option<serde_json::Value>,
     #[serde(rename = "uiDefinition", default, skip_serializing_if = "Option::is_none")]
     pub ui_definition: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiResourceBackendService {
-    #[serde(rename = "serviceUrl", default, skip_serializing_if = "Option::is_none")]
-    pub service_url: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiResourceDefinitions {
-    #[serde(rename = "originalSwaggerUrl", default, skip_serializing_if = "Option::is_none")]
-    pub original_swagger_url: Option<String>,
-    #[serde(rename = "modifiedSwaggerUrl", default, skip_serializing_if = "Option::is_none")]
-    pub modified_swagger_url: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ApiType {
-    NotSpecified,
-    Rest,
-    Soap,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WsdlDefinition {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub content: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub service: Option<WsdlService>,
-    #[serde(rename = "importMethod", default, skip_serializing_if = "Option::is_none")]
-    pub import_method: Option<WsdlImportMethod>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WsdlService {
-    #[serde(rename = "qualifiedName")]
-    pub qualified_name: String,
-    #[serde(rename = "endpointQualifiedNames", default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint_qualified_names: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum WsdlImportMethod {
-    NotSpecified,
-    SoapToRest,
-    SoapPassThrough,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomApiReference {
@@ -325,8 +327,6 @@ pub struct ApiResourceMetadata {
     #[serde(rename = "connectionType", default, skip_serializing_if = "Option::is_none")]
     pub connection_type: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TagsDictionary {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiResourceGeneralInformation {
     #[serde(rename = "iconUrl", default, skip_serializing_if = "Option::is_none")]

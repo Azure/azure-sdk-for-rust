@@ -19,6 +19,24 @@ pub struct ManagedNetworkProperties {
     pub connectivity: Option<ConnectivityCollection>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Scope {
+    #[serde(rename = "managementGroups", default, skip_serializing_if = "Vec::is_empty")]
+    pub management_groups: Vec<ResourceId>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub subscriptions: Vec<ResourceId>,
+    #[serde(rename = "virtualNetworks", default, skip_serializing_if = "Vec::is_empty")]
+    pub virtual_networks: Vec<ResourceId>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub subnets: Vec<ResourceId>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectivityCollection {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub groups: Vec<ManagedNetworkGroup>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub peerings: Vec<ManagedNetworkPeeringPolicy>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedNetworkUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -31,29 +49,11 @@ pub struct ManagedNetworkListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Scope {
-    #[serde(rename = "managementGroups", default, skip_serializing_if = "Vec::is_empty")]
-    pub management_groups: Vec<ResourceId>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subscriptions: Vec<ResourceId>,
-    #[serde(rename = "virtualNetworks", default, skip_serializing_if = "Vec::is_empty")]
-    pub virtual_networks: Vec<ResourceId>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subnets: Vec<ResourceId>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScopeAssignment {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScopeAssignmentProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScopeAssignmentListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ScopeAssignment>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScopeAssignmentProperties {
@@ -63,11 +63,11 @@ pub struct ScopeAssignmentProperties {
     pub assigned_managed_network: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConnectivityCollection {
+pub struct ScopeAssignmentListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub groups: Vec<ManagedNetworkGroup>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub peerings: Vec<ManagedNetworkPeeringPolicy>,
+    pub value: Vec<ScopeAssignment>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedNetworkGroup {
@@ -132,6 +132,11 @@ pub mod managed_network_peering_policy_properties {
         HubAndSpokeTopology,
         MeshTopology,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceId {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HubAndSpokePeeringPolicyProperties {
@@ -211,11 +216,6 @@ pub struct TrackedResource {
 pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceId {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceProperties {

@@ -1642,6 +1642,11 @@ pub struct LiveEventInputAccessControl {
     pub ip: Option<IpAccessControl>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpAccessControl {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub allow: Vec<IpRange>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventInput {
     #[serde(rename = "streamingProtocol")]
     pub streaming_protocol: live_event_input::StreamingProtocol,
@@ -1672,11 +1677,6 @@ pub struct IpRange {
     pub address: Option<String>,
     #[serde(rename = "subnetPrefixLength", default, skip_serializing_if = "Option::is_none")]
     pub subnet_prefix_length: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpAccessControl {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub allow: Vec<IpRange>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventPreviewAccessControl {

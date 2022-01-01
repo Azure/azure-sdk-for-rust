@@ -36,6 +36,17 @@ pub struct MapsAccount {
     pub properties: Option<MapsAccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MapsAccountProperties {
+    #[serde(rename = "x-ms-client-id", default, skip_serializing_if = "Option::is_none")]
+    pub x_ms_client_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsAccountCreateParameters {
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -53,12 +64,6 @@ pub struct MapsAccountUpdateParameters {
 pub struct MapsAccounts {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MapsAccount>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsAccountsMoveRequest {
@@ -95,9 +100,4 @@ pub struct MapsAccountKeys {
 pub struct MapsOperations {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MapsAccountProperties {
-    #[serde(rename = "x-ms-client-id", default, skip_serializing_if = "Option::is_none")]
-    pub x_ms_client_id: Option<String>,
 }

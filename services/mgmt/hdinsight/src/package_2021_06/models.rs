@@ -277,6 +277,38 @@ pub mod cluster_create_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskEncryptionProperties {
+    #[serde(rename = "vaultUri", default, skip_serializing_if = "Option::is_none")]
+    pub vault_uri: Option<String>,
+    #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
+    pub key_name: Option<String>,
+    #[serde(rename = "keyVersion", default, skip_serializing_if = "Option::is_none")]
+    pub key_version: Option<String>,
+    #[serde(rename = "encryptionAlgorithm", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_algorithm: Option<disk_encryption_properties::EncryptionAlgorithm>,
+    #[serde(rename = "msiResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub msi_resource_id: Option<String>,
+    #[serde(rename = "encryptionAtHost", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_at_host: Option<bool>,
+}
+pub mod disk_encryption_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum EncryptionAlgorithm {
+        #[serde(rename = "RSA-OAEP")]
+        RsaOaep,
+        #[serde(rename = "RSA-OAEP-256")]
+        RsaOaep256,
+        #[serde(rename = "RSA1_5")]
+        Rsa15,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EncryptionInTransitProperties {
+    #[serde(rename = "isEncryptionInTransitEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_encryption_in_transit_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterCreateParametersExtended {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -288,6 +320,28 @@ pub struct ClusterCreateParametersExtended {
     pub properties: Option<ClusterCreateProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ClusterIdentity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClusterIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<cluster_identity::Type>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+pub mod cluster_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+        UserAssigned,
+        #[serde(rename = "SystemAssigned, UserAssigned")]
+        SystemAssignedUserAssigned,
+        None,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterPatchParameters {
@@ -407,6 +461,38 @@ pub struct Cluster {
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuntimeScriptAction {
     pub name: String,
     pub uri: String,
@@ -457,28 +543,6 @@ pub struct RuntimeScriptActionDetail {
     pub debug_information: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClusterIdentity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<cluster_identity::Type>,
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
-}
-pub mod cluster_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-        UserAssigned,
-        #[serde(rename = "SystemAssigned, UserAssigned")]
-        SystemAssignedUserAssigned,
-        None,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -507,38 +571,6 @@ pub struct ClusterDiskEncryptionParameters {
     pub key_name: Option<String>,
     #[serde(rename = "keyVersion", default, skip_serializing_if = "Option::is_none")]
     pub key_version: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskEncryptionProperties {
-    #[serde(rename = "vaultUri", default, skip_serializing_if = "Option::is_none")]
-    pub vault_uri: Option<String>,
-    #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
-    pub key_name: Option<String>,
-    #[serde(rename = "keyVersion", default, skip_serializing_if = "Option::is_none")]
-    pub key_version: Option<String>,
-    #[serde(rename = "encryptionAlgorithm", default, skip_serializing_if = "Option::is_none")]
-    pub encryption_algorithm: Option<disk_encryption_properties::EncryptionAlgorithm>,
-    #[serde(rename = "msiResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub msi_resource_id: Option<String>,
-    #[serde(rename = "encryptionAtHost", default, skip_serializing_if = "Option::is_none")]
-    pub encryption_at_host: Option<bool>,
-}
-pub mod disk_encryption_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum EncryptionAlgorithm {
-        #[serde(rename = "RSA-OAEP")]
-        RsaOaep,
-        #[serde(rename = "RSA-OAEP-256")]
-        RsaOaep256,
-        #[serde(rename = "RSA1_5")]
-        Rsa15,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionInTransitProperties {
-    #[serde(rename = "isEncryptionInTransitEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_encryption_in_transit_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateGatewaySettingsParameters {
@@ -1214,15 +1246,6 @@ pub struct AzureMonitorRequest {
     pub selected_configurations: Option<AzureMonitorSelectedConfigurations>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureMonitorResponse {
-    #[serde(rename = "clusterMonitoringEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_monitoring_enabled: Option<bool>,
-    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_id: Option<String>,
-    #[serde(rename = "selectedConfigurations", default, skip_serializing_if = "Option::is_none")]
-    pub selected_configurations: Option<AzureMonitorSelectedConfigurations>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMonitorSelectedConfigurations {
     #[serde(rename = "configurationVersion", default, skip_serializing_if = "Option::is_none")]
     pub configuration_version: Option<String>,
@@ -1230,6 +1253,15 @@ pub struct AzureMonitorSelectedConfigurations {
     pub global_configurations: Option<serde_json::Value>,
     #[serde(rename = "tableList", default, skip_serializing_if = "Vec::is_empty")]
     pub table_list: Vec<AzureMonitorTableConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureMonitorResponse {
+    #[serde(rename = "clusterMonitoringEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_monitoring_enabled: Option<bool>,
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<String>,
+    #[serde(rename = "selectedConfigurations", default, skip_serializing_if = "Option::is_none")]
+    pub selected_configurations: Option<AzureMonitorSelectedConfigurations>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMonitorTableConfiguration {
@@ -1257,41 +1289,18 @@ pub struct PrivateLinkResource {
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateLinkResourceProperties {
+    #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
+    pub group_id: Option<String>,
+    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_members: Vec<String>,
+    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    pub required_zone_names: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
@@ -1300,13 +1309,4 @@ pub struct TrackedResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkResourceProperties {
-    #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
-    pub group_id: Option<String>,
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
-    pub required_members: Vec<String>,
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
-    pub required_zone_names: Vec<String>,
 }

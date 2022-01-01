@@ -33,6 +33,13 @@ pub struct LoadBalancerConfiguration {
     pub sql_virtual_machine_instances: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateIpAddress {
+    #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
+    pub ip_address: Option<String>,
+    #[serde(rename = "subnetResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub subnet_resource_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -40,13 +47,6 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateIpAddress {
-    #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
-    pub ip_address: Option<String>,
-    #[serde(rename = "subnetResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub subnet_resource_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {
@@ -375,40 +375,6 @@ pub struct ServerConfigurationsManagementSettings {
     pub additional_features_server_configurations: Option<AdditionalFeaturesServerConfigurations>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageConfigurationSettings {
-    #[serde(rename = "sqlDataSettings", default, skip_serializing_if = "Option::is_none")]
-    pub sql_data_settings: Option<SqlStorageSettings>,
-    #[serde(rename = "sqlLogSettings", default, skip_serializing_if = "Option::is_none")]
-    pub sql_log_settings: Option<SqlStorageSettings>,
-    #[serde(rename = "sqlTempDbSettings", default, skip_serializing_if = "Option::is_none")]
-    pub sql_temp_db_settings: Option<SqlStorageSettings>,
-    #[serde(rename = "diskConfigurationType", default, skip_serializing_if = "Option::is_none")]
-    pub disk_configuration_type: Option<storage_configuration_settings::DiskConfigurationType>,
-    #[serde(rename = "storageWorkloadType", default, skip_serializing_if = "Option::is_none")]
-    pub storage_workload_type: Option<storage_configuration_settings::StorageWorkloadType>,
-}
-pub mod storage_configuration_settings {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DiskConfigurationType {
-        #[serde(rename = "NEW")]
-        New,
-        #[serde(rename = "EXTEND")]
-        Extend,
-        #[serde(rename = "ADD")]
-        Add,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageWorkloadType {
-        #[serde(rename = "GENERAL")]
-        General,
-        #[serde(rename = "OLTP")]
-        Oltp,
-        #[serde(rename = "DW")]
-        Dw,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlConnectivityUpdateSettings {
     #[serde(rename = "connectivityType", default, skip_serializing_if = "Option::is_none")]
     pub connectivity_type: Option<sql_connectivity_update_settings::ConnectivityType>,
@@ -473,6 +439,40 @@ pub mod sql_storage_update_settings {
 pub struct AdditionalFeaturesServerConfigurations {
     #[serde(rename = "isRServicesEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_r_services_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageConfigurationSettings {
+    #[serde(rename = "sqlDataSettings", default, skip_serializing_if = "Option::is_none")]
+    pub sql_data_settings: Option<SqlStorageSettings>,
+    #[serde(rename = "sqlLogSettings", default, skip_serializing_if = "Option::is_none")]
+    pub sql_log_settings: Option<SqlStorageSettings>,
+    #[serde(rename = "sqlTempDbSettings", default, skip_serializing_if = "Option::is_none")]
+    pub sql_temp_db_settings: Option<SqlStorageSettings>,
+    #[serde(rename = "diskConfigurationType", default, skip_serializing_if = "Option::is_none")]
+    pub disk_configuration_type: Option<storage_configuration_settings::DiskConfigurationType>,
+    #[serde(rename = "storageWorkloadType", default, skip_serializing_if = "Option::is_none")]
+    pub storage_workload_type: Option<storage_configuration_settings::StorageWorkloadType>,
+}
+pub mod storage_configuration_settings {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DiskConfigurationType {
+        #[serde(rename = "NEW")]
+        New,
+        #[serde(rename = "EXTEND")]
+        Extend,
+        #[serde(rename = "ADD")]
+        Add,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageWorkloadType {
+        #[serde(rename = "GENERAL")]
+        General,
+        #[serde(rename = "OLTP")]
+        Oltp,
+        #[serde(rename = "DW")]
+        Dw,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlStorageSettings {

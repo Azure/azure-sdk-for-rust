@@ -62,6 +62,51 @@ pub struct WorkflowProperties {
     pub parameters: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum WorkflowProvisioningState {
+    NotSpecified,
+    Accepted,
+    Running,
+    Ready,
+    Creating,
+    Created,
+    Deleting,
+    Deleted,
+    Canceled,
+    Failed,
+    Succeeded,
+    Moving,
+    Updating,
+    Registering,
+    Registered,
+    Unregistering,
+    Unregistered,
+    Completed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum WorkflowState {
+    NotSpecified,
+    Completed,
+    Enabled,
+    Disabled,
+    Deleted,
+    Suspended,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: SkuName,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<ResourceReference>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SkuName {
+    NotSpecified,
+    Free,
+    Shared,
+    Basic,
+    Standard,
+    Premium,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkflowFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<WorkflowState>,
@@ -141,6 +186,82 @@ pub struct WorkflowTriggerProperties {
     pub workflow: Option<ResourceReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum WorkflowTriggerProvisioningState {
+    NotSpecified,
+    Accepted,
+    Running,
+    Ready,
+    Creating,
+    Created,
+    Deleting,
+    Deleted,
+    Canceled,
+    Failed,
+    Succeeded,
+    Moving,
+    Updating,
+    Registering,
+    Registered,
+    Unregistering,
+    Unregistered,
+    Completed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum WorkflowStatus {
+    NotSpecified,
+    Paused,
+    Running,
+    Waiting,
+    Succeeded,
+    Skipped,
+    Suspended,
+    Cancelled,
+    Failed,
+    Faulted,
+    TimedOut,
+    Aborted,
+    Ignored,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkflowTriggerRecurrence {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frequency: Option<RecurrenceFrequency>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<i32>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
+    pub time_zone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedule: Option<RecurrenceSchedule>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum RecurrenceFrequency {
+    NotSpecified,
+    Second,
+    Minute,
+    Hour,
+    Day,
+    Week,
+    Month,
+    Year,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecurrenceSchedule {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub minutes: Vec<i32>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hours: Vec<i32>,
+    #[serde(rename = "weekDays", default, skip_serializing_if = "Vec::is_empty")]
+    pub week_days: Vec<String>,
+    #[serde(rename = "monthDays", default, skip_serializing_if = "Vec::is_empty")]
+    pub month_days: Vec<i32>,
+    #[serde(rename = "monthlyOccurrences", default, skip_serializing_if = "Vec::is_empty")]
+    pub monthly_occurrences: Vec<RecurrenceScheduleOccurrence>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkflowTriggerFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<WorkflowState>,
@@ -217,6 +338,31 @@ pub struct WorkflowTriggerHistoryProperties {
     pub run: Option<ResourceReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Correlation {
+    #[serde(rename = "clientTrackingId", default, skip_serializing_if = "Option::is_none")]
+    pub client_tracking_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContentLink {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+    #[serde(rename = "contentVersion", default, skip_serializing_if = "Option::is_none")]
+    pub content_version: Option<String>,
+    #[serde(rename = "contentSize", default, skip_serializing_if = "Option::is_none")]
+    pub content_size: Option<i64>,
+    #[serde(rename = "contentHash", default, skip_serializing_if = "Option::is_none")]
+    pub content_hash: Option<ContentHash>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<Object>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContentHash {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub algorithm: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkflowTriggerHistoryListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkflowTriggerHistory>,
@@ -265,6 +411,37 @@ pub struct WorkflowRunProperties {
     pub outputs: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub response: Option<WorkflowRunTrigger>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkflowRunTrigger {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inputs: Option<Object>,
+    #[serde(rename = "inputsLink", default, skip_serializing_if = "Option::is_none")]
+    pub inputs_link: Option<ContentLink>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub outputs: Option<Object>,
+    #[serde(rename = "outputsLink", default, skip_serializing_if = "Option::is_none")]
+    pub outputs_link: Option<ContentLink>,
+    #[serde(rename = "scheduledTime", default, skip_serializing_if = "Option::is_none")]
+    pub scheduled_time: Option<String>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
+    pub tracking_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub correlation: Option<Correlation>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<WorkflowStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<Object>,
+    #[serde(rename = "trackedProperties", default, skip_serializing_if = "Option::is_none")]
+    pub tracked_properties: Option<Object>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkflowRunFilter {
@@ -327,40 +504,6 @@ pub struct WorkflowRunActionListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SkuName {
-    NotSpecified,
-    Free,
-    Shared,
-    Basic,
-    Standard,
-    Premium,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum WorkflowState {
-    NotSpecified,
-    Completed,
-    Enabled,
-    Disabled,
-    Deleted,
-    Suspended,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum WorkflowStatus {
-    NotSpecified,
-    Paused,
-    Running,
-    Waiting,
-    Succeeded,
-    Skipped,
-    Suspended,
-    Cancelled,
-    Failed,
-    Faulted,
-    TimedOut,
-    Aborted,
-    Ignored,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ParameterType {
     NotSpecified,
     String,
@@ -377,32 +520,6 @@ pub enum KeyType {
     NotSpecified,
     Primary,
     Secondary,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: SkuName,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<ResourceReference>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentLink {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-    #[serde(rename = "contentVersion", default, skip_serializing_if = "Option::is_none")]
-    pub content_version: Option<String>,
-    #[serde(rename = "contentSize", default, skip_serializing_if = "Option::is_none")]
-    pub content_size: Option<i64>,
-    #[serde(rename = "contentHash", default, skip_serializing_if = "Option::is_none")]
-    pub content_hash: Option<ContentHash>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<Object>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentHash {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub algorithm: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateActionParameter {
@@ -425,9 +542,16 @@ pub struct RetryHistory {
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Correlation {
-    #[serde(rename = "clientTrackingId", default, skip_serializing_if = "Option::is_none")]
-    pub client_tracking_id: Option<String>,
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkflowParameter {
@@ -448,123 +572,11 @@ pub struct WorkflowOutputParameter {
     pub error: Option<Object>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum RecurrenceFrequency {
-    NotSpecified,
-    Second,
-    Minute,
-    Hour,
-    Day,
-    Week,
-    Month,
-    Year,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecurrenceSchedule {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub minutes: Vec<i32>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub hours: Vec<i32>,
-    #[serde(rename = "weekDays", default, skip_serializing_if = "Vec::is_empty")]
-    pub week_days: Vec<String>,
-    #[serde(rename = "monthDays", default, skip_serializing_if = "Vec::is_empty")]
-    pub month_days: Vec<i32>,
-    #[serde(rename = "monthlyOccurrences", default, skip_serializing_if = "Vec::is_empty")]
-    pub monthly_occurrences: Vec<RecurrenceScheduleOccurrence>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecurrenceScheduleOccurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub day: Option<DayOfWeek>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub occurrence: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkflowTriggerRecurrence {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub frequency: Option<RecurrenceFrequency>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub interval: Option<i32>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
-    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub schedule: Option<RecurrenceSchedule>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkflowRunTrigger {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub inputs: Option<Object>,
-    #[serde(rename = "inputsLink", default, skip_serializing_if = "Option::is_none")]
-    pub inputs_link: Option<ContentLink>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub outputs: Option<Object>,
-    #[serde(rename = "outputsLink", default, skip_serializing_if = "Option::is_none")]
-    pub outputs_link: Option<ContentLink>,
-    #[serde(rename = "scheduledTime", default, skip_serializing_if = "Option::is_none")]
-    pub scheduled_time: Option<String>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
-    #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
-    pub tracking_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub correlation: Option<Correlation>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<WorkflowStatus>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<Object>,
-    #[serde(rename = "trackedProperties", default, skip_serializing_if = "Option::is_none")]
-    pub tracked_properties: Option<Object>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum WorkflowTriggerProvisioningState {
-    NotSpecified,
-    Accepted,
-    Running,
-    Ready,
-    Creating,
-    Created,
-    Deleting,
-    Deleted,
-    Canceled,
-    Failed,
-    Succeeded,
-    Moving,
-    Updating,
-    Registering,
-    Registered,
-    Unregistering,
-    Unregistered,
-    Completed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum WorkflowProvisioningState {
-    NotSpecified,
-    Accepted,
-    Running,
-    Ready,
-    Creating,
-    Created,
-    Deleting,
-    Deleted,
-    Canceled,
-    Failed,
-    Succeeded,
-    Moving,
-    Updating,
-    Registering,
-    Registered,
-    Unregistering,
-    Unregistered,
-    Completed,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DayOfWeek {
@@ -599,6 +611,10 @@ pub struct IntegrationAccount {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IntegrationAccountSku {
+    pub name: IntegrationAccountSkuName,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -648,6 +664,11 @@ pub struct IntegrationAccountSchemaProperties {
     pub content_link: Option<ContentLink>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SchemaType {
+    NotSpecified,
+    Xml,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountSchemaListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IntegrationAccountSchema>,
@@ -658,11 +679,6 @@ pub struct IntegrationAccountSchemaListResult {
 pub struct IntegrationAccountSchemaFilter {
     #[serde(rename = "schemaType")]
     pub schema_type: SchemaType,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SchemaType {
-    NotSpecified,
-    Xml,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountMap {
@@ -698,6 +714,14 @@ pub mod integration_account_map_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MapType {
+    NotSpecified,
+    Xslt,
+    Xslt20,
+    Xslt30,
+    Liquid,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountMapListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IntegrationAccountMap>,
@@ -710,18 +734,6 @@ pub struct IntegrationAccountMapFilter {
     pub map_type: MapType,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum MapType {
-    NotSpecified,
-    Xslt,
-    Xslt20,
-    Xslt30,
-    Liquid,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IntegrationAccountSku {
-    pub name: IntegrationAccountSkuName,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountPartnerListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IntegrationAccountPartner>,
@@ -732,6 +744,12 @@ pub struct IntegrationAccountPartnerListResult {
 pub struct IntegrationAccountPartnerFilter {
     #[serde(rename = "partnerType")]
     pub partner_type: PartnerType,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum PartnerType {
+    NotSpecified,
+    #[serde(rename = "B2B")]
+    B2b,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountPartner {
@@ -750,12 +768,6 @@ pub struct IntegrationAccountPartnerProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
     pub content: PartnerContent,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum PartnerType {
-    NotSpecified,
-    #[serde(rename = "B2B")]
-    B2b,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartnerContent {
@@ -785,6 +797,14 @@ pub struct IntegrationAccountAgreementFilter {
     pub agreement_type: AgreementType,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AgreementType {
+    NotSpecified,
+    #[serde(rename = "AS2")]
+    As2,
+    X12,
+    Edifact,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountAgreement {
     #[serde(flatten)]
     pub resource: Resource,
@@ -809,14 +829,6 @@ pub struct IntegrationAccountAgreementProperties {
     #[serde(rename = "guestIdentity")]
     pub guest_identity: BusinessIdentity,
     pub content: AgreementContent,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum AgreementType {
-    NotSpecified,
-    #[serde(rename = "AS2")]
-    As2,
-    X12,
-    Edifact,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgreementContent {
@@ -861,7 +873,7 @@ pub struct As2ProtocolSettings {
     pub error_settings: As2ErrorSettings,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct As2AcknowledgementConnectionSettings {
+pub struct As2MessageConnectionSettings {
     #[serde(rename = "ignoreCertificateNameMismatch")]
     pub ignore_certificate_name_mismatch: bool,
     #[serde(rename = "supportHttpStatusCodeContinue")]
@@ -872,7 +884,7 @@ pub struct As2AcknowledgementConnectionSettings {
     pub unfold_http_headers: bool,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct As2MessageConnectionSettings {
+pub struct As2AcknowledgementConnectionSettings {
     #[serde(rename = "ignoreCertificateNameMismatch")]
     pub ignore_certificate_name_mismatch: bool,
     #[serde(rename = "supportHttpStatusCodeContinue")]
@@ -902,6 +914,21 @@ pub struct As2MdnSettings {
     pub send_inbound_mdn_to_message_box: bool,
     #[serde(rename = "micHashingAlgorithm")]
     pub mic_hashing_algorithm: HashingAlgorithm,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum HashingAlgorithm {
+    NotSpecified,
+    None,
+    #[serde(rename = "MD5")]
+    Md5,
+    #[serde(rename = "SHA1")]
+    Sha1,
+    #[serde(rename = "SHA2256")]
+    Sha2256,
+    #[serde(rename = "SHA2384")]
+    Sha2384,
+    #[serde(rename = "SHA2512")]
+    Sha2512,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct As2SecuritySettings {
@@ -948,6 +975,34 @@ pub struct As2ValidationSettings {
     pub encryption_algorithm: EncryptionAlgorithm,
     #[serde(rename = "signingAlgorithm", default, skip_serializing_if = "Option::is_none")]
     pub signing_algorithm: Option<SigningAlgorithm>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EncryptionAlgorithm {
+    NotSpecified,
+    None,
+    #[serde(rename = "DES3")]
+    Des3,
+    #[serde(rename = "RC2")]
+    Rc2,
+    #[serde(rename = "AES128")]
+    Aes128,
+    #[serde(rename = "AES192")]
+    Aes192,
+    #[serde(rename = "AES256")]
+    Aes256,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SigningAlgorithm {
+    NotSpecified,
+    Default,
+    #[serde(rename = "SHA1")]
+    Sha1,
+    #[serde(rename = "SHA2256")]
+    Sha2256,
+    #[serde(rename = "SHA2384")]
+    Sha2384,
+    #[serde(rename = "SHA2512")]
+    Sha2512,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct As2EnvelopeSettings {
@@ -1036,6 +1091,13 @@ pub struct X12ValidationSettings {
     pub trailing_separator_policy: TrailingSeparatorPolicy,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum TrailingSeparatorPolicy {
+    NotSpecified,
+    NotAllowed,
+    Optional,
+    Mandatory,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12FramingSettings {
     #[serde(rename = "dataElementSeparator")]
     pub data_element_separator: i32,
@@ -1051,6 +1113,25 @@ pub struct X12FramingSettings {
     pub character_set: X12CharacterSet,
     #[serde(rename = "segmentTerminatorSuffix")]
     pub segment_terminator_suffix: SegmentTerminatorSuffix,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum X12CharacterSet {
+    NotSpecified,
+    Basic,
+    Extended,
+    #[serde(rename = "UTF8")]
+    Utf8,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SegmentTerminatorSuffix {
+    NotSpecified,
+    None,
+    #[serde(rename = "CR")]
+    Cr,
+    #[serde(rename = "LF")]
+    Lf,
+    #[serde(rename = "CRLF")]
+    Crlf,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12EnvelopeSettings {
@@ -1104,6 +1185,33 @@ pub struct X12EnvelopeSettings {
     pub usage_indicator: UsageIndicator,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum X12DateFormat {
+    NotSpecified,
+    #[serde(rename = "CCYYMMDD")]
+    Ccyymmdd,
+    #[serde(rename = "YYMMDD")]
+    Yymmdd,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum X12TimeFormat {
+    NotSpecified,
+    #[serde(rename = "HHMM")]
+    Hhmm,
+    #[serde(rename = "HHMMSS")]
+    Hhmmss,
+    #[serde(rename = "HHMMSSdd")]
+    HhmmsSdd,
+    #[serde(rename = "HHMMSSd")]
+    HhmmsSd,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum UsageIndicator {
+    NotSpecified,
+    Test,
+    Information,
+    Production,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12AcknowledgementSettings {
     #[serde(rename = "needTechnicalAcknowledgement")]
     pub need_technical_acknowledgement: bool,
@@ -1142,6 +1250,12 @@ pub struct X12MessageFilter {
     pub message_filter_type: MessageFilterType,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MessageFilterType {
+    NotSpecified,
+    Include,
+    Exclude,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12SecuritySettings {
     #[serde(rename = "authorizationQualifier")]
     pub authorization_qualifier: String,
@@ -1166,185 +1280,6 @@ pub struct X12ProcessingSettings {
     pub create_empty_xml_tags_for_trailing_separators: bool,
     #[serde(rename = "useDotAsDecimalSeparator")]
     pub use_dot_as_decimal_separator: bool,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X12EnvelopeOverride {
-    #[serde(rename = "targetNamespace")]
-    pub target_namespace: String,
-    #[serde(rename = "protocolVersion")]
-    pub protocol_version: String,
-    #[serde(rename = "messageId")]
-    pub message_id: String,
-    #[serde(rename = "responsibleAgencyCode")]
-    pub responsible_agency_code: String,
-    #[serde(rename = "headerVersion")]
-    pub header_version: String,
-    #[serde(rename = "senderApplicationId")]
-    pub sender_application_id: String,
-    #[serde(rename = "receiverApplicationId")]
-    pub receiver_application_id: String,
-    #[serde(rename = "functionalIdentifierCode", default, skip_serializing_if = "Option::is_none")]
-    pub functional_identifier_code: Option<String>,
-    #[serde(rename = "dateFormat")]
-    pub date_format: X12DateFormat,
-    #[serde(rename = "timeFormat")]
-    pub time_format: X12TimeFormat,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X12ValidationOverride {
-    #[serde(rename = "messageId")]
-    pub message_id: String,
-    #[serde(rename = "validateEDITypes")]
-    pub validate_edi_types: bool,
-    #[serde(rename = "validateXSDTypes")]
-    pub validate_xsd_types: bool,
-    #[serde(rename = "allowLeadingAndTrailingSpacesAndZeroes")]
-    pub allow_leading_and_trailing_spaces_and_zeroes: bool,
-    #[serde(rename = "validateCharacterSet")]
-    pub validate_character_set: bool,
-    #[serde(rename = "trimLeadingAndTrailingSpacesAndZeroes")]
-    pub trim_leading_and_trailing_spaces_and_zeroes: bool,
-    #[serde(rename = "trailingSeparatorPolicy")]
-    pub trailing_separator_policy: TrailingSeparatorPolicy,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X12MessageIdentifier {
-    #[serde(rename = "messageId")]
-    pub message_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X12SchemaReference {
-    #[serde(rename = "messageId")]
-    pub message_id: String,
-    #[serde(rename = "senderApplicationId", default, skip_serializing_if = "Option::is_none")]
-    pub sender_application_id: Option<String>,
-    #[serde(rename = "schemaVersion")]
-    pub schema_version: String,
-    #[serde(rename = "schemaName")]
-    pub schema_name: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X12DelimiterOverrides {
-    #[serde(rename = "protocolVersion", default, skip_serializing_if = "Option::is_none")]
-    pub protocol_version: Option<String>,
-    #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
-    pub message_id: Option<String>,
-    #[serde(rename = "dataElementSeparator")]
-    pub data_element_separator: i32,
-    #[serde(rename = "componentSeparator")]
-    pub component_separator: i32,
-    #[serde(rename = "segmentTerminator")]
-    pub segment_terminator: i32,
-    #[serde(rename = "segmentTerminatorSuffix")]
-    pub segment_terminator_suffix: SegmentTerminatorSuffix,
-    #[serde(rename = "replaceCharacter")]
-    pub replace_character: i32,
-    #[serde(rename = "replaceSeparatorsInPayload")]
-    pub replace_separators_in_payload: bool,
-    #[serde(rename = "targetNamespace", default, skip_serializing_if = "Option::is_none")]
-    pub target_namespace: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum X12CharacterSet {
-    NotSpecified,
-    Basic,
-    Extended,
-    #[serde(rename = "UTF8")]
-    Utf8,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SegmentTerminatorSuffix {
-    NotSpecified,
-    None,
-    #[serde(rename = "CR")]
-    Cr,
-    #[serde(rename = "LF")]
-    Lf,
-    #[serde(rename = "CRLF")]
-    Crlf,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum X12DateFormat {
-    NotSpecified,
-    #[serde(rename = "CCYYMMDD")]
-    Ccyymmdd,
-    #[serde(rename = "YYMMDD")]
-    Yymmdd,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum X12TimeFormat {
-    NotSpecified,
-    #[serde(rename = "HHMM")]
-    Hhmm,
-    #[serde(rename = "HHMMSS")]
-    Hhmmss,
-    #[serde(rename = "HHMMSSdd")]
-    HhmmsSdd,
-    #[serde(rename = "HHMMSSd")]
-    HhmmsSd,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum UsageIndicator {
-    NotSpecified,
-    Test,
-    Information,
-    Production,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum MessageFilterType {
-    NotSpecified,
-    Include,
-    Exclude,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum HashingAlgorithm {
-    NotSpecified,
-    None,
-    #[serde(rename = "MD5")]
-    Md5,
-    #[serde(rename = "SHA1")]
-    Sha1,
-    #[serde(rename = "SHA2256")]
-    Sha2256,
-    #[serde(rename = "SHA2384")]
-    Sha2384,
-    #[serde(rename = "SHA2512")]
-    Sha2512,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum EncryptionAlgorithm {
-    NotSpecified,
-    None,
-    #[serde(rename = "DES3")]
-    Des3,
-    #[serde(rename = "RC2")]
-    Rc2,
-    #[serde(rename = "AES128")]
-    Aes128,
-    #[serde(rename = "AES192")]
-    Aes192,
-    #[serde(rename = "AES256")]
-    Aes256,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SigningAlgorithm {
-    NotSpecified,
-    Default,
-    #[serde(rename = "SHA1")]
-    Sha1,
-    #[serde(rename = "SHA2256")]
-    Sha2256,
-    #[serde(rename = "SHA2384")]
-    Sha2384,
-    #[serde(rename = "SHA2512")]
-    Sha2512,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum TrailingSeparatorPolicy {
-    NotSpecified,
-    NotAllowed,
-    Optional,
-    Mandatory,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactAgreementContent {
@@ -1434,6 +1369,44 @@ pub struct EdifactFramingSettings {
     pub decimal_point_indicator: EdifactDecimalIndicator,
     #[serde(rename = "segmentTerminatorSuffix")]
     pub segment_terminator_suffix: SegmentTerminatorSuffix,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EdifactCharacterSet {
+    NotSpecified,
+    #[serde(rename = "UNOB")]
+    Unob,
+    #[serde(rename = "UNOA")]
+    Unoa,
+    #[serde(rename = "UNOC")]
+    Unoc,
+    #[serde(rename = "UNOD")]
+    Unod,
+    #[serde(rename = "UNOE")]
+    Unoe,
+    #[serde(rename = "UNOF")]
+    Unof,
+    #[serde(rename = "UNOG")]
+    Unog,
+    #[serde(rename = "UNOH")]
+    Unoh,
+    #[serde(rename = "UNOI")]
+    Unoi,
+    #[serde(rename = "UNOJ")]
+    Unoj,
+    #[serde(rename = "UNOK")]
+    Unok,
+    #[serde(rename = "UNOX")]
+    Unox,
+    #[serde(rename = "UNOY")]
+    Unoy,
+    #[serde(rename = "KECA")]
+    Keca,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EdifactDecimalIndicator {
+    NotSpecified,
+    Comma,
+    Decimal,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactEnvelopeSettings {
@@ -1564,6 +1537,83 @@ pub struct EdifactProcessingSettings {
     pub use_dot_as_decimal_separator: bool,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X12EnvelopeOverride {
+    #[serde(rename = "targetNamespace")]
+    pub target_namespace: String,
+    #[serde(rename = "protocolVersion")]
+    pub protocol_version: String,
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+    #[serde(rename = "responsibleAgencyCode")]
+    pub responsible_agency_code: String,
+    #[serde(rename = "headerVersion")]
+    pub header_version: String,
+    #[serde(rename = "senderApplicationId")]
+    pub sender_application_id: String,
+    #[serde(rename = "receiverApplicationId")]
+    pub receiver_application_id: String,
+    #[serde(rename = "functionalIdentifierCode", default, skip_serializing_if = "Option::is_none")]
+    pub functional_identifier_code: Option<String>,
+    #[serde(rename = "dateFormat")]
+    pub date_format: X12DateFormat,
+    #[serde(rename = "timeFormat")]
+    pub time_format: X12TimeFormat,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X12ValidationOverride {
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+    #[serde(rename = "validateEDITypes")]
+    pub validate_edi_types: bool,
+    #[serde(rename = "validateXSDTypes")]
+    pub validate_xsd_types: bool,
+    #[serde(rename = "allowLeadingAndTrailingSpacesAndZeroes")]
+    pub allow_leading_and_trailing_spaces_and_zeroes: bool,
+    #[serde(rename = "validateCharacterSet")]
+    pub validate_character_set: bool,
+    #[serde(rename = "trimLeadingAndTrailingSpacesAndZeroes")]
+    pub trim_leading_and_trailing_spaces_and_zeroes: bool,
+    #[serde(rename = "trailingSeparatorPolicy")]
+    pub trailing_separator_policy: TrailingSeparatorPolicy,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X12MessageIdentifier {
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X12SchemaReference {
+    #[serde(rename = "messageId")]
+    pub message_id: String,
+    #[serde(rename = "senderApplicationId", default, skip_serializing_if = "Option::is_none")]
+    pub sender_application_id: Option<String>,
+    #[serde(rename = "schemaVersion")]
+    pub schema_version: String,
+    #[serde(rename = "schemaName")]
+    pub schema_name: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X12DelimiterOverrides {
+    #[serde(rename = "protocolVersion", default, skip_serializing_if = "Option::is_none")]
+    pub protocol_version: Option<String>,
+    #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
+    #[serde(rename = "dataElementSeparator")]
+    pub data_element_separator: i32,
+    #[serde(rename = "componentSeparator")]
+    pub component_separator: i32,
+    #[serde(rename = "segmentTerminator")]
+    pub segment_terminator: i32,
+    #[serde(rename = "segmentTerminatorSuffix")]
+    pub segment_terminator_suffix: SegmentTerminatorSuffix,
+    #[serde(rename = "replaceCharacter")]
+    pub replace_character: i32,
+    #[serde(rename = "replaceSeparatorsInPayload")]
+    pub replace_separators_in_payload: bool,
+    #[serde(rename = "targetNamespace", default, skip_serializing_if = "Option::is_none")]
+    pub target_namespace: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactEnvelopeOverride {
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
@@ -1661,44 +1711,6 @@ pub struct EdifactDelimiterOverride {
     pub message_association_assigned_code: Option<String>,
     #[serde(rename = "targetNamespace", default, skip_serializing_if = "Option::is_none")]
     pub target_namespace: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum EdifactCharacterSet {
-    NotSpecified,
-    #[serde(rename = "UNOB")]
-    Unob,
-    #[serde(rename = "UNOA")]
-    Unoa,
-    #[serde(rename = "UNOC")]
-    Unoc,
-    #[serde(rename = "UNOD")]
-    Unod,
-    #[serde(rename = "UNOE")]
-    Unoe,
-    #[serde(rename = "UNOF")]
-    Unof,
-    #[serde(rename = "UNOG")]
-    Unog,
-    #[serde(rename = "UNOH")]
-    Unoh,
-    #[serde(rename = "UNOI")]
-    Unoi,
-    #[serde(rename = "UNOJ")]
-    Unoj,
-    #[serde(rename = "UNOK")]
-    Unok,
-    #[serde(rename = "UNOX")]
-    Unox,
-    #[serde(rename = "UNOY")]
-    Unoy,
-    #[serde(rename = "KECA")]
-    Keca,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum EdifactDecimalIndicator {
-    NotSpecified,
-    Comma,
-    Decimal,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountCertificateListResult {
@@ -1799,18 +1811,6 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListKeyVaultKeysDefinition {

@@ -22,13 +22,6 @@ pub struct ActionGroupResource {
     pub properties: Option<ActionGroup>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActionGroupList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ActionGroupResource>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroup {
     #[serde(rename = "groupShortName")]
     pub group_short_name: String,
@@ -55,12 +48,25 @@ pub struct ActionGroup {
     pub arm_role_receivers: Vec<ArmRoleReceiver>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActionGroupList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ActionGroupResource>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailReceiver {
     pub name: String,
     #[serde(rename = "emailAddress")]
     pub email_address: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ReceiverStatus {
+    NotSpecified,
+    Enabled,
+    Disabled,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsReceiver {
@@ -141,12 +147,6 @@ pub struct ArmRoleReceiver {
     pub name: String,
     #[serde(rename = "roleId")]
     pub role_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReceiverStatus {
-    NotSpecified,
-    Enabled,
-    Disabled,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnableRequest {

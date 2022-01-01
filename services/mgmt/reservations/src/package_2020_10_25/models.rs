@@ -18,16 +18,16 @@ pub struct CalculateExchangeRequest {
     pub properties: Option<CalculateExchangeRequestProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExchangeRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ExchangeRequestProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CalculateExchangeRequestProperties {
     #[serde(rename = "reservationsToPurchase", default, skip_serializing_if = "Vec::is_empty")]
     pub reservations_to_purchase: Vec<PurchaseRequest>,
     #[serde(rename = "reservationsToExchange", default, skip_serializing_if = "Vec::is_empty")]
     pub reservations_to_exchange: Vec<ReservationToReturn>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExchangeRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ExchangeRequestProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExchangeRequestProperties {
@@ -141,6 +141,42 @@ pub mod calculate_exchange_operation_result_response {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CalculateExchangeResponseProperties {
+    #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    #[serde(rename = "netPayable", default, skip_serializing_if = "Option::is_none")]
+    pub net_payable: Option<Price>,
+    #[serde(rename = "refundsTotal", default, skip_serializing_if = "Option::is_none")]
+    pub refunds_total: Option<Price>,
+    #[serde(rename = "purchasesTotal", default, skip_serializing_if = "Option::is_none")]
+    pub purchases_total: Option<Price>,
+    #[serde(rename = "reservationsToPurchase", default, skip_serializing_if = "Vec::is_empty")]
+    pub reservations_to_purchase: Vec<ReservationToPurchaseCalculateExchange>,
+    #[serde(rename = "reservationsToExchange", default, skip_serializing_if = "Vec::is_empty")]
+    pub reservations_to_exchange: Vec<ReservationToExchange>,
+    #[serde(rename = "policyResult", default, skip_serializing_if = "Option::is_none")]
+    pub policy_result: Option<ExchangePolicyErrors>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Price {
+    #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
+    pub currency_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub amount: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExchangePolicyErrors {
+    #[serde(rename = "policyErrors", default, skip_serializing_if = "Vec::is_empty")]
+    pub policy_errors: Vec<ExchangePolicyError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationResultError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExchangeOperationResultResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -165,30 +201,6 @@ pub mod exchange_operation_result_response {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationResultError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CalculateExchangeResponseProperties {
-    #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
-    pub session_id: Option<String>,
-    #[serde(rename = "netPayable", default, skip_serializing_if = "Option::is_none")]
-    pub net_payable: Option<Price>,
-    #[serde(rename = "refundsTotal", default, skip_serializing_if = "Option::is_none")]
-    pub refunds_total: Option<Price>,
-    #[serde(rename = "purchasesTotal", default, skip_serializing_if = "Option::is_none")]
-    pub purchases_total: Option<Price>,
-    #[serde(rename = "reservationsToPurchase", default, skip_serializing_if = "Vec::is_empty")]
-    pub reservations_to_purchase: Vec<ReservationToPurchaseCalculateExchange>,
-    #[serde(rename = "reservationsToExchange", default, skip_serializing_if = "Vec::is_empty")]
-    pub reservations_to_exchange: Vec<ReservationToExchange>,
-    #[serde(rename = "policyResult", default, skip_serializing_if = "Option::is_none")]
-    pub policy_result: Option<ExchangePolicyErrors>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExchangeResponseProperties {
     #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
@@ -204,11 +216,6 @@ pub struct ExchangeResponseProperties {
     pub reservations_to_exchange: Vec<ReservationToReturnForExchange>,
     #[serde(rename = "policyResult", default, skip_serializing_if = "Option::is_none")]
     pub policy_result: Option<ExchangePolicyErrors>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExchangePolicyErrors {
-    #[serde(rename = "policyErrors", default, skip_serializing_if = "Vec::is_empty")]
-    pub policy_errors: Vec<ExchangePolicyError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExchangePolicyError {
@@ -229,19 +236,6 @@ pub struct ReservationToExchange {
     pub billing_information: Option<BillingInformation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationToReturnForExchange {
-    #[serde(rename = "reservationId", default, skip_serializing_if = "Option::is_none")]
-    pub reservation_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub quantity: Option<i32>,
-    #[serde(rename = "billingRefundAmount", default, skip_serializing_if = "Option::is_none")]
-    pub billing_refund_amount: Option<Price>,
-    #[serde(rename = "billingInformation", default, skip_serializing_if = "Option::is_none")]
-    pub billing_information: Option<BillingInformation>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<OperationStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BillingInformation {
     #[serde(rename = "billingCurrencyTotalPaidAmount", default, skip_serializing_if = "Option::is_none")]
     pub billing_currency_total_paid_amount: Option<Price>,
@@ -255,11 +249,120 @@ pub struct BillingInformation {
     pub billing_currency_remaining_commitment_amount: Option<Price>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationToReturnForExchange {
+    #[serde(rename = "reservationId", default, skip_serializing_if = "Option::is_none")]
+    pub reservation_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<i32>,
+    #[serde(rename = "billingRefundAmount", default, skip_serializing_if = "Option::is_none")]
+    pub billing_refund_amount: Option<Price>,
+    #[serde(rename = "billingInformation", default, skip_serializing_if = "Option::is_none")]
+    pub billing_information: Option<BillingInformation>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<OperationStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OperationStatus {
+    Succeeded,
+    Failed,
+    Cancelled,
+    Pending,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationToPurchaseCalculateExchange {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PurchaseRequest>,
     #[serde(rename = "billingCurrencyTotal", default, skip_serializing_if = "Option::is_none")]
     pub billing_currency_total: Option<Price>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PurchaseRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<SkuName>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PurchaseRequestProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PurchaseRequestProperties {
+    #[serde(rename = "reservedResourceType", default, skip_serializing_if = "Option::is_none")]
+    pub reserved_resource_type: Option<ReservedResourceType>,
+    #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
+    pub billing_scope_id: Option<BillingScopeId>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub term: Option<ReservationTerm>,
+    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
+    pub billing_plan: Option<ReservationBillingPlan>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<ReservationQuantity>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
+    pub applied_scope_type: Option<AppliedScopeType>,
+    #[serde(rename = "appliedScopes", default, skip_serializing_if = "Option::is_none")]
+    pub applied_scopes: Option<AppliedScopes>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub renew: Option<Renew>,
+    #[serde(rename = "reservedResourceProperties", default, skip_serializing_if = "Option::is_none")]
+    pub reserved_resource_properties: Option<purchase_request_properties::ReservedResourceProperties>,
+}
+pub mod purchase_request_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct ReservedResourceProperties {
+        #[serde(rename = "instanceFlexibility", default, skip_serializing_if = "Option::is_none")]
+        pub instance_flexibility: Option<InstanceFlexibility>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ReservedResourceType {
+    VirtualMachines,
+    SqlDatabases,
+    SuseLinux,
+    CosmosDb,
+    RedHat,
+    SqlDataWarehouse,
+    VMwareCloudSimple,
+    RedHatOsa,
+    Databricks,
+    AppService,
+    ManagedDisk,
+    BlockBlob,
+    RedisCache,
+    AzureDataExplorer,
+    MySql,
+    MariaDb,
+    PostgreSql,
+    DedicatedHost,
+    SapHana,
+    SqlAzureHybridBenefit,
+}
+pub type BillingScopeId = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ReservationTerm {
+    #[serde(rename = "P1Y")]
+    P1y,
+    #[serde(rename = "P3Y")]
+    P3y,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ReservationBillingPlan {
+    Upfront,
+    Monthly,
+}
+pub type ReservationQuantity = i32;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AppliedScopeType {
+    Single,
+    Shared,
+}
+pub type AppliedScopes = Vec<String>;
+pub type Renew = bool;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum InstanceFlexibility {
+    On,
+    Off,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationToPurchaseExchange {
@@ -321,16 +424,38 @@ pub struct ReservationOrderResponse {
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReservationBillingPlan {
-    Upfront,
-    Monthly,
+pub struct ReservationOrderProperties {
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "requestDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub request_date_time: Option<String>,
+    #[serde(rename = "createdDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub created_date_time: Option<String>,
+    #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
+    pub expiry_date: Option<String>,
+    #[serde(rename = "originalQuantity", default, skip_serializing_if = "Option::is_none")]
+    pub original_quantity: Option<ReservationQuantity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub term: Option<ReservationTerm>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
+    pub billing_plan: Option<ReservationBillingPlan>,
+    #[serde(rename = "planInformation", default, skip_serializing_if = "Option::is_none")]
+    pub plan_information: Option<ReservationOrderBillingPlanInformation>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub reservations: Vec<ReservationResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReservationTerm {
-    #[serde(rename = "P1Y")]
-    P1y,
-    #[serde(rename = "P3Y")]
-    P3y,
+pub struct ReservationOrderBillingPlanInformation {
+    #[serde(rename = "pricingCurrencyTotal", default, skip_serializing_if = "Option::is_none")]
+    pub pricing_currency_total: Option<Price>,
+    #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
+    pub start_date: Option<String>,
+    #[serde(rename = "nextPaymentDueDate", default, skip_serializing_if = "Option::is_none")]
+    pub next_payment_due_date: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub transactions: Vec<PaymentDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PaymentStatus {
@@ -357,38 +482,11 @@ pub struct PaymentDetail {
     pub extended_status_info: Option<ExtendedStatusInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationOrderBillingPlanInformation {
-    #[serde(rename = "pricingCurrencyTotal", default, skip_serializing_if = "Option::is_none")]
-    pub pricing_currency_total: Option<Price>,
-    #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
-    pub start_date: Option<String>,
-    #[serde(rename = "nextPaymentDueDate", default, skip_serializing_if = "Option::is_none")]
-    pub next_payment_due_date: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub transactions: Vec<PaymentDetail>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationOrderProperties {
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "requestDateTime", default, skip_serializing_if = "Option::is_none")]
-    pub request_date_time: Option<String>,
-    #[serde(rename = "createdDateTime", default, skip_serializing_if = "Option::is_none")]
-    pub created_date_time: Option<String>,
-    #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
-    pub expiry_date: Option<String>,
-    #[serde(rename = "originalQuantity", default, skip_serializing_if = "Option::is_none")]
-    pub original_quantity: Option<ReservationQuantity>,
+pub struct ExtendedStatusInfo {
+    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
+    pub status_code: Option<ReservationStatusCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub term: Option<ReservationTerm>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
-    pub billing_plan: Option<ReservationBillingPlan>,
-    #[serde(rename = "planInformation", default, skip_serializing_if = "Option::is_none")]
-    pub plan_information: Option<ReservationOrderBillingPlanInformation>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reservations: Vec<ReservationResponse>,
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationResponse {
@@ -406,6 +504,65 @@ pub struct ReservationResponse {
     pub properties: Option<ReservationProperties>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationProperties {
+    #[serde(rename = "reservedResourceType", default, skip_serializing_if = "Option::is_none")]
+    pub reserved_resource_type: Option<ReservedResourceType>,
+    #[serde(rename = "instanceFlexibility", default, skip_serializing_if = "Option::is_none")]
+    pub instance_flexibility: Option<InstanceFlexibility>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "appliedScopes", default, skip_serializing_if = "Option::is_none")]
+    pub applied_scopes: Option<AppliedScopes>,
+    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
+    pub applied_scope_type: Option<AppliedScopeType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<ReservationQuantity>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "effectiveDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub effective_date_time: Option<String>,
+    #[serde(rename = "lastUpdatedDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_updated_date_time: Option<String>,
+    #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
+    pub expiry_date: Option<String>,
+    #[serde(rename = "skuDescription", default, skip_serializing_if = "Option::is_none")]
+    pub sku_description: Option<String>,
+    #[serde(rename = "extendedStatusInfo", default, skip_serializing_if = "Option::is_none")]
+    pub extended_status_info: Option<ExtendedStatusInfo>,
+    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
+    pub billing_plan: Option<ReservationBillingPlan>,
+    #[serde(rename = "splitProperties", default, skip_serializing_if = "Option::is_none")]
+    pub split_properties: Option<ReservationSplitProperties>,
+    #[serde(rename = "mergeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub merge_properties: Option<ReservationMergeProperties>,
+    #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
+    pub billing_scope_id: Option<BillingScopeId>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub renew: Option<Renew>,
+    #[serde(rename = "renewSource", default, skip_serializing_if = "Option::is_none")]
+    pub renew_source: Option<String>,
+    #[serde(rename = "renewDestination", default, skip_serializing_if = "Option::is_none")]
+    pub renew_destination: Option<String>,
+    #[serde(rename = "renewProperties", default, skip_serializing_if = "Option::is_none")]
+    pub renew_properties: Option<RenewPropertiesResponse>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub term: Option<ReservationTerm>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationSplitProperties {
+    #[serde(rename = "splitDestinations", default, skip_serializing_if = "Vec::is_empty")]
+    pub split_destinations: Vec<String>,
+    #[serde(rename = "splitSource", default, skip_serializing_if = "Option::is_none")]
+    pub split_source: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationMergeProperties {
+    #[serde(rename = "mergeDestination", default, skip_serializing_if = "Option::is_none")]
+    pub merge_destination: Option<String>,
+    #[serde(rename = "mergeSources", default, skip_serializing_if = "Vec::is_empty")]
+    pub merge_sources: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RenewPropertiesResponse {
@@ -473,96 +630,6 @@ pub mod calculate_price_response_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationProperties {
-    #[serde(rename = "reservedResourceType", default, skip_serializing_if = "Option::is_none")]
-    pub reserved_resource_type: Option<ReservedResourceType>,
-    #[serde(rename = "instanceFlexibility", default, skip_serializing_if = "Option::is_none")]
-    pub instance_flexibility: Option<InstanceFlexibility>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "appliedScopes", default, skip_serializing_if = "Option::is_none")]
-    pub applied_scopes: Option<AppliedScopes>,
-    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
-    pub applied_scope_type: Option<AppliedScopeType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub quantity: Option<ReservationQuantity>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "effectiveDateTime", default, skip_serializing_if = "Option::is_none")]
-    pub effective_date_time: Option<String>,
-    #[serde(rename = "lastUpdatedDateTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_updated_date_time: Option<String>,
-    #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
-    pub expiry_date: Option<String>,
-    #[serde(rename = "skuDescription", default, skip_serializing_if = "Option::is_none")]
-    pub sku_description: Option<String>,
-    #[serde(rename = "extendedStatusInfo", default, skip_serializing_if = "Option::is_none")]
-    pub extended_status_info: Option<ExtendedStatusInfo>,
-    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
-    pub billing_plan: Option<ReservationBillingPlan>,
-    #[serde(rename = "splitProperties", default, skip_serializing_if = "Option::is_none")]
-    pub split_properties: Option<ReservationSplitProperties>,
-    #[serde(rename = "mergeProperties", default, skip_serializing_if = "Option::is_none")]
-    pub merge_properties: Option<ReservationMergeProperties>,
-    #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
-    pub billing_scope_id: Option<BillingScopeId>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub renew: Option<Renew>,
-    #[serde(rename = "renewSource", default, skip_serializing_if = "Option::is_none")]
-    pub renew_source: Option<String>,
-    #[serde(rename = "renewDestination", default, skip_serializing_if = "Option::is_none")]
-    pub renew_destination: Option<String>,
-    #[serde(rename = "renewProperties", default, skip_serializing_if = "Option::is_none")]
-    pub renew_properties: Option<RenewPropertiesResponse>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub term: Option<ReservationTerm>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationSplitProperties {
-    #[serde(rename = "splitDestinations", default, skip_serializing_if = "Vec::is_empty")]
-    pub split_destinations: Vec<String>,
-    #[serde(rename = "splitSource", default, skip_serializing_if = "Option::is_none")]
-    pub split_source: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationMergeProperties {
-    #[serde(rename = "mergeDestination", default, skip_serializing_if = "Option::is_none")]
-    pub merge_destination: Option<String>,
-    #[serde(rename = "mergeSources", default, skip_serializing_if = "Vec::is_empty")]
-    pub merge_sources: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PurchaseRequestProperties {
-    #[serde(rename = "reservedResourceType", default, skip_serializing_if = "Option::is_none")]
-    pub reserved_resource_type: Option<ReservedResourceType>,
-    #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
-    pub billing_scope_id: Option<BillingScopeId>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub term: Option<ReservationTerm>,
-    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
-    pub billing_plan: Option<ReservationBillingPlan>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub quantity: Option<ReservationQuantity>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
-    pub applied_scope_type: Option<AppliedScopeType>,
-    #[serde(rename = "appliedScopes", default, skip_serializing_if = "Option::is_none")]
-    pub applied_scopes: Option<AppliedScopes>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub renew: Option<Renew>,
-    #[serde(rename = "reservedResourceProperties", default, skip_serializing_if = "Option::is_none")]
-    pub reserved_resource_properties: Option<purchase_request_properties::ReservedResourceProperties>,
-}
-pub mod purchase_request_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct ReservedResourceProperties {
-        #[serde(rename = "instanceFlexibility", default, skip_serializing_if = "Option::is_none")]
-        pub instance_flexibility: Option<InstanceFlexibility>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PatchProperties {
     #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
     pub applied_scope_type: Option<AppliedScopeType>,
@@ -603,15 +670,6 @@ pub struct MergeRequest {
     pub properties: Option<MergeProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PurchaseRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<SkuName>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PurchaseRequestProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Patch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PatchProperties>,
@@ -630,13 +688,6 @@ pub struct Error {
 pub struct ExtendedErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<ErrorResponseCode>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExtendedStatusInfo {
-    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
-    pub status_code: Option<ReservationStatusCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -705,20 +756,6 @@ pub struct OperationDisplay {
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum InstanceFlexibility {
-    On,
-    Off,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum AppliedScopeType {
-    Single,
-    Shared,
-}
-pub type AppliedScopes = Vec<String>;
-pub type BillingScopeId = String;
-pub type Renew = bool;
-pub type ReservationQuantity = i32;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailableScopeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionScopeProperties>,
@@ -734,43 +771,6 @@ pub struct ScopeProperties {
     pub scope: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub valid: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReservedResourceType {
-    VirtualMachines,
-    SqlDatabases,
-    SuseLinux,
-    CosmosDb,
-    RedHat,
-    SqlDataWarehouse,
-    VMwareCloudSimple,
-    RedHatOsa,
-    Databricks,
-    AppService,
-    ManagedDisk,
-    BlockBlob,
-    RedisCache,
-    AzureDataExplorer,
-    MySql,
-    MariaDb,
-    PostgreSql,
-    DedicatedHost,
-    SapHana,
-    SqlAzureHybridBenefit,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Price {
-    #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
-    pub currency_code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub amount: Option<f64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OperationStatus {
-    Succeeded,
-    Failed,
-    Cancelled,
-    Pending,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CurrentQuotaLimit {
@@ -807,6 +807,34 @@ pub struct ResourceName {
     pub value: Option<String>,
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ResourceTypesName {
+    #[serde(rename = "standard")]
+    Standard,
+    #[serde(rename = "dedicated")]
+    Dedicated,
+    #[serde(rename = "lowPriority")]
+    LowPriority,
+    #[serde(rename = "shared")]
+    Shared,
+    #[serde(rename = "serviceSpecific")]
+    ServiceSpecific,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuotaRequestStatusDetails {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<QuotaRequestState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum QuotaRequestState {
+    Accepted,
+    Invalid,
+    Succeeded,
+    Failed,
+    InProgress,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuotaLimits {
@@ -856,6 +884,17 @@ pub struct QuotaRequestOneResourceSubmitResponse {
     pub properties: Option<QuotaRequestOneResourceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuotaRequestOneResourceProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<QuotaRequestState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(rename = "requestSubmitTime", default, skip_serializing_if = "Option::is_none")]
+    pub request_submit_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CurrentQuotaLimitBase>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuotaRequestSubmitResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -867,6 +906,17 @@ pub struct QuotaRequestSubmitResponse {
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuotaRequestProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<QuotaRequestState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(rename = "requestSubmitTime", default, skip_serializing_if = "Option::is_none")]
+    pub request_submit_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SubRequest>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuotaRequestSubmitResponse201 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -876,13 +926,6 @@ pub struct QuotaRequestSubmitResponse201 {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QuotaRequestStatusDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QuotaRequestStatusDetails {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<QuotaRequestState>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuotaRequestDetails {
@@ -901,49 +944,6 @@ pub struct QuotaRequestDetailsList {
     pub value: Vec<QuotaRequestDetails>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QuotaRequestProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<QuotaRequestState>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(rename = "requestSubmitTime", default, skip_serializing_if = "Option::is_none")]
-    pub request_submit_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SubRequest>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QuotaRequestOneResourceProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<QuotaRequestState>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(rename = "requestSubmitTime", default, skip_serializing_if = "Option::is_none")]
-    pub request_submit_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CurrentQuotaLimitBase>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum QuotaRequestState {
-    Accepted,
-    Invalid,
-    Succeeded,
-    Failed,
-    InProgress,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ResourceTypesName {
-    #[serde(rename = "standard")]
-    Standard,
-    #[serde(rename = "dedicated")]
-    Dedicated,
-    #[serde(rename = "lowPriority")]
-    LowPriority,
-    #[serde(rename = "shared")]
-    Shared,
-    #[serde(rename = "serviceSpecific")]
-    ServiceSpecific,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExceptionResponse {

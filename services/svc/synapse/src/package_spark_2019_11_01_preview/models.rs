@@ -84,6 +84,37 @@ pub struct SparkBatchJobState {
     pub job_creation_request: Option<SparkRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SparkRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
+    #[serde(rename = "className", default, skip_serializing_if = "Option::is_none")]
+    pub class_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub args: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub jars: Vec<String>,
+    #[serde(rename = "pyFiles", default, skip_serializing_if = "Vec::is_empty")]
+    pub py_files: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub files: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub archives: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conf: Option<serde_json::Value>,
+    #[serde(rename = "driverMemory", default, skip_serializing_if = "Option::is_none")]
+    pub driver_memory: Option<String>,
+    #[serde(rename = "driverCores", default, skip_serializing_if = "Option::is_none")]
+    pub driver_cores: Option<i32>,
+    #[serde(rename = "executorMemory", default, skip_serializing_if = "Option::is_none")]
+    pub executor_memory: Option<String>,
+    #[serde(rename = "executorCores", default, skip_serializing_if = "Option::is_none")]
+    pub executor_cores: Option<i32>,
+    #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
+    pub num_executors: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkScheduler {
     #[serde(rename = "submittedAt", default, skip_serializing_if = "Option::is_none")]
     pub submitted_at: Option<String>,
@@ -151,37 +182,6 @@ pub mod spark_service_error {
         Unknown,
         Dependency,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub file: Option<String>,
-    #[serde(rename = "className", default, skip_serializing_if = "Option::is_none")]
-    pub class_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub args: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub jars: Vec<String>,
-    #[serde(rename = "pyFiles", default, skip_serializing_if = "Vec::is_empty")]
-    pub py_files: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub files: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub archives: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub conf: Option<serde_json::Value>,
-    #[serde(rename = "driverMemory", default, skip_serializing_if = "Option::is_none")]
-    pub driver_memory: Option<String>,
-    #[serde(rename = "driverCores", default, skip_serializing_if = "Option::is_none")]
-    pub driver_cores: Option<i32>,
-    #[serde(rename = "executorMemory", default, skip_serializing_if = "Option::is_none")]
-    pub executor_memory: Option<String>,
-    #[serde(rename = "executorCores", default, skip_serializing_if = "Option::is_none")]
-    pub executor_cores: Option<i32>,
-    #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
-    pub num_executors: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkBatchJobOptions {

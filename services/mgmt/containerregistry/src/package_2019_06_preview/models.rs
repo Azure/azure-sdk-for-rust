@@ -216,32 +216,6 @@ pub struct Policies {
     pub retention_policy: Option<RetentionPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualNetworkRule {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<virtual_network_rule::Action>,
-    pub id: String,
-}
-pub mod virtual_network_rule {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Action {
-        Allow,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpRule {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<ip_rule::Action>,
-    pub value: String,
-}
-pub mod ip_rule {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Action {
-        Allow,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuarantinePolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<quarantine_policy::Status>,
@@ -294,6 +268,32 @@ pub mod retention_policy {
         Enabled,
         #[serde(rename = "disabled")]
         Disabled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualNetworkRule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<virtual_network_rule::Action>,
+    pub id: String,
+}
+pub mod virtual_network_rule {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Action {
+        Allow,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpRule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<ip_rule::Action>,
+    pub value: String,
+}
+pub mod ip_rule {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Action {
+        Allow,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -566,19 +566,6 @@ pub struct EventRequestMessage {
     pub version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventResponseMessage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub content: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub headers: Option<serde_json::Value>,
-    #[serde(rename = "reasonPhrase", default, skip_serializing_if = "Option::is_none")]
-    pub reason_phrase: Option<String>,
-    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
-    pub status_code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventContent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -640,6 +627,19 @@ pub struct Source {
     pub addr: Option<String>,
     #[serde(rename = "instanceID", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventResponseMessage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub headers: Option<serde_json::Value>,
+    #[serde(rename = "reasonPhrase", default, skip_serializing_if = "Option::is_none")]
+    pub reason_phrase: Option<String>,
+    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
+    pub status_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -810,17 +810,6 @@ pub mod run_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageDescriptor {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub registry: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub repository: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub digest: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageUpdateTrigger {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -895,6 +884,17 @@ pub mod platform_properties {
 pub struct AgentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cpu: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageDescriptor {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registry: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repository: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub digest: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceUploadDefinition {
@@ -1142,11 +1142,54 @@ pub struct TriggerProperties {
     pub base_image_trigger: Option<BaseImageTrigger>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BaseImageTrigger {
+    #[serde(rename = "baseImageTriggerType")]
+    pub base_image_trigger_type: base_image_trigger::BaseImageTriggerType,
+    #[serde(rename = "updateTriggerEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub update_trigger_endpoint: Option<String>,
+    #[serde(rename = "updateTriggerPayloadType", default, skip_serializing_if = "Option::is_none")]
+    pub update_trigger_payload_type: Option<base_image_trigger::UpdateTriggerPayloadType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<base_image_trigger::Status>,
+    pub name: String,
+}
+pub mod base_image_trigger {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BaseImageTriggerType {
+        All,
+        Runtime,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum UpdateTriggerPayloadType {
+        Default,
+        Token,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Disabled,
+        Enabled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Credentials {
     #[serde(rename = "sourceRegistry", default, skip_serializing_if = "Option::is_none")]
     pub source_registry: Option<SourceRegistryCredentials>,
     #[serde(rename = "customRegistries", default, skip_serializing_if = "Option::is_none")]
     pub custom_registries: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SourceRegistryCredentials {
+    #[serde(rename = "loginMode", default, skip_serializing_if = "Option::is_none")]
+    pub login_mode: Option<source_registry_credentials::LoginMode>,
+}
+pub mod source_registry_credentials {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LoginMode {
+        None,
+        Default,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseImageDependency {
@@ -1203,58 +1246,6 @@ pub mod source_trigger {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BaseImageTrigger {
-    #[serde(rename = "baseImageTriggerType")]
-    pub base_image_trigger_type: base_image_trigger::BaseImageTriggerType,
-    #[serde(rename = "updateTriggerEndpoint", default, skip_serializing_if = "Option::is_none")]
-    pub update_trigger_endpoint: Option<String>,
-    #[serde(rename = "updateTriggerPayloadType", default, skip_serializing_if = "Option::is_none")]
-    pub update_trigger_payload_type: Option<base_image_trigger::UpdateTriggerPayloadType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<base_image_trigger::Status>,
-    pub name: String,
-}
-pub mod base_image_trigger {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BaseImageTriggerType {
-        All,
-        Runtime,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum UpdateTriggerPayloadType {
-        Default,
-        Token,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Disabled,
-        Enabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SourceRegistryCredentials {
-    #[serde(rename = "loginMode", default, skip_serializing_if = "Option::is_none")]
-    pub login_mode: Option<source_registry_credentials::LoginMode>,
-}
-pub mod source_registry_credentials {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LoginMode {
-        None,
-        Default,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CustomRegistryCredentials {
-    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
-    pub user_name: Option<SecretObject>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<SecretObject>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceProperties {
     #[serde(rename = "sourceControlType")]
     pub source_control_type: source_properties::SourceControlType,
@@ -1271,21 +1262,6 @@ pub mod source_properties {
     pub enum SourceControlType {
         Github,
         VisualStudioTeamService,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretObject {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<secret_object::Type>,
-}
-pub mod secret_object {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Opaque,
-        Vaultsecret,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1307,6 +1283,30 @@ pub mod auth_info {
         #[serde(rename = "PAT")]
         Pat,
         OAuth,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomRegistryCredentials {
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<SecretObject>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<SecretObject>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecretObject {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<secret_object::Type>,
+}
+pub mod secret_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Opaque,
+        Vaultsecret,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1414,6 +1414,36 @@ pub struct TriggerUpdateParameters {
     pub base_image_trigger: Option<BaseImageTriggerUpdateParameters>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BaseImageTriggerUpdateParameters {
+    #[serde(rename = "baseImageTriggerType", default, skip_serializing_if = "Option::is_none")]
+    pub base_image_trigger_type: Option<base_image_trigger_update_parameters::BaseImageTriggerType>,
+    #[serde(rename = "updateTriggerEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub update_trigger_endpoint: Option<String>,
+    #[serde(rename = "updateTriggerPayloadType", default, skip_serializing_if = "Option::is_none")]
+    pub update_trigger_payload_type: Option<base_image_trigger_update_parameters::UpdateTriggerPayloadType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<base_image_trigger_update_parameters::Status>,
+    pub name: String,
+}
+pub mod base_image_trigger_update_parameters {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BaseImageTriggerType {
+        All,
+        Runtime,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum UpdateTriggerPayloadType {
+        Default,
+        Token,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Disabled,
+        Enabled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimerTriggerUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<String>,
@@ -1441,36 +1471,6 @@ pub struct SourceTriggerUpdateParameters {
 }
 pub mod source_trigger_update_parameters {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Disabled,
-        Enabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BaseImageTriggerUpdateParameters {
-    #[serde(rename = "baseImageTriggerType", default, skip_serializing_if = "Option::is_none")]
-    pub base_image_trigger_type: Option<base_image_trigger_update_parameters::BaseImageTriggerType>,
-    #[serde(rename = "updateTriggerEndpoint", default, skip_serializing_if = "Option::is_none")]
-    pub update_trigger_endpoint: Option<String>,
-    #[serde(rename = "updateTriggerPayloadType", default, skip_serializing_if = "Option::is_none")]
-    pub update_trigger_payload_type: Option<base_image_trigger_update_parameters::UpdateTriggerPayloadType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<base_image_trigger_update_parameters::Status>,
-    pub name: String,
-}
-pub mod base_image_trigger_update_parameters {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BaseImageTriggerType {
-        All,
-        Runtime,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum UpdateTriggerPayloadType {
-        Default,
-        Token,
-    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
@@ -1519,17 +1519,6 @@ pub mod auth_info_update_parameters {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -1562,6 +1551,17 @@ pub mod system_data {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponseBody {
     pub code: String,
     pub message: String,
@@ -1571,16 +1571,16 @@ pub struct ErrorResponseBody {
     pub details: Option<InnerErrorDescription>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponseBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InnerErrorDescription {
     pub code: String,
     pub message: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponseBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerBuildRequest {

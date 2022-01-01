@@ -55,6 +55,17 @@ pub struct HeatMapModel {
     pub properties: Option<HeatMapProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HeatMapProperties {
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub endpoints: Vec<HeatMapEndpoint>,
+    #[serde(rename = "trafficFlows", default, skip_serializing_if = "Vec::is_empty")]
+    pub traffic_flows: Vec<TrafficFlow>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryExperience {
     #[serde(rename = "endpointId")]
     pub endpoint_id: i64,
@@ -73,17 +84,6 @@ pub struct TrafficFlow {
     pub longitude: Option<f64>,
     #[serde(rename = "queryExperiences", default, skip_serializing_if = "Vec::is_empty")]
     pub query_experiences: Vec<QueryExperience>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HeatMapProperties {
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoints: Vec<HeatMapEndpoint>,
-    #[serde(rename = "trafficFlows", default, skip_serializing_if = "Vec::is_empty")]
-    pub traffic_flows: Vec<TrafficFlow>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HeatMapEndpoint {

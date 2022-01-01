@@ -70,6 +70,22 @@ pub struct NetworkProperties {
     pub ingress_config: Option<IngressConfig>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IngressConfig {
+    #[serde(rename = "qosLevel", default, skip_serializing_if = "Option::is_none")]
+    pub qos_level: Option<ingress_config::QosLevel>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub layer4: Vec<Layer4IngressConfig>,
+    #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
+    pub public_ip_address: Option<String>,
+}
+pub mod ingress_config {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum QosLevel {
+        Bronze,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeResourceDescriptionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VolumeResourceDescription>,
@@ -168,6 +184,23 @@ pub mod application_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum HealthState {
+    Invalid,
+    Ok,
+    Warning,
+    Error,
+    Unknown,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiagnosticsDescription {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sinks: Vec<DiagnosticsSinkProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(rename = "defaultSinkRefs", default, skip_serializing_if = "Vec::is_empty")]
+    pub default_sink_refs: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServiceResourceDescription>,
@@ -199,6 +232,19 @@ pub struct ContainerInstanceView {
     pub events: Vec<ContainerEvent>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerState {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
+    pub exit_code: Option<String>,
+    #[serde(rename = "finishTime", default, skip_serializing_if = "Option::is_none")]
+    pub finish_time: Option<String>,
+    #[serde(rename = "detailStatus", default, skip_serializing_if = "Option::is_none")]
+    pub detail_status: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerEvent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -222,19 +268,6 @@ pub struct ContainerLabel {
 pub struct ContainerLogs {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerState {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
-    pub exit_code: Option<String>,
-    #[serde(rename = "finishTime", default, skip_serializing_if = "Option::is_none")]
-    pub finish_time: Option<String>,
-    #[serde(rename = "detailStatus", default, skip_serializing_if = "Option::is_none")]
-    pub detail_status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageRegistryCredential {
@@ -325,6 +358,13 @@ pub struct ContainerCodePackageProperties {
     pub diagnostics: Option<DiagnosticsRef>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiagnosticsRef {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(rename = "sinkRefs", default, skip_serializing_if = "Vec::is_empty")]
+    pub sink_refs: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerVolume {
     pub name: String,
     #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
@@ -372,22 +412,6 @@ pub mod service_replica_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IngressConfig {
-    #[serde(rename = "qosLevel", default, skip_serializing_if = "Option::is_none")]
-    pub qos_level: Option<ingress_config::QosLevel>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub layer4: Vec<Layer4IngressConfig>,
-    #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
-    pub public_ip_address: Option<String>,
-}
-pub mod ingress_config {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum QosLevel {
-        Bronze,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Layer4IngressConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -418,30 +442,6 @@ pub struct Setting {
 pub struct NetworkRef {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum HealthState {
-    Invalid,
-    Ok,
-    Warning,
-    Error,
-    Unknown,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiagnosticsDescription {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sinks: Vec<DiagnosticsSinkProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(rename = "defaultSinkRefs", default, skip_serializing_if = "Vec::is_empty")]
-    pub default_sink_refs: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiagnosticsRef {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(rename = "sinkRefs", default, skip_serializing_if = "Vec::is_empty")]
-    pub sink_refs: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsSinkProperties {

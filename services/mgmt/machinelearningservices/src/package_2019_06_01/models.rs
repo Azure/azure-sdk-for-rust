@@ -359,6 +359,18 @@ pub mod compute {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ComputeType {
+    #[serde(rename = "AKS")]
+    Aks,
+    AmlCompute,
+    DataFactory,
+    VirtualMachine,
+    #[serde(rename = "HDInsight")]
+    HdInsight,
+    Databricks,
+    DataLakeAnalytics,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Aks {
     #[serde(flatten)]
     pub compute: Compute,
@@ -577,18 +589,6 @@ pub struct DatabricksComputeSecrets {
     pub compute_secrets: ComputeSecrets,
     #[serde(flatten)]
     pub serde_json_value: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ComputeType {
-    #[serde(rename = "AKS")]
-    Aks,
-    AmlCompute,
-    DataFactory,
-    VirtualMachine,
-    #[serde(rename = "HDInsight")]
-    HdInsight,
-    Databricks,
-    DataLakeAnalytics,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineLearningServiceError {

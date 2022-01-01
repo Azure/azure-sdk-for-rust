@@ -199,6 +199,17 @@ pub mod compute {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ComputeType {
+    #[serde(rename = "AKS")]
+    Aks,
+    #[serde(rename = "BatchAI")]
+    BatchAi,
+    DataFactory,
+    VirtualMachine,
+    #[serde(rename = "HDInsight")]
+    HdInsight,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Aks {
     #[serde(flatten)]
     pub compute: Compute,
@@ -304,17 +315,6 @@ pub struct VirtualMachineSecrets {
     pub compute_secrets: ComputeSecrets,
     #[serde(flatten)]
     pub serde_json_value: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ComputeType {
-    #[serde(rename = "AKS")]
-    Aks,
-    #[serde(rename = "BatchAI")]
-    BatchAi,
-    DataFactory,
-    VirtualMachine,
-    #[serde(rename = "HDInsight")]
-    HdInsight,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineLearningServiceError {

@@ -41,6 +41,13 @@ pub struct TestNotificationDetailsResponse {
     pub action_details: Vec<ActionDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Context {
+    #[serde(rename = "NotificationSource", default, skip_serializing_if = "Option::is_none")]
+    pub notification_source: Option<String>,
+    #[serde(rename = "ContextType", default, skip_serializing_if = "Option::is_none")]
+    pub context_type: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionDetail {
     #[serde(rename = "MechanismType", default, skip_serializing_if = "Option::is_none")]
     pub mechanism_type: Option<String>,
@@ -56,18 +63,39 @@ pub struct ActionDetail {
     pub detail: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Context {
-    #[serde(rename = "NotificationSource", default, skip_serializing_if = "Option::is_none")]
-    pub notification_source: Option<String>,
-    #[serde(rename = "ContextType", default, skip_serializing_if = "Option::is_none")]
-    pub context_type: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupResource {
     #[serde(flatten)]
     pub azure_resource: AzureResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroup>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActionGroup {
+    #[serde(rename = "groupShortName")]
+    pub group_short_name: String,
+    pub enabled: bool,
+    #[serde(rename = "emailReceivers", default, skip_serializing_if = "Vec::is_empty")]
+    pub email_receivers: Vec<EmailReceiver>,
+    #[serde(rename = "smsReceivers", default, skip_serializing_if = "Vec::is_empty")]
+    pub sms_receivers: Vec<SmsReceiver>,
+    #[serde(rename = "webhookReceivers", default, skip_serializing_if = "Vec::is_empty")]
+    pub webhook_receivers: Vec<WebhookReceiver>,
+    #[serde(rename = "itsmReceivers", default, skip_serializing_if = "Vec::is_empty")]
+    pub itsm_receivers: Vec<ItsmReceiver>,
+    #[serde(rename = "azureAppPushReceivers", default, skip_serializing_if = "Vec::is_empty")]
+    pub azure_app_push_receivers: Vec<AzureAppPushReceiver>,
+    #[serde(rename = "automationRunbookReceivers", default, skip_serializing_if = "Vec::is_empty")]
+    pub automation_runbook_receivers: Vec<AutomationRunbookReceiver>,
+    #[serde(rename = "voiceReceivers", default, skip_serializing_if = "Vec::is_empty")]
+    pub voice_receivers: Vec<VoiceReceiver>,
+    #[serde(rename = "logicAppReceivers", default, skip_serializing_if = "Vec::is_empty")]
+    pub logic_app_receivers: Vec<LogicAppReceiver>,
+    #[serde(rename = "azureFunctionReceivers", default, skip_serializing_if = "Vec::is_empty")]
+    pub azure_function_receivers: Vec<AzureFunctionReceiver>,
+    #[serde(rename = "armRoleReceivers", default, skip_serializing_if = "Vec::is_empty")]
+    pub arm_role_receivers: Vec<ArmRoleReceiver>,
+    #[serde(rename = "eventHubReceivers", default, skip_serializing_if = "Vec::is_empty")]
+    pub event_hub_receivers: Vec<EventHubReceiver>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupList {
@@ -104,34 +132,6 @@ pub struct NotificationRequestBody {
     pub event_hub_receivers: Vec<EventHubReceiver>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActionGroup {
-    #[serde(rename = "groupShortName")]
-    pub group_short_name: String,
-    pub enabled: bool,
-    #[serde(rename = "emailReceivers", default, skip_serializing_if = "Vec::is_empty")]
-    pub email_receivers: Vec<EmailReceiver>,
-    #[serde(rename = "smsReceivers", default, skip_serializing_if = "Vec::is_empty")]
-    pub sms_receivers: Vec<SmsReceiver>,
-    #[serde(rename = "webhookReceivers", default, skip_serializing_if = "Vec::is_empty")]
-    pub webhook_receivers: Vec<WebhookReceiver>,
-    #[serde(rename = "itsmReceivers", default, skip_serializing_if = "Vec::is_empty")]
-    pub itsm_receivers: Vec<ItsmReceiver>,
-    #[serde(rename = "azureAppPushReceivers", default, skip_serializing_if = "Vec::is_empty")]
-    pub azure_app_push_receivers: Vec<AzureAppPushReceiver>,
-    #[serde(rename = "automationRunbookReceivers", default, skip_serializing_if = "Vec::is_empty")]
-    pub automation_runbook_receivers: Vec<AutomationRunbookReceiver>,
-    #[serde(rename = "voiceReceivers", default, skip_serializing_if = "Vec::is_empty")]
-    pub voice_receivers: Vec<VoiceReceiver>,
-    #[serde(rename = "logicAppReceivers", default, skip_serializing_if = "Vec::is_empty")]
-    pub logic_app_receivers: Vec<LogicAppReceiver>,
-    #[serde(rename = "azureFunctionReceivers", default, skip_serializing_if = "Vec::is_empty")]
-    pub azure_function_receivers: Vec<AzureFunctionReceiver>,
-    #[serde(rename = "armRoleReceivers", default, skip_serializing_if = "Vec::is_empty")]
-    pub arm_role_receivers: Vec<ArmRoleReceiver>,
-    #[serde(rename = "eventHubReceivers", default, skip_serializing_if = "Vec::is_empty")]
-    pub event_hub_receivers: Vec<EventHubReceiver>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailReceiver {
     pub name: String,
     #[serde(rename = "emailAddress")]
@@ -140,6 +140,12 @@ pub struct EmailReceiver {
     pub use_common_alert_schema: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ReceiverStatus {
+    NotSpecified,
+    Enabled,
+    Disabled,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsReceiver {
@@ -252,12 +258,6 @@ pub struct ArmRoleReceiver {
     pub role_id: String,
     #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
     pub use_common_alert_schema: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReceiverStatus {
-    NotSpecified,
-    Enabled,
-    Disabled,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnableRequest {

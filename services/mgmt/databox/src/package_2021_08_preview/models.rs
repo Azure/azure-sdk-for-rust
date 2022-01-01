@@ -56,6 +56,15 @@ pub struct ApiError {
     pub error: ErrorDetail,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    pub code: String,
+    pub message: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<Details>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplianceNetworkConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -292,6 +301,22 @@ pub struct DataBoxCustomerDiskJobDetails {
     pub return_to_customer_package_details: PackageCarrierDetails,
     #[serde(rename = "enableManifestBackup", default, skip_serializing_if = "Option::is_none")]
     pub enable_manifest_backup: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PackageCarrierInfo {
+    #[serde(rename = "carrierName", default, skip_serializing_if = "Option::is_none")]
+    pub carrier_name: Option<String>,
+    #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
+    pub tracking_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PackageCarrierDetails {
+    #[serde(rename = "carrierAccountNumber", default, skip_serializing_if = "Option::is_none")]
+    pub carrier_account_number: Option<String>,
+    #[serde(rename = "carrierName", default, skip_serializing_if = "Option::is_none")]
+    pub carrier_name: Option<String>,
+    #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
+    pub tracking_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomerDiskJobSecrets {
@@ -573,6 +598,69 @@ pub mod data_export_details {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransferConfiguration {
+    #[serde(rename = "transferConfigurationType")]
+    pub transfer_configuration_type: transfer_configuration::TransferConfigurationType,
+    #[serde(rename = "transferFilterDetails", default, skip_serializing_if = "Option::is_none")]
+    pub transfer_filter_details: Option<transfer_configuration::TransferFilterDetails>,
+    #[serde(rename = "transferAllDetails", default, skip_serializing_if = "Option::is_none")]
+    pub transfer_all_details: Option<transfer_configuration::TransferAllDetails>,
+}
+pub mod transfer_configuration {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum TransferConfigurationType {
+        TransferAll,
+        TransferUsingFilter,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct TransferFilterDetails {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub include: Box<Option<TransferFilterDetails>>,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct TransferAllDetails {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub include: Box<Option<TransferAllDetails>>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransferFilterDetails {
+    #[serde(rename = "dataAccountType")]
+    pub data_account_type: transfer_filter_details::DataAccountType,
+    #[serde(rename = "blobFilterDetails", default, skip_serializing_if = "Option::is_none")]
+    pub blob_filter_details: Option<BlobFilterDetails>,
+    #[serde(rename = "azureFileFilterDetails", default, skip_serializing_if = "Option::is_none")]
+    pub azure_file_filter_details: Option<AzureFileFilterDetails>,
+    #[serde(rename = "filterFileDetails", default, skip_serializing_if = "Vec::is_empty")]
+    pub filter_file_details: Vec<FilterFileDetails>,
+}
+pub mod transfer_filter_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DataAccountType {
+        StorageAccount,
+        ManagedDisk,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransferAllDetails {
+    #[serde(rename = "dataAccountType")]
+    pub data_account_type: transfer_all_details::DataAccountType,
+    #[serde(rename = "transferAllBlobs", default, skip_serializing_if = "Option::is_none")]
+    pub transfer_all_blobs: Option<bool>,
+    #[serde(rename = "transferAllFiles", default, skip_serializing_if = "Option::is_none")]
+    pub transfer_all_files: Option<bool>,
+}
+pub mod transfer_all_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DataAccountType {
+        StorageAccount,
+        ManagedDisk,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataImportDetails {
     #[serde(rename = "accountDetails")]
     pub account_details: DataAccountDetails,
@@ -678,15 +766,6 @@ pub mod encryption_preferences {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetail {
-    pub code: String,
-    pub message: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<Details>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportDiskDetails {
     #[serde(rename = "manifestFile", default, skip_serializing_if = "Option::is_none")]
     pub manifest_file: Option<String>,
@@ -721,6 +800,11 @@ pub struct IdentityProperties {
     pub type_: Option<String>,
     #[serde(rename = "userAssigned", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned: Option<UserAssignedProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserAssignedProperties {
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportDiskDetails {
@@ -889,6 +973,105 @@ pub mod job_details {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ShippingAddress {
+    #[serde(rename = "streetAddress1")]
+    pub street_address1: String,
+    #[serde(rename = "streetAddress2", default, skip_serializing_if = "Option::is_none")]
+    pub street_address2: Option<String>,
+    #[serde(rename = "streetAddress3", default, skip_serializing_if = "Option::is_none")]
+    pub street_address3: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    #[serde(rename = "stateOrProvince", default, skip_serializing_if = "Option::is_none")]
+    pub state_or_province: Option<String>,
+    pub country: String,
+    #[serde(rename = "postalCode", default, skip_serializing_if = "Option::is_none")]
+    pub postal_code: Option<String>,
+    #[serde(rename = "zipExtendedCode", default, skip_serializing_if = "Option::is_none")]
+    pub zip_extended_code: Option<String>,
+    #[serde(rename = "companyName", default, skip_serializing_if = "Option::is_none")]
+    pub company_name: Option<String>,
+    #[serde(rename = "addressType", default, skip_serializing_if = "Option::is_none")]
+    pub address_type: Option<shipping_address::AddressType>,
+}
+pub mod shipping_address {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AddressType {
+        None,
+        Residential,
+        Commercial,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PackageShippingDetails {
+    #[serde(rename = "trackingUrl", default, skip_serializing_if = "Option::is_none")]
+    pub tracking_url: Option<String>,
+    #[serde(rename = "carrierName", default, skip_serializing_if = "Option::is_none")]
+    pub carrier_name: Option<String>,
+    #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
+    pub tracking_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Preferences {
+    #[serde(rename = "preferredDataCenterRegion", default, skip_serializing_if = "Vec::is_empty")]
+    pub preferred_data_center_region: Vec<String>,
+    #[serde(rename = "transportPreferences", default, skip_serializing_if = "Option::is_none")]
+    pub transport_preferences: Option<TransportPreferences>,
+    #[serde(rename = "encryptionPreferences", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_preferences: Option<EncryptionPreferences>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransportPreferences {
+    #[serde(rename = "preferredShipmentType")]
+    pub preferred_shipment_type: transport_preferences::PreferredShipmentType,
+}
+pub mod transport_preferences {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PreferredShipmentType {
+        CustomerManaged,
+        MicrosoftManaged,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyEncryptionKey {
+    #[serde(rename = "kekType")]
+    pub kek_type: key_encryption_key::KekType,
+    #[serde(rename = "identityProperties", default, skip_serializing_if = "Option::is_none")]
+    pub identity_properties: Option<IdentityProperties>,
+    #[serde(rename = "kekUrl", default, skip_serializing_if = "Option::is_none")]
+    pub kek_url: Option<String>,
+    #[serde(rename = "kekVaultResourceID", default, skip_serializing_if = "Option::is_none")]
+    pub kek_vault_resource_id: Option<String>,
+}
+pub mod key_encryption_key {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum KekType {
+        MicrosoftManaged,
+        CustomerManaged,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LastMitigationActionOnJob {
+    #[serde(rename = "actionDateTimeInUtc", default, skip_serializing_if = "Option::is_none")]
+    pub action_date_time_in_utc: Option<String>,
+    #[serde(rename = "isPerformedByCustomer", default, skip_serializing_if = "Option::is_none")]
+    pub is_performed_by_customer: Option<bool>,
+    #[serde(rename = "customerResolution", default, skip_serializing_if = "Option::is_none")]
+    pub customer_resolution: Option<last_mitigation_action_on_job::CustomerResolution>,
+}
+pub mod last_mitigation_action_on_job {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CustomerResolution {
+        None,
+        MoveToCleanUpDevice,
+        Resume,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobProperties {
     #[serde(rename = "transferType")]
     pub transfer_type: job_properties::TransferType,
@@ -976,6 +1159,21 @@ pub struct JobResource {
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<String>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<String>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobResource>,
@@ -990,6 +1188,33 @@ pub struct JobResourceUpdateParameter {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UpdateJobProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<UpdateJobDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UpdateJobDetails {
+    #[serde(rename = "contactDetails", default, skip_serializing_if = "Option::is_none")]
+    pub contact_details: Option<ContactDetails>,
+    #[serde(rename = "shippingAddress", default, skip_serializing_if = "Option::is_none")]
+    pub shipping_address: Option<ShippingAddress>,
+    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
+    pub key_encryption_key: Option<KeyEncryptionKey>,
+    #[serde(rename = "returnToCustomerPackageDetails", default, skip_serializing_if = "Option::is_none")]
+    pub return_to_customer_package_details: Option<PackageCarrierDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceIdentity {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobSecrets {
@@ -1073,25 +1298,6 @@ pub mod job_stages {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyEncryptionKey {
-    #[serde(rename = "kekType")]
-    pub kek_type: key_encryption_key::KekType,
-    #[serde(rename = "identityProperties", default, skip_serializing_if = "Option::is_none")]
-    pub identity_properties: Option<IdentityProperties>,
-    #[serde(rename = "kekUrl", default, skip_serializing_if = "Option::is_none")]
-    pub kek_url: Option<String>,
-    #[serde(rename = "kekVaultResourceID", default, skip_serializing_if = "Option::is_none")]
-    pub kek_vault_resource_id: Option<String>,
-}
-pub mod key_encryption_key {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum KekType {
-        MicrosoftManaged,
-        CustomerManaged,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedDiskDetails {
     #[serde(flatten)]
     pub data_account_details: DataAccountDetails,
@@ -1104,24 +1310,6 @@ pub struct ManagedDiskDetails {
 pub struct MarkDevicesShippedRequest {
     #[serde(rename = "deliverToDcPackageDetails")]
     pub deliver_to_dc_package_details: PackageCarrierInfo,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LastMitigationActionOnJob {
-    #[serde(rename = "actionDateTimeInUtc", default, skip_serializing_if = "Option::is_none")]
-    pub action_date_time_in_utc: Option<String>,
-    #[serde(rename = "isPerformedByCustomer", default, skip_serializing_if = "Option::is_none")]
-    pub is_performed_by_customer: Option<bool>,
-    #[serde(rename = "customerResolution", default, skip_serializing_if = "Option::is_none")]
-    pub customer_resolution: Option<last_mitigation_action_on_job::CustomerResolution>,
-}
-pub mod last_mitigation_action_on_job {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CustomerResolution {
-        None,
-        MoveToCleanUpDevice,
-        Resume,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MitigateJobRequest {
@@ -1184,47 +1372,13 @@ pub struct OperationDisplay {
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationProperties {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PackageCarrierDetails {
-    #[serde(rename = "carrierAccountNumber", default, skip_serializing_if = "Option::is_none")]
-    pub carrier_account_number: Option<String>,
-    #[serde(rename = "carrierName", default, skip_serializing_if = "Option::is_none")]
-    pub carrier_name: Option<String>,
-    #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
-    pub tracking_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PackageCarrierInfo {
-    #[serde(rename = "carrierName", default, skip_serializing_if = "Option::is_none")]
-    pub carrier_name: Option<String>,
-    #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
-    pub tracking_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PackageShippingDetails {
-    #[serde(rename = "trackingUrl", default, skip_serializing_if = "Option::is_none")]
-    pub tracking_url: Option<String>,
-    #[serde(rename = "carrierName", default, skip_serializing_if = "Option::is_none")]
-    pub carrier_name: Option<String>,
-    #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
-    pub tracking_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Preferences {
-    #[serde(rename = "preferredDataCenterRegion", default, skip_serializing_if = "Vec::is_empty")]
-    pub preferred_data_center_region: Vec<String>,
-    #[serde(rename = "transportPreferences", default, skip_serializing_if = "Option::is_none")]
-    pub transport_preferences: Option<TransportPreferences>,
-    #[serde(rename = "encryptionPreferences", default, skip_serializing_if = "Option::is_none")]
-    pub encryption_preferences: Option<EncryptionPreferences>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PreferencesValidationRequest {
@@ -1271,35 +1425,6 @@ pub struct RegionConfigurationRequest {
     pub datacenter_address_request: Option<DatacenterAddressRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegionConfigurationResponse {
-    #[serde(rename = "scheduleAvailabilityResponse", default, skip_serializing_if = "Option::is_none")]
-    pub schedule_availability_response: Option<ScheduleAvailabilityResponse>,
-    #[serde(rename = "transportAvailabilityResponse", default, skip_serializing_if = "Option::is_none")]
-    pub transport_availability_response: Option<TransportAvailabilityResponse>,
-    #[serde(rename = "datacenterAddressResponse", default, skip_serializing_if = "Option::is_none")]
-    pub datacenter_address_response: Option<DatacenterAddressResponse>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    pub sku: Sku,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ResourceIdentity>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceIdentity {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleAvailabilityRequest {
     #[serde(rename = "storageLocation")]
     pub storage_location: String,
@@ -1319,9 +1444,65 @@ pub mod schedule_availability_request {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransportAvailabilityRequest {
+    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
+    pub sku_name: Option<transport_availability_request::SkuName>,
+}
+pub mod transport_availability_request {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SkuName {
+        DataBox,
+        DataBoxDisk,
+        DataBoxHeavy,
+        DataBoxCustomerDisk,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegionConfigurationResponse {
+    #[serde(rename = "scheduleAvailabilityResponse", default, skip_serializing_if = "Option::is_none")]
+    pub schedule_availability_response: Option<ScheduleAvailabilityResponse>,
+    #[serde(rename = "transportAvailabilityResponse", default, skip_serializing_if = "Option::is_none")]
+    pub transport_availability_response: Option<TransportAvailabilityResponse>,
+    #[serde(rename = "datacenterAddressResponse", default, skip_serializing_if = "Option::is_none")]
+    pub datacenter_address_response: Option<DatacenterAddressResponse>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleAvailabilityResponse {
     #[serde(rename = "availableDates", default, skip_serializing_if = "Vec::is_empty")]
     pub available_dates: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransportAvailabilityResponse {
+    #[serde(rename = "transportAvailabilityDetails", default, skip_serializing_if = "Vec::is_empty")]
+    pub transport_availability_details: Vec<TransportAvailabilityDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    pub sku: Sku,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ResourceIdentity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: sku::Name,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<String>,
+}
+pub mod sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        DataBox,
+        DataBoxDisk,
+        DataBoxHeavy,
+        DataBoxCustomerDisk,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareCredentialDetails {
@@ -1364,55 +1545,6 @@ pub struct ShipmentPickUpResponse {
     pub confirmation_number: Option<String>,
     #[serde(rename = "readyByTime", default, skip_serializing_if = "Option::is_none")]
     pub ready_by_time: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ShippingAddress {
-    #[serde(rename = "streetAddress1")]
-    pub street_address1: String,
-    #[serde(rename = "streetAddress2", default, skip_serializing_if = "Option::is_none")]
-    pub street_address2: Option<String>,
-    #[serde(rename = "streetAddress3", default, skip_serializing_if = "Option::is_none")]
-    pub street_address3: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub city: Option<String>,
-    #[serde(rename = "stateOrProvince", default, skip_serializing_if = "Option::is_none")]
-    pub state_or_province: Option<String>,
-    pub country: String,
-    #[serde(rename = "postalCode", default, skip_serializing_if = "Option::is_none")]
-    pub postal_code: Option<String>,
-    #[serde(rename = "zipExtendedCode", default, skip_serializing_if = "Option::is_none")]
-    pub zip_extended_code: Option<String>,
-    #[serde(rename = "companyName", default, skip_serializing_if = "Option::is_none")]
-    pub company_name: Option<String>,
-    #[serde(rename = "addressType", default, skip_serializing_if = "Option::is_none")]
-    pub address_type: Option<shipping_address::AddressType>,
-}
-pub mod shipping_address {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AddressType {
-        None,
-        Residential,
-        Commercial,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: sku::Name,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub family: Option<String>,
-}
-pub mod sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        DataBox,
-        DataBoxDisk,
-        DataBoxHeavy,
-        DataBoxCustomerDisk,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuAvailabilityValidationRequest {
@@ -1539,84 +1671,6 @@ pub mod subscription_is_allowed_to_create_job_validation_response_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<String>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<String>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransferAllDetails {
-    #[serde(rename = "dataAccountType")]
-    pub data_account_type: transfer_all_details::DataAccountType,
-    #[serde(rename = "transferAllBlobs", default, skip_serializing_if = "Option::is_none")]
-    pub transfer_all_blobs: Option<bool>,
-    #[serde(rename = "transferAllFiles", default, skip_serializing_if = "Option::is_none")]
-    pub transfer_all_files: Option<bool>,
-}
-pub mod transfer_all_details {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DataAccountType {
-        StorageAccount,
-        ManagedDisk,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransferConfiguration {
-    #[serde(rename = "transferConfigurationType")]
-    pub transfer_configuration_type: transfer_configuration::TransferConfigurationType,
-    #[serde(rename = "transferFilterDetails", default, skip_serializing_if = "Option::is_none")]
-    pub transfer_filter_details: Option<transfer_configuration::TransferFilterDetails>,
-    #[serde(rename = "transferAllDetails", default, skip_serializing_if = "Option::is_none")]
-    pub transfer_all_details: Option<transfer_configuration::TransferAllDetails>,
-}
-pub mod transfer_configuration {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum TransferConfigurationType {
-        TransferAll,
-        TransferUsingFilter,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct TransferFilterDetails {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub include: Box<Option<TransferFilterDetails>>,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct TransferAllDetails {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub include: Box<Option<TransferAllDetails>>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransferFilterDetails {
-    #[serde(rename = "dataAccountType")]
-    pub data_account_type: transfer_filter_details::DataAccountType,
-    #[serde(rename = "blobFilterDetails", default, skip_serializing_if = "Option::is_none")]
-    pub blob_filter_details: Option<BlobFilterDetails>,
-    #[serde(rename = "azureFileFilterDetails", default, skip_serializing_if = "Option::is_none")]
-    pub azure_file_filter_details: Option<AzureFileFilterDetails>,
-    #[serde(rename = "filterFileDetails", default, skip_serializing_if = "Vec::is_empty")]
-    pub filter_file_details: Vec<FilterFileDetails>,
-}
-pub mod transfer_filter_details {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DataAccountType {
-        StorageAccount,
-        ManagedDisk,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransportAvailabilityDetails {
     #[serde(rename = "shipmentType", default, skip_serializing_if = "Option::is_none")]
     pub shipment_type: Option<transport_availability_details::ShipmentType>,
@@ -1625,39 +1679,6 @@ pub mod transport_availability_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ShipmentType {
-        CustomerManaged,
-        MicrosoftManaged,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransportAvailabilityRequest {
-    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
-    pub sku_name: Option<transport_availability_request::SkuName>,
-}
-pub mod transport_availability_request {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SkuName {
-        DataBox,
-        DataBoxDisk,
-        DataBoxHeavy,
-        DataBoxCustomerDisk,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransportAvailabilityResponse {
-    #[serde(rename = "transportAvailabilityDetails", default, skip_serializing_if = "Vec::is_empty")]
-    pub transport_availability_details: Vec<TransportAvailabilityDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransportPreferences {
-    #[serde(rename = "preferredShipmentType")]
-    pub preferred_shipment_type: transport_preferences::PreferredShipmentType,
-}
-pub mod transport_preferences {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PreferredShipmentType {
         CustomerManaged,
         MicrosoftManaged,
     }
@@ -1677,32 +1698,11 @@ pub struct UnencryptedCredentialsList {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateJobDetails {
-    #[serde(rename = "contactDetails", default, skip_serializing_if = "Option::is_none")]
-    pub contact_details: Option<ContactDetails>,
-    #[serde(rename = "shippingAddress", default, skip_serializing_if = "Option::is_none")]
-    pub shipping_address: Option<ShippingAddress>,
-    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
-    pub key_encryption_key: Option<KeyEncryptionKey>,
-    #[serde(rename = "returnToCustomerPackageDetails", default, skip_serializing_if = "Option::is_none")]
-    pub return_to_customer_package_details: Option<PackageCarrierDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateJobProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<UpdateJobDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserAssignedProperties {
-    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidateAddress {

@@ -25,6 +25,11 @@ pub struct ModernSubscriptionCreationParameters {
     pub additional_parameters: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdPrincipal {
+    #[serde(rename = "objectId")]
+    pub object_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModernCspSubscriptionCreationParameters {
     #[serde(rename = "displayName")]
     pub display_name: String,
@@ -41,11 +46,6 @@ pub struct ErrorResponse {
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdPrincipal {
-    #[serde(rename = "objectId")]
-    pub object_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionOperationListResult {

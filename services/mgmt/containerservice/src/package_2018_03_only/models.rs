@@ -452,6 +452,11 @@ pub struct ManagedClusterAgentPoolProfile {
     pub os_type: Option<OsType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OsType {
+    Linux,
+    Windows,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceWindowsProfile {
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
@@ -463,6 +468,11 @@ pub struct ContainerServiceLinuxProfile {
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
     pub ssh: ContainerServiceSshConfiguration,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceSshConfiguration {
+    #[serde(rename = "publicKeys")]
+    pub public_keys: Vec<ContainerServiceSshPublicKey>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceNetworkProfile {
@@ -493,11 +503,6 @@ pub mod container_service_network_profile {
         #[serde(rename = "calico")]
         Calico,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceSshConfiguration {
-    #[serde(rename = "publicKeys")]
-    pub public_keys: Vec<ContainerServiceSshPublicKey>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceSshPublicKey {
@@ -557,6 +562,17 @@ pub struct ManagedClusterProperties {
     pub aad_profile: Option<ManagedClusterAadProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterAadProfile {
+    #[serde(rename = "clientAppID")]
+    pub client_app_id: String,
+    #[serde(rename = "serverAppID")]
+    pub server_app_id: String,
+    #[serde(rename = "serverAppSecret", default, skip_serializing_if = "Option::is_none")]
+    pub server_app_secret: Option<String>,
+    #[serde(rename = "tenantID", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorProfile {
     #[serde(rename = "orchestratorType")]
     pub orchestrator_type: String,
@@ -594,17 +610,6 @@ pub struct ManagedClusterUpgradeProfileProperties {
     pub agent_pool_profiles: Vec<ManagedClusterPoolUpgradeProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterAadProfile {
-    #[serde(rename = "clientAppID")]
-    pub client_app_id: String,
-    #[serde(rename = "serverAppID")]
-    pub server_app_id: String,
-    #[serde(rename = "serverAppSecret", default, skip_serializing_if = "Option::is_none")]
-    pub server_app_secret: Option<String>,
-    #[serde(rename = "tenantID", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAddonProfile {
     pub enabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -619,11 +624,6 @@ pub struct ManagedClusterUpgradeProfile {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub properties: ManagedClusterUpgradeProfileProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OsType {
-    Linux,
-    Windows,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialResults {

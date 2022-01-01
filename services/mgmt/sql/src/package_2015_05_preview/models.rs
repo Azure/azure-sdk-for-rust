@@ -1790,32 +1790,18 @@ pub mod service_level_objective_capability {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ElasticPoolDtuCapability {
+pub struct PerformanceLevelCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i32>,
-    #[serde(rename = "maxDatabaseCount", default, skip_serializing_if = "Option::is_none")]
-    pub max_database_count: Option<i32>,
-    #[serde(rename = "includedMaxSize", default, skip_serializing_if = "Option::is_none")]
-    pub included_max_size: Option<MaxSizeCapability>,
-    #[serde(rename = "supportedMaxSizes", default, skip_serializing_if = "Vec::is_empty")]
-    pub supported_max_sizes: Vec<MaxSizeCapability>,
-    #[serde(rename = "supportedPerDatabaseMaxSizes", default, skip_serializing_if = "Vec::is_empty")]
-    pub supported_per_database_max_sizes: Vec<MaxSizeCapability>,
-    #[serde(rename = "supportedPerDatabaseMaxDtus", default, skip_serializing_if = "Vec::is_empty")]
-    pub supported_per_database_max_dtus: Vec<ElasticPoolPerDatabaseMaxDtuCapability>,
+    pub value: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<elastic_pool_dtu_capability::Status>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
+    pub unit: Option<performance_level_capability::Unit>,
 }
-pub mod elastic_pool_dtu_capability {
+pub mod performance_level_capability {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Visible,
-        Available,
-        Default,
-        Disabled,
+    pub enum Unit {
+        #[serde(rename = "DTU")]
+        Dtu,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1847,18 +1833,32 @@ pub mod max_size_capability {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PerformanceLevelCapability {
+pub struct ElasticPoolDtuCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<i32>,
+    pub limit: Option<i32>,
+    #[serde(rename = "maxDatabaseCount", default, skip_serializing_if = "Option::is_none")]
+    pub max_database_count: Option<i32>,
+    #[serde(rename = "includedMaxSize", default, skip_serializing_if = "Option::is_none")]
+    pub included_max_size: Option<MaxSizeCapability>,
+    #[serde(rename = "supportedMaxSizes", default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_max_sizes: Vec<MaxSizeCapability>,
+    #[serde(rename = "supportedPerDatabaseMaxSizes", default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_per_database_max_sizes: Vec<MaxSizeCapability>,
+    #[serde(rename = "supportedPerDatabaseMaxDtus", default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_per_database_max_dtus: Vec<ElasticPoolPerDatabaseMaxDtuCapability>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<performance_level_capability::Unit>,
+    pub status: Option<elastic_pool_dtu_capability::Status>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
-pub mod performance_level_capability {
+pub mod elastic_pool_dtu_capability {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Unit {
-        #[serde(rename = "DTU")]
-        Dtu,
+    pub enum Status {
+        Visible,
+        Available,
+        Default,
+        Disabled,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2168,6 +2168,38 @@ pub struct ManagedInstance {
     pub sku: Option<Sku>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<resource_identity::Type>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+pub mod resource_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        None,
+        SystemAssigned,
+        UserAssigned,
+        #[serde(rename = "SystemAssigned,UserAssigned")]
+        SystemAssignedUserAssigned,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedInstanceUpdate {
@@ -2716,36 +2748,4 @@ pub struct VirtualNetworkRuleListResult {
 pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceIdentity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<resource_identity::Type>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-pub mod resource_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        None,
-        SystemAssigned,
-        UserAssigned,
-        #[serde(rename = "SystemAssigned,UserAssigned")]
-        SystemAssignedUserAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub size: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub family: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i32>,
 }

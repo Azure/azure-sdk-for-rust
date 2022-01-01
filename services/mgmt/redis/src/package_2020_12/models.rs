@@ -142,6 +142,13 @@ pub mod redis_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RedisAccessKeys {
+    #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
+    pub primary_key: Option<String>,
+    #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_key: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisCreateParameters {
     pub properties: RedisCreateProperties,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -158,22 +165,10 @@ pub struct RedisUpdateParameters {
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RedisAccessKeys {
-    #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
-    pub primary_key: Option<String>,
-    #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
-    pub secondary_key: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisFirewallRule {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     pub properties: RedisFirewallRuleProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RedisFirewallRuleCreateParameters {
-    #[serde(flatten)]
-    pub redis_firewall_rule: RedisFirewallRule,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisFirewallRuleProperties {
@@ -181,6 +176,11 @@ pub struct RedisFirewallRuleProperties {
     pub start_ip: String,
     #[serde(rename = "endIP")]
     pub end_ip: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RedisFirewallRuleCreateParameters {
+    #[serde(flatten)]
+    pub redis_firewall_rule: RedisFirewallRule,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisFirewallRuleListResult {

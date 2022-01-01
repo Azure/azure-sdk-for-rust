@@ -356,24 +356,6 @@ pub struct IoTSecuritySolutionAnalyticsModelProperties {
     pub most_prevalent_device_recommendations: Option<IoTSecurityDeviceRecommendationsList>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IoTSecuritySolutionAnalyticsModelList {
-    pub value: Vec<IoTSecuritySolutionAnalyticsModel>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IoTSecurityAggregatedAlertList {
-    pub value: Vec<IoTSecurityAggregatedAlert>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IoTSecurityAggregatedRecommendationList {
-    pub value: Vec<IoTSecurityAggregatedRecommendation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTSecurityAlertedDevicesList {
     pub value: Vec<IoTSecurityAlertedDevice>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -388,6 +370,24 @@ pub struct IoTSecurityDeviceAlertsList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTSecurityDeviceRecommendationsList {
     pub value: Vec<IoTSecurityDeviceRecommendation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IoTSecuritySolutionAnalyticsModelList {
+    pub value: Vec<IoTSecuritySolutionAnalyticsModel>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IoTSecurityAggregatedAlertList {
+    pub value: Vec<IoTSecurityAggregatedAlert>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IoTSecurityAggregatedRecommendationList {
+    pub value: Vec<IoTSecurityAggregatedRecommendation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -580,6 +580,7 @@ pub struct UserDefinedResourcesProperties {
     #[serde(rename = "querySubscriptions")]
     pub query_subscriptions: Vec<String>,
 }
+pub type RecommendationConfigurationList = Vec<RecommendationConfigurationProperties>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecommendationConfigurationProperties {
     #[serde(rename = "recommendationType")]
@@ -631,7 +632,6 @@ pub mod recommendation_configuration_properties {
         Enabled,
     }
 }
-pub type RecommendationConfigurationList = Vec<RecommendationConfigurationProperties>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateIotSecuritySolutionData {
     #[serde(flatten)]
@@ -719,6 +719,10 @@ pub struct DataExportSetting {
     pub properties: Option<DataExportSettingProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataExportSettingProperties {
+    pub enabled: bool,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Setting {
     #[serde(flatten)]
     pub resource: Resource,
@@ -731,10 +735,6 @@ pub mod setting {
         DataExportSetting,
         AlertSuppressionSetting,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataExportSettingProperties {
-    pub enabled: bool,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceSettingList {

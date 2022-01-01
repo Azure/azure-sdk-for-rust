@@ -100,6 +100,15 @@ pub mod data_source {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataSourceConfiguration {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub providers: Vec<EtwProviderConfiguration>,
+    #[serde(rename = "perfCounters", default, skip_serializing_if = "Vec::is_empty")]
+    pub perf_counters: Vec<PerformanceCounterConfiguration>,
+    #[serde(rename = "eventLogs", default, skip_serializing_if = "Vec::is_empty")]
+    pub event_logs: Vec<EventLogConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SinkConfiguration {
     pub kind: sink_configuration::Kind,
 }
@@ -111,15 +120,6 @@ pub mod sink_configuration {
         ApplicationInsights,
         LogAnalytics,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataSourceConfiguration {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub providers: Vec<EtwProviderConfiguration>,
-    #[serde(rename = "perfCounters", default, skip_serializing_if = "Vec::is_empty")]
-    pub perf_counters: Vec<PerformanceCounterConfiguration>,
-    #[serde(rename = "eventLogs", default, skip_serializing_if = "Vec::is_empty")]
-    pub event_logs: Vec<EventLogConfiguration>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EtwEventConfiguration {

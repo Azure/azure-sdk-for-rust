@@ -130,6 +130,15 @@ pub mod domain {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DomainPurchaseConsent {
+    #[serde(rename = "agreementKeys", default, skip_serializing_if = "Vec::is_empty")]
+    pub agreement_keys: Vec<String>,
+    #[serde(rename = "agreedBy", default, skip_serializing_if = "Option::is_none")]
+    pub agreed_by: Option<String>,
+    #[serde(rename = "agreedAt", default, skip_serializing_if = "Option::is_none")]
+    pub agreed_at: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainAvailablilityCheckResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -278,15 +287,6 @@ pub mod domain_patch_resource {
             DefaultDomainRegistrarDns,
         }
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DomainPurchaseConsent {
-    #[serde(rename = "agreementKeys", default, skip_serializing_if = "Vec::is_empty")]
-    pub agreement_keys: Vec<String>,
-    #[serde(rename = "agreedBy", default, skip_serializing_if = "Option::is_none")]
-    pub agreed_by: Option<String>,
-    #[serde(rename = "agreedAt", default, skip_serializing_if = "Option::is_none")]
-    pub agreed_at: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainRecommendationSearchParameters {

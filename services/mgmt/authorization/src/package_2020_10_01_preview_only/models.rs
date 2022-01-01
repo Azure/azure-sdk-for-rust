@@ -223,24 +223,6 @@ pub mod role_assignment_schedule_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RoleAssignmentSchedule {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RoleAssignmentScheduleProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RoleAssignmentScheduleListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<RoleAssignmentSchedule>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExpandedProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<expanded_properties::Scope>,
@@ -280,6 +262,24 @@ pub mod expanded_properties {
         #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<String>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleAssignmentSchedule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RoleAssignmentScheduleProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleAssignmentScheduleListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<RoleAssignmentSchedule>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentScheduleInstanceFilter {
@@ -928,6 +928,23 @@ pub struct RoleManagementPolicyProperties {
     pub policy_properties: Option<PolicyProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PolicyProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<policy_properties::Scope>,
+}
+pub mod policy_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Scope {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub id: Option<String>,
+        #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+        pub display_name: Option<String>,
+        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+        pub type_: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -953,6 +970,29 @@ pub struct RoleManagementPolicyRule {
     pub rule_type: RoleManagementPolicyRuleType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<RoleManagementPolicyRuleTarget>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum RoleManagementPolicyRuleType {
+    RoleManagementPolicyApprovalRule,
+    RoleManagementPolicyAuthenticationContextRule,
+    RoleManagementPolicyEnablementRule,
+    RoleManagementPolicyExpirationRule,
+    RoleManagementPolicyNotificationRule,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleManagementPolicyRuleTarget {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub caller: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub operations: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level: Option<String>,
+    #[serde(rename = "targetObjects", default, skip_serializing_if = "Vec::is_empty")]
+    pub target_objects: Vec<String>,
+    #[serde(rename = "inheritableSettings", default, skip_serializing_if = "Vec::is_empty")]
+    pub inheritable_settings: Vec<String>,
+    #[serde(rename = "enforcedSettings", default, skip_serializing_if = "Vec::is_empty")]
+    pub enforced_settings: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyApprovalRule {
@@ -1078,46 +1118,6 @@ pub mod role_management_policy_notification_rule {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RoleManagementPolicyRuleTarget {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub caller: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub operations: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<String>,
-    #[serde(rename = "targetObjects", default, skip_serializing_if = "Vec::is_empty")]
-    pub target_objects: Vec<String>,
-    #[serde(rename = "inheritableSettings", default, skip_serializing_if = "Vec::is_empty")]
-    pub inheritable_settings: Vec<String>,
-    #[serde(rename = "enforcedSettings", default, skip_serializing_if = "Vec::is_empty")]
-    pub enforced_settings: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum RoleManagementPolicyRuleType {
-    RoleManagementPolicyApprovalRule,
-    RoleManagementPolicyAuthenticationContextRule,
-    RoleManagementPolicyEnablementRule,
-    RoleManagementPolicyExpirationRule,
-    RoleManagementPolicyNotificationRule,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scope: Option<policy_properties::Scope>,
-}
-pub mod policy_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Scope {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub id: Option<String>,
-        #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-        pub display_name: Option<String>,
-        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-        pub type_: Option<String>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1138,13 +1138,6 @@ pub struct RoleManagementPolicyAssignmentProperties {
     pub policy_id: Option<String>,
     #[serde(rename = "policyAssignmentProperties", default, skip_serializing_if = "Option::is_none")]
     pub policy_assignment_properties: Option<PolicyAssignmentProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RoleManagementPolicyAssignmentListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<RoleManagementPolicyAssignment>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyAssignmentProperties {
@@ -1184,6 +1177,13 @@ pub mod policy_assignment_properties {
         #[serde(rename = "lastModifiedDateTime", default, skip_serializing_if = "Option::is_none")]
         pub last_modified_date_time: Option<String>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleManagementPolicyAssignmentListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<RoleManagementPolicyAssignment>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {

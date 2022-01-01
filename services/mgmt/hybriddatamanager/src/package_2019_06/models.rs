@@ -74,17 +74,17 @@ pub struct DataManagerUpdateParameter {
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataService {
     #[serde(flatten)]
     pub dms_base_object: DmsBaseObject,
     pub properties: DataServiceProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataServiceList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DataService>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataServiceProperties {
@@ -104,22 +104,17 @@ pub mod data_service_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataServiceList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DataService>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataStore {
     #[serde(flatten)]
     pub dms_base_object: DmsBaseObject,
     pub properties: DataStoreProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataStoreFilter {
-    #[serde(rename = "dataStoreTypeId", default, skip_serializing_if = "Option::is_none")]
-    pub data_store_type_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataStoreList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DataStore>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataStoreProperties {
@@ -143,17 +138,22 @@ pub mod data_store_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataStoreFilter {
+    #[serde(rename = "dataStoreTypeId", default, skip_serializing_if = "Option::is_none")]
+    pub data_store_type_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataStoreList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DataStore>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataStoreType {
     #[serde(flatten)]
     pub dms_base_object: DmsBaseObject,
     pub properties: DataStoreTypeProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataStoreTypeList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DataStoreType>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataStoreTypeProperties {
@@ -173,6 +173,13 @@ pub mod data_store_type_properties {
         Enabled,
         Supported,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataStoreTypeList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DataStoreType>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DmsBaseObject {
@@ -228,34 +235,48 @@ pub mod job {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobProperties {
+    #[serde(rename = "isCancellable")]
+    pub is_cancellable: job_properties::IsCancellable,
+    #[serde(rename = "bytesProcessed", default, skip_serializing_if = "Option::is_none")]
+    pub bytes_processed: Option<i64>,
+    #[serde(rename = "itemsProcessed", default, skip_serializing_if = "Option::is_none")]
+    pub items_processed: Option<i64>,
+    #[serde(rename = "totalBytesToProcess", default, skip_serializing_if = "Option::is_none")]
+    pub total_bytes_to_process: Option<i64>,
+    #[serde(rename = "totalItemsToProcess", default, skip_serializing_if = "Option::is_none")]
+    pub total_items_to_process: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<JobDetails>,
+    #[serde(rename = "dataSourceName", default, skip_serializing_if = "Option::is_none")]
+    pub data_source_name: Option<String>,
+    #[serde(rename = "dataSinkName", default, skip_serializing_if = "Option::is_none")]
+    pub data_sink_name: Option<String>,
+}
+pub mod job_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum IsCancellable {
+        NotCancellable,
+        Cancellable,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobDetails {
+    #[serde(rename = "jobStages", default, skip_serializing_if = "Vec::is_empty")]
+    pub job_stages: Vec<JobStages>,
+    #[serde(rename = "jobDefinition", default, skip_serializing_if = "Option::is_none")]
+    pub job_definition: Option<JobDefinition>,
+    #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
+    pub error_details: Vec<ErrorDetails>,
+    #[serde(rename = "itemDetailsLink", default, skip_serializing_if = "Option::is_none")]
+    pub item_details_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDefinition {
     #[serde(flatten)]
     pub dms_base_object: DmsBaseObject,
     pub properties: JobDefinitionProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobDefinitionFilter {
-    pub state: job_definition_filter::State,
-    #[serde(rename = "dataSource", default, skip_serializing_if = "Option::is_none")]
-    pub data_source: Option<String>,
-    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified: Option<String>,
-}
-pub mod job_definition_filter {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
-        Disabled,
-        Enabled,
-        Supported,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobDefinitionList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<JobDefinition>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDefinitionProperties {
@@ -349,15 +370,28 @@ pub mod job_definition_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobDetails {
-    #[serde(rename = "jobStages", default, skip_serializing_if = "Vec::is_empty")]
-    pub job_stages: Vec<JobStages>,
-    #[serde(rename = "jobDefinition", default, skip_serializing_if = "Option::is_none")]
-    pub job_definition: Option<JobDefinition>,
-    #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
-    pub error_details: Vec<ErrorDetails>,
-    #[serde(rename = "itemDetailsLink", default, skip_serializing_if = "Option::is_none")]
-    pub item_details_link: Option<String>,
+pub struct JobDefinitionFilter {
+    pub state: job_definition_filter::State,
+    #[serde(rename = "dataSource", default, skip_serializing_if = "Option::is_none")]
+    pub data_source: Option<String>,
+    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified: Option<String>,
+}
+pub mod job_definition_filter {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Disabled,
+        Enabled,
+        Supported,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobDefinitionList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<JobDefinition>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobFilter {
@@ -385,33 +419,6 @@ pub struct JobList {
     pub value: Vec<Job>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobProperties {
-    #[serde(rename = "isCancellable")]
-    pub is_cancellable: job_properties::IsCancellable,
-    #[serde(rename = "bytesProcessed", default, skip_serializing_if = "Option::is_none")]
-    pub bytes_processed: Option<i64>,
-    #[serde(rename = "itemsProcessed", default, skip_serializing_if = "Option::is_none")]
-    pub items_processed: Option<i64>,
-    #[serde(rename = "totalBytesToProcess", default, skip_serializing_if = "Option::is_none")]
-    pub total_bytes_to_process: Option<i64>,
-    #[serde(rename = "totalItemsToProcess", default, skip_serializing_if = "Option::is_none")]
-    pub total_items_to_process: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<JobDetails>,
-    #[serde(rename = "dataSourceName", default, skip_serializing_if = "Option::is_none")]
-    pub data_source_name: Option<String>,
-    #[serde(rename = "dataSinkName", default, skip_serializing_if = "Option::is_none")]
-    pub data_sink_name: Option<String>,
-}
-pub mod job_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum IsCancellable {
-        NotCancellable,
-        Cancellable,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobStages {
@@ -454,18 +461,18 @@ pub struct PublicKey {
     pub properties: PublicKeyProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PublicKeyList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PublicKey>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PublicKeyProperties {
     #[serde(rename = "dataServiceLevel1Key")]
     pub data_service_level1_key: Key,
     #[serde(rename = "dataServiceLevel2Key")]
     pub data_service_level2_key: Key,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PublicKeyList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PublicKey>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -504,11 +511,4 @@ pub struct Schedule {
     pub name: Option<String>,
     #[serde(rename = "policyList", default, skip_serializing_if = "Vec::is_empty")]
     pub policy_list: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
 }

@@ -45,11 +45,6 @@ pub mod services_properties {
 }
 pub type ServiceAccessPoliciesInfo = Vec<ServiceAccessPolicyEntry>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceAccessPolicyEntry {
-    #[serde(rename = "objectId")]
-    pub object_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceCosmosDbConfigurationInfo {
     #[serde(rename = "offerThroughput", default, skip_serializing_if = "Option::is_none")]
     pub offer_throughput: Option<i64>,
@@ -88,6 +83,11 @@ pub struct ServiceAcrConfigurationInfo {
     #[serde(rename = "loginServers", default, skip_serializing_if = "Vec::is_empty")]
     pub login_servers: Vec<String>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceAccessPolicyEntry {
+    #[serde(rename = "objectId")]
+    pub object_id: String,
+}
 pub type ServiceCorsConfigurationOriginEntry = String;
 pub type ServiceCorsConfigurationHeaderEntry = String;
 pub type ServiceCorsConfigurationMethodEntry = String;
@@ -101,11 +101,56 @@ pub struct ServicesDescription {
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicesPatchDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServicesPropertiesUpdateParameters>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServicesPropertiesUpdateParameters {
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    pub public_network_access: Option<services_properties_update_parameters::PublicNetworkAccess>,
+}
+pub mod services_properties_update_parameters {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PublicNetworkAccess {
+        Enabled,
+        Disabled,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicesResource {
@@ -161,19 +206,6 @@ pub struct ServicesDescriptionListResult {
     pub value: Vec<ServicesDescription>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServicesPropertiesUpdateParameters {
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
-    pub public_network_access: Option<services_properties_update_parameters::PublicNetworkAccess>,
-}
-pub mod services_properties_update_parameters {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PublicNetworkAccess {
-        Enabled,
-        Disabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityParameters {
     pub name: String,
     #[serde(rename = "type")]
@@ -226,11 +258,6 @@ pub struct Error {
     pub error: Option<ErrorDetailsInternal>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetails {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetailsInternal>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetailsInternal {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -238,6 +265,11 @@ pub struct ErrorDetailsInternal {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetailsInternal>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListOperations {
@@ -407,18 +439,6 @@ pub struct DicomService {
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DicomServicePatchResource {
-    #[serde(flatten)]
-    pub resource_tags: ResourceTags,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DicomServiceCollection {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DicomService>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DicomServiceProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -434,6 +454,18 @@ pub struct DicomServiceAuthenticationConfiguration {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub audiences: Vec<DicomAudience>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DicomServicePatchResource {
+    #[serde(flatten)]
+    pub resource_tags: ResourceTags,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DicomServiceCollection {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DicomService>,
+}
 pub type DicomAudience = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotConnector {
@@ -445,20 +477,6 @@ pub struct IotConnector {
     pub properties: Option<IotConnectorProperties>,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IotConnectorPatchResource {
-    #[serde(flatten)]
-    pub resource_tags: ResourceTags,
-    #[serde(flatten)]
-    pub service_managed_identity: ServiceManagedIdentity,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IotConnectorCollection {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<IotConnector>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotConnectorProperties {
@@ -482,6 +500,20 @@ pub struct IotEventHubIngestionEndpointConfiguration {
 pub struct IotMappingProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IotConnectorPatchResource {
+    #[serde(flatten)]
+    pub resource_tags: ResourceTags,
+    #[serde(flatten)]
+    pub service_managed_identity: ServiceManagedIdentity,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IotConnectorCollection {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<IotConnector>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IotIdentityResolutionType {
@@ -550,13 +582,6 @@ pub mod fhir_service {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FhirServicePatchResource {
-    #[serde(flatten)]
-    pub resource_tags: ResourceTags,
-    #[serde(flatten)]
-    pub service_managed_identity: ServiceManagedIdentity,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FhirServiceProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -572,11 +597,6 @@ pub struct FhirServiceProperties {
     pub export_configuration: Option<FhirServiceExportConfiguration>,
 }
 pub type FhirServiceAccessPolicies = Vec<FhirServiceAccessPolicyEntry>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FhirServiceAccessPolicyEntry {
-    #[serde(rename = "objectId")]
-    pub object_id: String,
-}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FhirServiceAcrConfiguration {
     #[serde(rename = "loginServers", default, skip_serializing_if = "Vec::is_empty")]
@@ -604,14 +624,26 @@ pub struct FhirServiceCorsConfiguration {
     #[serde(rename = "allowCredentials", default, skip_serializing_if = "Option::is_none")]
     pub allow_credentials: Option<bool>,
 }
-pub type CorsConfigurationOriginEntry = String;
-pub type CorsConfigurationHeaderEntry = String;
-pub type CorsConfigurationMethodEntry = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FhirServiceExportConfiguration {
     #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_name: Option<String>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FhirServicePatchResource {
+    #[serde(flatten)]
+    pub resource_tags: ResourceTags,
+    #[serde(flatten)]
+    pub service_managed_identity: ServiceManagedIdentity,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FhirServiceAccessPolicyEntry {
+    #[serde(rename = "objectId")]
+    pub object_id: String,
+}
+pub type CorsConfigurationOriginEntry = String;
+pub type CorsConfigurationHeaderEntry = String;
+pub type CorsConfigurationMethodEntry = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
@@ -663,38 +695,6 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkResource {

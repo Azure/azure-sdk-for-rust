@@ -115,19 +115,6 @@ pub struct DirectoryItem {
     pub permission_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FileItem {
-    #[serde(rename = "Name")]
-    pub name: String,
-    #[serde(rename = "FileId", default, skip_serializing_if = "Option::is_none")]
-    pub file_id: Option<String>,
-    #[serde(rename = "Properties")]
-    pub properties: FileProperty,
-    #[serde(rename = "Attributes", default, skip_serializing_if = "Option::is_none")]
-    pub attributes: Option<String>,
-    #[serde(rename = "PermissionKey", default, skip_serializing_if = "Option::is_none")]
-    pub permission_key: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileProperty {
     #[serde(rename = "Content-Length")]
     pub content_length: i64,
@@ -143,6 +130,19 @@ pub struct FileProperty {
     pub last_modified: Option<String>,
     #[serde(rename = "Etag", default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileItem {
+    #[serde(rename = "Name")]
+    pub name: String,
+    #[serde(rename = "FileId", default, skip_serializing_if = "Option::is_none")]
+    pub file_id: Option<String>,
+    #[serde(rename = "Properties")]
+    pub properties: FileProperty,
+    #[serde(rename = "Attributes", default, skip_serializing_if = "Option::is_none")]
+    pub attributes: Option<String>,
+    #[serde(rename = "PermissionKey", default, skip_serializing_if = "Option::is_none")]
+    pub permission_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HandleItem {
@@ -249,6 +249,13 @@ pub struct Metrics {
     pub retention_policy: Option<RetentionPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RetentionPolicy {
+    #[serde(rename = "Enabled")]
+    pub enabled: bool,
+    #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
+    pub days: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmbMultichannel {
     #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -273,6 +280,11 @@ pub struct ShareProtocolSettings {
     pub smb: Option<ShareSmbSettings>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ShareSmbSettings {
+    #[serde(rename = "Multichannel", default, skip_serializing_if = "Option::is_none")]
+    pub multichannel: Option<SmbMultichannel>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareFileRangeList {
     #[serde(rename = "Ranges", default, skip_serializing_if = "Vec::is_empty")]
     pub ranges: Vec<FileRange>,
@@ -283,13 +295,6 @@ pub struct ShareFileRangeList {
 pub struct StorageError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RetentionPolicy {
-    #[serde(rename = "Enabled")]
-    pub enabled: bool,
-    #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
-    pub days: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareItemInternal {
@@ -345,6 +350,13 @@ pub struct SharePropertiesInternal {
     #[serde(rename = "RootSquash", default, skip_serializing_if = "Option::is_none")]
     pub root_squash: Option<ShareRootSquash>,
 }
+pub type ShareEnabledProtocols = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ShareRootSquash {
+    NoRootSquash,
+    RootSquash,
+    AllSquash,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareStats {
     #[serde(rename = "ShareUsageBytes")]
@@ -359,11 +371,6 @@ pub struct SignedIdentifier {
 }
 pub type SignedIdentifiers = Vec<SignedIdentifier>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ShareSmbSettings {
-    #[serde(rename = "Multichannel", default, skip_serializing_if = "Option::is_none")]
-    pub multichannel: Option<SmbMultichannel>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageServiceProperties {
     #[serde(rename = "HourMetrics", default, skip_serializing_if = "Option::is_none")]
     pub hour_metrics: Option<Metrics>,
@@ -377,11 +384,4 @@ pub struct StorageServiceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharePermission {
     pub permission: String,
-}
-pub type ShareEnabledProtocols = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ShareRootSquash {
-    NoRootSquash,
-    RootSquash,
-    AllSquash,
 }

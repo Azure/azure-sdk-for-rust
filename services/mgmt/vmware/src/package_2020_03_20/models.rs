@@ -57,6 +57,19 @@ pub struct CloudError {
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorResponse>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
@@ -242,28 +255,8 @@ pub struct PrivateCloud {
     pub properties: PrivateCloudProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateCloudUpdate {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PrivateCloudUpdateProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateCloudUpdateProperties {
-    #[serde(rename = "managementCluster", default, skip_serializing_if = "Option::is_none")]
-    pub management_cluster: Option<ManagementCluster>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub internet: Option<private_cloud_update_properties::Internet>,
-    #[serde(rename = "identitySources", default, skip_serializing_if = "Vec::is_empty")]
-    pub identity_sources: Vec<IdentitySource>,
-}
-pub mod private_cloud_update_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Internet {
-        Enabled,
-        Disabled,
-    }
+pub struct Sku {
+    pub name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateCloudProperties {
@@ -306,21 +299,28 @@ pub mod private_cloud_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Cluster {
-    #[serde(flatten)]
-    pub resource: Resource,
-    pub sku: Sku,
-    pub properties: ClusterProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClusterUpdate {
+pub struct PrivateCloudUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ClusterUpdateProperties>,
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateCloudUpdateProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClusterUpdateProperties {
-    #[serde(rename = "clusterSize", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_size: Option<i32>,
+pub struct PrivateCloudUpdateProperties {
+    #[serde(rename = "managementCluster", default, skip_serializing_if = "Option::is_none")]
+    pub management_cluster: Option<ManagementCluster>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub internet: Option<private_cloud_update_properties::Internet>,
+    #[serde(rename = "identitySources", default, skip_serializing_if = "Vec::is_empty")]
+    pub identity_sources: Vec<IdentitySource>,
+}
+pub mod private_cloud_update_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Internet {
+        Enabled,
+        Disabled,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementCluster {
@@ -334,6 +334,21 @@ pub struct ManagementCluster {
     pub hosts: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ClusterProvisioningState {
+    Succeeded,
+    Failed,
+    Cancelled,
+    Deleting,
+    Updating,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Cluster {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub sku: Sku,
+    pub properties: ClusterProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterProperties {
     #[serde(flatten)]
     pub management_cluster: ManagementCluster,
@@ -341,12 +356,14 @@ pub struct ClusterProperties {
     pub provisioning_state: Option<ClusterProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ClusterProvisioningState {
-    Succeeded,
-    Failed,
-    Cancelled,
-    Deleting,
-    Updating,
+pub struct ClusterUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ClusterUpdateProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClusterUpdateProperties {
+    #[serde(rename = "clusterSize", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_size: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateCloudList {
@@ -372,10 +389,6 @@ pub struct AdminCredentials {
     pub vcenter_username: Option<String>,
     #[serde(rename = "vcenterPassword", default, skip_serializing_if = "Option::is_none")]
     pub vcenter_password: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HcxEnterpriseSiteList {
@@ -407,19 +420,6 @@ pub mod hcx_enterprise_site_properties {
         Deactivated,
         Deleted,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorResponse>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {

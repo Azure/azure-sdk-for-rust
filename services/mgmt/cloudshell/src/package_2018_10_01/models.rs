@@ -80,17 +80,6 @@ pub struct UserSettingsResponse {
     pub properties: UserProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudShellUserSettings {
-    #[serde(flatten)]
-    pub resource: Resource,
-    pub properties: UserProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudShellPatchUserSettings {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<UserProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserProperties {
     #[serde(rename = "preferredOsType")]
     pub preferred_os_type: user_properties::PreferredOsType,
@@ -151,6 +140,17 @@ pub mod terminal_settings {
         Monospace,
         Courier,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudShellUserSettings {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub properties: UserProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudShellPatchUserSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<UserProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {

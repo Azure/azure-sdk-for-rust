@@ -107,6 +107,33 @@ pub struct ReportConfigDatasetConfiguration {
     pub columns: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReportConfigFilter {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub and: Vec<ReportConfigFilter>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub or: Vec<ReportConfigFilter>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub not: Box<Option<ReportConfigFilter>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dimension: Option<ReportConfigComparisonExpression>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<ReportConfigComparisonExpression>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReportConfigComparisonExpression {
+    pub name: String,
+    pub operator: report_config_comparison_expression::Operator,
+    pub values: Vec<String>,
+}
+pub mod report_config_comparison_expression {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Operator {
+        In,
+        Contains,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigAggregation {
     pub name: String,
     pub function: report_config_aggregation::Function,
@@ -139,36 +166,9 @@ pub struct ReportConfigGrouping {
     pub name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReportConfigFilter {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub and: Vec<ReportConfigFilter>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub or: Vec<ReportConfigFilter>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub not: Box<Option<ReportConfigFilter>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dimension: Option<ReportConfigComparisonExpression>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<ReportConfigComparisonExpression>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReportConfigColumnType {
     Tag,
     Dimension,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReportConfigComparisonExpression {
-    pub name: String,
-    pub operator: report_config_comparison_expression::Operator,
-    pub values: Vec<String>,
-}
-pub mod report_config_comparison_expression {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Operator {
-        In,
-        Contains,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {

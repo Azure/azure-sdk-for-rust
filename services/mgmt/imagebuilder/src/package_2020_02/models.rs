@@ -30,6 +30,15 @@ pub struct ImageTemplatePlatformImageSource {
     pub plan_info: Option<PlatformImagePurchasePlan>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PlatformImagePurchasePlan {
+    #[serde(rename = "planName")]
+    pub plan_name: String,
+    #[serde(rename = "planProduct")]
+    pub plan_product: String,
+    #[serde(rename = "planPublisher")]
+    pub plan_publisher: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateManagedImageSource {
     #[serde(flatten)]
     pub image_template_source: ImageTemplateSource,
@@ -155,15 +164,6 @@ pub mod image_template_shared_image_distributor {
 pub struct ImageTemplateVhdDistributor {
     #[serde(flatten)]
     pub image_template_distributor: ImageTemplateDistributor,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PlatformImagePurchasePlan {
-    #[serde(rename = "planName")]
-    pub plan_name: String,
-    #[serde(rename = "planProduct")]
-    pub plan_product: String,
-    #[serde(rename = "planPublisher")]
-    pub plan_publisher: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkConfig {

@@ -23,13 +23,6 @@ pub struct ActivityLogAlertResource {
     pub properties: Option<AlertRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertRuleList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ActivityLogAlertResource>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRuleProperties {
     pub scopes: Vec<String>,
     pub condition: AlertRuleAllOfCondition,
@@ -43,6 +36,18 @@ pub struct AlertRuleProperties {
 pub struct AlertRuleAllOfCondition {
     #[serde(rename = "allOf")]
     pub all_of: Vec<AlertRuleAnyOfOrLeafCondition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActionList {
+    #[serde(rename = "actionGroups", default, skip_serializing_if = "Vec::is_empty")]
+    pub action_groups: Vec<ActionGroup>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertRuleList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ActivityLogAlertResource>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRuleAnyOfOrLeafCondition {
@@ -59,11 +64,6 @@ pub struct AlertRuleLeafCondition {
     pub equals: Option<String>,
     #[serde(rename = "containsAny", default, skip_serializing_if = "Vec::is_empty")]
     pub contains_any: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActionList {
-    #[serde(rename = "actionGroups", default, skip_serializing_if = "Vec::is_empty")]
-    pub action_groups: Vec<ActionGroup>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroup {

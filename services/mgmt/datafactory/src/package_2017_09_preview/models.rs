@@ -56,6 +56,24 @@ pub struct AzureKeyVaultSecretReference {
     pub secret_version: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LinkedServiceReference {
+    #[serde(rename = "type")]
+    pub type_: linked_service_reference::Type,
+    #[serde(rename = "referenceName")]
+    pub reference_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<ParameterValueSpecification>,
+}
+pub mod linked_service_reference {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        LinkedServiceReference,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ParameterValueSpecification {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretBase {
     #[serde(rename = "type")]
     pub type_: String,
@@ -95,10 +113,43 @@ pub struct IntegrationRuntimeResource {
     pub properties: IntegrationRuntime,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IntegrationRuntime {
+    #[serde(rename = "type")]
+    pub type_: IntegrationRuntimeType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum IntegrationRuntimeType {
+    Managed,
+    SelfHosted,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatusResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     pub properties: IntegrationRuntimeStatus,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IntegrationRuntimeStatus {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<IntegrationRuntimeType>,
+    #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
+    pub data_factory_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<IntegrationRuntimeState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum IntegrationRuntimeState {
+    Initial,
+    Stopped,
+    Started,
+    Starting,
+    Stopping,
+    NeedRegistration,
+    Online,
+    Limited,
+    Offline,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatusListResponse {
@@ -112,6 +163,11 @@ pub struct UpdateIntegrationRuntimeRequest {
     pub auto_update: Option<IntegrationRuntimeAutoUpdate>,
     #[serde(rename = "updateDelayOffset", default, skip_serializing_if = "Option::is_none")]
     pub update_delay_offset: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum IntegrationRuntimeAutoUpdate {
+    On,
+    Off,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateIntegrationRuntimeNodeRequest {
@@ -179,8 +235,6 @@ pub mod parameter_specification {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ParameterValueSpecification {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FactoryVstsConfiguration {
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
@@ -224,6 +278,19 @@ pub struct PipelineResource {
     pub properties: Pipeline,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Pipeline {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub activities: Vec<Activity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<ParameterDefinitionSpecification>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub concurrency: Option<i64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub annotations: Vec<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineReference {
     #[serde(rename = "type")]
     pub type_: pipeline_reference::Type,
@@ -253,6 +320,21 @@ pub struct TriggerResource {
     pub properties: Trigger,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Trigger {
+    #[serde(rename = "type")]
+    pub type_: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "runtimeState", default, skip_serializing_if = "Option::is_none")]
+    pub runtime_state: Option<TriggerRuntimeState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum TriggerRuntimeState {
+    Started,
+    Stopped,
+    Disabled,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Factory {
     #[serde(flatten)]
     pub resource: Resource,
@@ -260,13 +342,6 @@ pub struct Factory {
     pub identity: Option<FactoryIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FactoryProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FactoryUpdateParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<FactoryIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FactoryIdentity {
@@ -283,6 +358,13 @@ pub mod factory_identity {
     pub enum Type {
         SystemAssigned,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FactoryUpdateParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<FactoryIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetReference {
@@ -307,26 +389,38 @@ pub struct DatasetResource {
     pub properties: Dataset,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinkedServiceReference {
+pub struct Dataset {
     #[serde(rename = "type")]
-    pub type_: linked_service_reference::Type,
-    #[serde(rename = "referenceName")]
-    pub reference_name: String,
+    pub type_: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<ParameterValueSpecification>,
-}
-pub mod linked_service_reference {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        LinkedServiceReference,
-    }
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub structure: Option<serde_json::Value>,
+    #[serde(rename = "linkedServiceName")]
+    pub linked_service_name: LinkedServiceReference,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<ParameterDefinitionSpecification>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub annotations: Vec<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedServiceResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     pub properties: LinkedService,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LinkedService {
+    #[serde(rename = "type")]
+    pub type_: String,
+    #[serde(rename = "connectVia", default, skip_serializing_if = "Option::is_none")]
+    pub connect_via: Option<IntegrationRuntimeReference>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<ParameterDefinitionSpecification>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub annotations: Vec<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRunFilterParameters {
@@ -702,57 +796,6 @@ pub struct IntegrationRuntimeNodeIpAddress {
     pub ip_address: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IntegrationRuntime {
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum IntegrationRuntimeType {
-    Managed,
-    SelfHosted,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IntegrationRuntimeStatus {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<IntegrationRuntimeType>,
-    #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
-    pub data_factory_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<IntegrationRuntimeState>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum IntegrationRuntimeState {
-    Initial,
-    Stopped,
-    Started,
-    Starting,
-    Stopping,
-    NeedRegistration,
-    Online,
-    Limited,
-    Offline,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum IntegrationRuntimeAutoUpdate {
-    On,
-    Off,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Pipeline {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub activities: Vec<Activity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<ParameterDefinitionSpecification>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub concurrency: Option<i64>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub annotations: Vec<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Activity {
     pub name: String,
     #[serde(rename = "type")]
@@ -767,47 +810,4 @@ pub struct ActivityDependency {
     pub activity: String,
     #[serde(rename = "dependencyConditions")]
     pub dependency_conditions: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Trigger {
-    #[serde(rename = "type")]
-    pub type_: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "runtimeState", default, skip_serializing_if = "Option::is_none")]
-    pub runtime_state: Option<TriggerRuntimeState>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum TriggerRuntimeState {
-    Started,
-    Stopped,
-    Disabled,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Dataset {
-    #[serde(rename = "type")]
-    pub type_: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub structure: Option<serde_json::Value>,
-    #[serde(rename = "linkedServiceName")]
-    pub linked_service_name: LinkedServiceReference,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<ParameterDefinitionSpecification>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub annotations: Vec<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinkedService {
-    #[serde(rename = "type")]
-    pub type_: String,
-    #[serde(rename = "connectVia", default, skip_serializing_if = "Option::is_none")]
-    pub connect_via: Option<IntegrationRuntimeReference>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<ParameterDefinitionSpecification>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub annotations: Vec<serde_json::Value>,
 }

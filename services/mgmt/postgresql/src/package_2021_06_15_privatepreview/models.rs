@@ -53,6 +53,136 @@ pub struct MigrationResourceProperties {
     pub trigger_cutover: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MigrationDetailsLevel {
+    Default,
+    Summary,
+    Full,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MigrationStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<MigrationState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[serde(rename = "currentSubStateDetails", default, skip_serializing_if = "Option::is_none")]
+    pub current_sub_state_details: Option<MigrationSubStateDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MigrationState {
+    InProgress,
+    WaitingForUserAction,
+    Canceled,
+    Failed,
+    Succeeded,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MigrationSubStateDetails {
+    #[serde(rename = "currentSubState", default, skip_serializing_if = "Option::is_none")]
+    pub current_sub_state: Option<MigrationSubState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MigrationSubState {
+    PerformingPreRequisiteSteps,
+    #[serde(rename = "WaitingForLogicalReplicationSetupRequestOnSourceDB")]
+    WaitingForLogicalReplicationSetupRequestOnSourceDb,
+    WaitingForDBsToMigrateSpecification,
+    #[serde(rename = "WaitingForTargetDBOverwriteConfirmation")]
+    WaitingForTargetDbOverwriteConfirmation,
+    WaitingForDataMigrationScheduling,
+    WaitingForDataMigrationWindow,
+    MigratingData,
+    WaitingForCutoverTrigger,
+    CompletingMigration,
+    Completed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DbServerMetadata {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(rename = "storageMB", default, skip_serializing_if = "Option::is_none")]
+    pub storage_mb: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<ServerSku>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerSku {
+    pub name: String,
+    pub tier: server_sku::Tier,
+}
+pub mod server_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Tier {
+        Burstable,
+        GeneralPurpose,
+        MemoryOptimized,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MigrationSecretParameters {
+    #[serde(rename = "adminCredentials")]
+    pub admin_credentials: AdminCredentials,
+    #[serde(rename = "aadApp")]
+    pub aad_app: AadApp,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdminCredentials {
+    #[serde(rename = "sourceServerPassword")]
+    pub source_server_password: String,
+    #[serde(rename = "targetServerPassword")]
+    pub target_server_password: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AadApp {
+    #[serde(rename = "aadSecret")]
+    pub aad_secret: String,
+    #[serde(rename = "clientId")]
+    pub client_id: String,
+    #[serde(rename = "tenantId")]
+    pub tenant_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MigrationResourceGroup {
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(rename = "subnetResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub subnet_resource_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrationResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MigrationResource>,
@@ -94,104 +224,6 @@ pub struct MigrationResourcePropertiesForPatch {
     pub trigger_cutover: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MigrationResourceGroup {
-    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
-    #[serde(rename = "subnetResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub subnet_resource_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MigrationSecretParameters {
-    #[serde(rename = "adminCredentials")]
-    pub admin_credentials: AdminCredentials,
-    #[serde(rename = "aadApp")]
-    pub aad_app: AadApp,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AadApp {
-    #[serde(rename = "aadSecret")]
-    pub aad_secret: String,
-    #[serde(rename = "clientId")]
-    pub client_id: String,
-    #[serde(rename = "tenantId")]
-    pub tenant_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdminCredentials {
-    #[serde(rename = "sourceServerPassword")]
-    pub source_server_password: String,
-    #[serde(rename = "targetServerPassword")]
-    pub target_server_password: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DbServerMetadata {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-    #[serde(rename = "storageMB", default, skip_serializing_if = "Option::is_none")]
-    pub storage_mb: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<ServerSku>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum MigrationDetailsLevel {
-    Default,
-    Summary,
-    Full,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum MigrationState {
-    InProgress,
-    WaitingForUserAction,
-    Canceled,
-    Failed,
-    Succeeded,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MigrationStatus {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<MigrationState>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
-    #[serde(rename = "currentSubStateDetails", default, skip_serializing_if = "Option::is_none")]
-    pub current_sub_state_details: Option<MigrationSubStateDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum MigrationSubState {
-    PerformingPreRequisiteSteps,
-    #[serde(rename = "WaitingForLogicalReplicationSetupRequestOnSourceDB")]
-    WaitingForLogicalReplicationSetupRequestOnSourceDb,
-    WaitingForDBsToMigrateSpecification,
-    #[serde(rename = "WaitingForTargetDBOverwriteConfirmation")]
-    WaitingForTargetDbOverwriteConfirmation,
-    WaitingForDataMigrationScheduling,
-    WaitingForDataMigrationWindow,
-    MigratingData,
-    WaitingForCutoverTrigger,
-    CompletingMigration,
-    Completed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MigrationSubStateDetails {
-    #[serde(rename = "currentSubState", default, skip_serializing_if = "Option::is_none")]
-    pub current_sub_state: Option<MigrationSubState>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerSku {
-    pub name: String,
-    pub tier: server_sku::Tier,
-}
-pub mod server_sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Tier {
-        Burstable,
-        GeneralPurpose,
-        MemoryOptimized,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MigrationNameAvailabilityReason {
     Invalid,
     AlreadyExists,
@@ -212,6 +244,19 @@ pub struct MigrationNameAvailabilityResource {
 pub struct ServiceError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorResponse>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkSubnetUsageParameter {
@@ -394,74 +439,6 @@ pub mod server_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Server {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<Identity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServerProperties>,
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerPropertiesForUpdate {
-    #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
-    pub administrator_login_password: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub storage: Option<Storage>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub backup: Option<Backup>,
-    #[serde(rename = "highAvailability", default, skip_serializing_if = "Option::is_none")]
-    pub high_availability: Option<HighAvailability>,
-    #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
-    pub maintenance_window: Option<MaintenanceWindow>,
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
-    pub create_mode: Option<server_properties_for_update::CreateMode>,
-}
-pub mod server_properties_for_update {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreateMode {
-        Default,
-        Update,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerForUpdate {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServerPropertiesForUpdate>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Server>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: String,
-    pub tier: sku::Tier,
-}
-pub mod sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Tier {
-        Burstable,
-        GeneralPurpose,
-        MemoryOptimized,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Storage {
     #[serde(rename = "storageSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub storage_size_gb: Option<i32>,
@@ -536,6 +513,90 @@ pub struct MaintenanceWindow {
     pub start_minute: Option<i32>,
     #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
     pub day_of_week: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Server {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<Identity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServerProperties>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Identity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<identity::Type>,
+}
+pub mod identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: String,
+    pub tier: sku::Tier,
+}
+pub mod sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Tier {
+        Burstable,
+        GeneralPurpose,
+        MemoryOptimized,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerPropertiesForUpdate {
+    #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
+    pub administrator_login_password: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub storage: Option<Storage>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub backup: Option<Backup>,
+    #[serde(rename = "highAvailability", default, skip_serializing_if = "Option::is_none")]
+    pub high_availability: Option<HighAvailability>,
+    #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
+    pub maintenance_window: Option<MaintenanceWindow>,
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    pub create_mode: Option<server_properties_for_update::CreateMode>,
+}
+pub mod server_properties_for_update {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreateMode {
+        Default,
+        Update,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerForUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServerPropertiesForUpdate>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Server>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRuleProperties {
@@ -682,38 +743,6 @@ pub struct CloudError {
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
@@ -731,40 +760,11 @@ pub struct Resource {
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorResponse>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Identity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<identity::Type>,
-}
-pub mod identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {

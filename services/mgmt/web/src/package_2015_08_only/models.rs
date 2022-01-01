@@ -119,6 +119,27 @@ pub mod app_service_certificate_order {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CertificateDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<i32>,
+    #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
+    pub serial_number: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thumbprint: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subject: Option<String>,
+    #[serde(rename = "notBefore", default, skip_serializing_if = "Option::is_none")]
+    pub not_before: Option<String>,
+    #[serde(rename = "notAfter", default, skip_serializing_if = "Option::is_none")]
+    pub not_after: Option<String>,
+    #[serde(rename = "signatureAlgorithm", default, skip_serializing_if = "Option::is_none")]
+    pub signature_algorithm: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub issuer: Option<String>,
+    #[serde(rename = "rawData", default, skip_serializing_if = "Option::is_none")]
+    pub raw_data: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppServiceCertificateOrderCollection {
     pub value: Vec<AppServiceCertificateOrder>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -221,27 +242,6 @@ pub struct AppServiceCertificateResource {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AppServiceCertificate>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CertificateDetails {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<i32>,
-    #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
-    pub serial_number: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub thumbprint: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subject: Option<String>,
-    #[serde(rename = "notBefore", default, skip_serializing_if = "Option::is_none")]
-    pub not_before: Option<String>,
-    #[serde(rename = "notAfter", default, skip_serializing_if = "Option::is_none")]
-    pub not_after: Option<String>,
-    #[serde(rename = "signatureAlgorithm", default, skip_serializing_if = "Option::is_none")]
-    pub signature_algorithm: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub issuer: Option<String>,
-    #[serde(rename = "rawData", default, skip_serializing_if = "Option::is_none")]
-    pub raw_data: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateEmail {

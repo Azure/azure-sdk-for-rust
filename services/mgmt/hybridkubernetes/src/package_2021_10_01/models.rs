@@ -105,20 +105,6 @@ pub mod connected_cluster_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CredentialResults {
-    #[serde(rename = "hybridConnectionConfig", default, skip_serializing_if = "Option::is_none")]
-    pub hybrid_connection_config: Option<HybridConnectionConfig>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub kubeconfigs: Vec<CredentialResult>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CredentialResult {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConnectedClusterProvisioningState {
     Succeeded,
     Failed,
@@ -127,42 +113,6 @@ pub enum ConnectedClusterProvisioningState {
     Updating,
     Deleting,
     Accepted,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConnectedClusterPatch {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ConnectedClusterPatchProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConnectedClusterPatchProperties {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HybridConnectionConfig {
-    #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
-    pub expiration_time: Option<i64>,
-    #[serde(rename = "hybridConnectionName", default, skip_serializing_if = "Option::is_none")]
-    pub hybrid_connection_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub relay: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListClusterUserCredentialProperties {
-    #[serde(rename = "authenticationMethod")]
-    pub authentication_method: list_cluster_user_credential_properties::AuthenticationMethod,
-    #[serde(rename = "clientProxy")]
-    pub client_proxy: bool,
-}
-pub mod list_cluster_user_credential_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AuthenticationMethod {
-        Token,
-        #[serde(rename = "AAD")]
-        Aad,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
@@ -194,6 +144,56 @@ pub mod system_data {
         Application,
         ManagedIdentity,
         Key,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CredentialResults {
+    #[serde(rename = "hybridConnectionConfig", default, skip_serializing_if = "Option::is_none")]
+    pub hybrid_connection_config: Option<HybridConnectionConfig>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub kubeconfigs: Vec<CredentialResult>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HybridConnectionConfig {
+    #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
+    pub expiration_time: Option<i64>,
+    #[serde(rename = "hybridConnectionName", default, skip_serializing_if = "Option::is_none")]
+    pub hybrid_connection_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub relay: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CredentialResult {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectedClusterPatch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ConnectedClusterPatchProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectedClusterPatchProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListClusterUserCredentialProperties {
+    #[serde(rename = "authenticationMethod")]
+    pub authentication_method: list_cluster_user_credential_properties::AuthenticationMethod,
+    #[serde(rename = "clientProxy")]
+    pub client_proxy: bool,
+}
+pub mod list_cluster_user_credential_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AuthenticationMethod {
+        Token,
+        #[serde(rename = "AAD")]
+        Aad,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -130,29 +130,6 @@ pub struct SignalRResource {
     pub kind: Option<ServiceKind>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ServiceKind {
-    SignalR,
-    RawWebSockets,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackedResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSku {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -203,6 +180,29 @@ pub enum ProvisioningState {
     Moving,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ServiceKind {
+    SignalR,
+    RawWebSockets,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrackedResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignalRCreateOrUpdateProperties {
     #[serde(rename = "hostNamePrefix", default, skip_serializing_if = "Option::is_none")]
     pub host_name_prefix: Option<String>,
@@ -214,19 +214,6 @@ pub struct SignalRCreateOrUpdateProperties {
     pub upstream: Option<ServerlessUpstreamSettings>,
     #[serde(rename = "networkACLs", default, skip_serializing_if = "Option::is_none")]
     pub network_ac_ls: Option<SignalRNetworkAcLs>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SignalRFeature {
-    pub flag: FeatureFlags,
-    pub value: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum FeatureFlags {
-    ServiceMode,
-    EnableConnectivityLogs,
-    EnableMessagingLogs,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignalRCorsSettings {
@@ -253,6 +240,26 @@ pub enum AclAction {
     Deny,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkAcl {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub allow: Vec<SignalRRequestType>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub deny: Vec<SignalRRequestType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SignalRFeature {
+    pub flag: FeatureFlags,
+    pub value: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum FeatureFlags {
+    ServiceMode,
+    EnableConnectivityLogs,
+    EnableMessagingLogs,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpstreamTemplate {
     #[serde(rename = "hubPattern", default, skip_serializing_if = "Option::is_none")]
     pub hub_pattern: Option<String>,
@@ -262,13 +269,6 @@ pub struct UpstreamTemplate {
     pub category_pattern: Option<String>,
     #[serde(rename = "urlTemplate")]
     pub url_template: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkAcl {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub allow: Vec<SignalRRequestType>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub deny: Vec<SignalRRequestType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SignalRRequestType {
@@ -290,11 +290,6 @@ pub struct PrivateEndpointConnection {
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
-    #[serde(flatten)]
-    pub resource: Resource,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
@@ -325,6 +320,11 @@ pub enum PrivateLinkServiceConnectionStatus {
     Approved,
     Rejected,
     Disconnected,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkResourceList {

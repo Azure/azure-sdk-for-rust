@@ -34,13 +34,6 @@ pub struct WebService {
     pub properties: WebServiceProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PatchedWebService {
-    #[serde(flatten)]
-    pub patched_resource: PatchedResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WebServiceProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebServiceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
@@ -102,25 +95,11 @@ pub mod web_service_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WebServicePropertiesForGraph {
-    #[serde(flatten)]
-    pub web_service_properties: WebServiceProperties,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub package: Option<GraphPackage>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebServiceKeys {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PaginatedWebServicesList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<WebService>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RealtimeConfiguration {
@@ -166,6 +145,49 @@ pub struct ServiceInputOutputSpecification {
     #[serde(rename = "type")]
     pub type_: String,
     pub properties: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExampleRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inputs: Option<serde_json::Value>,
+    #[serde(rename = "globalParameters", default, skip_serializing_if = "Option::is_none")]
+    pub global_parameters: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobLocation {
+    pub uri: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credentials: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PatchedWebService {
+    #[serde(flatten)]
+    pub patched_resource: PatchedResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<WebServiceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WebServicePropertiesForGraph {
+    #[serde(flatten)]
+    pub web_service_properties: WebServiceProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub package: Option<GraphPackage>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GraphPackage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nodes: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub edges: Vec<GraphEdge>,
+    #[serde(rename = "graphParameters", default, skip_serializing_if = "Option::is_none")]
+    pub graph_parameters: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PaginatedWebServicesList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<WebService>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TableSpecification {
@@ -226,13 +248,6 @@ pub mod column_specification {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExampleRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub inputs: Option<serde_json::Value>,
-    #[serde(rename = "globalParameters", default, skip_serializing_if = "Option::is_none")]
-    pub global_parameters: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssetItem {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -257,12 +272,6 @@ pub mod asset_item {
         Module,
         Resource,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobLocation {
-    pub uri: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub credentials: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModuleAssetParameter {
@@ -303,15 +312,6 @@ pub mod output_port {
     pub enum Type {
         Dataset,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GraphPackage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub nodes: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub edges: Vec<GraphEdge>,
-    #[serde(rename = "graphParameters", default, skip_serializing_if = "Option::is_none")]
-    pub graph_parameters: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GraphNode {

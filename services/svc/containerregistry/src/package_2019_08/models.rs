@@ -20,6 +20,19 @@ pub struct RepositoryAttributes {
     pub changeable_attributes: Option<RepositoryChangeableAttributes>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RepositoryChangeableAttributes {
+    #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub delete_enabled: Option<bool>,
+    #[serde(rename = "writeEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub write_enabled: Option<bool>,
+    #[serde(rename = "listEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub list_enabled: Option<bool>,
+    #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub read_enabled: Option<bool>,
+    #[serde(rename = "teleportEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub teleport_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
@@ -51,6 +64,17 @@ pub struct TagAttributesBase {
     pub signed: Option<bool>,
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
     pub changeable_attributes: Option<TagChangeableAttributes>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TagChangeableAttributes {
+    #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub delete_enabled: Option<bool>,
+    #[serde(rename = "writeEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub write_enabled: Option<bool>,
+    #[serde(rename = "listEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub list_enabled: Option<bool>,
+    #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub read_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcrManifests {
@@ -92,6 +116,21 @@ pub struct ManifestAttributesBase {
     pub tags: Vec<String>,
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
     pub changeable_attributes: Option<ManifestChangeableAttributes>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManifestChangeableAttributes {
+    #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub delete_enabled: Option<bool>,
+    #[serde(rename = "writeEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub write_enabled: Option<bool>,
+    #[serde(rename = "listEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub list_enabled: Option<bool>,
+    #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub read_enabled: Option<bool>,
+    #[serde(rename = "quarantineState", default, skip_serializing_if = "Option::is_none")]
+    pub quarantine_state: Option<String>,
+    #[serde(rename = "quarantineDetails", default, skip_serializing_if = "Option::is_none")]
+    pub quarantine_details: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RefreshToken {
@@ -189,15 +228,35 @@ pub struct Descriptor {
     pub annotations: Option<Annotations>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TagChangeableAttributes {
-    #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub delete_enabled: Option<bool>,
-    #[serde(rename = "writeEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub write_enabled: Option<bool>,
-    #[serde(rename = "listEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub list_enabled: Option<bool>,
-    #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub read_enabled: Option<bool>,
+pub struct Annotations {
+    #[serde(rename = "org.opencontainers.image.created", default, skip_serializing_if = "Option::is_none")]
+    pub org_opencontainers_image_created: Option<String>,
+    #[serde(rename = "org.opencontainers.image.authors", default, skip_serializing_if = "Option::is_none")]
+    pub org_opencontainers_image_authors: Option<String>,
+    #[serde(rename = "org.opencontainers.image.url", default, skip_serializing_if = "Option::is_none")]
+    pub org_opencontainers_image_url: Option<String>,
+    #[serde(
+        rename = "org.opencontainers.image.documentation",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub org_opencontainers_image_documentation: Option<String>,
+    #[serde(rename = "org.opencontainers.image.source", default, skip_serializing_if = "Option::is_none")]
+    pub org_opencontainers_image_source: Option<String>,
+    #[serde(rename = "org.opencontainers.image.version", default, skip_serializing_if = "Option::is_none")]
+    pub org_opencontainers_image_version: Option<String>,
+    #[serde(rename = "org.opencontainers.image.revision", default, skip_serializing_if = "Option::is_none")]
+    pub org_opencontainers_image_revision: Option<String>,
+    #[serde(rename = "org.opencontainers.image.vendor", default, skip_serializing_if = "Option::is_none")]
+    pub org_opencontainers_image_vendor: Option<String>,
+    #[serde(rename = "org.opencontainers.image.licenses", default, skip_serializing_if = "Option::is_none")]
+    pub org_opencontainers_image_licenses: Option<String>,
+    #[serde(rename = "org.opencontainers.image.ref.name", default, skip_serializing_if = "Option::is_none")]
+    pub org_opencontainers_image_ref_name: Option<String>,
+    #[serde(rename = "org.opencontainers.image.title", default, skip_serializing_if = "Option::is_none")]
+    pub org_opencontainers_image_title: Option<String>,
+    #[serde(rename = "org.opencontainers.image.description", default, skip_serializing_if = "Option::is_none")]
+    pub org_opencontainers_image_description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagAttributesTag {
@@ -219,34 +278,6 @@ pub struct ManifestAttributesManifest {
     pub references: Vec<ManifestAttributesManifestReferences>,
     #[serde(rename = "quarantineTag", default, skip_serializing_if = "Option::is_none")]
     pub quarantine_tag: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManifestChangeableAttributes {
-    #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub delete_enabled: Option<bool>,
-    #[serde(rename = "writeEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub write_enabled: Option<bool>,
-    #[serde(rename = "listEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub list_enabled: Option<bool>,
-    #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub read_enabled: Option<bool>,
-    #[serde(rename = "quarantineState", default, skip_serializing_if = "Option::is_none")]
-    pub quarantine_state: Option<String>,
-    #[serde(rename = "quarantineDetails", default, skip_serializing_if = "Option::is_none")]
-    pub quarantine_details: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RepositoryChangeableAttributes {
-    #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub delete_enabled: Option<bool>,
-    #[serde(rename = "writeEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub write_enabled: Option<bool>,
-    #[serde(rename = "listEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub list_enabled: Option<bool>,
-    #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub read_enabled: Option<bool>,
-    #[serde(rename = "teleportEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub teleport_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Manifest {
@@ -362,35 +393,4 @@ pub struct V1Manifest {
     pub history: Vec<History>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub signatures: Vec<ImageSignature>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Annotations {
-    #[serde(rename = "org.opencontainers.image.created", default, skip_serializing_if = "Option::is_none")]
-    pub org_opencontainers_image_created: Option<String>,
-    #[serde(rename = "org.opencontainers.image.authors", default, skip_serializing_if = "Option::is_none")]
-    pub org_opencontainers_image_authors: Option<String>,
-    #[serde(rename = "org.opencontainers.image.url", default, skip_serializing_if = "Option::is_none")]
-    pub org_opencontainers_image_url: Option<String>,
-    #[serde(
-        rename = "org.opencontainers.image.documentation",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub org_opencontainers_image_documentation: Option<String>,
-    #[serde(rename = "org.opencontainers.image.source", default, skip_serializing_if = "Option::is_none")]
-    pub org_opencontainers_image_source: Option<String>,
-    #[serde(rename = "org.opencontainers.image.version", default, skip_serializing_if = "Option::is_none")]
-    pub org_opencontainers_image_version: Option<String>,
-    #[serde(rename = "org.opencontainers.image.revision", default, skip_serializing_if = "Option::is_none")]
-    pub org_opencontainers_image_revision: Option<String>,
-    #[serde(rename = "org.opencontainers.image.vendor", default, skip_serializing_if = "Option::is_none")]
-    pub org_opencontainers_image_vendor: Option<String>,
-    #[serde(rename = "org.opencontainers.image.licenses", default, skip_serializing_if = "Option::is_none")]
-    pub org_opencontainers_image_licenses: Option<String>,
-    #[serde(rename = "org.opencontainers.image.ref.name", default, skip_serializing_if = "Option::is_none")]
-    pub org_opencontainers_image_ref_name: Option<String>,
-    #[serde(rename = "org.opencontainers.image.title", default, skip_serializing_if = "Option::is_none")]
-    pub org_opencontainers_image_title: Option<String>,
-    #[serde(rename = "org.opencontainers.image.description", default, skip_serializing_if = "Option::is_none")]
-    pub org_opencontainers_image_description: Option<String>,
 }

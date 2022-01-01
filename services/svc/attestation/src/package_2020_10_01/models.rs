@@ -21,6 +21,42 @@ pub struct AttestationCertificateManagementBody {
     pub policy_certificate: Option<JsonWebKey>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JsonWebKey {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub alg: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub crv: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub d: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dp: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dq: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub e: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub k: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kid: Option<String>,
+    pub kty: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub n: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub p: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub q: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub qi: Option<String>,
+    #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]
+    pub use_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub x5c: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub y: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyCertificatesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<JsonWebToken>,
@@ -29,6 +65,11 @@ pub struct PolicyCertificatesResponse {
 pub struct PolicyCertificatesResult {
     #[serde(rename = "x-ms-policy-certificates", default, skip_serializing_if = "Option::is_none")]
     pub x_ms_policy_certificates: Option<JsonWebKeySet>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JsonWebKeySet {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub keys: Vec<JsonWebKey>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyCertificatesModifyResponse {
@@ -206,45 +247,4 @@ pub struct TpmAttestationRequest {
 pub struct TpmAttestationResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JsonWebKeySet {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub keys: Vec<JsonWebKey>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JsonWebKey {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub alg: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub crv: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub d: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dp: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dq: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub e: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub k: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kid: Option<String>,
-    pub kty: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub n: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub p: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub q: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub qi: Option<String>,
-    #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]
-    pub use_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub x: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub x5c: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub y: Option<String>,
 }

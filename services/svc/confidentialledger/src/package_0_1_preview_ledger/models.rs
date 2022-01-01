@@ -9,6 +9,9 @@ pub struct ConfidentialLedgerEnclaves {
     #[serde(rename = "enclaveQuotes")]
     pub enclave_quotes: EnclaveQuotes,
 }
+pub type EntityId = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EnclaveQuotes {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Consortium {
     pub members: Vec<ConsortiumMember>,
@@ -33,9 +36,6 @@ pub struct EnclaveQuote {
     pub quote_version: String,
     pub raw: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnclaveQuotes {}
-pub type EntityId = String;
 pub type LedgerEntries = Vec<LedgerEntry>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LedgerEntry {
@@ -45,6 +45,8 @@ pub struct LedgerEntry {
     #[serde(rename = "transactionId", default, skip_serializing_if = "Option::is_none")]
     pub transaction_id: Option<TransactionId>,
 }
+pub type SubLedgerId = String;
+pub type TransactionId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LedgerQueryResult {
     pub state: LedgerQueryState,
@@ -69,6 +71,7 @@ pub enum LedgerUserRole {
     Contributor,
     Reader,
 }
+pub type UserId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LedgerWriteResult {
     #[serde(rename = "subLedgerId")]
@@ -105,8 +108,6 @@ pub struct RoleAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-pub type SubLedgerId = String;
-pub type TransactionId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransactionReceipt {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -126,7 +127,6 @@ pub struct TransactionStatus {
     #[serde(rename = "transactionId")]
     pub transaction_id: TransactionId,
 }
-pub type UserId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfidentialLedgerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]

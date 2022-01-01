@@ -58,6 +58,45 @@ pub struct ResourcePool {
     pub kind: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtendedLocation {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourcePoolsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -125,6 +164,32 @@ pub struct VirtualDiskUpdate {
     pub device_name: Option<String>,
     #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<DiskType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DiskMode {
+    #[serde(rename = "persistent")]
+    Persistent,
+    #[serde(rename = "independent_persistent")]
+    IndependentPersistent,
+    #[serde(rename = "independent_nonpersistent")]
+    IndependentNonpersistent,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DiskType {
+    #[serde(rename = "flat")]
+    Flat,
+    #[serde(rename = "pmem")]
+    Pmem,
+    #[serde(rename = "rawphysical")]
+    Rawphysical,
+    #[serde(rename = "rawvirtual")]
+    Rawvirtual,
+    #[serde(rename = "sparse")]
+    Sparse,
+    #[serde(rename = "sesparse")]
+    Sesparse,
+    #[serde(rename = "unknown")]
+    Unknown,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualDisk {
@@ -314,13 +379,6 @@ pub struct PlacementProfile {
     pub datastore_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExtendedLocation {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineProperties {
     #[serde(rename = "resourcePoolId", default, skip_serializing_if = "Option::is_none")]
     pub resource_pool_id: Option<String>,
@@ -368,6 +426,13 @@ pub struct VirtualMachineProperties {
     pub vm_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum FirmwareType {
+    #[serde(rename = "bios")]
+    Bios,
+    #[serde(rename = "efi")]
+    Efi,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachine {
     pub properties: VirtualMachineProperties,
     pub location: String,
@@ -387,6 +452,23 @@ pub struct VirtualMachine {
     pub kind: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Identity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type")]
+    pub type_: identity::Type,
+}
+pub mod identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        None,
+        SystemAssigned,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineUpdateProperties {
@@ -688,6 +770,28 @@ pub struct NetworkInterfaceUpdate {
     pub device_key: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum NicType {
+    #[serde(rename = "vmxnet3")]
+    Vmxnet3,
+    #[serde(rename = "vmxnet2")]
+    Vmxnet2,
+    #[serde(rename = "vmxnet")]
+    Vmxnet,
+    #[serde(rename = "e1000")]
+    E1000,
+    #[serde(rename = "e1000e")]
+    E1000e,
+    #[serde(rename = "pcnet32")]
+    Pcnet32,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum PowerOnBootOption {
+    #[serde(rename = "enabled")]
+    Enabled,
+    #[serde(rename = "disabled")]
+    Disabled,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkInterface {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -713,59 +817,23 @@ pub struct NetworkInterface {
     pub ip_settings: Option<NicIpSettings>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum PowerOnBootOption {
-    #[serde(rename = "enabled")]
-    Enabled,
-    #[serde(rename = "disabled")]
-    Disabled,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum DiskMode {
-    #[serde(rename = "persistent")]
-    Persistent,
-    #[serde(rename = "independent_persistent")]
-    IndependentPersistent,
-    #[serde(rename = "independent_nonpersistent")]
-    IndependentNonpersistent,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum DiskType {
-    #[serde(rename = "flat")]
-    Flat,
-    #[serde(rename = "pmem")]
-    Pmem,
-    #[serde(rename = "rawphysical")]
-    Rawphysical,
-    #[serde(rename = "rawvirtual")]
-    Rawvirtual,
-    #[serde(rename = "sparse")]
-    Sparse,
-    #[serde(rename = "sesparse")]
-    Sesparse,
-    #[serde(rename = "unknown")]
-    Unknown,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum NicType {
-    #[serde(rename = "vmxnet3")]
-    Vmxnet3,
-    #[serde(rename = "vmxnet2")]
-    Vmxnet2,
-    #[serde(rename = "vmxnet")]
-    Vmxnet,
-    #[serde(rename = "e1000")]
-    E1000,
-    #[serde(rename = "e1000e")]
-    E1000e,
-    #[serde(rename = "pcnet32")]
-    Pcnet32,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum FirmwareType {
-    #[serde(rename = "bios")]
-    Bios,
-    #[serde(rename = "efi")]
-    Efi,
+pub struct NicIpSettings {
+    #[serde(rename = "allocationMethod", default, skip_serializing_if = "Option::is_none")]
+    pub allocation_method: Option<IpAddressAllocationMethod>,
+    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    pub dns_servers: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub gateway: Vec<String>,
+    #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
+    pub ip_address: Option<String>,
+    #[serde(rename = "subnetMask", default, skip_serializing_if = "Option::is_none")]
+    pub subnet_mask: Option<String>,
+    #[serde(rename = "primaryWinsServer", default, skip_serializing_if = "Option::is_none")]
+    pub primary_wins_server: Option<String>,
+    #[serde(rename = "secondaryWinsServer", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_wins_server: Option<String>,
+    #[serde(rename = "ipAddressInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub ip_address_info: Vec<NicIpAddressSettings>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IpAddressAllocationMethod {
@@ -790,25 +858,6 @@ pub struct NicIpAddressSettings {
     pub ip_address: Option<String>,
     #[serde(rename = "subnetMask", default, skip_serializing_if = "Option::is_none")]
     pub subnet_mask: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NicIpSettings {
-    #[serde(rename = "allocationMethod", default, skip_serializing_if = "Option::is_none")]
-    pub allocation_method: Option<IpAddressAllocationMethod>,
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
-    pub dns_servers: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub gateway: Vec<String>,
-    #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
-    pub ip_address: Option<String>,
-    #[serde(rename = "subnetMask", default, skip_serializing_if = "Option::is_none")]
-    pub subnet_mask: Option<String>,
-    #[serde(rename = "primaryWinsServer", default, skip_serializing_if = "Option::is_none")]
-    pub primary_wins_server: Option<String>,
-    #[serde(rename = "secondaryWinsServer", default, skip_serializing_if = "Option::is_none")]
-    pub secondary_wins_server: Option<String>,
-    #[serde(rename = "ipAddressInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub ip_address_info: Vec<NicIpAddressSettings>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
@@ -892,11 +941,28 @@ pub struct InventoryItemProperties {
     pub provisioning_state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum InventoryType {
+    ResourcePool,
+    VirtualMachine,
+    VirtualMachineTemplate,
+    VirtualNetwork,
+    Cluster,
+    Datastore,
+    Host,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourcePoolInventoryItem {
     #[serde(flatten)]
     pub inventory_item_properties: InventoryItemProperties,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<InventoryItemDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InventoryItemDetails {
+    #[serde(rename = "inventoryItemId", default, skip_serializing_if = "Option::is_none")]
+    pub inventory_item_id: Option<String>,
+    #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
+    pub mo_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineInventoryItem {
@@ -971,23 +1037,6 @@ pub struct HostInventoryItem {
     pub parent: Option<InventoryItemDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum InventoryType {
-    ResourcePool,
-    VirtualMachine,
-    VirtualMachineTemplate,
-    VirtualNetwork,
-    Cluster,
-    Datastore,
-    Host,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InventoryItemDetails {
-    #[serde(rename = "inventoryItemId", default, skip_serializing_if = "Option::is_none")]
-    pub inventory_item_id: Option<String>,
-    #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
-    pub mo_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridIdentityMetadataList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -1013,23 +1062,6 @@ pub struct HybridIdentityMetadataProperties {
     pub provisioning_state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Identity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type")]
-    pub type_: identity::Type,
-}
-pub mod identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        None,
-        SystemAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineExtension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MachineExtensionProperties>,
@@ -1045,13 +1077,6 @@ pub struct MachineExtension {
     pub id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MachineExtensionUpdate {
-    #[serde(flatten)]
-    pub resource_patch: ResourcePatch,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MachineExtensionUpdateProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineExtensionProperties {
@@ -1073,6 +1098,13 @@ pub struct MachineExtensionProperties {
     pub provisioning_state: Option<String>,
     #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
     pub instance_view: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MachineExtensionUpdate {
+    #[serde(flatten)]
+    pub resource_patch: ResourcePatch,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MachineExtensionUpdateProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineExtensionUpdateProperties {
@@ -1187,38 +1219,6 @@ pub struct GuestAgentProperties {
     pub statuses: Vec<ResourceStatus>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {

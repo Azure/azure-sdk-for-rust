@@ -9,6 +9,13 @@ pub struct CheckPrincipalAccessRequest {
     pub scope: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubjectInfo {
+    #[serde(rename = "principalId")]
+    pub principal_id: String,
+    #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub group_ids: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequiredAction {
     pub id: String,
     #[serde(rename = "isDataAction")]
@@ -18,13 +25,6 @@ pub struct RequiredAction {
 pub struct CheckPrincipalAccessResponse {
     #[serde(rename = "AccessDecisions", default, skip_serializing_if = "Vec::is_empty")]
     pub access_decisions: Vec<CheckAccessDecision>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubjectInfo {
-    #[serde(rename = "principalId")]
-    pub principal_id: String,
-    #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
-    pub group_ids: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckAccessDecision {

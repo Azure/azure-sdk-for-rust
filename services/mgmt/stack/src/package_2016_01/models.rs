@@ -122,6 +122,24 @@ pub struct ProductNestedProperties {
     pub compatibility: Option<Compatibility>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IconUris {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub large: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wide: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub medium: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub small: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hero: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProductProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Compatibility {
     #[serde(rename = "isCompatible", default, skip_serializing_if = "Option::is_none")]
     pub is_compatible: Option<bool>,
@@ -146,24 +164,6 @@ pub enum CompatibilityIssue {
     ConnectionToInternetRequired,
     ConnectionToAzureRequired,
     DisconnectedEnvironmentRequired,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IconUris {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub large: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub wide: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub medium: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub small: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub hero: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProductProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProductLink {

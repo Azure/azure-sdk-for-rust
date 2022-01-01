@@ -87,6 +87,11 @@ pub struct AttestationServiceCreationSpecificParams {
     pub policy_signing_certificates: Option<JsonWebKeySet>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JsonWebKeySet {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub keys: Vec<JsonWebKey>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
@@ -102,11 +107,6 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JsonWebKeySet {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub keys: Vec<JsonWebKey>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonWebKey {

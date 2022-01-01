@@ -87,13 +87,6 @@ pub struct PriceSheetProperties {
     pub offer_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Forecast {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ForecastProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MeterDetails {
     #[serde(rename = "meterName", default, skip_serializing_if = "Option::is_none")]
     pub meter_name: Option<String>,
@@ -111,18 +104,47 @@ pub struct MeterDetails {
     pub pretax_standard_rate: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Forecast {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ForecastProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ForecastProperties {
+    #[serde(rename = "usageDate", default, skip_serializing_if = "Option::is_none")]
+    pub usage_date: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub grain: Option<forecast_properties::Grain>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub charge: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub currency: Option<String>,
+    #[serde(rename = "chargeType", default, skip_serializing_if = "Option::is_none")]
+    pub charge_type: Option<forecast_properties::ChargeType>,
+    #[serde(rename = "confidenceLevels", default, skip_serializing_if = "Vec::is_empty")]
+    pub confidence_levels: Vec<serde_json::Value>,
+}
+pub mod forecast_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Grain {
+        Daily,
+        Monthly,
+        Yearly,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ChargeType {
+        Actual,
+        Forecast,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageDetail {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UsageDetailProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UsageDetailsListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<UsageDetail>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageDetailProperties {
@@ -180,36 +202,14 @@ pub struct UsageDetailProperties {
     pub additional_properties: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UsageDetailsListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<UsageDetail>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ForecastsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Forecast>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ForecastProperties {
-    #[serde(rename = "usageDate", default, skip_serializing_if = "Option::is_none")]
-    pub usage_date: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub grain: Option<forecast_properties::Grain>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub charge: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub currency: Option<String>,
-    #[serde(rename = "chargeType", default, skip_serializing_if = "Option::is_none")]
-    pub charge_type: Option<forecast_properties::ChargeType>,
-    #[serde(rename = "confidenceLevels", default, skip_serializing_if = "Vec::is_empty")]
-    pub confidence_levels: Vec<serde_json::Value>,
-}
-pub mod forecast_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Grain {
-        Daily,
-        Monthly,
-        Yearly,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ChargeType {
-        Actual,
-        Forecast,
-    }
 }

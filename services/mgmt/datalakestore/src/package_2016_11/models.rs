@@ -34,11 +34,20 @@ pub struct DataLakeStoreAccount {
     pub properties: Option<DataLakeStoreAccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataLakeStoreAccountBasic {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DataLakeStoreAccountPropertiesBasic>,
+pub struct EncryptionIdentity {
+    #[serde(rename = "type")]
+    pub type_: encryption_identity::Type,
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+pub mod encryption_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataLakeStoreAccountProperties {
@@ -130,6 +139,37 @@ pub mod data_lake_store_account_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EncryptionConfig {
+    #[serde(rename = "type")]
+    pub type_: encryption_config::Type,
+    #[serde(rename = "keyVaultMetaInfo", default, skip_serializing_if = "Option::is_none")]
+    pub key_vault_meta_info: Option<KeyVaultMetaInfo>,
+}
+pub mod encryption_config {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        UserManaged,
+        ServiceManaged,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultMetaInfo {
+    #[serde(rename = "keyVaultResourceId")]
+    pub key_vault_resource_id: String,
+    #[serde(rename = "encryptionKeyName")]
+    pub encryption_key_name: String,
+    #[serde(rename = "encryptionKeyVersion")]
+    pub encryption_key_version: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataLakeStoreAccountBasic {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DataLakeStoreAccountPropertiesBasic>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataLakeStoreAccountPropertiesBasic {
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
@@ -172,46 +212,6 @@ pub struct DataLakeStoreAccountListResult {
     pub value: Vec<DataLakeStoreAccountBasic>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionIdentity {
-    #[serde(rename = "type")]
-    pub type_: encryption_identity::Type,
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-pub mod encryption_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionConfig {
-    #[serde(rename = "type")]
-    pub type_: encryption_config::Type,
-    #[serde(rename = "keyVaultMetaInfo", default, skip_serializing_if = "Option::is_none")]
-    pub key_vault_meta_info: Option<KeyVaultMetaInfo>,
-}
-pub mod encryption_config {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        UserManaged,
-        ServiceManaged,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultMetaInfo {
-    #[serde(rename = "keyVaultResourceId")]
-    pub key_vault_resource_id: String,
-    #[serde(rename = "encryptionKeyName")]
-    pub encryption_key_name: String,
-    #[serde(rename = "encryptionKeyVersion")]
-    pub encryption_key_version: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRule {
@@ -530,11 +530,6 @@ pub struct CreateOrUpdateFirewallRuleParameters {
     pub properties: CreateOrUpdateFirewallRuleProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateFirewallRuleWithAccountParameters {
-    pub name: String,
-    pub properties: CreateOrUpdateFirewallRuleProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateOrUpdateFirewallRuleProperties {
     #[serde(rename = "startIpAddress")]
     pub start_ip_address: String,
@@ -542,13 +537,12 @@ pub struct CreateOrUpdateFirewallRuleProperties {
     pub end_ip_address: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateFirewallRuleParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<UpdateFirewallRuleProperties>,
+pub struct CreateFirewallRuleWithAccountParameters {
+    pub name: String,
+    pub properties: CreateOrUpdateFirewallRuleProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateFirewallRuleWithAccountParameters {
-    pub name: String,
+pub struct UpdateFirewallRuleParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateFirewallRuleProperties>,
 }
@@ -560,12 +554,13 @@ pub struct UpdateFirewallRuleProperties {
     pub end_ip_address: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateOrUpdateVirtualNetworkRuleParameters {
-    pub properties: CreateOrUpdateVirtualNetworkRuleProperties,
+pub struct UpdateFirewallRuleWithAccountParameters {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<UpdateFirewallRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateVirtualNetworkRuleWithAccountParameters {
-    pub name: String,
+pub struct CreateOrUpdateVirtualNetworkRuleParameters {
     pub properties: CreateOrUpdateVirtualNetworkRuleProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -574,13 +569,12 @@ pub struct CreateOrUpdateVirtualNetworkRuleProperties {
     pub subnet_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateVirtualNetworkRuleParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<UpdateVirtualNetworkRuleProperties>,
+pub struct CreateVirtualNetworkRuleWithAccountParameters {
+    pub name: String,
+    pub properties: CreateOrUpdateVirtualNetworkRuleProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateVirtualNetworkRuleWithAccountParameters {
-    pub name: String,
+pub struct UpdateVirtualNetworkRuleParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateVirtualNetworkRuleProperties>,
 }
@@ -590,12 +584,13 @@ pub struct UpdateVirtualNetworkRuleProperties {
     pub subnet_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateOrUpdateTrustedIdProviderParameters {
-    pub properties: CreateOrUpdateTrustedIdProviderProperties,
+pub struct UpdateVirtualNetworkRuleWithAccountParameters {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<UpdateVirtualNetworkRuleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateTrustedIdProviderWithAccountParameters {
-    pub name: String,
+pub struct CreateOrUpdateTrustedIdProviderParameters {
     pub properties: CreateOrUpdateTrustedIdProviderProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -604,13 +599,12 @@ pub struct CreateOrUpdateTrustedIdProviderProperties {
     pub id_provider: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateTrustedIdProviderParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<UpdateTrustedIdProviderProperties>,
+pub struct CreateTrustedIdProviderWithAccountParameters {
+    pub name: String,
+    pub properties: CreateOrUpdateTrustedIdProviderProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateTrustedIdProviderWithAccountParameters {
-    pub name: String,
+pub struct UpdateTrustedIdProviderParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateTrustedIdProviderProperties>,
 }
@@ -618,6 +612,12 @@ pub struct UpdateTrustedIdProviderWithAccountParameters {
 pub struct UpdateTrustedIdProviderProperties {
     #[serde(rename = "idProvider", default, skip_serializing_if = "Option::is_none")]
     pub id_provider: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UpdateTrustedIdProviderWithAccountParameters {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<UpdateTrustedIdProviderProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityParameters {

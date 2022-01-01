@@ -11,10 +11,20 @@ pub struct Account {
     pub properties: Option<AccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccountList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    pub value: Vec<Account>,
+pub struct Identity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<identity::Type>,
+}
+pub mod identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountProperties {
@@ -37,6 +47,12 @@ pub mod account_properties {
         Moving,
         Failed,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccountList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<Account>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountUpdateParameters {
@@ -90,6 +106,21 @@ pub struct AdlsGen2FileDataSet {
     pub properties: AdlsGen2FileProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdlsGen2FileProperties {
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
+    pub data_set_id: Option<String>,
+    #[serde(rename = "filePath")]
+    pub file_path: String,
+    #[serde(rename = "fileSystem")]
+    pub file_system: String,
+    #[serde(rename = "resourceGroup")]
+    pub resource_group: String,
+    #[serde(rename = "storageAccountName")]
+    pub storage_account_name: String,
+    #[serde(rename = "subscriptionId")]
+    pub subscription_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
@@ -138,11 +169,15 @@ pub mod adls_gen2_file_data_set_mapping_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdlsGen2FileProperties {
+pub struct AdlsGen2FileSystemDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
+    pub properties: AdlsGen2FileSystemProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdlsGen2FileSystemProperties {
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
-    #[serde(rename = "filePath")]
-    pub file_path: String,
     #[serde(rename = "fileSystem")]
     pub file_system: String,
     #[serde(rename = "resourceGroup")]
@@ -151,12 +186,6 @@ pub struct AdlsGen2FileProperties {
     pub storage_account_name: String,
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdlsGen2FileSystemDataSet {
-    #[serde(flatten)]
-    pub data_set: DataSet,
-    pub properties: AdlsGen2FileSystemProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileSystemDataSetMapping {
@@ -198,23 +227,25 @@ pub mod adls_gen2_file_system_data_set_mapping_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdlsGen2FileSystemProperties {
+pub struct AdlsGen2FolderDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
+    pub properties: AdlsGen2FolderProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdlsGen2FolderProperties {
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[serde(rename = "fileSystem")]
     pub file_system: String,
+    #[serde(rename = "folderPath")]
+    pub folder_path: String,
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdlsGen2FolderDataSet {
-    #[serde(flatten)]
-    pub data_set: DataSet,
-    pub properties: AdlsGen2FolderProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FolderDataSetMapping {
@@ -258,25 +289,23 @@ pub mod adls_gen2_folder_data_set_mapping_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdlsGen2FolderProperties {
+pub struct BlobContainerDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
+    pub properties: BlobContainerProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobContainerProperties {
+    #[serde(rename = "containerName")]
+    pub container_name: String,
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
-    #[serde(rename = "fileSystem")]
-    pub file_system: String,
-    #[serde(rename = "folderPath")]
-    pub folder_path: String,
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobContainerDataSet {
-    #[serde(flatten)]
-    pub data_set: DataSet,
-    pub properties: BlobContainerProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobContainerDataSetMapping {
@@ -318,89 +347,31 @@ pub mod blob_container_mapping_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobContainerProperties {
-    #[serde(rename = "containerName")]
-    pub container_name: String,
-    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
-    pub data_set_id: Option<String>,
-    #[serde(rename = "resourceGroup")]
-    pub resource_group: String,
-    #[serde(rename = "storageAccountName")]
-    pub storage_account_name: String,
-    #[serde(rename = "subscriptionId")]
-    pub subscription_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
     pub properties: BlobProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobDataSetMapping {
-    #[serde(flatten)]
-    pub data_set_mapping: DataSetMapping,
-    pub properties: BlobMappingProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobFolderDataSet {
-    #[serde(flatten)]
-    pub data_set: DataSet,
-    pub properties: BlobFolderProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobFolderDataSetMapping {
-    #[serde(flatten)]
-    pub data_set_mapping: DataSetMapping,
-    pub properties: BlobFolderMappingProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobFolderMappingProperties {
-    #[serde(rename = "containerName")]
-    pub container_name: String,
-    #[serde(rename = "dataSetId")]
-    pub data_set_id: String,
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
-    pub data_set_mapping_status: Option<blob_folder_mapping_properties::DataSetMappingStatus>,
-    pub prefix: String,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<blob_folder_mapping_properties::ProvisioningState>,
-    #[serde(rename = "resourceGroup")]
-    pub resource_group: String,
-    #[serde(rename = "storageAccountName")]
-    pub storage_account_name: String,
-    #[serde(rename = "subscriptionId")]
-    pub subscription_id: String,
-}
-pub mod blob_folder_mapping_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DataSetMappingStatus {
-        Ok,
-        Broken,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Succeeded,
-        Creating,
-        Deleting,
-        Moving,
-        Failed,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobFolderProperties {
+pub struct BlobProperties {
     #[serde(rename = "containerName")]
     pub container_name: String,
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
-    pub prefix: String,
+    #[serde(rename = "filePath")]
+    pub file_path: String,
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
+    pub properties: BlobMappingProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobMappingProperties {
@@ -445,13 +416,18 @@ pub mod blob_mapping_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobProperties {
+pub struct BlobFolderDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
+    pub properties: BlobFolderProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobFolderProperties {
     #[serde(rename = "containerName")]
     pub container_name: String,
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
-    #[serde(rename = "filePath")]
-    pub file_path: String,
+    pub prefix: String,
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
     #[serde(rename = "storageAccountName")]
@@ -460,16 +436,50 @@ pub struct BlobProperties {
     pub subscription_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobFolderDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
+    pub properties: BlobFolderMappingProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobFolderMappingProperties {
+    #[serde(rename = "containerName")]
+    pub container_name: String,
+    #[serde(rename = "dataSetId")]
+    pub data_set_id: String,
+    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    pub data_set_mapping_status: Option<blob_folder_mapping_properties::DataSetMappingStatus>,
+    pub prefix: String,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<blob_folder_mapping_properties::ProvisioningState>,
+    #[serde(rename = "resourceGroup")]
+    pub resource_group: String,
+    #[serde(rename = "storageAccountName")]
+    pub storage_account_name: String,
+    #[serde(rename = "subscriptionId")]
+    pub subscription_id: String,
+}
+pub mod blob_folder_mapping_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DataSetMappingStatus {
+        Ok,
+        Broken,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Succeeded,
+        Creating,
+        Deleting,
+        Moving,
+        Failed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerInvitation {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     pub properties: ConsumerInvitationProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConsumerInvitationList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    pub value: Vec<ConsumerInvitation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerInvitationProperties {
@@ -513,17 +523,17 @@ pub mod consumer_invitation_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConsumerInvitationList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<ConsumerInvitation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerSourceDataSet {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConsumerSourceDataSetProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConsumerSourceDataSetList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    pub value: Vec<ConsumerSourceDataSet>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerSourceDataSetProperties {
@@ -557,6 +567,12 @@ pub mod consumer_source_data_set_properties {
         #[serde(rename = "SqlDWTable")]
         SqlDwTable,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConsumerSourceDataSetList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<ConsumerSourceDataSet>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataSet {
@@ -672,33 +688,11 @@ pub mod email_registration {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Identity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<identity::Type>,
-}
-pub mod identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Invitation {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InvitationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InvitationList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    pub value: Vec<Invitation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InvitationProperties {
@@ -732,10 +726,38 @@ pub mod invitation_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InvitationList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<Invitation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoClusterDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
     pub properties: KustoClusterDataSetProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KustoClusterDataSetProperties {
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
+    pub data_set_id: Option<String>,
+    #[serde(rename = "kustoClusterResourceId")]
+    pub kusto_cluster_resource_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<kusto_cluster_data_set_properties::ProvisioningState>,
+}
+pub mod kusto_cluster_data_set_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Succeeded,
+        Creating,
+        Deleting,
+        Moving,
+        Failed,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoClusterDataSetMapping {
@@ -773,17 +795,23 @@ pub mod kusto_cluster_data_set_mapping_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KustoClusterDataSetProperties {
+pub struct KustoDatabaseDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
+    pub properties: KustoDatabaseDataSetProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KustoDatabaseDataSetProperties {
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
-    #[serde(rename = "kustoClusterResourceId")]
-    pub kusto_cluster_resource_id: String,
+    #[serde(rename = "kustoDatabaseResourceId")]
+    pub kusto_database_resource_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<kusto_cluster_data_set_properties::ProvisioningState>,
+    pub provisioning_state: Option<kusto_database_data_set_properties::ProvisioningState>,
 }
-pub mod kusto_cluster_data_set_properties {
+pub mod kusto_database_data_set_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
@@ -793,12 +821,6 @@ pub mod kusto_cluster_data_set_properties {
         Moving,
         Failed,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KustoDatabaseDataSet {
-    #[serde(flatten)]
-    pub data_set: DataSet,
-    pub properties: KustoDatabaseDataSetProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoDatabaseDataSetMapping {
@@ -826,28 +848,6 @@ pub mod kusto_database_data_set_mapping_properties {
         Ok,
         Broken,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Succeeded,
-        Creating,
-        Deleting,
-        Moving,
-        Failed,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KustoDatabaseDataSetProperties {
-    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
-    pub data_set_id: Option<String>,
-    #[serde(rename = "kustoDatabaseResourceId")]
-    pub kusto_database_resource_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<kusto_database_data_set_properties::ProvisioningState>,
-}
-pub mod kusto_database_data_set_properties {
-    use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -963,12 +963,6 @@ pub struct ProviderShareSubscription {
     pub properties: Option<ProviderShareSubscriptionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProviderShareSubscriptionList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    pub value: Vec<ProviderShareSubscription>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProviderShareSubscriptionProperties {
     #[serde(rename = "consumerEmail", default, skip_serializing_if = "Option::is_none")]
     pub consumer_email: Option<String>,
@@ -998,6 +992,12 @@ pub mod provider_share_subscription_properties {
         SourceDeleted,
         Revoking,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProviderShareSubscriptionList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<ProviderShareSubscription>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyDto {
@@ -1123,12 +1123,6 @@ pub struct Share {
     pub properties: Option<ShareProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ShareList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    pub value: Vec<Share>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareProperties {
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
@@ -1162,16 +1156,16 @@ pub mod share_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ShareList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<Share>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareSubscription {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     pub properties: ShareSubscriptionProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ShareSubscriptionList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    pub value: Vec<ShareSubscription>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareSubscriptionProperties {
@@ -1226,6 +1220,12 @@ pub mod share_subscription_properties {
         SourceDeleted,
         Revoking,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ShareSubscriptionList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<ShareSubscription>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareSubscriptionSynchronization {
@@ -1320,6 +1320,19 @@ pub struct SqlDbTableDataSet {
     pub properties: Option<SqlDbTableProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlDbTableProperties {
+    #[serde(rename = "databaseName")]
+    pub database_name: String,
+    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
+    pub data_set_id: Option<String>,
+    #[serde(rename = "schemaName")]
+    pub schema_name: String,
+    #[serde(rename = "sqlServerResourceId")]
+    pub sql_server_resource_id: String,
+    #[serde(rename = "tableName")]
+    pub table_name: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDbTableDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
@@ -1359,24 +1372,24 @@ pub mod sql_db_table_data_set_mapping_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlDbTableProperties {
-    #[serde(rename = "databaseName")]
-    pub database_name: String,
+pub struct SqlDwTableDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SqlDwTableProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlDwTableProperties {
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[serde(rename = "dataWarehouseName")]
+    pub data_warehouse_name: String,
     #[serde(rename = "schemaName")]
     pub schema_name: String,
     #[serde(rename = "sqlServerResourceId")]
     pub sql_server_resource_id: String,
     #[serde(rename = "tableName")]
     pub table_name: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlDwTableDataSet {
-    #[serde(flatten)]
-    pub data_set: DataSet,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SqlDwTableProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDwTableDataSetMapping {
@@ -1416,19 +1429,6 @@ pub mod sql_dw_table_data_set_mapping_properties {
         Moving,
         Failed,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlDwTableProperties {
-    #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
-    pub data_set_id: Option<String>,
-    #[serde(rename = "dataWarehouseName")]
-    pub data_warehouse_name: String,
-    #[serde(rename = "schemaName")]
-    pub schema_name: String,
-    #[serde(rename = "sqlServerResourceId")]
-    pub sql_server_resource_id: String,
-    #[serde(rename = "tableName")]
-    pub table_name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynchronizationDetails {

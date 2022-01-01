@@ -129,6 +129,15 @@ pub struct NetAppAccount {
     pub properties: Option<AccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceTags {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccountProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "activeDirectories", default, skip_serializing_if = "Vec::is_empty")]
+    pub active_directories: Vec<ActiveDirectory>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetAppAccountPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -142,13 +151,6 @@ pub struct NetAppAccountPatch {
     pub tags: Option<ResourceTags>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccountProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "activeDirectories", default, skip_serializing_if = "Vec::is_empty")]
-    pub active_directories: Vec<ActiveDirectory>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveDirectory {
@@ -260,8 +262,6 @@ pub struct Volume {
     pub properties: VolumeProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceTags {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeProperties {
     #[serde(rename = "fileSystemId", default, skip_serializing_if = "Option::is_none")]
     pub file_system_id: Option<String>,
@@ -318,23 +318,6 @@ pub mod volume_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExportPolicyRule {
-    #[serde(rename = "ruleIndex", default, skip_serializing_if = "Option::is_none")]
-    pub rule_index: Option<i64>,
-    #[serde(rename = "unixReadOnly", default, skip_serializing_if = "Option::is_none")]
-    pub unix_read_only: Option<bool>,
-    #[serde(rename = "unixReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub unix_read_write: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cifs: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub nfsv3: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub nfsv41: Option<bool>,
-    #[serde(rename = "allowedClients", default, skip_serializing_if = "Option::is_none")]
-    pub allowed_clients: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicationObject {
     #[serde(rename = "replicationId", default, skip_serializing_if = "Option::is_none")]
     pub replication_id: Option<String>,
@@ -370,6 +353,23 @@ pub mod replication_object {
 pub struct VolumeSnapshotProperties {
     #[serde(rename = "snapshotPolicyId", default, skip_serializing_if = "Option::is_none")]
     pub snapshot_policy_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExportPolicyRule {
+    #[serde(rename = "ruleIndex", default, skip_serializing_if = "Option::is_none")]
+    pub rule_index: Option<i64>,
+    #[serde(rename = "unixReadOnly", default, skip_serializing_if = "Option::is_none")]
+    pub unix_read_only: Option<bool>,
+    #[serde(rename = "unixReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub unix_read_write: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cifs: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nfsv3: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nfsv41: Option<bool>,
+    #[serde(rename = "allowedClients", default, skip_serializing_if = "Option::is_none")]
+    pub allowed_clients: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicationStatus {
@@ -488,8 +488,6 @@ pub struct Snapshot {
     pub properties: Option<SnapshotProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SnapshotPatch {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotProperties {
     #[serde(rename = "snapshotId", default, skip_serializing_if = "Option::is_none")]
     pub snapshot_id: Option<String>,
@@ -498,6 +496,8 @@ pub struct SnapshotProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SnapshotPatch {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeRevert {
     #[serde(rename = "snapshotId", default, skip_serializing_if = "Option::is_none")]

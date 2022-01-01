@@ -54,6 +54,13 @@ pub mod registration_definition_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Plan {
+    pub name: String,
+    pub publisher: String,
+    pub product: String,
+    pub version: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistrationDefinitionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RegistrationDefinition>,
@@ -195,13 +202,6 @@ pub struct MarketplaceRegistrationDefinitionList {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Plan {
-    pub name: String,
-    pub publisher: String,
-    pub product: String,
-    pub version: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -250,13 +250,6 @@ pub struct EligibleAuthorization {
     pub just_in_time_access_policy: Option<JustInTimeAccessPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EligibleApprover {
-    #[serde(rename = "principalId")]
-    pub principal_id: String,
-    #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id_display_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JustInTimeAccessPolicy {
     #[serde(rename = "multiFactorAuthProvider")]
     pub multi_factor_auth_provider: just_in_time_access_policy::MultiFactorAuthProvider,
@@ -272,6 +265,13 @@ pub mod just_in_time_access_policy {
         Azure,
         None,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EligibleApprover {
+    #[serde(rename = "principalId")]
+    pub principal_id: String,
+    #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id_display_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {

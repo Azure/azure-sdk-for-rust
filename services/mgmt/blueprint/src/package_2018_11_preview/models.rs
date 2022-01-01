@@ -9,6 +9,15 @@ pub struct Blueprint {
     pub properties: BlueprintProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlueprintProperties {
+    #[serde(flatten)]
+    pub shared_blueprint_properties: SharedBlueprintProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub versions: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub layout: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Artifact {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
@@ -31,6 +40,15 @@ pub struct PublishedBlueprint {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
     pub properties: PublishedBlueprintProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PublishedBlueprintProperties {
+    #[serde(flatten)]
+    pub shared_blueprint_properties: SharedBlueprintProperties,
+    #[serde(rename = "blueprintName", default, skip_serializing_if = "Option::is_none")]
+    pub blueprint_name: Option<String>,
+    #[serde(rename = "changeNotes", default, skip_serializing_if = "Option::is_none")]
+    pub change_notes: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlueprintList {
@@ -101,24 +119,6 @@ pub mod shared_blueprint_properties {
         #[serde(rename = "managementGroup")]
         ManagementGroup,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlueprintProperties {
-    #[serde(flatten)]
-    pub shared_blueprint_properties: SharedBlueprintProperties,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub versions: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub layout: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PublishedBlueprintProperties {
-    #[serde(flatten)]
-    pub shared_blueprint_properties: SharedBlueprintProperties,
-    #[serde(rename = "blueprintName", default, skip_serializing_if = "Option::is_none")]
-    pub blueprint_name: Option<String>,
-    #[serde(rename = "changeNotes", default, skip_serializing_if = "Option::is_none")]
-    pub change_notes: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlueprintStatus {
@@ -231,6 +231,15 @@ pub mod parameter_definition {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ParameterDefinitionMetadata {
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "strongType", default, skip_serializing_if = "Option::is_none")]
+    pub strong_type: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceGroupDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -242,15 +251,6 @@ pub struct ResourceGroupDefinition {
     pub depends_on: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ParameterDefinitionMetadata {
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "strongType", default, skip_serializing_if = "Option::is_none")]
-    pub strong_type: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureResourceBase {
@@ -286,25 +286,24 @@ pub struct CloudError {
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorResponse>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Assignment {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     pub identity: ManagedServiceIdentity,
     pub properties: AssignmentProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssignmentList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Assignment>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserAssignedIdentity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedServiceIdentity {
@@ -324,31 +323,6 @@ pub mod managed_service_identity {
         None,
         SystemAssigned,
         UserAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssignmentStatus {
-    #[serde(flatten)]
-    pub blueprint_resource_status_base: BlueprintResourceStatusBase,
-    #[serde(rename = "managedResources", default, skip_serializing_if = "Vec::is_empty")]
-    pub managed_resources: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssignmentLockSettings {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mode: Option<assignment_lock_settings::Mode>,
-    #[serde(rename = "excludedPrincipals", default, skip_serializing_if = "Vec::is_empty")]
-    pub excluded_principals: Vec<String>,
-    #[serde(rename = "excludedActions", default, skip_serializing_if = "Vec::is_empty")]
-    pub excluded_actions: Vec<String>,
-}
-pub mod assignment_lock_settings {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Mode {
-        None,
-        AllResourcesReadOnly,
-        AllResourcesDoNotDelete,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -396,6 +370,45 @@ pub mod assignment_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssignmentStatus {
+    #[serde(flatten)]
+    pub blueprint_resource_status_base: BlueprintResourceStatusBase,
+    #[serde(rename = "managedResources", default, skip_serializing_if = "Vec::is_empty")]
+    pub managed_resources: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssignmentLockSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<assignment_lock_settings::Mode>,
+    #[serde(rename = "excludedPrincipals", default, skip_serializing_if = "Vec::is_empty")]
+    pub excluded_principals: Vec<String>,
+    #[serde(rename = "excludedActions", default, skip_serializing_if = "Vec::is_empty")]
+    pub excluded_actions: Vec<String>,
+}
+pub mod assignment_lock_settings {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Mode {
+        None,
+        AllResourcesReadOnly,
+        AllResourcesDoNotDelete,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssignmentList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Assignment>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserAssignedIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceGroupValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -421,13 +434,6 @@ pub struct AssignmentOperation {
     pub properties: Option<AssignmentOperationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssignmentOperationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<AssignmentOperation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssignmentOperationProperties {
     #[serde(rename = "blueprintVersion", default, skip_serializing_if = "Option::is_none")]
     pub blueprint_version: Option<String>,
@@ -441,6 +447,13 @@ pub struct AssignmentOperationProperties {
     pub time_finished: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub deployments: Vec<AssignmentDeploymentJob>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssignmentOperationList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<AssignmentOperation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssignmentDeploymentJob {
@@ -467,13 +480,6 @@ pub struct AssignmentDeploymentJobResult {
     pub resources: Vec<AssignmentJobCreatedResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssignmentJobCreatedResource {
-    #[serde(flatten)]
-    pub azure_resource_base: AzureResourceBase,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureResourceManagerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -481,17 +487,11 @@ pub struct AzureResourceManagerError {
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
+pub struct AssignmentJobCreatedResource {
+    #[serde(flatten)]
+    pub azure_resource_base: AzureResourceBase,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorResponse>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
+    pub properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {

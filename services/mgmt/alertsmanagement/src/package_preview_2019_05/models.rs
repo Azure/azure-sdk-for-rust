@@ -241,13 +241,6 @@ pub struct Alert {
     pub properties: Option<AlertProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertsList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Alert>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub essentials: Option<Essentials>,
@@ -256,10 +249,6 @@ pub struct AlertProperties {
     #[serde(rename = "egressConfig", default, skip_serializing_if = "Option::is_none")]
     pub egress_config: Option<EgressConfig>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EgressConfig {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertContext {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Essentials {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -350,6 +339,17 @@ pub mod essentials {
         VmInsights,
         Zabbix,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertContext {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EgressConfig {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertsList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Alert>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertModification {

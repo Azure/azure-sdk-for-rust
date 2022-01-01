@@ -581,6 +581,88 @@ pub struct ErrorDetail {
     pub object_with_sync_error: Option<MergedExportError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ObjectWithSyncError {
+    #[serde(rename = "sourceOfAuthority", default, skip_serializing_if = "Option::is_none")]
+    pub source_of_authority: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
+    pub object_type: Option<String>,
+    #[serde(rename = "attributeName", default, skip_serializing_if = "Option::is_none")]
+    pub attribute_name: Option<String>,
+    #[serde(rename = "attributeValue", default, skip_serializing_if = "Option::is_none")]
+    pub attribute_value: Option<String>,
+    #[serde(rename = "modififedValue", default, skip_serializing_if = "Option::is_none")]
+    pub modififed_value: Option<String>,
+    #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
+    pub user_principal_name: Option<String>,
+    #[serde(rename = "objectGuid", default, skip_serializing_if = "Option::is_none")]
+    pub object_guid: Option<String>,
+    #[serde(rename = "attributeMultiValues", default, skip_serializing_if = "Option::is_none")]
+    pub attribute_multi_values: Option<bool>,
+    #[serde(rename = "minLimit", default, skip_serializing_if = "Option::is_none")]
+    pub min_limit: Option<String>,
+    #[serde(rename = "maxLimit", default, skip_serializing_if = "Option::is_none")]
+    pub max_limit: Option<String>,
+    #[serde(rename = "distinguishedName", default, skip_serializing_if = "Option::is_none")]
+    pub distinguished_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mail: Option<String>,
+    #[serde(rename = "timeOccured", default, skip_serializing_if = "Option::is_none")]
+    pub time_occured: Option<String>,
+    #[serde(rename = "errorType", default, skip_serializing_if = "Option::is_none")]
+    pub error_type: Option<String>,
+    #[serde(rename = "sourceAnchor", default, skip_serializing_if = "Option::is_none")]
+    pub source_anchor: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MergedExportError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "incomingObjectDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub incoming_object_display_name: Option<String>,
+    #[serde(rename = "incomingObjectType", default, skip_serializing_if = "Option::is_none")]
+    pub incoming_object_type: Option<String>,
+    #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
+    pub user_principal_name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "attributeName", default, skip_serializing_if = "Option::is_none")]
+    pub attribute_name: Option<String>,
+    #[serde(rename = "attributeValue", default, skip_serializing_if = "Option::is_none")]
+    pub attribute_value: Option<String>,
+    #[serde(rename = "timeOccurred", default, skip_serializing_if = "Option::is_none")]
+    pub time_occurred: Option<String>,
+    #[serde(rename = "timeFirstOccurred", default, skip_serializing_if = "Option::is_none")]
+    pub time_first_occurred: Option<String>,
+    #[serde(rename = "csObjectId", default, skip_serializing_if = "Option::is_none")]
+    pub cs_object_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dn: Option<String>,
+    #[serde(rename = "incomingObject", default, skip_serializing_if = "Option::is_none")]
+    pub incoming_object: Option<AssociatedObject>,
+    #[serde(rename = "existingObject", default, skip_serializing_if = "Option::is_none")]
+    pub existing_object: Option<AssociatedObject>,
+    #[serde(rename = "modifiedOrRemovedAttributeValue", default, skip_serializing_if = "Option::is_none")]
+    pub modified_or_removed_attribute_value: Option<String>,
+    #[serde(rename = "runStepResultId", default, skip_serializing_if = "Option::is_none")]
+    pub run_step_result_id: Option<String>,
+    #[serde(rename = "samAccountName", default, skip_serializing_if = "Option::is_none")]
+    pub sam_account_name: Option<String>,
+    #[serde(rename = "serverErrorDetail", default, skip_serializing_if = "Option::is_none")]
+    pub server_error_detail: Option<String>,
+    #[serde(rename = "serviceId", default, skip_serializing_if = "Option::is_none")]
+    pub service_id: Option<String>,
+    #[serde(rename = "serviceMemberId", default, skip_serializing_if = "Option::is_none")]
+    pub service_member_id: Option<String>,
+    #[serde(rename = "mergedEntityId", default, skip_serializing_if = "Option::is_none")]
+    pub merged_entity_id: Option<String>,
+    #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
+    pub created_date: Option<String>,
+    #[serde(rename = "exportErrorStatus", default, skip_serializing_if = "Option::is_none")]
+    pub export_error_status: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -821,6 +903,19 @@ pub mod import_error {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RuleErrorInfo {
+    #[serde(rename = "attributeMapping", default, skip_serializing_if = "Option::is_none")]
+    pub attribute_mapping: Option<AttributeMapping>,
+    #[serde(rename = "connectorId", default, skip_serializing_if = "Option::is_none")]
+    pub connector_id: Option<String>,
+    #[serde(rename = "connectorName", default, skip_serializing_if = "Option::is_none")]
+    pub connector_name: Option<String>,
+    #[serde(rename = "csObjectId", default, skip_serializing_if = "Option::is_none")]
+    pub cs_object_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dn: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InboundReplicationNeighbor {
     #[serde(rename = "sourceDomainController", default, skip_serializing_if = "Option::is_none")]
     pub source_domain_controller: Option<String>,
@@ -938,53 +1033,6 @@ pub struct Items {
     pub value: Vec<Item>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MergedExportError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "incomingObjectDisplayName", default, skip_serializing_if = "Option::is_none")]
-    pub incoming_object_display_name: Option<String>,
-    #[serde(rename = "incomingObjectType", default, skip_serializing_if = "Option::is_none")]
-    pub incoming_object_type: Option<String>,
-    #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
-    pub user_principal_name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "attributeName", default, skip_serializing_if = "Option::is_none")]
-    pub attribute_name: Option<String>,
-    #[serde(rename = "attributeValue", default, skip_serializing_if = "Option::is_none")]
-    pub attribute_value: Option<String>,
-    #[serde(rename = "timeOccurred", default, skip_serializing_if = "Option::is_none")]
-    pub time_occurred: Option<String>,
-    #[serde(rename = "timeFirstOccurred", default, skip_serializing_if = "Option::is_none")]
-    pub time_first_occurred: Option<String>,
-    #[serde(rename = "csObjectId", default, skip_serializing_if = "Option::is_none")]
-    pub cs_object_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dn: Option<String>,
-    #[serde(rename = "incomingObject", default, skip_serializing_if = "Option::is_none")]
-    pub incoming_object: Option<AssociatedObject>,
-    #[serde(rename = "existingObject", default, skip_serializing_if = "Option::is_none")]
-    pub existing_object: Option<AssociatedObject>,
-    #[serde(rename = "modifiedOrRemovedAttributeValue", default, skip_serializing_if = "Option::is_none")]
-    pub modified_or_removed_attribute_value: Option<String>,
-    #[serde(rename = "runStepResultId", default, skip_serializing_if = "Option::is_none")]
-    pub run_step_result_id: Option<String>,
-    #[serde(rename = "samAccountName", default, skip_serializing_if = "Option::is_none")]
-    pub sam_account_name: Option<String>,
-    #[serde(rename = "serverErrorDetail", default, skip_serializing_if = "Option::is_none")]
-    pub server_error_detail: Option<String>,
-    #[serde(rename = "serviceId", default, skip_serializing_if = "Option::is_none")]
-    pub service_id: Option<String>,
-    #[serde(rename = "serviceMemberId", default, skip_serializing_if = "Option::is_none")]
-    pub service_member_id: Option<String>,
-    #[serde(rename = "mergedEntityId", default, skip_serializing_if = "Option::is_none")]
-    pub merged_entity_id: Option<String>,
-    #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
-    pub created_date: Option<String>,
-    #[serde(rename = "exportErrorStatus", default, skip_serializing_if = "Option::is_none")]
-    pub export_error_status: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MergedExportErrors {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MergedExportError>,
@@ -1072,41 +1120,6 @@ pub struct ModuleConfiguration {
 pub struct ModuleConfigurations {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ModuleConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ObjectWithSyncError {
-    #[serde(rename = "sourceOfAuthority", default, skip_serializing_if = "Option::is_none")]
-    pub source_of_authority: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
-    pub object_type: Option<String>,
-    #[serde(rename = "attributeName", default, skip_serializing_if = "Option::is_none")]
-    pub attribute_name: Option<String>,
-    #[serde(rename = "attributeValue", default, skip_serializing_if = "Option::is_none")]
-    pub attribute_value: Option<String>,
-    #[serde(rename = "modififedValue", default, skip_serializing_if = "Option::is_none")]
-    pub modififed_value: Option<String>,
-    #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
-    pub user_principal_name: Option<String>,
-    #[serde(rename = "objectGuid", default, skip_serializing_if = "Option::is_none")]
-    pub object_guid: Option<String>,
-    #[serde(rename = "attributeMultiValues", default, skip_serializing_if = "Option::is_none")]
-    pub attribute_multi_values: Option<bool>,
-    #[serde(rename = "minLimit", default, skip_serializing_if = "Option::is_none")]
-    pub min_limit: Option<String>,
-    #[serde(rename = "maxLimit", default, skip_serializing_if = "Option::is_none")]
-    pub max_limit: Option<String>,
-    #[serde(rename = "distinguishedName", default, skip_serializing_if = "Option::is_none")]
-    pub distinguished_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mail: Option<String>,
-    #[serde(rename = "timeOccured", default, skip_serializing_if = "Option::is_none")]
-    pub time_occured: Option<String>,
-    #[serde(rename = "errorType", default, skip_serializing_if = "Option::is_none")]
-    pub error_type: Option<String>,
-    #[serde(rename = "sourceAnchor", default, skip_serializing_if = "Option::is_none")]
-    pub source_anchor: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -1263,19 +1276,6 @@ pub struct RiskyIpBlobUri {
 pub struct RiskyIpBlobUris {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RiskyIpBlobUri>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RuleErrorInfo {
-    #[serde(rename = "attributeMapping", default, skip_serializing_if = "Option::is_none")]
-    pub attribute_mapping: Option<AttributeMapping>,
-    #[serde(rename = "connectorId", default, skip_serializing_if = "Option::is_none")]
-    pub connector_id: Option<String>,
-    #[serde(rename = "connectorName", default, skip_serializing_if = "Option::is_none")]
-    pub connector_name: Option<String>,
-    #[serde(rename = "csObjectId", default, skip_serializing_if = "Option::is_none")]
-    pub cs_object_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dn: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunStep {

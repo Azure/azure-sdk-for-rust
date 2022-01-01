@@ -22,6 +22,42 @@ pub struct PaymentMethodLinkProperties {
     pub payment_method: Option<PaymentMethodProjectionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PaymentMethodProjectionProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<payment_method_projection_properties::Family>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "accountHolderName", default, skip_serializing_if = "Option::is_none")]
+    pub account_holder_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expiration: Option<String>,
+    #[serde(rename = "lastFourDigits", default, skip_serializing_if = "Option::is_none")]
+    pub last_four_digits: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub logos: Vec<PaymentMethodLogo>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<payment_method_projection_properties::Status>,
+}
+pub mod payment_method_projection_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Family {
+        CreditCard,
+        CheckWire,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        #[serde(rename = "active")]
+        Active,
+        #[serde(rename = "inactive")]
+        Inactive,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PaymentMethodsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PaymentMethod>,
@@ -55,42 +91,6 @@ pub struct PaymentMethodProperties {
     pub status: Option<payment_method_properties::Status>,
 }
 pub mod payment_method_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Family {
-        CreditCard,
-        CheckWire,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        #[serde(rename = "active")]
-        Active,
-        #[serde(rename = "inactive")]
-        Inactive,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PaymentMethodProjectionProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub family: Option<payment_method_projection_properties::Family>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "accountHolderName", default, skip_serializing_if = "Option::is_none")]
-    pub account_holder_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub expiration: Option<String>,
-    #[serde(rename = "lastFourDigits", default, skip_serializing_if = "Option::is_none")]
-    pub last_four_digits: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub logos: Vec<PaymentMethodLogo>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<payment_method_projection_properties::Status>,
-}
-pub mod payment_method_projection_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Family {
@@ -166,12 +166,12 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<ErrorSubDetails>,
 }
+pub type ErrorSubDetails = Vec<serde_json::Value>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
-pub type ErrorSubDetails = Vec<serde_json::Value>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

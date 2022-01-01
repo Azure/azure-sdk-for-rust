@@ -437,6 +437,11 @@ pub struct ContainerServiceAgentPoolProfile {
     pub os_type: Option<OsType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OsType {
+    Linux,
+    Windows,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceWindowsProfile {
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
@@ -547,9 +552,4 @@ pub struct ManagedClusterUpgradeProfile {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub properties: ManagedClusterUpgradeProfileProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OsType {
-    Linux,
-    Windows,
 }

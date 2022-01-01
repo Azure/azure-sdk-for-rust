@@ -134,6 +134,8 @@ pub mod alert_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertExtendedProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertConfidenceReason {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -145,8 +147,6 @@ pub struct AlertEntity {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertExtendedProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AllowedConnectionsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -221,35 +221,10 @@ pub struct AppWhitelistingGroupData {
     pub path_recommendations: Option<PathRecommendations>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AppWhitelistingPutGroupData {
-    #[serde(rename = "enforcementMode", default, skip_serializing_if = "Option::is_none")]
-    pub enforcement_mode: Option<EnforcementMode>,
-    #[serde(rename = "protectionMode", default, skip_serializing_if = "Option::is_none")]
-    pub protection_mode: Option<ProtectionMode>,
-    #[serde(rename = "vmRecommendations", default, skip_serializing_if = "Option::is_none")]
-    pub vm_recommendations: Option<VmRecommendations>,
-    #[serde(rename = "pathRecommendations", default, skip_serializing_if = "Option::is_none")]
-    pub path_recommendations: Option<PathRecommendations>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ConfigurationStatus {
-    Configured,
-    NotConfigured,
-    InProgress,
-    Failed,
-    NoStatus,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EnforcementMode {
     Audit,
     Enforce,
     None,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum EnforcementSupport {
-    Supported,
-    NotSupported,
-    Unknown,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProtectionMode {
@@ -263,11 +238,51 @@ pub struct ProtectionMode {
     pub executable: Option<EnforcementMode>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ConfigurationStatus {
+    Configured,
+    NotConfigured,
+    InProgress,
+    Failed,
+    NoStatus,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RecommendationStatus {
     Recommended,
     NotRecommended,
     NotAvailable,
     NoStatus,
+}
+pub type AppWhitelistingIssuesSummaries = Vec<AppWhitelistingIssueSummary>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SourceSystem {
+    #[serde(rename = "Azure_AppLocker")]
+    AzureAppLocker,
+    #[serde(rename = "Azure_AuditD")]
+    AzureAuditD,
+    #[serde(rename = "NonAzure_AppLocker")]
+    NonAzureAppLocker,
+    #[serde(rename = "NonAzure_AuditD")]
+    NonAzureAuditD,
+    None,
+}
+pub type VmRecommendations = Vec<VmRecommendation>;
+pub type PathRecommendations = Vec<PathRecommendation>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AppWhitelistingPutGroupData {
+    #[serde(rename = "enforcementMode", default, skip_serializing_if = "Option::is_none")]
+    pub enforcement_mode: Option<EnforcementMode>,
+    #[serde(rename = "protectionMode", default, skip_serializing_if = "Option::is_none")]
+    pub protection_mode: Option<ProtectionMode>,
+    #[serde(rename = "vmRecommendations", default, skip_serializing_if = "Option::is_none")]
+    pub vm_recommendations: Option<VmRecommendations>,
+    #[serde(rename = "pathRecommendations", default, skip_serializing_if = "Option::is_none")]
+    pub path_recommendations: Option<PathRecommendations>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EnforcementSupport {
+    Supported,
+    NotSupported,
+    Unknown,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RecommendationAction {
@@ -303,26 +318,12 @@ pub enum FileType {
     Unknown,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SourceSystem {
-    #[serde(rename = "Azure_AppLocker")]
-    AzureAppLocker,
-    #[serde(rename = "Azure_AuditD")]
-    AzureAuditD,
-    #[serde(rename = "NonAzure_AppLocker")]
-    NonAzureAppLocker,
-    #[serde(rename = "NonAzure_AuditD")]
-    NonAzureAuditD,
-    None,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppWhitelistingIssueSummary {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub issue: Option<AppWhitelistingIssue>,
     #[serde(rename = "numberOfVms", default, skip_serializing_if = "Option::is_none")]
     pub number_of_vms: Option<f64>,
 }
-pub type AppWhitelistingIssuesSummaries = Vec<AppWhitelistingIssueSummary>;
-pub type VmRecommendations = Vec<VmRecommendation>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VmRecommendation {
     #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
@@ -334,6 +335,7 @@ pub struct VmRecommendation {
     #[serde(rename = "enforcementSupport", default, skip_serializing_if = "Option::is_none")]
     pub enforcement_support: Option<EnforcementSupport>,
 }
+pub type VmResourceId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PublisherInfo {
     #[serde(rename = "publisherName", default, skip_serializing_if = "Option::is_none")]
@@ -352,7 +354,6 @@ pub struct UserRecommendation {
     #[serde(rename = "recommendationAction", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_action: Option<RecommendationAction>,
 }
-pub type PathRecommendations = Vec<PathRecommendation>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PathRecommendation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -375,7 +376,6 @@ pub struct PathRecommendation {
     pub configuration_status: Option<ConfigurationStatus>,
 }
 pub type GroupResourceId = String;
-pub type VmResourceId = String;
 pub type AppWhitelistingResourceType = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiscoveredSecuritySolutionList {
@@ -434,6 +434,17 @@ pub struct CefExternalSecuritySolution {
     pub properties: Option<CefSolutionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CefSolutionProperties {
+    #[serde(flatten)]
+    pub external_security_solution_properties: ExternalSecuritySolutionProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hostname: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent: Option<String>,
+    #[serde(rename = "lastEventReceived", default, skip_serializing_if = "Option::is_none")]
+    pub last_event_received: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AtaExternalSecuritySolution {
     #[serde(flatten)]
     pub external_security_solution: ExternalSecuritySolution,
@@ -441,11 +452,25 @@ pub struct AtaExternalSecuritySolution {
     pub properties: Option<AtaSolutionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AtaSolutionProperties {
+    #[serde(flatten)]
+    pub external_security_solution_properties: ExternalSecuritySolutionProperties,
+    #[serde(rename = "lastEventReceived", default, skip_serializing_if = "Option::is_none")]
+    pub last_event_received: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AadExternalSecuritySolution {
     #[serde(flatten)]
     pub external_security_solution: ExternalSecuritySolution,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AadSolutionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AadSolutionProperties {
+    #[serde(flatten)]
+    pub external_security_solution_properties: ExternalSecuritySolutionProperties,
+    #[serde(flatten)]
+    pub aad_connectivity_state: AadConnectivityState,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExternalSecuritySolutionKind {
@@ -491,31 +516,6 @@ pub mod aad_connectivity_state {
         NotLicensed,
         Connected,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AadSolutionProperties {
-    #[serde(flatten)]
-    pub external_security_solution_properties: ExternalSecuritySolutionProperties,
-    #[serde(flatten)]
-    pub aad_connectivity_state: AadConnectivityState,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CefSolutionProperties {
-    #[serde(flatten)]
-    pub external_security_solution_properties: ExternalSecuritySolutionProperties,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub hostname: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub agent: Option<String>,
-    #[serde(rename = "lastEventReceived", default, skip_serializing_if = "Option::is_none")]
-    pub last_event_received: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AtaSolutionProperties {
-    #[serde(flatten)]
-    pub external_security_solution_properties: ExternalSecuritySolutionProperties,
-    #[serde(rename = "lastEventReceived", default, skip_serializing_if = "Option::is_none")]
-    pub last_event_received: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitNetworkAccessPoliciesList {

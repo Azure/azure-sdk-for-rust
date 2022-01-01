@@ -89,6 +89,12 @@ pub struct PutAliasRequestProperties {
     pub additional_properties: Option<PutAliasRequestAdditionalProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Workload {
+    Production,
+    DevTest,
+}
+pub type BillingScope = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PutAliasRequestAdditionalProperties {
     #[serde(rename = "managementGroupId", default, skip_serializing_if = "Option::is_none")]
     pub management_group_id: Option<String>,
@@ -144,6 +150,44 @@ pub mod subscription_alias_response_properties {
         Accepted,
         Succeeded,
         Failed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AcceptOwnershipState {
+    Pending,
+    Completed,
+    Expired,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -205,6 +249,17 @@ pub struct GetTenantPolicyResponse {
     pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TenantPolicy {
+    #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
+    pub policy_id: Option<String>,
+    #[serde(rename = "blockSubscriptionsLeavingTenant", default, skip_serializing_if = "Option::is_none")]
+    pub block_subscriptions_leaving_tenant: Option<bool>,
+    #[serde(rename = "blockSubscriptionsIntoTenant", default, skip_serializing_if = "Option::is_none")]
+    pub block_subscriptions_into_tenant: Option<bool>,
+    #[serde(rename = "exemptedPrincipals", default, skip_serializing_if = "Vec::is_empty")]
+    pub exempted_principals: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetTenantPolicyListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GetTenantPolicyResponse>,
@@ -232,64 +287,9 @@ pub struct BillingAccountPoliciesResponseProperties {
     pub allow_transfers: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TenantPolicy {
-    #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
-    pub policy_id: Option<String>,
-    #[serde(rename = "blockSubscriptionsLeavingTenant", default, skip_serializing_if = "Option::is_none")]
-    pub block_subscriptions_leaving_tenant: Option<bool>,
-    #[serde(rename = "blockSubscriptionsIntoTenant", default, skip_serializing_if = "Option::is_none")]
-    pub block_subscriptions_into_tenant: Option<bool>,
-    #[serde(rename = "exemptedPrincipals", default, skip_serializing_if = "Vec::is_empty")]
-    pub exempted_principals: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Workload {
-    Production,
-    DevTest,
-}
-pub type BillingScope = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum AcceptOwnershipState {
-    Pending,
-    Completed,
-    Expired,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceTenantResponse {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "tenantName", default, skip_serializing_if = "Option::is_none")]
     pub tenant_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
 }

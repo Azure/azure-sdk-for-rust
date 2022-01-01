@@ -52,6 +52,18 @@ pub mod domain_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InputSchemaMapping {
+    #[serde(rename = "inputSchemaMappingType")]
+    pub input_schema_mapping_type: input_schema_mapping::InputSchemaMappingType,
+}
+pub mod input_schema_mapping {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum InputSchemaMappingType {
+        Json,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IdentityInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity_info::Type>,
@@ -185,18 +197,6 @@ pub struct JsonInputSchemaMapping {
     pub properties: Option<JsonInputSchemaMappingProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InputSchemaMapping {
-    #[serde(rename = "inputSchemaMappingType")]
-    pub input_schema_mapping_type: input_schema_mapping::InputSchemaMappingType,
-}
-pub mod input_schema_mapping {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum InputSchemaMappingType {
-        Json,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub resource: Resource,
@@ -221,6 +221,38 @@ pub struct Domain {
     pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainUpdateParameters {
@@ -350,6 +382,46 @@ pub mod event_subscription_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventSubscriptionDestination {
+    #[serde(rename = "endpointType")]
+    pub endpoint_type: event_subscription_destination::EndpointType,
+}
+pub mod event_subscription_destination {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum EndpointType {
+        WebHook,
+        EventHub,
+        StorageQueue,
+        HybridConnection,
+        ServiceBusQueue,
+        ServiceBusTopic,
+        AzureFunction,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeliveryWithResourceIdentity {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<EventSubscriptionIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub destination: Option<EventSubscriptionDestination>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventSubscriptionIdentity {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<event_subscription_identity::Type>,
+    #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identity: Option<String>,
+}
+pub mod event_subscription_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+        UserAssigned,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSubscriptionFilter {
     #[serde(rename = "subjectBeginsWith", default, skip_serializing_if = "Option::is_none")]
     pub subject_begins_with: Option<String>,
@@ -370,6 +442,25 @@ pub struct RetryPolicy {
     pub max_delivery_attempts: Option<i32>,
     #[serde(rename = "eventTimeToLiveInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub event_time_to_live_in_minutes: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeadLetterDestination {
+    #[serde(rename = "endpointType")]
+    pub endpoint_type: dead_letter_destination::EndpointType,
+}
+pub mod dead_letter_destination {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum EndpointType {
+        StorageBlob,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeadLetterWithResourceIdentity {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<EventSubscriptionIdentity>,
+    #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
+    pub dead_letter_destination: Option<DeadLetterDestination>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebHookEventSubscriptionDestinationProperties {
@@ -557,52 +648,11 @@ pub mod advanced_filter {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeliveryWithResourceIdentity {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<EventSubscriptionIdentity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub destination: Option<EventSubscriptionDestination>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeadLetterWithResourceIdentity {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<EventSubscriptionIdentity>,
-    #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
-    pub dead_letter_destination: Option<DeadLetterDestination>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventSubscriptionIdentity {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<event_subscription_identity::Type>,
-    #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identity: Option<String>,
-}
-pub mod event_subscription_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-        UserAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebHookEventSubscriptionDestination {
     #[serde(flatten)]
     pub event_subscription_destination: EventSubscriptionDestination,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebHookEventSubscriptionDestinationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeadLetterDestination {
-    #[serde(rename = "endpointType")]
-    pub endpoint_type: dead_letter_destination::EndpointType,
-}
-pub mod dead_letter_destination {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum EndpointType {
-        StorageBlob,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSubscriptionDestinationProperties {
@@ -693,24 +743,6 @@ pub struct AzureFunctionEventSubscriptionDestination {
     pub event_subscription_destination: EventSubscriptionDestination,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureFunctionEventSubscriptionDestinationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventSubscriptionDestination {
-    #[serde(rename = "endpointType")]
-    pub endpoint_type: event_subscription_destination::EndpointType,
-}
-pub mod event_subscription_destination {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum EndpointType {
-        WebHook,
-        EventHub,
-        StorageQueue,
-        HybridConnection,
-        ServiceBusQueue,
-        ServiceBusTopic,
-        AzureFunction,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSubscription {
@@ -1067,36 +1099,4 @@ pub struct TopicTypeInfo {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TopicTypeProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
 }

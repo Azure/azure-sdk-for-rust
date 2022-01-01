@@ -134,6 +134,10 @@ pub struct RedisResourceProperties {
     pub linked_servers: Option<RedisLinkedServerList>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RedisLinkedServerList {
+    pub value: Vec<RedisLinkedServer>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
@@ -257,10 +261,6 @@ pub struct RedisLinkedServerProperties {
     pub redis_linked_server_create_properties: RedisLinkedServerCreateProperties,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RedisLinkedServerList {
-    pub value: Vec<RedisLinkedServer>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisLinkedServerWithPropertiesList {

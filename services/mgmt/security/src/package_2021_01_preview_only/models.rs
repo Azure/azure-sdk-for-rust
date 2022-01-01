@@ -17,12 +17,12 @@ pub struct IngestionSetting {
     pub properties: Option<IngestionSettingProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IngestionSettingProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IngestionSettingToken {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IngestionSettingProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IngestionConnectionString {
     #[serde(default, skip_serializing_if = "Option::is_none")]

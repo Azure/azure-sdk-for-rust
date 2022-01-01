@@ -1772,6 +1772,18 @@ pub struct JobAgent {
     pub properties: Option<JobAgentProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobAgentUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -3048,18 +3060,6 @@ pub struct DatabaseListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub size: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub family: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseProperties {
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<database_properties::CreateMode>,
@@ -3324,6 +3324,26 @@ pub struct Server {
     pub properties: Option<ServerProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<resource_identity::Type>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+pub mod resource_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        None,
+        SystemAssigned,
+        UserAssigned,
+        #[serde(rename = "SystemAssigned,UserAssigned")]
+        SystemAssignedUserAssigned,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerProperties>,
@@ -3460,6 +3480,25 @@ pub mod edition_capability {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReadScaleCapability {
+    #[serde(rename = "maxNumberOfReplicas", default, skip_serializing_if = "Option::is_none")]
+    pub max_number_of_replicas: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<read_scale_capability::Status>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+pub mod read_scale_capability {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Visible,
+        Available,
+        Default,
+        Disabled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolEditionCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -3564,22 +3603,58 @@ pub mod service_objective_capability {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReadScaleCapability {
-    #[serde(rename = "maxNumberOfReplicas", default, skip_serializing_if = "Option::is_none")]
-    pub max_number_of_replicas: Option<i32>,
+pub struct PerformanceLevelCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<read_scale_capability::Status>,
+    pub value: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
+    pub unit: Option<performance_level_capability::Unit>,
 }
-pub mod read_scale_capability {
+pub mod performance_level_capability {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Visible,
-        Available,
-        Default,
-        Disabled,
+    pub enum Unit {
+        #[serde(rename = "DTU")]
+        Dtu,
+        VCores,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MaxSizeCapability {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<max_size_capability::Unit>,
+}
+pub mod max_size_capability {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Unit {
+        Megabytes,
+        Gigabytes,
+        Terabytes,
+        Petabytes,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutoPauseDelayTimeRange {
+    #[serde(rename = "minValue", default, skip_serializing_if = "Option::is_none")]
+    pub min_value: Option<i32>,
+    #[serde(rename = "maxValue", default, skip_serializing_if = "Option::is_none")]
+    pub max_value: Option<i32>,
+    #[serde(rename = "stepSize", default, skip_serializing_if = "Option::is_none")]
+    pub step_size: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<auto_pause_delay_time_range::Unit>,
+    #[serde(rename = "doNotPauseValue", default, skip_serializing_if = "Option::is_none")]
+    pub do_not_pause_value: Option<i32>,
+}
+pub mod auto_pause_delay_time_range {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Unit {
+        Minutes,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3723,19 +3798,21 @@ pub mod max_size_range_capability {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PerformanceLevelCapability {
+pub struct LogSizeCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<f64>,
+    pub limit: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<performance_level_capability::Unit>,
+    pub unit: Option<log_size_capability::Unit>,
 }
-pub mod performance_level_capability {
+pub mod log_size_capability {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
-        #[serde(rename = "DTU")]
-        Dtu,
-        VCores,
+        Megabytes,
+        Gigabytes,
+        Terabytes,
+        Petabytes,
+        Percent,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3755,45 +3832,6 @@ pub mod license_type_capability {
         Available,
         Default,
         Disabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MaxSizeCapability {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<max_size_capability::Unit>,
-}
-pub mod max_size_capability {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Unit {
-        Megabytes,
-        Gigabytes,
-        Terabytes,
-        Petabytes,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoPauseDelayTimeRange {
-    #[serde(rename = "minValue", default, skip_serializing_if = "Option::is_none")]
-    pub min_value: Option<i32>,
-    #[serde(rename = "maxValue", default, skip_serializing_if = "Option::is_none")]
-    pub max_value: Option<i32>,
-    #[serde(rename = "stepSize", default, skip_serializing_if = "Option::is_none")]
-    pub step_size: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<auto_pause_delay_time_range::Unit>,
-    #[serde(rename = "doNotPauseValue", default, skip_serializing_if = "Option::is_none")]
-    pub do_not_pause_value: Option<i32>,
-}
-pub mod auto_pause_delay_time_range {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Unit {
-        Minutes,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3898,24 +3936,6 @@ pub mod instance_pool_vcores_capability {
         Available,
         Default,
         Disabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogSizeCapability {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<log_size_capability::Unit>,
-}
-pub mod log_size_capability {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Unit {
-        Megabytes,
-        Gigabytes,
-        Terabytes,
-        Petabytes,
-        Percent,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -4117,15 +4137,6 @@ pub struct ManagedInstanceOperationParametersPair {
     pub requested_parameters: Option<UpsertManagedServerOperationParameters>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedInstanceOperationSteps {
-    #[serde(rename = "totalSteps", default, skip_serializing_if = "Option::is_none")]
-    pub total_steps: Option<String>,
-    #[serde(rename = "currentStep", default, skip_serializing_if = "Option::is_none")]
-    pub current_step: Option<i32>,
-    #[serde(rename = "stepsList", default, skip_serializing_if = "Vec::is_empty")]
-    pub steps_list: Vec<UpsertManagedServerOperationStep>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpsertManagedServerOperationParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
@@ -4135,6 +4146,15 @@ pub struct UpsertManagedServerOperationParameters {
     pub v_cores: Option<i32>,
     #[serde(rename = "storageSizeInGB", default, skip_serializing_if = "Option::is_none")]
     pub storage_size_in_gb: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedInstanceOperationSteps {
+    #[serde(rename = "totalSteps", default, skip_serializing_if = "Option::is_none")]
+    pub total_steps: Option<String>,
+    #[serde(rename = "currentStep", default, skip_serializing_if = "Option::is_none")]
+    pub current_step: Option<i32>,
+    #[serde(rename = "stepsList", default, skip_serializing_if = "Vec::is_empty")]
+    pub steps_list: Vec<UpsertManagedServerOperationStep>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpsertManagedServerOperationStep {
@@ -4981,24 +5001,4 @@ pub struct PrivateEndpointConnectionListResult {
     pub value: Vec<PrivateEndpointConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceIdentity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<resource_identity::Type>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-pub mod resource_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        None,
-        SystemAssigned,
-        UserAssigned,
-        #[serde(rename = "SystemAssigned,UserAssigned")]
-        SystemAssignedUserAssigned,
-    }
 }

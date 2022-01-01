@@ -168,6 +168,30 @@ pub struct ApiContractProperties {
     pub api_version_set: Option<ApiVersionSetContractDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiVersionSetContractDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "versioningScheme", default, skip_serializing_if = "Option::is_none")]
+    pub versioning_scheme: Option<api_version_set_contract_details::VersioningScheme>,
+    #[serde(rename = "versionQueryName", default, skip_serializing_if = "Option::is_none")]
+    pub version_query_name: Option<String>,
+    #[serde(rename = "versionHeaderName", default, skip_serializing_if = "Option::is_none")]
+    pub version_header_name: Option<String>,
+}
+pub mod api_version_set_contract_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum VersioningScheme {
+        Segment,
+        Query,
+        Header,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiCreateOrUpdateParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiCreateOrUpdateProperties>,
@@ -271,6 +295,34 @@ pub mod api_entity_base_contract {
         #[serde(rename = "websocket")]
         Websocket,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AuthenticationSettingsContract {
+    #[serde(rename = "oAuth2", default, skip_serializing_if = "Option::is_none")]
+    pub o_auth2: Option<OAuth2AuthenticationSettingsContract>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub openid: Option<OpenIdAuthenticationSettingsContract>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OAuth2AuthenticationSettingsContract {
+    #[serde(rename = "authorizationServerId", default, skip_serializing_if = "Option::is_none")]
+    pub authorization_server_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OpenIdAuthenticationSettingsContract {
+    #[serde(rename = "openidProviderId", default, skip_serializing_if = "Option::is_none")]
+    pub openid_provider_id: Option<String>,
+    #[serde(rename = "bearerTokenSendingMethods", default, skip_serializing_if = "Vec::is_empty")]
+    pub bearer_token_sending_methods: Vec<BearerTokenSendingMethodsContract>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionKeyParameterNamesContract {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub header: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiContactInformation {
@@ -432,30 +484,6 @@ pub struct ApiVersionSetContract {
     pub properties: Option<ApiVersionSetContractProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiVersionSetContractDetails {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "versioningScheme", default, skip_serializing_if = "Option::is_none")]
-    pub versioning_scheme: Option<api_version_set_contract_details::VersioningScheme>,
-    #[serde(rename = "versionQueryName", default, skip_serializing_if = "Option::is_none")]
-    pub version_query_name: Option<String>,
-    #[serde(rename = "versionHeaderName", default, skip_serializing_if = "Option::is_none")]
-    pub version_header_name: Option<String>,
-}
-pub mod api_version_set_contract_details {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum VersioningScheme {
-        Segment,
-        Query,
-        Header,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiVersionSetContractProperties {
     #[serde(flatten)]
     pub api_version_set_entity_base: ApiVersionSetEntityBase,
@@ -506,13 +534,6 @@ pub mod api_version_set_update_parameters_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthenticationSettingsContract {
-    #[serde(rename = "oAuth2", default, skip_serializing_if = "Option::is_none")]
-    pub o_auth2: Option<OAuth2AuthenticationSettingsContract>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub openid: Option<OpenIdAuthenticationSettingsContract>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthorizationServerCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AuthorizationServerContract>,
@@ -527,6 +548,23 @@ pub struct AuthorizationServerContract {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AuthorizationServerContractProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AuthorizationServerContractProperties {
+    #[serde(flatten)]
+    pub authorization_server_contract_base_properties: AuthorizationServerContractBaseProperties,
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    #[serde(rename = "clientRegistrationEndpoint")]
+    pub client_registration_endpoint: String,
+    #[serde(rename = "authorizationEndpoint")]
+    pub authorization_endpoint: String,
+    #[serde(rename = "grantTypes")]
+    pub grant_types: Vec<String>,
+    #[serde(rename = "clientId")]
+    pub client_id: String,
+    #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
+    pub client_secret: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthorizationServerContractBaseProperties {
@@ -550,23 +588,6 @@ pub struct AuthorizationServerContractBaseProperties {
     pub resource_owner_username: Option<String>,
     #[serde(rename = "resourceOwnerPassword", default, skip_serializing_if = "Option::is_none")]
     pub resource_owner_password: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthorizationServerContractProperties {
-    #[serde(flatten)]
-    pub authorization_server_contract_base_properties: AuthorizationServerContractBaseProperties,
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    #[serde(rename = "clientRegistrationEndpoint")]
-    pub client_registration_endpoint: String,
-    #[serde(rename = "authorizationEndpoint")]
-    pub authorization_endpoint: String,
-    #[serde(rename = "grantTypes")]
-    pub grant_types: Vec<String>,
-    #[serde(rename = "clientId")]
-    pub client_id: String,
-    #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
-    pub client_secret: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthorizationServerUpdateContract {
@@ -624,6 +645,54 @@ pub struct BackendBaseParameters {
     pub tls: Option<BackendTlsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackendProperties {
+    #[serde(rename = "serviceFabricCluster", default, skip_serializing_if = "Option::is_none")]
+    pub service_fabric_cluster: Option<BackendServiceFabricClusterProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackendServiceFabricClusterProperties {
+    #[serde(rename = "clientCertificateId", default, skip_serializing_if = "Option::is_none")]
+    pub client_certificate_id: Option<String>,
+    #[serde(rename = "clientCertificatethumbprint", default, skip_serializing_if = "Option::is_none")]
+    pub client_certificatethumbprint: Option<String>,
+    #[serde(rename = "maxPartitionResolutionRetries", default, skip_serializing_if = "Option::is_none")]
+    pub max_partition_resolution_retries: Option<i32>,
+    #[serde(rename = "managementEndpoints")]
+    pub management_endpoints: Vec<String>,
+    #[serde(rename = "serverCertificateThumbprints", default, skip_serializing_if = "Vec::is_empty")]
+    pub server_certificate_thumbprints: Vec<String>,
+    #[serde(rename = "serverX509Names", default, skip_serializing_if = "Vec::is_empty")]
+    pub server_x509_names: Vec<X509CertificateName>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackendCredentialsContract {
+    #[serde(rename = "certificateIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub certificate_ids: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub certificate: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub header: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authorization: Option<BackendAuthorizationHeaderCredentials>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackendProxyContract {
+    pub url: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackendTlsProperties {
+    #[serde(rename = "validateCertificateChain", default, skip_serializing_if = "Option::is_none")]
+    pub validate_certificate_chain: Option<bool>,
+    #[serde(rename = "validateCertificateName", default, skip_serializing_if = "Option::is_none")]
+    pub validate_certificate_name: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackendCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackendContract>,
@@ -657,32 +726,6 @@ pub mod backend_contract_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackendCredentialsContract {
-    #[serde(rename = "certificateIds", default, skip_serializing_if = "Vec::is_empty")]
-    pub certificate_ids: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub certificate: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub query: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub header: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<BackendAuthorizationHeaderCredentials>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackendProperties {
-    #[serde(rename = "serviceFabricCluster", default, skip_serializing_if = "Option::is_none")]
-    pub service_fabric_cluster: Option<BackendServiceFabricClusterProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackendProxyContract {
-    pub url: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub username: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackendReconnectContract {
     #[serde(flatten)]
     pub resource: Resource,
@@ -693,28 +736,6 @@ pub struct BackendReconnectContract {
 pub struct BackendReconnectProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackendServiceFabricClusterProperties {
-    #[serde(rename = "clientCertificateId", default, skip_serializing_if = "Option::is_none")]
-    pub client_certificate_id: Option<String>,
-    #[serde(rename = "clientCertificatethumbprint", default, skip_serializing_if = "Option::is_none")]
-    pub client_certificatethumbprint: Option<String>,
-    #[serde(rename = "maxPartitionResolutionRetries", default, skip_serializing_if = "Option::is_none")]
-    pub max_partition_resolution_retries: Option<i32>,
-    #[serde(rename = "managementEndpoints")]
-    pub management_endpoints: Vec<String>,
-    #[serde(rename = "serverCertificateThumbprints", default, skip_serializing_if = "Vec::is_empty")]
-    pub server_certificate_thumbprints: Vec<String>,
-    #[serde(rename = "serverX509Names", default, skip_serializing_if = "Vec::is_empty")]
-    pub server_x509_names: Vec<X509CertificateName>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackendTlsProperties {
-    #[serde(rename = "validateCertificateChain", default, skip_serializing_if = "Option::is_none")]
-    pub validate_certificate_chain: Option<bool>,
-    #[serde(rename = "validateCertificateName", default, skip_serializing_if = "Option::is_none")]
-    pub validate_certificate_name: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackendUpdateParameterProperties {
@@ -821,6 +842,22 @@ pub struct CertificateContractProperties {
     pub key_vault: Option<KeyVaultContractProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultContractProperties {
+    #[serde(flatten)]
+    pub key_vault_contract_create_properties: KeyVaultContractCreateProperties,
+    #[serde(rename = "lastStatus", default, skip_serializing_if = "Option::is_none")]
+    pub last_status: Option<KeyVaultLastAccessStatusContractProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultLastAccessStatusContractProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(rename = "timeStampUtc", default, skip_serializing_if = "Option::is_none")]
+    pub time_stamp_utc: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateCreateOrUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateCreateOrUpdateProperties>,
@@ -833,6 +870,13 @@ pub struct CertificateCreateOrUpdateProperties {
     pub password: Option<String>,
     #[serde(rename = "keyVault", default, skip_serializing_if = "Option::is_none")]
     pub key_vault: Option<KeyVaultContractCreateProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultContractCreateProperties {
+    #[serde(rename = "secretIdentifier", default, skip_serializing_if = "Option::is_none")]
+    pub secret_identifier: Option<String>,
+    #[serde(rename = "identityClientId", default, skip_serializing_if = "Option::is_none")]
+    pub identity_client_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataMasking {
@@ -932,6 +976,37 @@ pub mod diagnostic_contract_properties {
         Name,
         Url,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SamplingSettings {
+    #[serde(rename = "samplingType", default, skip_serializing_if = "Option::is_none")]
+    pub sampling_type: Option<sampling_settings::SamplingType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub percentage: Option<f64>,
+}
+pub mod sampling_settings {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SamplingType {
+        #[serde(rename = "fixed")]
+        Fixed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PipelineDiagnosticSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub request: Option<HttpMessageDiagnostic>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub response: Option<HttpMessageDiagnostic>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HttpMessageDiagnostic {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub headers: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body: Option<BodyDiagnosticSettings>,
+    #[serde(rename = "dataMasking", default, skip_serializing_if = "Option::is_none")]
+    pub data_masking: Option<DataMasking>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailTemplateCollection {
@@ -1092,15 +1167,6 @@ pub mod group_update_parameters_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HttpMessageDiagnostic {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub headers: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub body: Option<BodyDiagnosticSettings>,
-    #[serde(rename = "dataMasking", default, skip_serializing_if = "Option::is_none")]
-    pub data_masking: Option<DataMasking>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IdentityProviderBaseParameters {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity_provider_base_parameters::Type>,
@@ -1256,6 +1322,15 @@ pub struct IssueContract {
     pub properties: Option<IssueContractProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IssueContractProperties {
+    #[serde(flatten)]
+    pub issue_contract_base_properties: IssueContractBaseProperties,
+    pub title: String,
+    pub description: String,
+    #[serde(rename = "userId")]
+    pub user_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IssueContractBaseProperties {
     #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
     pub created_date: Option<String>,
@@ -1281,15 +1356,6 @@ pub mod issue_contract_base_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IssueContractProperties {
-    #[serde(flatten)]
-    pub issue_contract_base_properties: IssueContractBaseProperties,
-    pub title: String,
-    pub description: String,
-    #[serde(rename = "userId")]
-    pub user_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IssueUpdateContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IssueUpdateContractProperties>,
@@ -1304,29 +1370,6 @@ pub struct IssueUpdateContractProperties {
     pub description: Option<String>,
     #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultContractCreateProperties {
-    #[serde(rename = "secretIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub secret_identifier: Option<String>,
-    #[serde(rename = "identityClientId", default, skip_serializing_if = "Option::is_none")]
-    pub identity_client_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultContractProperties {
-    #[serde(flatten)]
-    pub key_vault_contract_create_properties: KeyVaultContractCreateProperties,
-    #[serde(rename = "lastStatus", default, skip_serializing_if = "Option::is_none")]
-    pub last_status: Option<KeyVaultLastAccessStatusContractProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultLastAccessStatusContractProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(rename = "timeStampUtc", default, skip_serializing_if = "Option::is_none")]
-    pub time_stamp_utc: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LoggerCollection {
@@ -1422,18 +1465,11 @@ pub struct NotificationContractProperties {
     pub recipients: Option<RecipientsContractProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OAuth2AuthenticationSettingsContract {
-    #[serde(rename = "authorizationServerId", default, skip_serializing_if = "Option::is_none")]
-    pub authorization_server_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scope: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OpenIdAuthenticationSettingsContract {
-    #[serde(rename = "openidProviderId", default, skip_serializing_if = "Option::is_none")]
-    pub openid_provider_id: Option<String>,
-    #[serde(rename = "bearerTokenSendingMethods", default, skip_serializing_if = "Vec::is_empty")]
-    pub bearer_token_sending_methods: Vec<BearerTokenSendingMethodsContract>,
+pub struct RecipientsContractProperties {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub emails: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub users: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenIdConnectProviderCollection {
@@ -1520,6 +1556,17 @@ pub struct OperationEntityBaseContract {
     pub responses: Vec<ResponseContract>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policies: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RequestContract {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "queryParameters", default, skip_serializing_if = "Vec::is_empty")]
+    pub query_parameters: Vec<ParameterContract>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub headers: Vec<ParameterContract>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub representations: Vec<RepresentationContract>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationResultContract {
@@ -1633,13 +1680,6 @@ pub struct ParameterExampleContract {
     pub external_value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PipelineDiagnosticSettings {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub request: Option<HttpMessageDiagnostic>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub response: Option<HttpMessageDiagnostic>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PolicyContract>,
@@ -1715,6 +1755,16 @@ pub struct PortalDelegationSettingsProperties {
     pub user_registration: Option<RegistrationDelegationSettingsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionsDelegationSettingsProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegistrationDelegationSettingsProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PortalSettingsCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PortalSettingsContract>,
@@ -1742,6 +1792,15 @@ pub struct PortalSettingsContractProperties {
     pub enabled: Option<bool>,
     #[serde(rename = "termsOfService", default, skip_serializing_if = "Option::is_none")]
     pub terms_of_service: Option<TermsOfServiceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TermsOfServiceProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(rename = "consentRequired", default, skip_serializing_if = "Option::is_none")]
+    pub consent_required: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PortalSigninSettingProperties {
@@ -1928,16 +1987,16 @@ pub struct QuotaCounterContract {
     pub value: Option<QuotaCounterValueContractProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QuotaCounterValueContract {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<QuotaCounterValueContractProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuotaCounterValueContractProperties {
     #[serde(rename = "callsCount", default, skip_serializing_if = "Option::is_none")]
     pub calls_count: Option<i32>,
     #[serde(rename = "kbTransferred", default, skip_serializing_if = "Option::is_none")]
     pub kb_transferred: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuotaCounterValueContract {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<QuotaCounterValueContractProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuotaCounterValueUpdateContract {
@@ -1966,13 +2025,6 @@ pub struct RecipientEmailContractProperties {
     pub email: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecipientsContractProperties {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub emails: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub users: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecipientUserCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RecipientUserContract>,
@@ -1992,11 +2044,6 @@ pub struct RecipientUserContract {
 pub struct RecipientUsersContractProperties {
     #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistrationDelegationSettingsProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportCollection {
@@ -2074,17 +2121,6 @@ pub struct RepresentationContract {
     pub form_parameters: Vec<ParameterContract>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RequestContract {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "queryParameters", default, skip_serializing_if = "Vec::is_empty")]
-    pub query_parameters: Vec<ParameterContract>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub headers: Vec<ParameterContract>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub representations: Vec<RepresentationContract>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestReportCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RequestReportRecordContract>,
@@ -2140,21 +2176,6 @@ pub struct ResponseContract {
     pub representations: Vec<RepresentationContract>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub headers: Vec<ParameterContract>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SamplingSettings {
-    #[serde(rename = "samplingType", default, skip_serializing_if = "Option::is_none")]
-    pub sampling_type: Option<sampling_settings::SamplingType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub percentage: Option<f64>,
-}
-pub mod sampling_settings {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SamplingType {
-        #[serde(rename = "fixed")]
-        Fixed,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SaveConfigurationParameter {
@@ -2291,18 +2312,6 @@ pub mod subscription_create_parameter_properties {
 pub struct SubscriptionCreateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionCreateParameterProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionKeyParameterNamesContract {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub header: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub query: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionsDelegationSettingsProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionUpdateParameterProperties {
@@ -2462,15 +2471,6 @@ pub struct TenantConfigurationSyncStateContractProperties {
     pub configuration_change_date: Option<String>,
     #[serde(rename = "lastOperationId", default, skip_serializing_if = "Option::is_none")]
     pub last_operation_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TermsOfServiceProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub text: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(rename = "consentRequired", default, skip_serializing_if = "Option::is_none")]
-    pub consent_required: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TokenBodyParameterContract {
@@ -2932,6 +2932,23 @@ pub struct ResourceSkuResult {
     pub capacity: Option<ResourceSkuCapacity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceSku {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<resource_sku::Name>,
+}
+pub mod resource_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        Developer,
+        Standard,
+        Premium,
+        Basic,
+        Consumption,
+        Isolated,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSkuCapacity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub minimum: Option<i32>,
@@ -2952,23 +2969,6 @@ pub mod resource_sku_capacity {
         Manual,
         #[serde(rename = "none")]
         None,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceSku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<resource_sku::Name>,
-}
-pub mod resource_sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        Developer,
-        Standard,
-        Premium,
-        Basic,
-        Consumption,
-        Isolated,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3074,6 +3074,23 @@ pub struct AdditionalLocation {
     pub disable_gateway: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementServiceSkuProperties {
+    pub name: api_management_service_sku_properties::Name,
+    pub capacity: i32,
+}
+pub mod api_management_service_sku_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        Developer,
+        Standard,
+        Premium,
+        Basic,
+        Consumption,
+        Isolated,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiManagementServiceBackupRestoreParameters {
     #[serde(rename = "storageAccount")]
     pub storage_account: String,
@@ -3166,23 +3183,6 @@ pub struct ApiVersionConstraint {
     pub min_api_version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiManagementServiceSkuProperties {
-    pub name: api_management_service_sku_properties::Name,
-    pub capacity: i32,
-}
-pub mod api_management_service_sku_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        Developer,
-        Standard,
-        Premium,
-        Basic,
-        Consumption,
-        Isolated,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiManagementServiceResource {
     #[serde(flatten)]
     pub apim_resource: ApimResource,
@@ -3195,6 +3195,28 @@ pub struct ApiManagementServiceResource {
     pub etag: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementServiceIdentity {
+    #[serde(rename = "type")]
+    pub type_: api_management_service_identity::Type,
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+pub mod api_management_service_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+        UserAssigned,
+        #[serde(rename = "SystemAssigned, UserAssigned")]
+        SystemAssignedUserAssigned,
+        None,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApimResource {
@@ -3264,28 +3286,6 @@ pub struct ApiManagementServiceGetDomainOwnershipIdentifierResult {
 pub struct ApiManagementServiceApplyNetworkConfigurationParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiManagementServiceIdentity {
-    #[serde(rename = "type")]
-    pub type_: api_management_service_identity::Type,
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
-}
-pub mod api_management_service_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-        UserAssigned,
-        #[serde(rename = "SystemAssigned, UserAssigned")]
-        SystemAssignedUserAssigned,
-        None,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserIdentityProperties {
@@ -3435,6 +3435,13 @@ pub mod api_management_sku_restrictions {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiManagementSkuRestrictionInfo {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub locations: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiManagementSku {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
@@ -3471,13 +3478,6 @@ pub struct ApiManagementSkuLocationInfo {
     pub zones: Vec<String>,
     #[serde(rename = "zoneDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub zone_details: Vec<ApiManagementSkuZoneDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiManagementSkuRestrictionInfo {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub locations: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiManagementSkusResult {

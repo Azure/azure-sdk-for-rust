@@ -145,6 +145,16 @@ pub mod kusto_pool_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ResourceProvisioningState {
+    Running,
+    Creating,
+    Deleting,
+    Succeeded,
+    Failed,
+    Moving,
+    Canceled,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoPool {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
@@ -155,6 +165,38 @@ pub struct KustoPool {
     pub etag: Option<String>,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoPoolUpdate {
@@ -247,20 +289,6 @@ pub struct EventHubDataConnection {
     pub properties: Option<EventHubConnectionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IotHubDataConnection {
-    #[serde(flatten)]
-    pub data_connection: DataConnection,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IotHubConnectionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventGridDataConnection {
-    #[serde(flatten)]
-    pub data_connection: DataConnection,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<EventGridConnectionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubConnectionProperties {
     #[serde(rename = "eventHubResourceId")]
     pub event_hub_resource_id: String,
@@ -276,46 +304,6 @@ pub struct EventHubConnectionProperties {
     pub event_system_properties: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compression: Option<Compression>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ResourceProvisioningState>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IotHubConnectionProperties {
-    #[serde(rename = "iotHubResourceId")]
-    pub iot_hub_resource_id: String,
-    #[serde(rename = "consumerGroup")]
-    pub consumer_group: String,
-    #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
-    pub table_name: Option<String>,
-    #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
-    pub mapping_rule_name: Option<String>,
-    #[serde(rename = "dataFormat", default, skip_serializing_if = "Option::is_none")]
-    pub data_format: Option<IotHubDataFormat>,
-    #[serde(rename = "eventSystemProperties", default, skip_serializing_if = "Vec::is_empty")]
-    pub event_system_properties: Vec<String>,
-    #[serde(rename = "sharedAccessPolicyName")]
-    pub shared_access_policy_name: String,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ResourceProvisioningState>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventGridConnectionProperties {
-    #[serde(rename = "storageAccountResourceId")]
-    pub storage_account_resource_id: String,
-    #[serde(rename = "eventHubResourceId")]
-    pub event_hub_resource_id: String,
-    #[serde(rename = "consumerGroup")]
-    pub consumer_group: String,
-    #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
-    pub table_name: Option<String>,
-    #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
-    pub mapping_rule_name: Option<String>,
-    #[serde(rename = "dataFormat", default, skip_serializing_if = "Option::is_none")]
-    pub data_format: Option<EventGridDataFormat>,
-    #[serde(rename = "ignoreFirstRecord", default, skip_serializing_if = "Option::is_none")]
-    pub ignore_first_record: Option<bool>,
-    #[serde(rename = "blobStorageEventType", default, skip_serializing_if = "Option::is_none")]
-    pub blob_storage_event_type: Option<BlobStorageEventType>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
@@ -355,6 +343,37 @@ pub enum EventHubDataFormat {
     W3clogfile,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Compression {
+    None,
+    GZip,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IotHubDataConnection {
+    #[serde(flatten)]
+    pub data_connection: DataConnection,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IotHubConnectionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IotHubConnectionProperties {
+    #[serde(rename = "iotHubResourceId")]
+    pub iot_hub_resource_id: String,
+    #[serde(rename = "consumerGroup")]
+    pub consumer_group: String,
+    #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
+    pub table_name: Option<String>,
+    #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
+    pub mapping_rule_name: Option<String>,
+    #[serde(rename = "dataFormat", default, skip_serializing_if = "Option::is_none")]
+    pub data_format: Option<IotHubDataFormat>,
+    #[serde(rename = "eventSystemProperties", default, skip_serializing_if = "Vec::is_empty")]
+    pub event_system_properties: Vec<String>,
+    #[serde(rename = "sharedAccessPolicyName")]
+    pub shared_access_policy_name: String,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ResourceProvisioningState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IotHubDataFormat {
     #[serde(rename = "MULTIJSON")]
     Multijson,
@@ -388,6 +407,34 @@ pub enum IotHubDataFormat {
     Apacheavro,
     #[serde(rename = "W3CLOGFILE")]
     W3clogfile,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventGridDataConnection {
+    #[serde(flatten)]
+    pub data_connection: DataConnection,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<EventGridConnectionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventGridConnectionProperties {
+    #[serde(rename = "storageAccountResourceId")]
+    pub storage_account_resource_id: String,
+    #[serde(rename = "eventHubResourceId")]
+    pub event_hub_resource_id: String,
+    #[serde(rename = "consumerGroup")]
+    pub consumer_group: String,
+    #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
+    pub table_name: Option<String>,
+    #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
+    pub mapping_rule_name: Option<String>,
+    #[serde(rename = "dataFormat", default, skip_serializing_if = "Option::is_none")]
+    pub data_format: Option<EventGridDataFormat>,
+    #[serde(rename = "ignoreFirstRecord", default, skip_serializing_if = "Option::is_none")]
+    pub ignore_first_record: Option<bool>,
+    #[serde(rename = "blobStorageEventType", default, skip_serializing_if = "Option::is_none")]
+    pub blob_storage_event_type: Option<BlobStorageEventType>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ResourceProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EventGridDataFormat {
@@ -430,21 +477,6 @@ pub enum BlobStorageEventType {
     MicrosoftStorageBlobCreated,
     #[serde(rename = "Microsoft.Storage.BlobRenamed")]
     MicrosoftStorageBlobRenamed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ResourceProvisioningState {
-    Running,
-    Creating,
-    Deleting,
-    Succeeded,
-    Failed,
-    Moving,
-    Canceled,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Compression {
-    None,
-    GZip,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterPrincipalAssignmentListResult {
@@ -595,38 +627,6 @@ pub struct ErrorAdditionalInfo {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

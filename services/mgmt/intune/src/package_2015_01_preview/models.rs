@@ -109,11 +109,67 @@ pub struct IOsmamPolicy {
     pub properties: Option<IOsmamPolicyProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IOsmamPolicyProperties {
+    #[serde(flatten)]
+    pub mam_policy_properties: MamPolicyProperties,
+    #[serde(rename = "fileEncryptionLevel", default, skip_serializing_if = "Option::is_none")]
+    pub file_encryption_level: Option<i_osmam_policy_properties::FileEncryptionLevel>,
+    #[serde(rename = "touchId", default, skip_serializing_if = "Option::is_none")]
+    pub touch_id: Option<i_osmam_policy_properties::TouchId>,
+}
+pub mod i_osmam_policy_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum FileEncryptionLevel {
+        #[serde(rename = "deviceLocked")]
+        DeviceLocked,
+        #[serde(rename = "deviceLockedExceptFilesOpen")]
+        DeviceLockedExceptFilesOpen,
+        #[serde(rename = "afterDeviceRestart")]
+        AfterDeviceRestart,
+        #[serde(rename = "useDeviceSettings")]
+        UseDeviceSettings,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum TouchId {
+        #[serde(rename = "enable")]
+        Enable,
+        #[serde(rename = "disable")]
+        Disable,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AndroidMamPolicy {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AndroidMamPolicyProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AndroidMamPolicyProperties {
+    #[serde(flatten)]
+    pub mam_policy_properties: MamPolicyProperties,
+    #[serde(rename = "screenCapture", default, skip_serializing_if = "Option::is_none")]
+    pub screen_capture: Option<android_mam_policy_properties::ScreenCapture>,
+    #[serde(rename = "fileEncryption", default, skip_serializing_if = "Option::is_none")]
+    pub file_encryption: Option<android_mam_policy_properties::FileEncryption>,
+}
+pub mod android_mam_policy_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ScreenCapture {
+        #[serde(rename = "allow")]
+        Allow,
+        #[serde(rename = "block")]
+        Block,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum FileEncryption {
+        #[serde(rename = "required")]
+        Required,
+        #[serde(rename = "notRequired")]
+        NotRequired,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MamPolicyAppIdOrGroupIdPayload {
@@ -242,62 +298,6 @@ pub mod mam_policy_properties {
         NotTargeted,
         #[serde(rename = "targeted")]
         Targeted,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IOsmamPolicyProperties {
-    #[serde(flatten)]
-    pub mam_policy_properties: MamPolicyProperties,
-    #[serde(rename = "fileEncryptionLevel", default, skip_serializing_if = "Option::is_none")]
-    pub file_encryption_level: Option<i_osmam_policy_properties::FileEncryptionLevel>,
-    #[serde(rename = "touchId", default, skip_serializing_if = "Option::is_none")]
-    pub touch_id: Option<i_osmam_policy_properties::TouchId>,
-}
-pub mod i_osmam_policy_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum FileEncryptionLevel {
-        #[serde(rename = "deviceLocked")]
-        DeviceLocked,
-        #[serde(rename = "deviceLockedExceptFilesOpen")]
-        DeviceLockedExceptFilesOpen,
-        #[serde(rename = "afterDeviceRestart")]
-        AfterDeviceRestart,
-        #[serde(rename = "useDeviceSettings")]
-        UseDeviceSettings,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum TouchId {
-        #[serde(rename = "enable")]
-        Enable,
-        #[serde(rename = "disable")]
-        Disable,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AndroidMamPolicyProperties {
-    #[serde(flatten)]
-    pub mam_policy_properties: MamPolicyProperties,
-    #[serde(rename = "screenCapture", default, skip_serializing_if = "Option::is_none")]
-    pub screen_capture: Option<android_mam_policy_properties::ScreenCapture>,
-    #[serde(rename = "fileEncryption", default, skip_serializing_if = "Option::is_none")]
-    pub file_encryption: Option<android_mam_policy_properties::FileEncryption>,
-}
-pub mod android_mam_policy_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ScreenCapture {
-        #[serde(rename = "allow")]
-        Allow,
-        #[serde(rename = "block")]
-        Block,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum FileEncryption {
-        #[serde(rename = "required")]
-        Required,
-        #[serde(rename = "notRequired")]
-        NotRequired,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

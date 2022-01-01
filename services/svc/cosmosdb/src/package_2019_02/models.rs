@@ -32,6 +32,13 @@ pub struct Logging {
     pub retention_policy: RetentionPolicy,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RetentionPolicy {
+    #[serde(rename = "Enabled")]
+    pub enabled: bool,
+    #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
+    pub days: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metrics {
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
@@ -54,13 +61,6 @@ pub struct CorsRule {
     pub exposed_headers: String,
     #[serde(rename = "MaxAgeInSeconds")]
     pub max_age_in_seconds: i64,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RetentionPolicy {
-    #[serde(rename = "Enabled")]
-    pub enabled: bool,
-    #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
-    pub days: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TableServiceStats {
@@ -123,7 +123,6 @@ pub struct SignedIdentifier {
     #[serde(rename = "AccessPolicy")]
     pub access_policy: AccessPolicy,
 }
-pub type SignedIdentifiers = Vec<SignedIdentifier>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessPolicy {
     #[serde(rename = "Start")]
@@ -133,6 +132,7 @@ pub struct AccessPolicy {
     #[serde(rename = "Permission")]
     pub permission: String,
 }
+pub type SignedIdentifiers = Vec<SignedIdentifier>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TableEntityQueryResponse {
     #[serde(rename = "odata.metadata", default, skip_serializing_if = "Option::is_none")]

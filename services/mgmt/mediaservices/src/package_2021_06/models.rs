@@ -141,6 +141,13 @@ pub mod storage_account {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceIdentity {
+    #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identity: Option<String>,
+    #[serde(rename = "useSystemAssignedIdentity")]
+    pub use_system_assigned_identity: bool,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SyncStorageKeysInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -174,6 +181,52 @@ pub mod media_service_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccountEncryption {
+    #[serde(rename = "type")]
+    pub type_: account_encryption::Type,
+    #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
+    pub key_vault_properties: Option<KeyVaultProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ResourceIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+}
+pub mod account_encryption {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemKey,
+        CustomerKey,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultProperties {
+    #[serde(rename = "keyIdentifier", default, skip_serializing_if = "Option::is_none")]
+    pub key_identifier: Option<String>,
+    #[serde(rename = "currentKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
+    pub current_key_identifier: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyDelivery {
+    #[serde(rename = "accessControl", default, skip_serializing_if = "Option::is_none")]
+    pub access_control: Option<AccessControl>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccessControl {
+    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
+    pub default_action: Option<access_control::DefaultAction>,
+    #[serde(rename = "ipAllowList", default, skip_serializing_if = "Vec::is_empty")]
+    pub ip_allow_list: Vec<String>,
+}
+pub mod access_control {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DefaultAction {
+        Allow,
+        Deny,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaService {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
@@ -183,6 +236,51 @@ pub struct MediaService {
     pub identity: Option<MediaServiceIdentity>,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MediaServiceIdentity {
+    #[serde(rename = "type")]
+    pub type_: String,
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<UserAssignedManagedIdentities>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserAssignedManagedIdentities {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaServiceUpdate {
@@ -224,77 +322,11 @@ pub struct EdgePolicies {
     pub usage_data_collection_policy: Option<EdgeUsageDataCollectionPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MediaServiceIdentity {
-    #[serde(rename = "type")]
-    pub type_: String,
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<UserAssignedManagedIdentities>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedManagedIdentity {
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserAssignedManagedIdentities {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultProperties {
-    #[serde(rename = "keyIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub key_identifier: Option<String>,
-    #[serde(rename = "currentKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub current_key_identifier: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceIdentity {
-    #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identity: Option<String>,
-    #[serde(rename = "useSystemAssignedIdentity")]
-    pub use_system_assigned_identity: bool,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccountEncryption {
-    #[serde(rename = "type")]
-    pub type_: account_encryption::Type,
-    #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
-    pub key_vault_properties: Option<KeyVaultProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ResourceIdentity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-}
-pub mod account_encryption {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemKey,
-        CustomerKey,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccessControl {
-    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
-    pub default_action: Option<access_control::DefaultAction>,
-    #[serde(rename = "ipAllowList", default, skip_serializing_if = "Vec::is_empty")]
-    pub ip_allow_list: Vec<String>,
-}
-pub mod access_control {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DefaultAction {
-        Allow,
-        Deny,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyDelivery {
-    #[serde(rename = "accessControl", default, skip_serializing_if = "Option::is_none")]
-    pub access_control: Option<AccessControl>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationCollection {
@@ -1324,6 +1356,39 @@ pub mod built_in_standard_encoder_preset {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PresetConfigurations {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub complexity: Option<preset_configurations::Complexity>,
+    #[serde(rename = "interleaveOutput", default, skip_serializing_if = "Option::is_none")]
+    pub interleave_output: Option<preset_configurations::InterleaveOutput>,
+    #[serde(rename = "keyFrameIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
+    pub key_frame_interval_in_seconds: Option<f32>,
+    #[serde(rename = "maxBitrateBps", default, skip_serializing_if = "Option::is_none")]
+    pub max_bitrate_bps: Option<i32>,
+    #[serde(rename = "maxHeight", default, skip_serializing_if = "Option::is_none")]
+    pub max_height: Option<i32>,
+    #[serde(rename = "maxLayers", default, skip_serializing_if = "Option::is_none")]
+    pub max_layers: Option<i32>,
+    #[serde(rename = "minBitrateBps", default, skip_serializing_if = "Option::is_none")]
+    pub min_bitrate_bps: Option<i32>,
+    #[serde(rename = "minHeight", default, skip_serializing_if = "Option::is_none")]
+    pub min_height: Option<i32>,
+}
+pub mod preset_configurations {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Complexity {
+        Speed,
+        Balanced,
+        Quality,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum InterleaveOutput {
+        NonInterleavedOutput,
+        InterleavedOutput,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StandardEncoderPreset {
     #[serde(flatten)]
     pub preset: Preset,
@@ -1641,39 +1706,6 @@ pub struct Job {
     pub properties: Option<JobProperties>,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PresetConfigurations {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub complexity: Option<preset_configurations::Complexity>,
-    #[serde(rename = "interleaveOutput", default, skip_serializing_if = "Option::is_none")]
-    pub interleave_output: Option<preset_configurations::InterleaveOutput>,
-    #[serde(rename = "keyFrameIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
-    pub key_frame_interval_in_seconds: Option<f32>,
-    #[serde(rename = "maxBitrateBps", default, skip_serializing_if = "Option::is_none")]
-    pub max_bitrate_bps: Option<i32>,
-    #[serde(rename = "maxHeight", default, skip_serializing_if = "Option::is_none")]
-    pub max_height: Option<i32>,
-    #[serde(rename = "maxLayers", default, skip_serializing_if = "Option::is_none")]
-    pub max_layers: Option<i32>,
-    #[serde(rename = "minBitrateBps", default, skip_serializing_if = "Option::is_none")]
-    pub min_bitrate_bps: Option<i32>,
-    #[serde(rename = "minHeight", default, skip_serializing_if = "Option::is_none")]
-    pub min_height: Option<i32>,
-}
-pub mod preset_configurations {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Complexity {
-        Speed,
-        Balanced,
-        Quality,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum InterleaveOutput {
-        NonInterleavedOutput,
-        InterleavedOutput,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransformCollection {
@@ -2018,6 +2050,11 @@ pub struct LiveEventInputAccessControl {
     pub ip: Option<IpAccessControl>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpAccessControl {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub allow: Vec<IpRange>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventInput {
     #[serde(rename = "streamingProtocol")]
     pub streaming_protocol: live_event_input::StreamingProtocol,
@@ -2048,11 +2085,6 @@ pub struct IpRange {
     pub address: Option<String>,
     #[serde(rename = "subnetPrefixLength", default, skip_serializing_if = "Option::is_none")]
     pub subnet_prefix_length: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpAccessControl {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub allow: Vec<IpRange>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventPreviewAccessControl {
@@ -2391,38 +2423,6 @@ pub enum PrivateEndpointConnectionProvisioningState {
     Creating,
     Deleting,
     Failed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

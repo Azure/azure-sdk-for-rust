@@ -15,67 +15,6 @@ pub struct GuestConfigurationAssignment {
     pub properties: Option<GuestConfigurationAssignmentProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestConfigurationNavigation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<guest_configuration_navigation::Kind>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-    #[serde(rename = "contentUri", default, skip_serializing_if = "Option::is_none")]
-    pub content_uri: Option<String>,
-    #[serde(rename = "contentHash", default, skip_serializing_if = "Option::is_none")]
-    pub content_hash: Option<String>,
-    #[serde(rename = "configurationParameter", default, skip_serializing_if = "Vec::is_empty")]
-    pub configuration_parameter: Vec<ConfigurationParameter>,
-    #[serde(rename = "configurationSetting", default, skip_serializing_if = "Option::is_none")]
-    pub configuration_setting: Option<ConfigurationSetting>,
-}
-pub mod guest_configuration_navigation {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "DSC")]
-        Dsc,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConfigurationParameter {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConfigurationSetting {
-    #[serde(rename = "configurationMode", default, skip_serializing_if = "Option::is_none")]
-    pub configuration_mode: Option<configuration_setting::ConfigurationMode>,
-    #[serde(rename = "allowModuleOverwrite", default, skip_serializing_if = "Option::is_none")]
-    pub allow_module_overwrite: Option<bool>,
-    #[serde(rename = "actionAfterReboot", default, skip_serializing_if = "Option::is_none")]
-    pub action_after_reboot: Option<configuration_setting::ActionAfterReboot>,
-    #[serde(rename = "refreshFrequencyMins", default, skip_serializing_if = "Option::is_none")]
-    pub refresh_frequency_mins: Option<f64>,
-    #[serde(rename = "rebootIfNeeded", default, skip_serializing_if = "Option::is_none")]
-    pub reboot_if_needed: Option<bool>,
-    #[serde(rename = "configurationModeFrequencyMins", default, skip_serializing_if = "Option::is_none")]
-    pub configuration_mode_frequency_mins: Option<f64>,
-}
-pub mod configuration_setting {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ConfigurationMode {
-        ApplyOnly,
-        ApplyAndMonitor,
-        ApplyAndAutoCorrect,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ActionAfterReboot {
-        ContinueConfiguration,
-        StopConfiguration,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestConfigurationAssignmentProperties {
     #[serde(rename = "guestConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub guest_configuration: Option<GuestConfigurationNavigation>,
@@ -107,6 +46,67 @@ pub mod guest_configuration_assignment_properties {
         Canceled,
         Created,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GuestConfigurationNavigation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<guest_configuration_navigation::Kind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(rename = "contentUri", default, skip_serializing_if = "Option::is_none")]
+    pub content_uri: Option<String>,
+    #[serde(rename = "contentHash", default, skip_serializing_if = "Option::is_none")]
+    pub content_hash: Option<String>,
+    #[serde(rename = "configurationParameter", default, skip_serializing_if = "Vec::is_empty")]
+    pub configuration_parameter: Vec<ConfigurationParameter>,
+    #[serde(rename = "configurationSetting", default, skip_serializing_if = "Option::is_none")]
+    pub configuration_setting: Option<ConfigurationSetting>,
+}
+pub mod guest_configuration_navigation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        #[serde(rename = "DSC")]
+        Dsc,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfigurationSetting {
+    #[serde(rename = "configurationMode", default, skip_serializing_if = "Option::is_none")]
+    pub configuration_mode: Option<configuration_setting::ConfigurationMode>,
+    #[serde(rename = "allowModuleOverwrite", default, skip_serializing_if = "Option::is_none")]
+    pub allow_module_overwrite: Option<bool>,
+    #[serde(rename = "actionAfterReboot", default, skip_serializing_if = "Option::is_none")]
+    pub action_after_reboot: Option<configuration_setting::ActionAfterReboot>,
+    #[serde(rename = "refreshFrequencyMins", default, skip_serializing_if = "Option::is_none")]
+    pub refresh_frequency_mins: Option<f64>,
+    #[serde(rename = "rebootIfNeeded", default, skip_serializing_if = "Option::is_none")]
+    pub reboot_if_needed: Option<bool>,
+    #[serde(rename = "configurationModeFrequencyMins", default, skip_serializing_if = "Option::is_none")]
+    pub configuration_mode_frequency_mins: Option<f64>,
+}
+pub mod configuration_setting {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ConfigurationMode {
+        ApplyOnly,
+        ApplyAndMonitor,
+        ApplyAndAutoCorrect,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ActionAfterReboot {
+        ContinueConfiguration,
+        StopConfiguration,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfigurationParameter {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestConfigurationAssignmentReportList {
@@ -156,16 +156,16 @@ pub struct AssignmentInfo {
     pub configuration: Option<ConfigurationInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfigurationInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VmInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConfigurationInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssignmentReportDetails {

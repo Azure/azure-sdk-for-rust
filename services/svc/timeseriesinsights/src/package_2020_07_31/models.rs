@@ -17,6 +17,11 @@ pub struct Availability {
     pub distribution: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DateTimeRange {
+    pub from: String,
+    pub to: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetEventSchemaRequest {
     #[serde(rename = "searchSpan")]
     pub search_span: DateTimeRange,
@@ -48,6 +53,11 @@ pub struct GetEvents {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub take: Option<i32>,
 }
+pub type TimeSeriesId = Vec<serde_json::Value>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Tsx {
+    pub tsx: String,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetSeries {
     #[serde(rename = "timeSeriesId")]
@@ -77,11 +87,6 @@ pub struct AggregateSeries {
     #[serde(rename = "inlineVariables", default, skip_serializing_if = "Option::is_none")]
     pub inline_variables: Option<serde_json::Value>,
 }
-pub type TimeSeriesId = Vec<serde_json::Value>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Tsx {
-    pub tsx: String,
-}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Interpolation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -101,11 +106,6 @@ pub mod interpolation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub span: Option<String>,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DateTimeRange {
-    pub from: String,
-    pub to: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NumericVariable {
@@ -214,6 +214,19 @@ pub struct InstanceOrError {
     pub instance: Option<TimeSeriesInstance>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<TsiErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TsiErrorBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
+    pub inner_error: Box<Option<TsiErrorBody>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<TsiErrorDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetTypesPage {
@@ -536,19 +549,6 @@ pub enum PropertyType {
 pub struct TsiError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<TsiErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TsiErrorBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Box<Option<TsiErrorBody>>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<TsiErrorDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TsiErrorDetails {

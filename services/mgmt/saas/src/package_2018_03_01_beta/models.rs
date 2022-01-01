@@ -50,6 +50,8 @@ pub struct SaasResource {
     pub tags: Option<Tags>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Tags {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SaasResourceCreation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -63,39 +65,6 @@ pub struct SaasResourceCreation {
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SaasCreationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SaasProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<saas_properties::Status>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub term: Option<saas_properties::Term>,
-    #[serde(rename = "isFreeTrial", default, skip_serializing_if = "Option::is_none")]
-    pub is_free_trial: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created: Option<String>,
-    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified: Option<String>,
-}
-pub mod saas_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        NotStarted,
-        PendingFulfillmentStart,
-        Subscribed,
-        Unsubscribed,
-        Suspended,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Term {
-        #[serde(rename = "termUnit", default, skip_serializing_if = "Option::is_none")]
-        pub term_unit: Option<String>,
-        #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
-        pub start_date: Option<String>,
-        #[serde(rename = "endDate", default, skip_serializing_if = "Option::is_none")]
-        pub end_date: Option<String>,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SaasCreationProperties {
@@ -130,6 +99,39 @@ pub mod saas_creation_properties {
     pub enum PaymentChannelType {
         SubscriptionDelegated,
         CustomerDelegated,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SaasProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<saas_properties::Status>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub term: Option<saas_properties::Term>,
+    #[serde(rename = "isFreeTrial", default, skip_serializing_if = "Option::is_none")]
+    pub is_free_trial: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified: Option<String>,
+}
+pub mod saas_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        NotStarted,
+        PendingFulfillmentStart,
+        Subscribed,
+        Unsubscribed,
+        Suspended,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Term {
+        #[serde(rename = "termUnit", default, skip_serializing_if = "Option::is_none")]
+        pub term_unit: Option<String>,
+        #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
+        pub start_date: Option<String>,
+        #[serde(rename = "endDate", default, skip_serializing_if = "Option::is_none")]
+        pub end_date: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -195,8 +197,6 @@ pub struct SaasAppPlan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Tags {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeleteOptions {
     #[serde(rename = "unsubscribeOnly", default, skip_serializing_if = "Option::is_none")]

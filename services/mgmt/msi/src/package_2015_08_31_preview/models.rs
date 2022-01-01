@@ -10,16 +10,6 @@ pub struct Identity {
     pub properties: Option<IdentityProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemAssignedIdentity {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IdentityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IdentityProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -29,6 +19,16 @@ pub struct IdentityProperties {
     pub client_id: Option<String>,
     #[serde(rename = "clientSecretUrl", default, skip_serializing_if = "Option::is_none")]
     pub client_secret_url: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemAssignedIdentity {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IdentityProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedIdentitiesListResult {

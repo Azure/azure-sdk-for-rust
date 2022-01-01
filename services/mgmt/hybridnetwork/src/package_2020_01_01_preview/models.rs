@@ -189,13 +189,6 @@ pub struct Device {
     pub properties: Option<DevicePropertiesFormat>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureStackEdgeFormat {
-    #[serde(flatten)]
-    pub device_properties_format: DevicePropertiesFormat,
-    #[serde(rename = "azureStackEdge")]
-    pub azure_stack_edge: SubResource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DevicePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<device_properties_format::Status>,
@@ -220,6 +213,13 @@ pub mod device_properties_format {
         Unknown,
         AzureStackEdge,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureStackEdgeFormat {
+    #[serde(flatten)]
+    pub device_properties_format: DevicePropertiesFormat,
+    #[serde(rename = "azureStackEdge")]
+    pub azure_stack_edge: SubResource,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceRegistrationKey {
@@ -309,6 +309,11 @@ pub mod vendor_sku_properties_format {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkFunctionTemplate {
+    #[serde(rename = "networkFunctionRoleConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    pub network_function_role_configurations: Vec<NetworkFunctionRoleConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VendorSkuListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VendorSku>,
@@ -321,11 +326,6 @@ pub struct VendorListResult {
     pub value: Vec<Vendor>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkFunctionTemplate {
-    #[serde(rename = "networkFunctionRoleConfigurations", default, skip_serializing_if = "Vec::is_empty")]
-    pub network_function_role_configurations: Vec<NetworkFunctionRoleConfiguration>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkFunctionRoleConfiguration {
@@ -413,6 +413,15 @@ pub mod network_function_role_configuration {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageProfile {
+    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
+    pub image_reference: Option<ImageReference>,
+    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
+    pub os_disk: Option<OsDisk>,
+    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_disks: Vec<DataDisk>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
@@ -424,15 +433,6 @@ pub struct ImageReference {
     pub version: Option<String>,
     #[serde(rename = "exactVersion", default, skip_serializing_if = "Option::is_none")]
     pub exact_version: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageProfile {
-    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
-    pub image_reference: Option<ImageReference>,
-    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
-    pub os_disk: Option<OsDisk>,
-    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
-    pub data_disks: Vec<DataDisk>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OsDisk {
@@ -460,6 +460,11 @@ pub struct VirtualHardDisk {
     pub uri: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomProfile {
+    #[serde(rename = "metadataConfigurationPath", default, skip_serializing_if = "Option::is_none")]
+    pub metadata_configuration_path: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataDisk {
     #[serde(rename = "createOption", default, skip_serializing_if = "Option::is_none")]
     pub create_option: Option<data_disk::CreateOption>,
@@ -475,11 +480,6 @@ pub mod data_disk {
         Unknown,
         Empty,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CustomProfile {
-    #[serde(rename = "metadataConfigurationPath", default, skip_serializing_if = "Option::is_none")]
-    pub metadata_configuration_path: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PreviewSubscription {

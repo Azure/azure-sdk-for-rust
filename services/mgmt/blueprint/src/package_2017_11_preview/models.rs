@@ -9,6 +9,15 @@ pub struct Blueprint {
     pub properties: BlueprintProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlueprintProperties {
+    #[serde(flatten)]
+    pub shared_blueprint_properties: SharedBlueprintProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub versions: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub layout: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Artifact {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
@@ -31,6 +40,15 @@ pub struct PublishedBlueprint {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
     pub properties: PublishedBlueprintProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PublishedBlueprintProperties {
+    #[serde(flatten)]
+    pub shared_blueprint_properties: SharedBlueprintProperties,
+    #[serde(rename = "blueprintName", default, skip_serializing_if = "Option::is_none")]
+    pub blueprint_name: Option<String>,
+    #[serde(rename = "changeNotes", default, skip_serializing_if = "Option::is_none")]
+    pub change_notes: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlueprintList {
@@ -103,28 +121,14 @@ pub mod shared_blueprint_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlueprintProperties {
-    #[serde(flatten)]
-    pub shared_blueprint_properties: SharedBlueprintProperties,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub versions: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub layout: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PublishedBlueprintProperties {
-    #[serde(flatten)]
-    pub shared_blueprint_properties: SharedBlueprintProperties,
-    #[serde(rename = "blueprintName", default, skip_serializing_if = "Option::is_none")]
-    pub blueprint_name: Option<String>,
-    #[serde(rename = "changeNotes", default, skip_serializing_if = "Option::is_none")]
-    pub change_notes: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlueprintStatus {
     #[serde(flatten)]
     pub blueprint_resource_status_base: BlueprintResourceStatusBase,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ParameterDefinitionCollection {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceGroupDefinitionCollection {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateArtifactProperties {
     #[serde(flatten)]
@@ -136,6 +140,8 @@ pub struct TemplateArtifactProperties {
     pub resource_group: Option<String>,
     pub parameters: ParameterValueCollection,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ParameterValueCollection {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateArtifact {
     #[serde(flatten)]
@@ -180,8 +186,6 @@ pub struct PolicyAssignmentArtifact {
     pub properties: PolicyAssignmentArtifactProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ParameterValueCollection {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParameterValueBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -211,8 +215,6 @@ pub struct SecretValueReference {
 pub struct KeyVaultReference {
     pub id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ParameterDefinitionCollection {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParameterDefinition {
     #[serde(rename = "type")]
@@ -245,7 +247,14 @@ pub mod parameter_definition {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceGroupDefinitionCollection {}
+pub struct ParameterDefinitionMetadata {
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "strongType", default, skip_serializing_if = "Option::is_none")]
+    pub strong_type: Option<String>,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceGroupDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -256,15 +265,6 @@ pub struct ResourceGroupDefinition {
     pub metadata: Option<ParameterDefinitionMetadata>,
     #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
     pub depends_on: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ParameterDefinitionMetadata {
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "strongType", default, skip_serializing_if = "Option::is_none")]
-    pub strong_type: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceGroupValueCollection {}
@@ -311,13 +311,6 @@ pub struct Assignment {
     pub properties: AssignmentProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssignmentList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Assignment>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedServiceIdentity {
     #[serde(rename = "type")]
     pub type_: managed_service_identity::Type,
@@ -333,24 +326,6 @@ pub mod managed_service_identity {
         None,
         SystemAssigned,
         UserAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssignmentStatus {
-    #[serde(flatten)]
-    pub blueprint_resource_status_base: BlueprintResourceStatusBase,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssignmentLockSettings {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mode: Option<assignment_lock_settings::Mode>,
-}
-pub mod assignment_lock_settings {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Mode {
-        None,
-        AllResources,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -394,6 +369,31 @@ pub mod assignment_properties {
         #[serde(rename = "deleting")]
         Deleting,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssignmentStatus {
+    #[serde(flatten)]
+    pub blueprint_resource_status_base: BlueprintResourceStatusBase,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssignmentLockSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<assignment_lock_settings::Mode>,
+}
+pub mod assignment_lock_settings {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Mode {
+        None,
+        AllResources,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssignmentList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Assignment>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

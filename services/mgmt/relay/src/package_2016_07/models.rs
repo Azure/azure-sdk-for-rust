@@ -104,19 +104,6 @@ pub struct RelayNamespace {
     pub properties: Option<RelayNamespaceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RelayNamespaceProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
-    pub updated_at: Option<String>,
-    #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
-    pub service_bus_endpoint: Option<String>,
-    #[serde(rename = "metricId", default, skip_serializing_if = "Option::is_none")]
-    pub metric_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: sku::Name,
     pub tier: sku::Tier,
@@ -131,6 +118,19 @@ pub mod sku {
     pub enum Tier {
         Standard,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RelayNamespaceProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+    #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub service_bus_endpoint: Option<String>,
+    #[serde(rename = "metricId", default, skip_serializing_if = "Option::is_none")]
+    pub metric_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthorizationRuleListResult {

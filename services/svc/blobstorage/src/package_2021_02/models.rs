@@ -133,6 +133,13 @@ pub struct BlobItemInternal {
     pub has_versions_only: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobName {
+    #[serde(rename = "Encoded", default, skip_serializing_if = "Option::is_none")]
+    pub encoded: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPropertiesInternal {
     #[serde(rename = "Creation-Time", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
@@ -231,6 +238,23 @@ pub mod blob_properties_internal {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum RehydratePriority {
+    High,
+    Standard,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobMetadata {
+    #[serde(rename = "Encrypted", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobTags {
+    #[serde(rename = "BlobTagSet")]
+    pub blob_tag_set: Vec<BlobTag>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ObjectReplicationMetadata {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListBlobsFlatSegmentResponse {
     #[serde(rename = "ServiceEndpoint")]
     pub service_endpoint: String,
@@ -246,6 +270,11 @@ pub struct ListBlobsFlatSegmentResponse {
     pub segment: BlobFlatListSegment,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobFlatListSegment {
+    #[serde(rename = "BlobItems")]
+    pub blob_items: Vec<BlobItemInternal>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListBlobsHierarchySegmentResponse {
@@ -267,11 +296,6 @@ pub struct ListBlobsHierarchySegmentResponse {
     pub next_marker: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobFlatListSegment {
-    #[serde(rename = "BlobItems")]
-    pub blob_items: Vec<BlobItemInternal>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobHierarchyListSegment {
     #[serde(rename = "BlobPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub blob_prefixes: Vec<BlobPrefix>,
@@ -284,23 +308,11 @@ pub struct BlobPrefix {
     pub name: BlobName,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobName {
-    #[serde(rename = "Encoded", default, skip_serializing_if = "Option::is_none")]
-    pub encoded: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub content: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobTag {
     #[serde(rename = "Key")]
     pub key: String,
     #[serde(rename = "Value")]
     pub value: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobTags {
-    #[serde(rename = "BlobTagSet")]
-    pub blob_tag_set: Vec<BlobTag>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Block {
@@ -367,6 +379,8 @@ pub struct ContainerProperties {
     #[serde(rename = "ImmutableStorageWithVersioningEnabled", default, skip_serializing_if = "Option::is_none")]
     pub immutable_storage_with_versioning_enabled: Option<bool>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerMetadata {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DelimitedTextConfiguration {
     #[serde(rename = "ColumnSeparator", default, skip_serializing_if = "Option::is_none")]
@@ -601,14 +615,14 @@ pub struct Logging {
     pub retention_policy: RetentionPolicy,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerMetadata {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobMetadata {
-    #[serde(rename = "Encrypted", default, skip_serializing_if = "Option::is_none")]
-    pub encrypted: Option<String>,
+pub struct RetentionPolicy {
+    #[serde(rename = "Enabled")]
+    pub enabled: bool,
+    #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
+    pub days: Option<i64>,
+    #[serde(rename = "AllowPermanentDelete", default, skip_serializing_if = "Option::is_none")]
+    pub allow_permanent_delete: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ObjectReplicationMetadata {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metrics {
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
@@ -661,6 +675,11 @@ pub mod query_request {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuerySerialization {
+    #[serde(rename = "Format")]
+    pub format: QueryFormat,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryFormat {
     #[serde(rename = "Type")]
     pub type_: QueryType,
@@ -674,11 +693,6 @@ pub struct QueryFormat {
     pub parquet_text_configuration: Option<ParquetConfiguration>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QuerySerialization {
-    #[serde(rename = "Format")]
-    pub format: QueryFormat,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryType {
     #[serde(rename = "delimited")]
     Delimited,
@@ -688,20 +702,6 @@ pub enum QueryType {
     Arrow,
     #[serde(rename = "parquet")]
     Parquet,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum RehydratePriority {
-    High,
-    Standard,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RetentionPolicy {
-    #[serde(rename = "Enabled")]
-    pub enabled: bool,
-    #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
-    pub days: Option<i64>,
-    #[serde(rename = "AllowPermanentDelete", default, skip_serializing_if = "Option::is_none")]
-    pub allow_permanent_delete: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignedIdentifier {

@@ -68,6 +68,99 @@ pub struct CertificateBundle {
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CertificatePolicy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key_props: Option<KeyProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secret_props: Option<SecretProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x509_props: Option<X509CertificateProperties>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub lifetime_actions: Vec<LifetimeAction>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub issuer: Option<IssuerParameters>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attributes: Option<CertificateAttributes>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exportable: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kty: Option<key_properties::Kty>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key_size: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reuse_key: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub crv: Option<key_properties::Crv>,
+}
+pub mod key_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kty {
+        #[serde(rename = "EC")]
+        Ec,
+        #[serde(rename = "EC-HSM")]
+        EcHsm,
+        #[serde(rename = "RSA")]
+        Rsa,
+        #[serde(rename = "RSA-HSM")]
+        RsaHsm,
+        #[serde(rename = "oct")]
+        Oct,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Crv {
+        #[serde(rename = "P-256")]
+        P256,
+        #[serde(rename = "P-384")]
+        P384,
+        #[serde(rename = "P-521")]
+        P521,
+        #[serde(rename = "P-256K")]
+        P256k,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecretProperties {
+    #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
+    pub content_type: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct X509CertificateProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subject: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ekus: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sans: Option<SubjectAlternativeNames>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub key_usage: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub validity_months: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubjectAlternativeNames {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub emails: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub dns_names: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub upns: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IssuerParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cty: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cert_transparency: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeletedCertificateBundle {
     #[serde(flatten)]
     pub certificate_bundle: CertificateBundle,
@@ -111,43 +204,13 @@ pub struct CertificateOperation {
     pub request_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CertificatePolicy {
+pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub key_props: Option<KeyProperties>,
+    pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub secret_props: Option<SecretProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub x509_props: Option<X509CertificateProperties>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub lifetime_actions: Vec<LifetimeAction>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub issuer: Option<IssuerParameters>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub attributes: Option<CertificateAttributes>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X509CertificateProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subject: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub ekus: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sans: Option<SubjectAlternativeNames>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub key_usage: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub validity_months: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IssuerParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cty: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cert_transparency: Option<bool>,
+    pub innererror: Box<Option<Error>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LifetimeAction {
@@ -155,6 +218,13 @@ pub struct LifetimeAction {
     pub trigger: Option<Trigger>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<Action>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Trigger {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lifetime_percentage: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub days_before_expiry: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Action {
@@ -170,22 +240,6 @@ pub mod action {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Trigger {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub lifetime_percentage: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub days_before_expiry: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubjectAlternativeNames {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub emails: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub dns_names: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub upns: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IssuerBundle {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -197,15 +251,6 @@ pub struct IssuerBundle {
     pub org_details: Option<OrganizationDetails>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<IssuerAttributes>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IssuerAttributes {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IssuerCredentials {
@@ -220,6 +265,15 @@ pub struct OrganizationDetails {
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub admin_details: Vec<AdministratorDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IssuerAttributes {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdministratorDetails {
@@ -365,15 +419,6 @@ pub struct KeyVaultError {
     pub error: Option<Error>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Error {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<Error>>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonWebKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kid: Option<String>,
@@ -504,46 +549,6 @@ pub struct DeletedKeyItem {
     pub scheduled_purge_date: Option<i64>,
     #[serde(rename = "deletedDate", default, skip_serializing_if = "Option::is_none")]
     pub deleted_date: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub exportable: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kty: Option<key_properties::Kty>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub key_size: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reuse_key: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub crv: Option<key_properties::Crv>,
-}
-pub mod key_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kty {
-        #[serde(rename = "EC")]
-        Ec,
-        #[serde(rename = "EC-HSM")]
-        EcHsm,
-        #[serde(rename = "RSA")]
-        Rsa,
-        #[serde(rename = "RSA-HSM")]
-        RsaHsm,
-        #[serde(rename = "oct")]
-        Oct,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Crv {
-        #[serde(rename = "P-256")]
-        P256,
-        #[serde(rename = "P-384")]
-        P384,
-        #[serde(rename = "P-521")]
-        P521,
-        #[serde(rename = "P-256K")]
-        P256k,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyCreateParameters {
@@ -742,6 +747,32 @@ pub struct SecretBundle {
     pub managed: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecretAttributes {
+    #[serde(flatten)]
+    pub attributes: Attributes,
+    #[serde(rename = "recoverableDays", default, skip_serializing_if = "Option::is_none")]
+    pub recoverable_days: Option<i32>,
+    #[serde(rename = "recoveryLevel", default, skip_serializing_if = "Option::is_none")]
+    pub recovery_level: Option<secret_attributes::RecoveryLevel>,
+}
+pub mod secret_attributes {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RecoveryLevel {
+        Purgeable,
+        #[serde(rename = "Recoverable+Purgeable")]
+        RecoverablePurgeable,
+        Recoverable,
+        #[serde(rename = "Recoverable+ProtectedSubscription")]
+        RecoverableProtectedSubscription,
+        #[serde(rename = "CustomizedRecoverable+Purgeable")]
+        CustomizedRecoverablePurgeable,
+        CustomizedRecoverable,
+        #[serde(rename = "CustomizedRecoverable+ProtectedSubscription")]
+        CustomizedRecoverableProtectedSubscription,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -777,39 +808,8 @@ pub struct DeletedSecretItem {
     pub deleted_date: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretAttributes {
-    #[serde(flatten)]
-    pub attributes: Attributes,
-    #[serde(rename = "recoverableDays", default, skip_serializing_if = "Option::is_none")]
-    pub recoverable_days: Option<i32>,
-    #[serde(rename = "recoveryLevel", default, skip_serializing_if = "Option::is_none")]
-    pub recovery_level: Option<secret_attributes::RecoveryLevel>,
-}
-pub mod secret_attributes {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum RecoveryLevel {
-        Purgeable,
-        #[serde(rename = "Recoverable+Purgeable")]
-        RecoverablePurgeable,
-        Recoverable,
-        #[serde(rename = "Recoverable+ProtectedSubscription")]
-        RecoverableProtectedSubscription,
-        #[serde(rename = "CustomizedRecoverable+Purgeable")]
-        CustomizedRecoverablePurgeable,
-        CustomizedRecoverable,
-        #[serde(rename = "CustomizedRecoverable+ProtectedSubscription")]
-        CustomizedRecoverableProtectedSubscription,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretRestoreParameters {
     pub value: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretProperties {
-    #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
-    pub content_type: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretSetParameters {

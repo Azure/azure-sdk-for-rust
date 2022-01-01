@@ -54,21 +54,6 @@ pub struct ContainerState {
     pub detail_status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Event {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<i64>,
-    #[serde(rename = "firstTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub first_timestamp: Option<String>,
-    #[serde(rename = "lastTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub last_timestamp: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceRequirements {
     pub requests: ResourceRequests,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -79,15 +64,6 @@ pub struct ResourceRequests {
     #[serde(rename = "memoryInGB")]
     pub memory_in_gb: f64,
     pub cpu: f64,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub gpu: Option<GpuResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceLimits {
-    #[serde(rename = "memoryInGB", default, skip_serializing_if = "Option::is_none")]
-    pub memory_in_gb: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cpu: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gpu: Option<GpuResource>,
 }
@@ -104,6 +80,79 @@ pub mod gpu_resource {
         P100,
         V100,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceLimits {
+    #[serde(rename = "memoryInGB", default, skip_serializing_if = "Option::is_none")]
+    pub memory_in_gb: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cpu: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gpu: Option<GpuResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerProbe {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exec: Option<ContainerExec>,
+    #[serde(rename = "httpGet", default, skip_serializing_if = "Option::is_none")]
+    pub http_get: Option<ContainerHttpGet>,
+    #[serde(rename = "initialDelaySeconds", default, skip_serializing_if = "Option::is_none")]
+    pub initial_delay_seconds: Option<i32>,
+    #[serde(rename = "periodSeconds", default, skip_serializing_if = "Option::is_none")]
+    pub period_seconds: Option<i32>,
+    #[serde(rename = "failureThreshold", default, skip_serializing_if = "Option::is_none")]
+    pub failure_threshold: Option<i32>,
+    #[serde(rename = "successThreshold", default, skip_serializing_if = "Option::is_none")]
+    pub success_threshold: Option<i32>,
+    #[serde(rename = "timeoutSeconds", default, skip_serializing_if = "Option::is_none")]
+    pub timeout_seconds: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerExec {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub command: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerHttpGet {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    pub port: i32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scheme: Option<container_http_get::Scheme>,
+    #[serde(rename = "httpHeaders", default, skip_serializing_if = "Option::is_none")]
+    pub http_headers: Option<HttpHeaders>,
+}
+pub mod container_http_get {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Scheme {
+        #[serde(rename = "http")]
+        Http,
+        #[serde(rename = "https")]
+        Https,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HttpHeaders {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Event {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+    #[serde(rename = "firstTimestamp", default, skip_serializing_if = "Option::is_none")]
+    pub first_timestamp: Option<String>,
+    #[serde(rename = "lastTimestamp", default, skip_serializing_if = "Option::is_none")]
+    pub last_timestamp: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFileVolume {
@@ -147,48 +196,6 @@ pub struct VolumeMount {
     pub mount_path: String,
     #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
     pub read_only: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerExec {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub command: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerHttpGet {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
-    pub port: i32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scheme: Option<container_http_get::Scheme>,
-    #[serde(rename = "httpHeaders", default, skip_serializing_if = "Option::is_none")]
-    pub http_headers: Option<HttpHeaders>,
-}
-pub mod container_http_get {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Scheme {
-        #[serde(rename = "http")]
-        Http,
-        #[serde(rename = "https")]
-        Https,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerProbe {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub exec: Option<ContainerExec>,
-    #[serde(rename = "httpGet", default, skip_serializing_if = "Option::is_none")]
-    pub http_get: Option<ContainerHttpGet>,
-    #[serde(rename = "initialDelaySeconds", default, skip_serializing_if = "Option::is_none")]
-    pub initial_delay_seconds: Option<i32>,
-    #[serde(rename = "periodSeconds", default, skip_serializing_if = "Option::is_none")]
-    pub period_seconds: Option<i32>,
-    #[serde(rename = "failureThreshold", default, skip_serializing_if = "Option::is_none")]
-    pub failure_threshold: Option<i32>,
-    #[serde(rename = "successThreshold", default, skip_serializing_if = "Option::is_none")]
-    pub success_threshold: Option<i32>,
-    #[serde(rename = "timeoutSeconds", default, skip_serializing_if = "Option::is_none")]
-    pub timeout_seconds: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerGroup {
@@ -419,13 +426,6 @@ pub struct ContainerAttachResponse {
     pub web_socket_uri: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HttpHeaders {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DnsConfiguration {

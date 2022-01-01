@@ -109,6 +109,8 @@ pub mod metadata_solution {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Tags {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataResourceType {
     pub id: String,
     #[serde(rename = "type")]
@@ -302,8 +304,6 @@ pub struct MetadataPermissions {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub applications: Vec<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Tags {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
     pub code: String,

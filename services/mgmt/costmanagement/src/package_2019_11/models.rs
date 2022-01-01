@@ -62,6 +62,35 @@ pub struct ReportConfigDatasetConfiguration {
     pub columns: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReportConfigFilter {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub and: Vec<ReportConfigFilter>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub or: Vec<ReportConfigFilter>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dimensions: Option<ReportConfigComparisonExpression>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<ReportConfigComparisonExpression>,
+    #[serde(rename = "tagKey", default, skip_serializing_if = "Option::is_none")]
+    pub tag_key: Option<ReportConfigComparisonExpression>,
+    #[serde(rename = "tagValue", default, skip_serializing_if = "Option::is_none")]
+    pub tag_value: Option<ReportConfigComparisonExpression>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReportConfigComparisonExpression {
+    pub name: String,
+    pub operator: report_config_comparison_expression::Operator,
+    pub values: Vec<String>,
+}
+pub mod report_config_comparison_expression {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Operator {
+        In,
+        Contains,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigAggregation {
     pub name: String,
     pub function: report_config_aggregation::Function,
@@ -97,38 +126,9 @@ pub struct ReportConfigGrouping {
     pub name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReportConfigFilter {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub and: Vec<ReportConfigFilter>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub or: Vec<ReportConfigFilter>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dimensions: Option<ReportConfigComparisonExpression>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<ReportConfigComparisonExpression>,
-    #[serde(rename = "tagKey", default, skip_serializing_if = "Option::is_none")]
-    pub tag_key: Option<ReportConfigComparisonExpression>,
-    #[serde(rename = "tagValue", default, skip_serializing_if = "Option::is_none")]
-    pub tag_value: Option<ReportConfigComparisonExpression>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReportConfigColumnType {
     Tag,
     Dimension,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReportConfigComparisonExpression {
-    pub name: String,
-    pub operator: report_config_comparison_expression::Operator,
-    pub values: Vec<String>,
-}
-pub mod report_config_comparison_expression {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Operator {
-        In,
-        Contains,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SettingsListResult {
@@ -143,20 +143,6 @@ pub struct Setting {
     pub proxy_setting_resource: ProxySettingResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SettingsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ViewListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<View>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct View {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ViewProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SettingsProperties {
@@ -176,6 +162,20 @@ pub mod settings_properties {
     }
 }
 pub type Cache = Vec<serde_json::Value>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ViewListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<View>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct View {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ViewProperties>,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ViewProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -589,6 +589,53 @@ pub mod forecast_definition {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryTimePeriod {
+    pub from: String,
+    pub to: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryDataset {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub granularity: Option<query_dataset::Granularity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub aggregation: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub grouping: Vec<QueryGrouping>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filter: Option<QueryFilter>,
+}
+pub mod query_dataset {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Granularity {
+        Daily,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryFilter {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub and: Vec<QueryFilter>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub or: Vec<QueryFilter>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dimensions: Option<QueryComparisonExpression>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<QueryComparisonExpression>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryComparisonExpression {
+    pub name: String,
+    pub operator: query_comparison_expression::Operator,
+    pub values: Vec<String>,
+}
+pub mod query_comparison_expression {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Operator {
+        In,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryDefinition {
     #[serde(rename = "type")]
     pub type_: query_definition::Type,
@@ -613,29 +660,6 @@ pub mod query_definition {
         TheLastBillingMonth,
         WeekToDate,
         Custom,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryTimePeriod {
-    pub from: String,
-    pub to: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryDataset {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub granularity: Option<query_dataset::Granularity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub aggregation: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub grouping: Vec<QueryGrouping>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub filter: Option<QueryFilter>,
-}
-pub mod query_dataset {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Granularity {
-        Daily,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -693,33 +717,9 @@ pub struct QueryGrouping {
     pub name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryFilter {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub and: Vec<QueryFilter>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub or: Vec<QueryFilter>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dimensions: Option<QueryComparisonExpression>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<QueryComparisonExpression>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryColumnType {
     Tag,
     Dimension,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryComparisonExpression {
-    pub name: String,
-    pub operator: query_comparison_expression::Operator,
-    pub values: Vec<String>,
-}
-pub mod query_comparison_expression {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Operator {
-        In,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportDefinition {
@@ -769,21 +769,6 @@ pub struct ExportProperties {
     pub schedule: Option<ExportSchedule>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CommonExportProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<common_export_properties::Format>,
-    #[serde(rename = "deliveryInfo")]
-    pub delivery_info: ExportDeliveryInfo,
-    pub definition: ExportDefinition,
-}
-pub mod common_export_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Format {
-        Csv,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportSchedule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<export_schedule::Status>,
@@ -807,14 +792,29 @@ pub mod export_schedule {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExportDeliveryInfo {
-    pub destination: ExportDeliveryDestination,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportRecurrencePeriod {
     pub from: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub to: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CommonExportProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub format: Option<common_export_properties::Format>,
+    #[serde(rename = "deliveryInfo")]
+    pub delivery_info: ExportDeliveryInfo,
+    pub definition: ExportDefinition,
+}
+pub mod common_export_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Format {
+        Csv,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExportDeliveryInfo {
+    pub destination: ExportDeliveryDestination,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportDeliveryDestination {

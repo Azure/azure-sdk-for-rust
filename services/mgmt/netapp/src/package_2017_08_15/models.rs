@@ -89,6 +89,15 @@ pub struct NetAppAccount {
     pub properties: AccountProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceTags {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccountProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "activeDirectories", default, skip_serializing_if = "Vec::is_empty")]
+    pub active_directories: Vec<ActiveDirectory>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetAppAccountPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -102,13 +111,6 @@ pub struct NetAppAccountPatch {
     pub tags: Option<ResourceTags>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccountProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "activeDirectories", default, skip_serializing_if = "Vec::is_empty")]
-    pub active_directories: Vec<ActiveDirectory>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveDirectory {
@@ -216,8 +218,6 @@ pub struct Volume {
     pub tags: Option<ResourceTags>,
     pub properties: VolumeProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceTags {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeProperties {
     #[serde(rename = "fileSystemId", default, skip_serializing_if = "Option::is_none")]
@@ -362,11 +362,6 @@ pub struct Snapshot {
     pub properties: SnapshotProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SnapshotPatch {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<ResourceTags>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotProperties {
     #[serde(rename = "snapshotId", default, skip_serializing_if = "Option::is_none")]
     pub snapshot_id: Option<String>,
@@ -376,6 +371,11 @@ pub struct SnapshotProperties {
     pub creation_date: Option<String>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SnapshotPatch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<ResourceTags>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {

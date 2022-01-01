@@ -154,14 +154,14 @@ pub mod alerts_suppression_rule_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScopeElement {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub field: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SuppressionAlertsScope {
     #[serde(rename = "allOf")]
     pub all_of: Vec<ScopeElement>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScopeElement {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub field: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAssessmentMetadataList {
@@ -255,9 +255,17 @@ pub struct SecurityAssessmentProperties {
     pub links: Option<AssessmentLinks>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssessmentLinks {
-    #[serde(rename = "azurePortalUri", default, skip_serializing_if = "Option::is_none")]
-    pub azure_portal_uri: Option<String>,
+pub struct ResourceDetails {
+    pub source: resource_details::Source,
+}
+pub mod resource_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Source {
+        Azure,
+        OnPremise,
+        OnPremiseSql,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessmentStatus {
@@ -275,6 +283,11 @@ pub mod assessment_status {
         Unhealthy,
         NotApplicable,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AssessmentLinks {
+    #[serde(rename = "azurePortalUri", default, skip_serializing_if = "Option::is_none")]
+    pub azure_portal_uri: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
@@ -309,17 +322,4 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceDetails {
-    pub source: resource_details::Source,
-}
-pub mod resource_details {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Source {
-        Azure,
-        OnPremise,
-        OnPremiseSql,
-    }
 }

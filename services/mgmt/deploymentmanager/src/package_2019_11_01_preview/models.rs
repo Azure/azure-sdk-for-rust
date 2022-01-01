@@ -110,6 +110,17 @@ pub struct RolloutOperationInfo {
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudErrorBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<CloudErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceTopologyResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
@@ -242,17 +253,6 @@ pub struct CloudError {
     pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudErrorBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<CloudErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<Operation>,
@@ -364,28 +364,6 @@ pub mod rest_request_authentication {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RolloutIdentityAuthentication {
-    #[serde(flatten)]
-    pub rest_request_authentication: RestRequestAuthentication,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiKeyAuthentication {
-    #[serde(flatten)]
-    pub rest_request_authentication: RestRequestAuthentication,
-    pub name: String,
-    #[serde(rename = "in")]
-    pub in_: api_key_authentication::In,
-    pub value: String,
-}
-pub mod api_key_authentication {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum In {
-        Query,
-        Header,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestResponse {
     #[serde(rename = "successStatusCodes", default, skip_serializing_if = "Vec::is_empty")]
     pub success_status_codes: Vec<String>,
@@ -408,6 +386,28 @@ pub mod rest_response {
             All,
             Any,
         }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RolloutIdentityAuthentication {
+    #[serde(flatten)]
+    pub rest_request_authentication: RestRequestAuthentication,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiKeyAuthentication {
+    #[serde(flatten)]
+    pub rest_request_authentication: RestRequestAuthentication,
+    pub name: String,
+    #[serde(rename = "in")]
+    pub in_: api_key_authentication::In,
+    pub value: String,
+}
+pub mod api_key_authentication {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum In {
+        Query,
+        Header,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

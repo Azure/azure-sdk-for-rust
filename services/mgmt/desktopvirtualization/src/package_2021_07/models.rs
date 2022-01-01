@@ -140,6 +140,24 @@ pub mod application_group_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MigrationRequestProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<migration_request_properties::Operation>,
+    #[serde(rename = "migrationPath", default, skip_serializing_if = "Option::is_none")]
+    pub migration_path: Option<String>,
+}
+pub mod migration_request_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Operation {
+        Start,
+        Revoke,
+        Complete,
+        Hide,
+        Unhide,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationGroupPatch {
     #[serde(flatten)]
     pub resource: Resource,
@@ -248,6 +266,24 @@ pub mod host_pool_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegistrationInfo {
+    #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
+    pub expiration_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+    #[serde(rename = "registrationTokenOperation", default, skip_serializing_if = "Option::is_none")]
+    pub registration_token_operation: Option<registration_info::RegistrationTokenOperation>,
+}
+pub mod registration_info {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RegistrationTokenOperation {
+        Delete,
+        None,
+        Update,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HostPoolPatch {
     #[serde(flatten)]
     pub resource: Resource,
@@ -316,24 +352,6 @@ pub mod host_pool_patch_properties {
         None,
         Desktop,
         RailApplications,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistrationInfo {
-    #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
-    pub expiration_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token: Option<String>,
-    #[serde(rename = "registrationTokenOperation", default, skip_serializing_if = "Option::is_none")]
-    pub registration_token_operation: Option<registration_info::RegistrationTokenOperation>,
-}
-pub mod registration_info {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum RegistrationTokenOperation {
-        Delete,
-        None,
-        Update,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -995,24 +1013,6 @@ pub mod scaling_plan_patch_properties {
         Pooled,
         #[serde(rename = "BYODesktop")]
         ByoDesktop,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MigrationRequestProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<migration_request_properties::Operation>,
-    #[serde(rename = "migrationPath", default, skip_serializing_if = "Option::is_none")]
-    pub migration_path: Option<String>,
-}
-pub mod migration_request_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Operation {
-        Start,
-        Revoke,
-        Complete,
-        Hide,
-        Unhide,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

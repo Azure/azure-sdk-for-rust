@@ -138,6 +138,11 @@ pub mod peering_properties_direct {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringPropertiesExchange {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub connections: Vec<ExchangeConnection>,
@@ -174,38 +179,6 @@ pub mod direct_connection {
         Microsoft,
         Peer,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ConnectionState {
-        None,
-        PendingApproval,
-        Approved,
-        ProvisioningStarted,
-        ProvisioningFailed,
-        ProvisioningCompleted,
-        Validating,
-        Active,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExchangeConnection {
-    #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
-    pub peering_db_facility_id: Option<i32>,
-    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
-    pub connection_state: Option<exchange_connection::ConnectionState>,
-    #[serde(rename = "bgpSession", default, skip_serializing_if = "Option::is_none")]
-    pub bgp_session: Option<BgpSession>,
-    #[serde(rename = "connectionIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub connection_identifier: Option<String>,
-    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
-    pub error_message: Option<String>,
-}
-pub mod exchange_connection {
-    use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConnectionState {
         None,
@@ -272,6 +245,33 @@ pub mod bgp_session {
         PendingAdd,
         PendingUpdate,
         PendingRemove,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExchangeConnection {
+    #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
+    pub peering_db_facility_id: Option<i32>,
+    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
+    pub connection_state: Option<exchange_connection::ConnectionState>,
+    #[serde(rename = "bgpSession", default, skip_serializing_if = "Option::is_none")]
+    pub bgp_session: Option<BgpSession>,
+    #[serde(rename = "connectionIdentifier", default, skip_serializing_if = "Option::is_none")]
+    pub connection_identifier: Option<String>,
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+}
+pub mod exchange_connection {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ConnectionState {
+        None,
+        PendingApproval,
+        Approved,
+        ProvisioningStarted,
+        ProvisioningFailed,
+        ProvisioningCompleted,
+        Validating,
+        Active,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

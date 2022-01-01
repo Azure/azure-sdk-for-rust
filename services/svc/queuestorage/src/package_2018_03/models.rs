@@ -133,6 +133,13 @@ pub struct Logging {
     pub retention_policy: RetentionPolicy,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RetentionPolicy {
+    #[serde(rename = "Enabled")]
+    pub enabled: bool,
+    #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
+    pub days: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metadata {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageError {
@@ -208,13 +215,6 @@ pub struct EnqueuedMessage {
 pub type DequeuedMessagesList = Vec<DequeuedMessageItem>;
 pub type PeekedMessagesList = Vec<PeekedMessageItem>;
 pub type EnqueuedMessageList = Vec<EnqueuedMessage>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RetentionPolicy {
-    #[serde(rename = "Enabled")]
-    pub enabled: bool,
-    #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
-    pub days: Option<i64>,
-}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignedIdentifier {
     #[serde(rename = "Id")]
