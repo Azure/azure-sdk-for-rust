@@ -78,6 +78,16 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
         "errorInfo",
         "innererror",
     ),
+    (
+        "../../../azure-rest-api-specs/specification/operationalinsights/data-plane/Microsoft.OperationalInsights/preview/2017-10-01/swagger.json",
+        "errorInfo",
+        "innererror",
+    ),
+    (
+        "../../../azure-rest-api-specs/specification/operationalinsights/data-plane/Microsoft.OperationalInsights/preview/2021-05-19_Preview/OperationalInsights.json",
+        "errorInfo",
+        "innererror",
+    ),
     // timeseriesinsights
     (
         "../../../azure-rest-api-specs/specification/timeseriesinsights/data-plane/Microsoft.TimeSeriesInsights/stable/2020-07-31/timeseriesinsights.json",
