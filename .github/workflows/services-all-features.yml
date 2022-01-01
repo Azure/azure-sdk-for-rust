@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
 
 env:
-  RUSTFLAGS: -Dwarnings
+  # the goal is to remove warnings from the generated code
+  # https://github.com/Azure/azure-sdk-for-rust/issues/553
+  RUSTFLAGS: --deny warnings --allow unused_attributes --allow unreachable-code --allow unused-assignments --allow dead-code
   CARGO_INCREMENTAL: 0
 
 jobs:
