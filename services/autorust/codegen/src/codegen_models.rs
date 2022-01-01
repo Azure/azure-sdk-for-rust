@@ -62,6 +62,10 @@ impl SchemaGen {
         self.schema.required.iter().map(String::as_str).collect()
     }
 
+    fn has_required(&self) -> bool {
+        !self.schema.required.is_empty()
+    }
+
     fn all_of(&self) -> Vec<&ReferenceOr<Schema>> {
         self.schema.all_of.iter().collect()
     }
@@ -76,6 +80,10 @@ impl SchemaGen {
 
     fn properties(&self) -> Vec<&PropertyGen> {
         self.properties.iter().collect()
+    }
+
+    fn has_properties(&self) -> bool {
+        !self.schema.properties.is_empty()
     }
 }
 
@@ -307,7 +315,7 @@ fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
 }
 
 fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<Vec<TokenStream>, Error> {
-    let mut streams = Vec::new();
+    let mut code = Vec::new();
     let mut local_types = Vec::new();
     let mut props = TokenStream::new();
     let ns = struct_name.to_snake_case_ident().map_err(Error::StructName)?;
@@ -323,6 +331,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         });
     }
 
+    let mut default_props: Vec<(TokenStream, bool)> = Vec::new();
     for property in schema.properties() {
         let property_name = property.name.as_str();
         let nm = property_name.to_snake_case_ident().map_err(Error::StructName)?;
@@ -380,6 +389,32 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
             #serde
             pub #nm: #field_tp_name,
         });
+        default_props.push((nm.clone(), is_vec));
+    }
+
+    let mut default_code = TokenStream::new();
+    if schema.has_properties() && !schema.has_required() {
+        let mut props_code = TokenStream::new();
+        for (nm, is_vec) in default_props {
+            if is_vec {
+                props_code.extend(quote! {
+                    #nm: Vec::new(),
+                });
+            } else {
+                props_code.extend(quote! {
+                    #nm: None,
+                });
+            }
+        }
+        default_code.extend(quote! {
+            impl std::default::Default for #nm {
+                fn default() -> Self {
+                    Self {
+                        #props_code
+                    }
+                }
+            }
+        });
     }
 
     let st = quote! {
@@ -387,13 +422,14 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         pub struct #nm {
             #props
         }
+        #default_code
     };
-    streams.push(st);
+    code.push(st);
 
     if !local_types.is_empty() {
         let mut types = TokenStream::new();
         local_types.into_iter().for_each(|tp| types.extend(tp));
-        streams.push(quote! {
+        code.push(quote! {
             pub mod #ns {
                 use super::*;
                 #types
@@ -401,7 +437,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         });
     }
 
-    Ok(streams)
+    Ok(code)
 }
 
 struct TypeCode {
