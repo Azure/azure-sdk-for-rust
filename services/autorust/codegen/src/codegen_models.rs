@@ -96,65 +96,78 @@ impl SchemaGen {
 fn resolve_schema_properties(
     resolved: &mut IndexMap<RefKey, SchemaGen>,
     all_schemas: &IndexMap<RefKey, SchemaGen>,
-    schema: &SchemaGen,
     spec: &Spec,
     doc_file: &Path,
+    schema: &SchemaGen,
 ) -> Result<SchemaGen, Error> {
-    let properties = spec.resolve_schema_map(doc_file, &schema.schema.properties)?;
+    let mut properties: IndexMap<String, _> = IndexMap::new();
+    // add any allOf properties not in schemas, not references
+    schema.schema.all_of.iter().for_each(|ref_or_schema| match ref_or_schema {
+        ReferenceOr::Item(schema) => {
+            for (property_name, property) in &schema.properties {
+                properties.insert(property_name.clone(), property.clone());
+            }
+        }
+        ReferenceOr::Reference { reference: _, .. } => (),
+    });
+    for (property_name, property) in &schema.schema.properties {
+        properties.insert(property_name.clone(), property.clone());
+    }
+    let properties = spec.resolve_schema_map(doc_file, &properties)?;
     let mut schema = schema.clone();
     schema.properties = properties
         .into_iter()
-        .map(|(name, resolved_schema)| {
-            let schema = if let Some(ref_key) = resolved_schema.ref_key {
-                if let Some(schema) = resolved.get(&ref_key) {
-                    schema.clone()
-                } else {
-                    let schema = all_schemas
-                        .get(&ref_key)
-                        .ok_or_else(|| Error::RefKeyNotFound { ref_key: ref_key.clone() })?;
-                    // prevent overflow for recursive call
-                    resolved.insert(ref_key.clone(), schema.clone()); // unresolved properties
-                    let schema = resolve_schema_properties(resolved, all_schemas, schema, spec, &ref_key.file_path)?;
-                    resolved.insert(ref_key, schema.clone()); // resolved properties
-                    schema
-                }
-            } else {
-                let schema = SchemaGen::new(None, resolved_schema.schema, doc_file.to_path_buf());
-                resolve_schema_properties(resolved, all_schemas, &schema, spec, doc_file)?
-            };
-            Ok(PropertyGen { name, schema })
-        })
+        .map(|(property_name, property)| resolve_schema_property(resolved, all_schemas, spec, doc_file, property_name, &property))
         .collect::<Result<_, Error>>()?;
     Ok(schema)
 }
 
-fn resolve_all_of(
-    _resolved: &mut IndexMap<RefKey, SchemaGen>,
+fn resolve_schema_property(
+    resolved: &mut IndexMap<RefKey, SchemaGen>,
     all_schemas: &IndexMap<RefKey, SchemaGen>,
-    schema: &SchemaGen,
     spec: &Spec,
-    _doc_file: &Path,
-) -> Result<SchemaGen, Error> {
+    doc_file: &Path,
+    property_name: String,
+    property: &ResolvedSchema,
+) -> Result<PropertyGen, Error> {
+    let schema = if let Some(ref_key) = &property.ref_key {
+        if let Some(schema) = resolved.get(ref_key) {
+            schema.clone()
+        } else {
+            let schema = all_schemas
+                .get(ref_key)
+                .ok_or_else(|| Error::RefKeyNotFound { ref_key: ref_key.clone() })?;
+            // prevent overflow for recursive call
+            resolved.insert(ref_key.clone(), schema.clone()); // unresolved properties
+            let schema = resolve_schema_properties(resolved, all_schemas, spec, &ref_key.file_path, schema)?;
+            resolved.insert(ref_key.clone(), schema.clone()); // resolved properties
+            schema
+        }
+    } else {
+        let schema = SchemaGen::new(None, property.schema.clone(), doc_file.to_path_buf());
+        resolve_schema_properties(resolved, all_schemas, spec, doc_file, &schema)?
+    };
+    Ok(PropertyGen {
+        name: property_name,
+        schema,
+    })
+}
+
+fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen, spec: &Spec) -> Result<SchemaGen, Error> {
     let mut schema = schema.clone();
     let all_of: Vec<_> = schema
         .schema
         .all_of
         .iter()
-        .map(|ref_or_schema| {
-            match ref_or_schema {
-                ReferenceOr::Item(_schema) => {
-                    // Err(Error::InvalidAllOf { file: schema.doc_file.to_path_buf() })
-                    println!("WARN invalid allOf in {:?}", schema.doc_file);
-                    Ok(None)
-                }
-                ReferenceOr::Reference { reference, .. } => {
-                    let ref_key = spec.ref_key(&schema.doc_file, reference)?;
-                    let schema = all_schemas
-                        .get(&ref_key)
-                        .ok_or_else(|| Error::RefKeyNotFound { ref_key: ref_key.clone() })?
-                        .clone();
-                    Ok(Some(schema))
-                }
+        .map(|ref_or_schema| match ref_or_schema {
+            ReferenceOr::Item(_schema) => Ok(None),
+            ReferenceOr::Reference { reference, .. } => {
+                let ref_key = spec.ref_key(&schema.doc_file, reference)?;
+                let schema = all_schemas
+                    .get(&ref_key)
+                    .ok_or_else(|| Error::RefKeyNotFound { ref_key: ref_key.clone() })?
+                    .clone();
+                Ok(Some(schema))
             }
         })
         .collect::<Result<_, Error>>()?;
@@ -204,7 +217,7 @@ fn resolve_all_schema_properties(schemas: &IndexMap<RefKey, SchemaGen>, spec: &S
     let mut resolved: IndexMap<RefKey, SchemaGen> = IndexMap::new();
     for (ref_key, schema) in schemas {
         resolved.insert(ref_key.clone(), schema.clone()); // order properties after
-        let schema = resolve_schema_properties(&mut resolved, schemas, schema, spec, &ref_key.file_path)?;
+        let schema = resolve_schema_properties(&mut resolved, schemas, spec, &ref_key.file_path, schema)?;
         resolved.insert(ref_key.clone(), schema);
     }
     Ok(resolved)
@@ -213,7 +226,7 @@ fn resolve_all_schema_properties(schemas: &IndexMap<RefKey, SchemaGen>, spec: &S
 fn resolve_all_all_of(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
     let mut resolved: IndexMap<RefKey, SchemaGen> = IndexMap::new();
     for (ref_key, schema) in schemas {
-        let schema_with_properties = resolve_all_of(&mut resolved, schemas, schema, spec, &ref_key.file_path)?;
+        let schema_with_properties = resolve_all_of(schemas, schema, spec)?;
         resolved.insert(ref_key.clone(), schema_with_properties);
     }
     Ok(resolved)
