@@ -25,9 +25,12 @@ struct PropertyGen {
 struct SchemaGen {
     ref_key: Option<RefKey>,
     schema: Schema,
+
+    // used for identifying workarounds
+    doc_file: PathBuf,
+
     // resolved properties
     properties: Vec<PropertyGen>,
-    doc_file: PathBuf,
 }
 
 impl SchemaGen {
@@ -79,7 +82,7 @@ impl SchemaGen {
     }
 }
 
-fn resolve_properties(
+fn resolve_schema_properties(
     resolved: &mut IndexMap<RefKey, SchemaGen>,
     all_schemas: &IndexMap<RefKey, SchemaGen>,
     schema: &SchemaGen,
@@ -100,7 +103,7 @@ fn resolve_properties(
                         .ok_or_else(|| Error::RefKeyNotFound { ref_key: ref_key.clone() })?;
                     // prevent overflow for recursive call
                     resolved.insert(ref_key.clone(), schema.clone()); // unresolved properties
-                    let schema = resolve_properties(resolved, all_schemas, schema, spec, &ref_key.file_path)?;
+                    let schema = resolve_schema_properties(resolved, all_schemas, schema, spec, &ref_key.file_path)?;
                     resolved.insert(ref_key, schema.clone()); // resolved properties
                     schema
                 }
@@ -111,7 +114,7 @@ fn resolve_properties(
                     properties: Vec::new(),
                     doc_file: doc_file.to_path_buf(),
                 };
-                resolve_properties(resolved, all_schemas, &schema, spec, doc_file)?
+                resolve_schema_properties(resolved, all_schemas, &schema, spec, doc_file)?
             };
             Ok(PropertyGen { name, schema })
         })
@@ -162,12 +165,12 @@ fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
     Ok(all_schemas)
 }
 
-fn resolve_schema_properties(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
+fn resolve_all_schema_properties(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
     let mut resolved: IndexMap<RefKey, SchemaGen> = IndexMap::new();
     for (ref_key, schema) in schemas {
         resolved.insert(ref_key.clone(), schema.clone()); // order properties after
-        let schema_with_properties = resolve_properties(&mut resolved, schemas, schema, spec, &ref_key.file_path)?;
-        resolved.insert(ref_key.clone(), schema_with_properties);
+        let schema = resolve_schema_properties(&mut resolved, schemas, schema, spec, &ref_key.file_path)?;
+        resolved.insert(ref_key.clone(), schema);
     }
     Ok(resolved)
 }
@@ -207,7 +210,10 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
 
     let mut schema_names = IndexMap::new();
     let schemas = all_schemas(&cg.spec)?;
-    let schemas = resolve_schema_properties(&schemas, &cg.spec)?;
+    let schemas = resolve_all_schema_properties(&schemas, &cg.spec)?;
+    // sort schemas by name
+    let mut schemas: Vec<_> = schemas.into_iter().collect();
+    schemas.sort_by(|a, b| a.0.name.cmp(&b.0.name));
     for (ref_key, schema) in &schemas {
         let doc_file = &ref_key.file_path;
         let schema_name = &ref_key.name;
