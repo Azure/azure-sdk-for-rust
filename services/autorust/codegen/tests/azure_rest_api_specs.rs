@@ -55,10 +55,10 @@ fn read_spec_avs() -> Result<()> {
 fn test_resolve_schema_ref() -> Result<()> {
     let file = PathBuf::from(VMWARE_SPEC);
     let spec = &Spec::read_files(&[&file])?;
-    spec.resolve_schema_ref(&file, Reference::parse("#/definitions/OperationList").unwrap())?;
+    spec.resolve_schema_ref(&file, &Reference::parse("#/definitions/OperationList").unwrap())?;
     spec.resolve_schema_ref(
         &file,
-        Reference::parse("../../../../../common-types/resource-management/v1/types.json#/definitions/ErrorResponse").unwrap(),
+        &Reference::parse("../../../../../common-types/resource-management/v1/types.json#/definitions/ErrorResponse").unwrap(),
     )?;
     Ok(())
 }
@@ -88,7 +88,7 @@ fn test_resolve_all_refs() -> Result<()> {
                     spec.resolve_parameter_ref(&doc_file, reference)?;
                 }
                 TypedReference::Schema(reference) => {
-                    spec.resolve_schema_ref(&doc_file, reference)?;
+                    spec.resolve_schema_ref(&doc_file, &reference)?;
                 }
             }
         }
