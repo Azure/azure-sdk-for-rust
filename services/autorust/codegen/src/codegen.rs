@@ -123,6 +123,8 @@ pub enum Error {
     NoRefKey,
     #[error("RefKey not found {0:?}", ref_key)]
     RefKeyNotFound { ref_key: RefKey },
+    // #[error("invalid allOf in {file:?}")]
+    // InvalidAllOf { file: PathBuf },
 }
 
 pub fn is_vec(ts: &TokenStream) -> bool {
