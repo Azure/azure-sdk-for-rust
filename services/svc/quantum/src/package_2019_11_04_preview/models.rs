@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDetailsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobDetails>,
@@ -58,7 +58,7 @@ pub mod job_details {
         Cancelled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -72,19 +72,19 @@ pub struct BlobDetails {
     #[serde(rename = "blobName", default, skip_serializing_if = "Option::is_none")]
     pub blob_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SasUriResponse {
     #[serde(rename = "sasUri", default, skip_serializing_if = "Option::is_none")]
     pub sas_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderStatusList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProviderStatus>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -102,7 +102,7 @@ pub mod provider_status {
         Unavailable,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TargetStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -122,14 +122,14 @@ pub mod target_status {
         Unavailable,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Quota>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Quota {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimension: Option<String>,
@@ -159,7 +159,7 @@ pub mod quota {
         Monthly,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorData>,

@@ -2,14 +2,14 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -60,14 +60,14 @@ pub enum AttackTactic {
     CommandAndControl,
     Impact,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureResourceEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -76,7 +76,7 @@ pub struct AzureResourceEntityProperties {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
@@ -87,14 +87,14 @@ pub struct ClientInfo {
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudApplicationEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CloudApplicationEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudApplicationEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -105,12 +105,12 @@ pub struct CloudApplicationEntityProperties {
     #[serde(rename = "instanceName", default, skip_serializing_if = "Option::is_none")]
     pub instance_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -123,14 +123,14 @@ pub struct ErrorResponse {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DnsEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -150,14 +150,14 @@ pub struct Entity {
     #[serde(flatten)]
     pub entity_kind: EntityKind,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityCommonProperties {
     #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
     pub additional_data: Option<serde_json::Value>,
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityEdges {
     #[serde(rename = "targetEntityId", default, skip_serializing_if = "Option::is_none")]
     pub target_entity_id: Option<String>,
@@ -192,14 +192,14 @@ pub enum EntityInnerKind {
 pub struct EntityKind {
     pub kind: EntityInnerKind,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FileEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -212,14 +212,14 @@ pub struct FileEntityProperties {
     #[serde(rename = "hostEntityId", default, skip_serializing_if = "Option::is_none")]
     pub host_entity_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileHashEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FileHashEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileHashEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -243,7 +243,7 @@ pub mod file_hash_entity_properties {
         Sha256ac,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GeoLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub asn: Option<i32>,
@@ -260,14 +260,14 @@ pub struct GeoLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HostEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HostEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HostEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -302,7 +302,7 @@ pub mod host_entity_properties {
         Unknown,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HuntingBookmark {
     #[serde(flatten)]
     pub entity: Entity,
@@ -335,7 +335,7 @@ pub struct HuntingBookmarkProperties {
     #[serde(rename = "incidentInfo", default, skip_serializing_if = "Option::is_none")]
     pub incident_info: Option<IncidentInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
@@ -344,7 +344,7 @@ pub struct UserInfo {
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentInfo {
     #[serde(rename = "incidentId", default, skip_serializing_if = "Option::is_none")]
     pub incident_id: Option<String>,
@@ -366,7 +366,7 @@ pub mod incident_info {
         Informational,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Incident {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
@@ -437,7 +437,7 @@ pub mod incident_properties {
         Closed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentAdditionalData {
     #[serde(rename = "alertsCount", default, skip_serializing_if = "Option::is_none")]
     pub alerts_count: Option<i32>,
@@ -450,7 +450,7 @@ pub struct IncidentAdditionalData {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentOwnerInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
@@ -469,7 +469,7 @@ pub struct IncidentAlertList {
 pub struct IncidentBookmarkList {
     pub value: Vec<HuntingBookmark>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentComment {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
@@ -492,7 +492,7 @@ pub struct IncidentCommentList {
     pub next_link: Option<String>,
     pub value: Vec<IncidentComment>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentEntitiesResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub entities: Vec<Entity>,
@@ -526,14 +526,14 @@ pub struct IncidentList {
     pub next_link: Option<String>,
     pub value: Vec<Incident>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTDeviceEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IoTDeviceEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTDeviceEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -572,14 +572,14 @@ pub struct IoTDeviceEntityProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub protocols: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IpEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -591,14 +591,14 @@ pub struct IpEntityProperties {
     pub threat_intelligence: Vec<ThreatIntelligence>,
 }
 pub type Label = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MailboxEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MailboxEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MailboxEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -611,14 +611,14 @@ pub struct MailboxEntityProperties {
     #[serde(rename = "externalDirectoryObjectId", default, skip_serializing_if = "Option::is_none")]
     pub external_directory_object_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MailClusterEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MailClusterEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MailClusterEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -653,14 +653,14 @@ pub struct MailClusterEntityProperties {
     #[serde(rename = "clusterGroup", default, skip_serializing_if = "Option::is_none")]
     pub cluster_group: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MailMessageEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MailMessageEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MailMessageEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -745,14 +745,14 @@ pub mod mail_message_entity_properties {
         Forwarded,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MalwareEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MalwareEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MalwareEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -765,14 +765,14 @@ pub struct MalwareEntityProperties {
     #[serde(rename = "processEntityIds", default, skip_serializing_if = "Vec::is_empty")]
     pub process_entity_ids: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProcessEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProcessEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProcessEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -804,14 +804,14 @@ pub mod process_entity_properties {
         Limited,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryKeyEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryKeyEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryKeyEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -846,14 +846,14 @@ pub mod registry_key_entity_properties {
         HkeyCurrentUser,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryValueEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryValueEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryValueEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -880,7 +880,7 @@ pub mod registry_value_entity_properties {
         QWord,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Relation {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
@@ -904,14 +904,14 @@ pub struct RelationList {
     pub next_link: Option<String>,
     pub value: Vec<Relation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAlert {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAlertProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAlertProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -1007,14 +1007,14 @@ pub mod security_alert_properties {
         InProgress,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityGroupEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityGroupEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityGroupEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -1025,14 +1025,14 @@ pub struct SecurityGroupEntityProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubmissionMailEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubmissionMailEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubmissionMailEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -1057,7 +1057,7 @@ pub struct SubmissionMailEntityProperties {
     #[serde(rename = "reportType", default, skip_serializing_if = "Option::is_none")]
     pub report_type: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub confidence: Option<f64>,
@@ -1072,14 +1072,14 @@ pub struct ThreatIntelligence {
     #[serde(rename = "threatType", default, skip_serializing_if = "Option::is_none")]
     pub threat_type: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UrlEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UrlEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UrlEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -1092,7 +1092,7 @@ pub struct OperationsList {
     pub next_link: Option<String>,
     pub value: Vec<Operation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
@@ -1103,7 +1103,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
@@ -1121,7 +1121,7 @@ pub struct WatchlistList {
     pub next_link: Option<String>,
     pub value: Vec<Watchlist>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Watchlist {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
@@ -1185,7 +1185,7 @@ pub struct WatchlistItemList {
     pub next_link: Option<String>,
     pub value: Vec<WatchlistItem>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WatchlistItem {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
@@ -1228,14 +1228,14 @@ pub struct ThreatIntelligenceInformationList {
     pub next_link: Option<String>,
     pub value: Vec<ThreatIntelligenceInformation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceIndicatorModel {
     #[serde(flatten)]
     pub threat_intelligence_information: ThreatIntelligenceInformation,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ThreatIntelligenceIndicatorProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceIndicatorProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
@@ -1296,7 +1296,7 @@ pub struct ThreatIntelligenceIndicatorProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub extensions: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceIndicatorModelForRequestBody {
     #[serde(flatten)]
     pub threat_intelligence_resource_kind: ThreatIntelligenceResourceKind,
@@ -1314,28 +1314,28 @@ pub enum ThreatIntelligenceResourceInnerKind {
     #[serde(rename = "indicator")]
     Indicator,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceKillChainPhase {
     #[serde(rename = "killChainName", default, skip_serializing_if = "Option::is_none")]
     pub kill_chain_name: Option<String>,
     #[serde(rename = "phaseName", default, skip_serializing_if = "Option::is_none")]
     pub phase_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceParsedPattern {
     #[serde(rename = "patternTypeKey", default, skip_serializing_if = "Option::is_none")]
     pub pattern_type_key: Option<String>,
     #[serde(rename = "patternTypeValues", default, skip_serializing_if = "Vec::is_empty")]
     pub pattern_type_values: Vec<ThreatIntelligenceParsedPatternTypeValue>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceParsedPatternTypeValue {
     #[serde(rename = "valueType", default, skip_serializing_if = "Option::is_none")]
     pub value_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceGranularMarkingModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
@@ -1344,7 +1344,7 @@ pub struct ThreatIntelligenceGranularMarkingModel {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub selectors: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceExternalReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -1357,7 +1357,7 @@ pub struct ThreatIntelligenceExternalReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hashes: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceFilteringCriteria {
     #[serde(rename = "pageSize", default, skip_serializing_if = "Option::is_none")]
     pub page_size: Option<i32>,
@@ -1386,7 +1386,7 @@ pub struct ThreatIntelligenceFilteringCriteria {
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceSortingCriteria {
     #[serde(rename = "itemKey", default, skip_serializing_if = "Option::is_none")]
     pub item_key: Option<String>,
@@ -1402,7 +1402,7 @@ pub enum ThreatIntelligenceSortingOrder {
     #[serde(rename = "descending")]
     Descending,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceAppendTags {
     #[serde(rename = "threatIntelligenceTags", default, skip_serializing_if = "Vec::is_empty")]
     pub threat_intelligence_tags: Vec<String>,
@@ -1411,12 +1411,12 @@ pub struct ThreatIntelligenceAppendTags {
 pub struct ThreatIntelligenceMetricsList {
     pub value: Vec<ThreatIntelligenceMetrics>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceMetrics {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ThreatIntelligenceMetric>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceMetric {
     #[serde(rename = "lastUpdatedTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time_utc: Option<String>,
@@ -1427,21 +1427,21 @@ pub struct ThreatIntelligenceMetric {
     #[serde(rename = "sourceMetrics", default, skip_serializing_if = "Vec::is_empty")]
     pub source_metrics: Vec<ThreatIntelligenceMetricEntity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceMetricEntity {
     #[serde(rename = "metricName", default, skip_serializing_if = "Option::is_none")]
     pub metric_name: Option<String>,
     #[serde(rename = "metricValue", default, skip_serializing_if = "Option::is_none")]
     pub metric_value: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1452,7 +1452,7 @@ pub struct Resource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -1484,7 +1484,7 @@ pub mod system_data {
         Key,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceWithEtag {
     #[serde(flatten)]
     pub resource: Resource,

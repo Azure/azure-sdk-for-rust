@@ -15,7 +15,7 @@ pub struct Conversion {
 }
 pub mod conversion {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Output {
         #[serde(rename = "outputAssetUri", default, skip_serializing_if = "Option::is_none")]
         pub output_asset_uri: Option<String>,

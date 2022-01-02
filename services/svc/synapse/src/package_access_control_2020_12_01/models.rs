@@ -21,12 +21,12 @@ pub struct RequiredAction {
     #[serde(rename = "isDataAction")]
     pub is_data_action: bool,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckPrincipalAccessResponse {
     #[serde(rename = "AccessDecisions", default, skip_serializing_if = "Vec::is_empty")]
     pub access_decisions: Vec<CheckAccessDecision>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckAccessDecision {
     #[serde(rename = "accessDecision", default, skip_serializing_if = "Option::is_none")]
     pub access_decision: Option<String>,
@@ -35,7 +35,7 @@ pub struct CheckAccessDecision {
     #[serde(rename = "roleAssignment", default, skip_serializing_if = "Option::is_none")]
     pub role_assignment: Option<RoleAssignmentDetails>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -58,7 +58,7 @@ pub struct RoleAssignmentRequest {
     #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentDetailsList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
@@ -66,7 +66,7 @@ pub struct RoleAssignmentDetailsList {
     pub value: Vec<RoleAssignmentDetails>,
 }
 pub type RoleDefinitionsListResponse = Vec<SynapseRoleDefinition>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SynapseRoleDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -83,7 +83,7 @@ pub struct SynapseRoleDefinition {
     #[serde(rename = "availabilityStatus", default, skip_serializing_if = "Option::is_none")]
     pub availability_status: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SynapseRbacPermission {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<String>,
@@ -94,12 +94,12 @@ pub struct SynapseRbacPermission {
     #[serde(rename = "notDataActions", default, skip_serializing_if = "Vec::is_empty")]
     pub not_data_actions: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -112,7 +112,7 @@ pub struct ErrorResponse {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,

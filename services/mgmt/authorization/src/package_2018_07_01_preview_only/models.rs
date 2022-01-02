@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignmentFilter {
     #[serde(rename = "denyAssignmentName", default, skip_serializing_if = "Option::is_none")]
     pub deny_assignment_name: Option<String>,
@@ -11,7 +11,7 @@ pub struct DenyAssignmentFilter {
     #[serde(rename = "gdprExportPrincipalId", default, skip_serializing_if = "Option::is_none")]
     pub gdpr_export_principal_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignmentProperties {
     #[serde(rename = "denyAssignmentName", default, skip_serializing_if = "Option::is_none")]
     pub deny_assignment_name: Option<String>,
@@ -30,7 +30,7 @@ pub struct DenyAssignmentProperties {
     #[serde(rename = "isSystemProtected", default, skip_serializing_if = "Option::is_none")]
     pub is_system_protected: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -41,14 +41,14 @@ pub struct DenyAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DenyAssignmentProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignmentListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DenyAssignment>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignmentPermission {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<String>,
@@ -59,12 +59,12 @@ pub struct DenyAssignmentPermission {
     #[serde(rename = "notDataActions", default, skip_serializing_if = "Vec::is_empty")]
     pub not_data_actions: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -77,14 +77,14 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Principal {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,

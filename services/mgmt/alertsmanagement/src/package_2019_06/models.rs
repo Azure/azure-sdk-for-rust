@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartDetectorErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -18,12 +18,12 @@ pub struct ActionGroupsInformation {
     #[serde(rename = "groupIds")]
     pub group_ids: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThrottlingInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -36,7 +36,7 @@ pub struct AzureResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertRule {
     #[serde(flatten)]
     pub azure_resource: AzureResource,
@@ -87,14 +87,14 @@ pub struct Detector {
     #[serde(rename = "imagePaths", default, skip_serializing_if = "Vec::is_empty")]
     pub image_paths: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertRulesList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AlertRule>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertRulePatchObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -107,7 +107,7 @@ pub struct AlertRulePatchObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertRulePatchProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertRulePatchProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,

@@ -91,14 +91,14 @@ pub struct Action {
     #[serde(rename = "odata.type")]
     pub odata_type: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSearchRuleResourcePatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LogSearchRulePatch>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSearchRulePatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<log_search_rule_patch::Enabled>,
@@ -113,7 +113,7 @@ pub mod log_search_rule_patch {
         False,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSearchRuleResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LogSearchRuleResource>,
@@ -134,7 +134,7 @@ pub enum ConditionalOperator {
     LessThan,
     Equal,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogMetricTrigger {
     #[serde(rename = "thresholdOperator", default, skip_serializing_if = "Option::is_none")]
     pub threshold_operator: Option<ConditionalOperator>,
@@ -150,7 +150,7 @@ pub enum MetricTriggerType {
     Consecutive,
     Total,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzNsActionGroup {
     #[serde(rename = "actionGroup", default, skip_serializing_if = "Vec::is_empty")]
     pub action_group: Vec<String>,
@@ -209,12 +209,12 @@ pub struct LogToMetricAction {
     pub action: Action,
     pub criteria: Vec<Criteria>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,

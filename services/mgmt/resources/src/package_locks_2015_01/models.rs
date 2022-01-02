@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementLockProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<management_lock_properties::Level>,
@@ -18,7 +18,7 @@ pub mod management_lock_properties {
         ReadOnly,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementLockObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementLockProperties>,
@@ -29,7 +29,7 @@ pub struct ManagementLockObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementLockListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagementLockObject>,

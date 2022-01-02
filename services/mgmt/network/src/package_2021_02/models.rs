@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayOnDemandProbe {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ApplicationGatewayProtocol>,
@@ -26,26 +26,26 @@ pub enum ApplicationGatewayProtocol {
     Http,
     Https,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayProbeHealthResponseMatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub body: Option<String>,
     #[serde(rename = "statusCodes", default, skip_serializing_if = "Vec::is_empty")]
     pub status_codes: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendHealthOnDemand {
     #[serde(rename = "backendAddressPool", default, skip_serializing_if = "Option::is_none")]
     pub backend_address_pool: Option<ApplicationGatewayBackendAddressPool>,
     #[serde(rename = "backendHealthHttpSettings", default, skip_serializing_if = "Option::is_none")]
     pub backend_health_http_settings: Option<ApplicationGatewayBackendHealthHttpSettings>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendAddressPool {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -58,7 +58,7 @@ pub struct ApplicationGatewayBackendAddressPool {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendAddressPoolPropertiesFormat {
     #[serde(rename = "backendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub backend_ip_configurations: Vec<NetworkInterfaceIpConfiguration>,
@@ -74,14 +74,14 @@ pub enum ProvisioningState {
     Deleting,
     Failed,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendHealthHttpSettings {
     #[serde(rename = "backendHttpSettings", default, skip_serializing_if = "Option::is_none")]
     pub backend_http_settings: Option<ApplicationGatewayBackendHttpSettings>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub servers: Vec<ApplicationGatewayBackendHealthServer>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendHttpSettings {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -94,7 +94,7 @@ pub struct ApplicationGatewayBackendHttpSettings {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendHttpSettingsPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
@@ -139,19 +139,19 @@ pub struct ApplicationGatewayConnectionDraining {
     #[serde(rename = "drainTimeoutInSec")]
     pub drain_timeout_in_sec: i32,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendHealth {
     #[serde(rename = "backendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
     pub backend_address_pools: Vec<ApplicationGatewayBackendHealthPool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendHealthPool {
     #[serde(rename = "backendAddressPool", default, skip_serializing_if = "Option::is_none")]
     pub backend_address_pool: Option<ApplicationGatewayBackendAddressPool>,
     #[serde(rename = "backendHttpSettingsCollection", default, skip_serializing_if = "Vec::is_empty")]
     pub backend_http_settings_collection: Vec<ApplicationGatewayBackendHealthHttpSettings>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendHealthServer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
@@ -173,7 +173,7 @@ pub mod application_gateway_backend_health_server {
         Draining,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -186,7 +186,7 @@ pub struct NetworkInterfaceIpConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceIpConfigurationPropertiesFormat {
     #[serde(rename = "gatewayLoadBalancer", default, skip_serializing_if = "Option::is_none")]
     pub gateway_load_balancer: Option<SubResource>,
@@ -227,7 +227,7 @@ pub enum IpVersion {
     IPv4,
     IPv6,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Subnet {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -240,7 +240,7 @@ pub struct Subnet {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubnetPropertiesFormat {
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix: Option<String>,
@@ -294,7 +294,7 @@ pub mod subnet_properties_format {
         Disabled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityGroup {
     #[serde(flatten)]
     pub resource: Resource,
@@ -303,7 +303,7 @@ pub struct NetworkSecurityGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityGroupPropertiesFormat {
     #[serde(rename = "securityRules", default, skip_serializing_if = "Vec::is_empty")]
     pub security_rules: Vec<SecurityRule>,
@@ -320,7 +320,7 @@ pub struct NetworkSecurityGroupPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteTable {
     #[serde(flatten)]
     pub resource: Resource,
@@ -329,7 +329,7 @@ pub struct RouteTable {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteTablePropertiesFormat {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub routes: Vec<Route>,
@@ -342,7 +342,7 @@ pub struct RouteTablePropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpAddress {
     #[serde(flatten)]
     pub resource: Resource,
@@ -357,7 +357,7 @@ pub struct PublicIpAddress {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -368,7 +368,7 @@ pub struct ExtendedLocation {
 pub enum ExtendedLocationType {
     EdgeZone,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpAddressSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<public_ip_address_sku::Name>,
@@ -388,7 +388,7 @@ pub mod public_ip_address_sku {
         Global,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpAddressPropertiesFormat {
     #[serde(rename = "publicIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_allocation_method: Option<IpAllocationMethod>,
@@ -439,7 +439,7 @@ pub mod public_ip_address_properties_format {
         Detach,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -450,7 +450,7 @@ pub struct IpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
@@ -463,7 +463,7 @@ pub struct IpConfigurationPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpAddressDnsSettings {
     #[serde(rename = "domainNameLabel", default, skip_serializing_if = "Option::is_none")]
     pub domain_name_label: Option<String>,
@@ -472,7 +472,7 @@ pub struct PublicIpAddressDnsSettings {
     #[serde(rename = "reverseFqdn", default, skip_serializing_if = "Option::is_none")]
     pub reverse_fqdn: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DdosSettings {
     #[serde(rename = "ddosCustomPolicy", default, skip_serializing_if = "Option::is_none")]
     pub ddos_custom_policy: Option<SubResource>,
@@ -489,7 +489,7 @@ pub mod ddos_settings {
         Standard,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NatGateway {
     #[serde(flatten)]
     pub resource: Resource,
@@ -502,7 +502,7 @@ pub struct NatGateway {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NatGatewaySku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<nat_gateway_sku::Name>,
@@ -514,7 +514,7 @@ pub mod nat_gateway_sku {
         Standard,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NatGatewayPropertiesFormat {
     #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub idle_timeout_in_minutes: Option<i32>,
@@ -529,7 +529,7 @@ pub struct NatGatewayPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceIpConfigurationPrivateLinkConnectionProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
@@ -538,7 +538,7 @@ pub struct NetworkInterfaceIpConfigurationPrivateLinkConnectionProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub fqdns: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<application_gateway_sku::Name>,
@@ -577,7 +577,7 @@ pub mod application_gateway_sku {
         WafV2,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslPolicy {
     #[serde(rename = "disabledSslProtocols", default, skip_serializing_if = "Vec::is_empty")]
     pub disabled_ssl_protocols: Vec<ProtocolsEnum>,
@@ -613,19 +613,19 @@ pub enum ProtocolsEnum {
     #[serde(rename = "TLSv1_2")]
     TlSv12,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayClientAuthConfiguration {
     #[serde(rename = "verifyClientCertIssuerDN", default, skip_serializing_if = "Option::is_none")]
     pub verify_client_cert_issuer_dn: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayIpConfigurationPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<SubResource>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -638,14 +638,14 @@ pub struct ApplicationGatewayIpConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayAuthenticationCertificatePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayAuthenticationCertificate {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -658,7 +658,7 @@ pub struct ApplicationGatewayAuthenticationCertificate {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayTrustedRootCertificatePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
@@ -667,7 +667,7 @@ pub struct ApplicationGatewayTrustedRootCertificatePropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayTrustedRootCertificate {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -680,7 +680,7 @@ pub struct ApplicationGatewayTrustedRootCertificate {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayTrustedClientCertificatePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
@@ -691,7 +691,7 @@ pub struct ApplicationGatewayTrustedClientCertificatePropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayTrustedClientCertificate {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -704,7 +704,7 @@ pub struct ApplicationGatewayTrustedClientCertificate {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslCertificatePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
@@ -717,7 +717,7 @@ pub struct ApplicationGatewaySslCertificatePropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslCertificate {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -730,7 +730,7 @@ pub struct ApplicationGatewaySslCertificate {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayFrontendIpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
@@ -745,7 +745,7 @@ pub struct ApplicationGatewayFrontendIpConfigurationPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayFrontendIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -758,14 +758,14 @@ pub struct ApplicationGatewayFrontendIpConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayFrontendPortPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayFrontendPort {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -778,14 +778,14 @@ pub struct ApplicationGatewayFrontendPort {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendAddress {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslProfilePropertiesFormat {
     #[serde(rename = "trustedClientCertificates", default, skip_serializing_if = "Vec::is_empty")]
     pub trusted_client_certificates: Vec<SubResource>,
@@ -796,7 +796,7 @@ pub struct ApplicationGatewaySslProfilePropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslProfile {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -809,7 +809,7 @@ pub struct ApplicationGatewaySslProfile {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayHttpListenerPropertiesFormat {
     #[serde(rename = "frontendIPConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub frontend_ip_configuration: Option<SubResource>,
@@ -834,7 +834,7 @@ pub struct ApplicationGatewayHttpListenerPropertiesFormat {
     #[serde(rename = "hostNames", default, skip_serializing_if = "Vec::is_empty")]
     pub host_names: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayHttpListener {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -847,7 +847,7 @@ pub struct ApplicationGatewayHttpListener {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPathRulePropertiesFormat {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub paths: Vec<String>,
@@ -864,7 +864,7 @@ pub struct ApplicationGatewayPathRulePropertiesFormat {
     #[serde(rename = "firewallPolicy", default, skip_serializing_if = "Option::is_none")]
     pub firewall_policy: Option<SubResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPathRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -877,7 +877,7 @@ pub struct ApplicationGatewayPathRule {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayProbePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ApplicationGatewayProtocol>,
@@ -902,7 +902,7 @@ pub struct ApplicationGatewayProbePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayProbe {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -915,7 +915,7 @@ pub struct ApplicationGatewayProbe {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRequestRoutingRulePropertiesFormat {
     #[serde(rename = "ruleType", default, skip_serializing_if = "Option::is_none")]
     pub rule_type: Option<application_gateway_request_routing_rule_properties_format::RuleType>,
@@ -944,7 +944,7 @@ pub mod application_gateway_request_routing_rule_properties_format {
         PathBasedRouting,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRequestRoutingRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -957,7 +957,7 @@ pub struct ApplicationGatewayRequestRoutingRule {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRewriteRuleSet {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -968,14 +968,14 @@ pub struct ApplicationGatewayRewriteRuleSet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRewriteRuleSetPropertiesFormat {
     #[serde(rename = "rewriteRules", default, skip_serializing_if = "Vec::is_empty")]
     pub rewrite_rules: Vec<ApplicationGatewayRewriteRule>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRewriteRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -986,7 +986,7 @@ pub struct ApplicationGatewayRewriteRule {
     #[serde(rename = "actionSet", default, skip_serializing_if = "Option::is_none")]
     pub action_set: Option<ApplicationGatewayRewriteRuleActionSet>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRewriteRuleActionSet {
     #[serde(rename = "requestHeaderConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub request_header_configurations: Vec<ApplicationGatewayHeaderConfiguration>,
@@ -995,7 +995,7 @@ pub struct ApplicationGatewayRewriteRuleActionSet {
     #[serde(rename = "urlConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub url_configuration: Option<ApplicationGatewayUrlConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayUrlConfiguration {
     #[serde(rename = "modifiedPath", default, skip_serializing_if = "Option::is_none")]
     pub modified_path: Option<String>,
@@ -1004,7 +1004,7 @@ pub struct ApplicationGatewayUrlConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reroute: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRewriteRuleCondition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub variable: Option<String>,
@@ -1015,14 +1015,14 @@ pub struct ApplicationGatewayRewriteRuleCondition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub negate: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayHeaderConfiguration {
     #[serde(rename = "headerName", default, skip_serializing_if = "Option::is_none")]
     pub header_name: Option<String>,
     #[serde(rename = "headerValue", default, skip_serializing_if = "Option::is_none")]
     pub header_value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRedirectConfigurationPropertiesFormat {
     #[serde(rename = "redirectType", default, skip_serializing_if = "Option::is_none")]
     pub redirect_type: Option<RedirectTypeEnum>,
@@ -1048,7 +1048,7 @@ pub enum RedirectTypeEnum {
     SeeOther,
     Temporary,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRedirectConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -1061,7 +1061,7 @@ pub struct ApplicationGatewayRedirectConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateLinkConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -1074,14 +1074,14 @@ pub struct ApplicationGatewayPrivateLinkConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateLinkConfigurationProperties {
     #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_configurations: Vec<ApplicationGatewayPrivateLinkIpConfiguration>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateLinkIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -1094,7 +1094,7 @@ pub struct ApplicationGatewayPrivateLinkIpConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateLinkIpConfigurationProperties {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
@@ -1107,7 +1107,7 @@ pub struct ApplicationGatewayPrivateLinkIpConfigurationProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateLinkResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -1120,7 +1120,7 @@ pub struct ApplicationGatewayPrivateLinkResource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
@@ -1129,14 +1129,14 @@ pub struct ApplicationGatewayPrivateLinkResourceProperties {
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateLinkResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationGatewayPrivateLinkResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateEndpointConnection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -1149,7 +1149,7 @@ pub struct ApplicationGatewayPrivateEndpointConnection {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateEndpointConnectionProperties {
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
@@ -1160,7 +1160,7 @@ pub struct ApplicationGatewayPrivateEndpointConnectionProperties {
     #[serde(rename = "linkIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub link_identifier: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
     #[serde(flatten)]
     pub resource: Resource,
@@ -1171,7 +1171,7 @@ pub struct PrivateEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointProperties {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
@@ -1188,7 +1188,7 @@ pub struct PrivateEndpointProperties {
     #[serde(rename = "customDnsConfigs", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_dns_configs: Vec<CustomDnsConfigPropertiesFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -1197,14 +1197,14 @@ pub struct PrivateLinkServiceConnectionState {
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateEndpointConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationGatewayPrivateEndpointConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<ApplicationGatewaySku>,
@@ -1314,7 +1314,7 @@ pub struct ApplicationGatewayAutoscaleConfiguration {
     #[serde(rename = "maxCapacity", default, skip_serializing_if = "Option::is_none")]
     pub max_capacity: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGateway {
     #[serde(flatten)]
     pub resource: Resource,
@@ -1327,7 +1327,7 @@ pub struct ApplicationGateway {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedServiceIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -1349,14 +1349,14 @@ pub mod managed_service_identity {
         None,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationGateway>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayUrlPathMapPropertiesFormat {
     #[serde(rename = "defaultBackendAddressPool", default, skip_serializing_if = "Option::is_none")]
     pub default_backend_address_pool: Option<SubResource>,
@@ -1371,7 +1371,7 @@ pub struct ApplicationGatewayUrlPathMapPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayUrlPathMap {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -1402,12 +1402,12 @@ pub struct ApplicationGatewayFirewallExclusion {
     pub selector_match_operator: String,
     pub selector: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayAvailableWafRuleSetsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationGatewayFirewallRuleSet>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayFirewallRuleSet {
     #[serde(flatten)]
     pub resource: Resource,
@@ -1440,14 +1440,14 @@ pub struct ApplicationGatewayFirewallRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayAvailableSslOptions {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationGatewayAvailableSslOptionsPropertiesFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayAvailableSslOptionsPropertiesFormat {
     #[serde(rename = "predefinedPolicies", default, skip_serializing_if = "Vec::is_empty")]
     pub predefined_policies: Vec<SubResource>,
@@ -1458,14 +1458,14 @@ pub struct ApplicationGatewayAvailableSslOptionsPropertiesFormat {
     #[serde(rename = "availableProtocols", default, skip_serializing_if = "Vec::is_empty")]
     pub available_protocols: Vec<ProtocolsEnum>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayAvailableSslPredefinedPolicies {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationGatewaySslPredefinedPolicy>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslPredefinedPolicy {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -1474,14 +1474,14 @@ pub struct ApplicationGatewaySslPredefinedPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationGatewaySslPredefinedPolicyPropertiesFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslPredefinedPolicyPropertiesFormat {
     #[serde(rename = "cipherSuites", default, skip_serializing_if = "Vec::is_empty")]
     pub cipher_suites: Vec<CipherSuitesEnum>,
     #[serde(rename = "minProtocolVersion", default, skip_serializing_if = "Option::is_none")]
     pub min_protocol_version: Option<ProtocolsEnum>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayCustomError {
     #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
     pub status_code: Option<application_gateway_custom_error::StatusCode>,
@@ -1555,7 +1555,7 @@ pub enum CipherSuitesEnum {
     #[serde(rename = "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")]
     TlsEcdheRsaWithAes256GcmSha384,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -1564,7 +1564,7 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -1577,12 +1577,12 @@ pub struct Error {
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -1593,7 +1593,7 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureAsyncOperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<azure_async_operation_result::Status>,
@@ -1609,7 +1609,7 @@ pub mod azure_async_operation_result {
         Failed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1622,7 +1622,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -1639,7 +1639,7 @@ pub enum AuthenticationMethod {
     #[serde(rename = "EAPMSCHAPv2")]
     EapmschaPv2,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceTapConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -1652,14 +1652,14 @@ pub struct NetworkInterfaceTapConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceTapConfigurationPropertiesFormat {
     #[serde(rename = "virtualNetworkTap", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network_tap: Option<VirtualNetworkTap>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkTap {
     #[serde(flatten)]
     pub resource: Resource,
@@ -1668,7 +1668,7 @@ pub struct VirtualNetworkTap {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkTapPropertiesFormat {
     #[serde(rename = "networkInterfaceTapConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interface_tap_configurations: Vec<NetworkInterfaceTapConfiguration>,
@@ -1691,7 +1691,7 @@ pub struct VirtualNetworkTapPropertiesFormat {
     #[serde(rename = "destinationPort", default, skip_serializing_if = "Option::is_none")]
     pub destination_port: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FrontendIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -1706,7 +1706,7 @@ pub struct FrontendIpConfiguration {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FrontendIpConfigurationPropertiesFormat {
     #[serde(rename = "inboundNatRules", default, skip_serializing_if = "Vec::is_empty")]
     pub inbound_nat_rules: Vec<SubResource>,
@@ -1733,7 +1733,7 @@ pub struct FrontendIpConfigurationPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceDnsSettings {
     #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
     pub dns_servers: Vec<String>,
@@ -1746,7 +1746,7 @@ pub struct NetworkInterfaceDnsSettings {
     #[serde(rename = "internalDomainNameSuffix", default, skip_serializing_if = "Option::is_none")]
     pub internal_domain_name_suffix: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfacePropertiesFormat {
     #[serde(rename = "virtualMachine", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine: Option<SubResource>,
@@ -1801,7 +1801,7 @@ pub mod network_interface_properties_format {
         Committed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkService {
     #[serde(flatten)]
     pub resource: Resource,
@@ -1812,7 +1812,7 @@ pub struct PrivateLinkService {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceProperties {
     #[serde(rename = "loadBalancerFrontendIpConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub load_balancer_frontend_ip_configurations: Vec<FrontendIpConfiguration>,
@@ -1837,7 +1837,7 @@ pub struct PrivateLinkServiceProperties {
     #[serde(rename = "enableProxyProtocol", default, skip_serializing_if = "Option::is_none")]
     pub enable_proxy_protocol: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterface {
     #[serde(flatten)]
     pub resource: Resource,
@@ -1848,35 +1848,35 @@ pub struct NetworkInterface {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkInterface>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceTapConfigurationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkInterfaceTapConfiguration>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceIpConfigurationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkInterfaceIpConfiguration>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceLoadBalancerListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LoadBalancer>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveNetworkSecurityGroup {
     #[serde(rename = "networkSecurityGroup", default, skip_serializing_if = "Option::is_none")]
     pub network_security_group: Option<SubResource>,
@@ -1887,7 +1887,7 @@ pub struct EffectiveNetworkSecurityGroup {
     #[serde(rename = "tagMap", default, skip_serializing_if = "Option::is_none")]
     pub tag_map: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveNetworkSecurityGroupAssociation {
     #[serde(rename = "networkManager", default, skip_serializing_if = "Option::is_none")]
     pub network_manager: Option<SubResource>,
@@ -1896,7 +1896,7 @@ pub struct EffectiveNetworkSecurityGroupAssociation {
     #[serde(rename = "networkInterface", default, skip_serializing_if = "Option::is_none")]
     pub network_interface: Option<SubResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveNetworkSecurityRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1948,14 +1948,14 @@ pub enum SecurityRuleDirection {
     Inbound,
     Outbound,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveNetworkSecurityGroupListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EffectiveNetworkSecurityGroup>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveRoute {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1995,21 +1995,21 @@ pub enum RouteNextHopType {
     VirtualAppliance,
     None,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveRouteListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EffectiveRoute>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkTapListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetworkTap>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayLoadBalancerTunnelInterface {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
@@ -2036,7 +2036,7 @@ pub mod gateway_load_balancer_tunnel_interface {
         External,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<load_balancer_sku::Name>,
@@ -2057,7 +2057,7 @@ pub mod load_balancer_sku {
         Global,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerBackendAddressPropertiesFormat {
     #[serde(rename = "virtualNetwork", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network: Option<SubResource>,
@@ -2070,14 +2070,14 @@ pub struct LoadBalancerBackendAddressPropertiesFormat {
     #[serde(rename = "loadBalancerFrontendIPConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub load_balancer_frontend_ip_configuration: Option<SubResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerBackendAddress {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LoadBalancerBackendAddressPropertiesFormat>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendAddressPoolPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -2096,7 +2096,7 @@ pub struct BackendAddressPoolPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendAddressPool {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -2154,7 +2154,7 @@ pub enum TransportProtocol {
     Tcp,
     All,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancingRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -2191,7 +2191,7 @@ pub mod probe_properties_format {
         Https,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Probe {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -2204,7 +2204,7 @@ pub struct Probe {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundNatRulePropertiesFormat {
     #[serde(rename = "frontendIPConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub frontend_ip_configuration: Option<SubResource>,
@@ -2225,7 +2225,7 @@ pub struct InboundNatRulePropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundNatRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -2258,7 +2258,7 @@ pub struct InboundNatPoolPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundNatPool {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -2296,7 +2296,7 @@ pub mod outbound_rule_properties_format {
         All,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutboundRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -2309,7 +2309,7 @@ pub struct OutboundRule {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerPropertiesFormat {
     #[serde(rename = "frontendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub frontend_ip_configurations: Vec<FrontendIpConfiguration>,
@@ -2330,7 +2330,7 @@ pub struct LoadBalancerPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancer {
     #[serde(flatten)]
     pub resource: Resource,
@@ -2343,73 +2343,73 @@ pub struct LoadBalancer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LoadBalancer>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundNatRuleListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<InboundNatRule>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerBackendAddressPoolListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackendAddressPool>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerFrontendIpConfigurationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FrontendIpConfiguration>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerLoadBalancingRuleListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LoadBalancingRule>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerOutboundRuleListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OutboundRule>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerProbeListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Probe>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerVipSwapRequest {
     #[serde(rename = "frontendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub frontend_ip_configurations: Vec<LoadBalancerVipSwapRequestFrontendIpConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerVipSwapRequestFrontendIpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LoadBalancerVipSwapRequestFrontendIpConfigurationProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerVipSwapRequestFrontendIpConfigurationProperties {
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<SubResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceAssociationLinkPropertiesFormat {
     #[serde(rename = "linkedResourceType", default, skip_serializing_if = "Option::is_none")]
     pub linked_resource_type: Option<String>,
@@ -2422,7 +2422,7 @@ pub struct ServiceAssociationLinkPropertiesFormat {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceAssociationLink {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -2435,7 +2435,7 @@ pub struct ServiceAssociationLink {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceNavigationLinkFormat {
     #[serde(rename = "linkedResourceType", default, skip_serializing_if = "Option::is_none")]
     pub linked_resource_type: Option<String>,
@@ -2444,7 +2444,7 @@ pub struct ResourceNavigationLinkFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceNavigationLink {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -2459,7 +2459,7 @@ pub struct ResourceNavigationLink {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceDelegationPropertiesFormat {
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
@@ -2468,7 +2468,7 @@ pub struct ServiceDelegationPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Delegation {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -2481,7 +2481,7 @@ pub struct Delegation {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceEndpointPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub service: Option<String>,
@@ -2490,7 +2490,7 @@ pub struct ServiceEndpointPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkPeeringPropertiesFormat {
     #[serde(rename = "allowVirtualNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub allow_virtual_network_access: Option<bool>,
@@ -2535,7 +2535,7 @@ pub mod virtual_network_peering_properties_format {
         LocalAndRemoteNotInSync,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AddressSpace {
     #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub address_prefixes: Vec<String>,
@@ -2547,7 +2547,7 @@ pub struct VirtualNetworkBgpCommunities {
     #[serde(rename = "regionalCommunity", default, skip_serializing_if = "Option::is_none")]
     pub regional_community: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkPeering {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -2560,35 +2560,35 @@ pub struct VirtualNetworkPeering {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubnetListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Subnet>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceNavigationLinksListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceNavigationLink>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceAssociationLinksListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServiceAssociationLink>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkPeeringListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetworkPeering>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkPropertiesFormat {
     #[serde(rename = "addressSpace", default, skip_serializing_if = "Option::is_none")]
     pub address_space: Option<AddressSpace>,
@@ -2615,12 +2615,12 @@ pub struct VirtualNetworkPropertiesFormat {
     #[serde(rename = "ipAllocations", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_allocations: Vec<SubResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DhcpOptions {
     #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
     pub dns_servers: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetwork {
     #[serde(flatten)]
     pub resource: Resource,
@@ -2631,14 +2631,14 @@ pub struct VirtualNetwork {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetwork>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAddressAvailabilityResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub available: Option<bool>,
@@ -2647,14 +2647,14 @@ pub struct IpAddressAvailabilityResult {
     #[serde(rename = "isPlatformReserved", default, skip_serializing_if = "Option::is_none")]
     pub is_platform_reserved: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkListUsageResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetworkUsage>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkUsage {
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<f64>,
@@ -2667,33 +2667,33 @@ pub struct VirtualNetworkUsage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkUsageName {
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrepareNetworkPoliciesRequest {
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
     #[serde(rename = "networkIntentPolicyConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub network_intent_policy_configurations: Vec<NetworkIntentPolicyConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UnprepareNetworkPoliciesRequest {
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkIntentPolicyConfiguration {
     #[serde(rename = "networkIntentPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub network_intent_policy_name: Option<String>,
     #[serde(rename = "sourceNetworkIntentPolicy", default, skip_serializing_if = "Option::is_none")]
     pub source_network_intent_policy: Option<NetworkIntentPolicy>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkIntentPolicy {
     #[serde(flatten)]
     pub resource: Resource,
@@ -2745,7 +2745,7 @@ pub mod security_rule_properties_format {
         Ah,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -2758,21 +2758,21 @@ pub struct SecurityRule {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityRuleListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityRule>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityGroupListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkSecurityGroup>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationSecurityGroup {
     #[serde(flatten)]
     pub resource: Resource,
@@ -2781,26 +2781,26 @@ pub struct ApplicationSecurityGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationSecurityGroupPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationSecurityGroupListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationSecurityGroup>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkWatcher {
     #[serde(flatten)]
     pub resource: Resource,
@@ -2809,17 +2809,17 @@ pub struct NetworkWatcher {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkWatcherPropertiesFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkWatcherPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkWatcherListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkWatcher>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopologyParameters {
     #[serde(rename = "targetResourceGroupName", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_group_name: Option<String>,
@@ -2828,7 +2828,7 @@ pub struct TopologyParameters {
     #[serde(rename = "targetSubnet", default, skip_serializing_if = "Option::is_none")]
     pub target_subnet: Option<SubResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Topology {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -2839,7 +2839,7 @@ pub struct Topology {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resources: Vec<TopologyResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopologyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -2850,7 +2850,7 @@ pub struct TopologyResource {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub associations: Vec<TopologyAssociation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopologyAssociation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -2899,7 +2899,7 @@ pub enum Direction {
     Inbound,
     Outbound,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VerificationIpFlowResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub access: Option<Access>,
@@ -2917,7 +2917,7 @@ pub struct NextHopParameters {
     #[serde(rename = "targetNicResourceId", default, skip_serializing_if = "Option::is_none")]
     pub target_nic_resource_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NextHopResult {
     #[serde(rename = "nextHopType", default, skip_serializing_if = "Option::is_none")]
     pub next_hop_type: Option<next_hop_result::NextHopType>,
@@ -2943,19 +2943,19 @@ pub struct SecurityGroupViewParameters {
     #[serde(rename = "targetResourceId")]
     pub target_resource_id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityGroupViewResult {
     #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interfaces: Vec<SecurityGroupNetworkInterface>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityGroupNetworkInterface {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(rename = "securityRuleAssociations", default, skip_serializing_if = "Option::is_none")]
     pub security_rule_associations: Option<SecurityRuleAssociations>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityRuleAssociations {
     #[serde(rename = "networkInterfaceAssociation", default, skip_serializing_if = "Option::is_none")]
     pub network_interface_association: Option<NetworkInterfaceAssociation>,
@@ -2966,14 +2966,14 @@ pub struct SecurityRuleAssociations {
     #[serde(rename = "effectiveSecurityRules", default, skip_serializing_if = "Vec::is_empty")]
     pub effective_security_rules: Vec<EffectiveNetworkSecurityRule>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceAssociation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(rename = "securityRules", default, skip_serializing_if = "Vec::is_empty")]
     pub security_rules: Vec<SecurityRule>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubnetAssociation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -2998,7 +2998,7 @@ pub struct PacketCaptureParameters {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filters: Vec<PacketCaptureFilter>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCaptureStorageLocation {
     #[serde(rename = "storageId", default, skip_serializing_if = "Option::is_none")]
     pub storage_id: Option<String>,
@@ -3007,7 +3007,7 @@ pub struct PacketCaptureStorageLocation {
     #[serde(rename = "filePath", default, skip_serializing_if = "Option::is_none")]
     pub file_path: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCaptureFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<packet_capture_filter::Protocol>,
@@ -3031,12 +3031,12 @@ pub mod packet_capture_filter {
         Any,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCaptureListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PacketCaptureResult>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCaptureResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -3047,14 +3047,14 @@ pub struct PacketCaptureResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PacketCaptureResultProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCaptureResultProperties {
     #[serde(flatten)]
     pub packet_capture_parameters: PacketCaptureParameters,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCaptureQueryStatusResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -3098,7 +3098,7 @@ pub struct QueryTroubleshootingParameters {
     #[serde(rename = "targetResourceId")]
     pub target_resource_id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TroubleshootingResult {
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
@@ -3109,7 +3109,7 @@ pub struct TroubleshootingResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub results: Vec<TroubleshootingDetails>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TroubleshootingDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -3122,7 +3122,7 @@ pub struct TroubleshootingDetails {
     #[serde(rename = "recommendedActions", default, skip_serializing_if = "Vec::is_empty")]
     pub recommended_actions: Vec<TroubleshootingRecommendedActions>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TroubleshootingRecommendedActions {
     #[serde(rename = "actionId", default, skip_serializing_if = "Option::is_none")]
     pub action_id: Option<String>,
@@ -3133,14 +3133,14 @@ pub struct TroubleshootingRecommendedActions {
     #[serde(rename = "actionUriText", default, skip_serializing_if = "Option::is_none")]
     pub action_uri_text: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlowLogListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FlowLog>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlowLog {
     #[serde(flatten)]
     pub resource: Resource,
@@ -3168,14 +3168,14 @@ pub struct FlowLogPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RetentionPolicyParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub days: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlowLogFormatParameters {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<flow_log_format_parameters::Type>,
@@ -3190,7 +3190,7 @@ pub mod flow_log_format_parameters {
         Json,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficAnalyticsProperties {
     #[serde(
         rename = "networkWatcherFlowAnalyticsConfiguration",
@@ -3199,7 +3199,7 @@ pub struct TrafficAnalyticsProperties {
     )]
     pub network_watcher_flow_analytics_configuration: Option<TrafficAnalyticsConfigurationProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficAnalyticsConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -3263,7 +3263,7 @@ pub struct ConnectivitySource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityDestination {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
@@ -3272,12 +3272,12 @@ pub struct ConnectivityDestination {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtocolConfiguration {
     #[serde(rename = "HTTPConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub http_configuration: Option<HttpConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HttpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<http_configuration::Method>,
@@ -3293,7 +3293,7 @@ pub mod http_configuration {
         Get,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityInformation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub hops: Vec<ConnectivityHop>,
@@ -3320,7 +3320,7 @@ pub mod connectivity_information {
         Degraded,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityHop {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -3341,7 +3341,7 @@ pub struct ConnectivityHop {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub issues: Vec<ConnectivityIssue>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HopLink {
     #[serde(rename = "nextHopId", default, skip_serializing_if = "Option::is_none")]
     pub next_hop_id: Option<String>,
@@ -3356,7 +3356,7 @@ pub struct HopLink {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HopLinkProperties {
     #[serde(rename = "roundTripTimeMin", default, skip_serializing_if = "Option::is_none")]
     pub round_trip_time_min: Option<i64>,
@@ -3365,7 +3365,7 @@ pub struct HopLinkProperties {
     #[serde(rename = "roundTripTimeMax", default, skip_serializing_if = "Option::is_none")]
     pub round_trip_time_max: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityIssue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<connectivity_issue::Origin>,
@@ -3404,7 +3404,7 @@ pub mod connectivity_issue {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IssueContext {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HttpHeader {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -3441,7 +3441,7 @@ pub struct AzureReachabilityReport {
     #[serde(rename = "reachabilityReport")]
     pub reachability_report: Vec<AzureReachabilityReportItem>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureReachabilityReportItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -3450,14 +3450,14 @@ pub struct AzureReachabilityReportItem {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub latencies: Vec<AzureReachabilityReportLatencyInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureReachabilityReportLatencyInfo {
     #[serde(rename = "timeStamp", default, skip_serializing_if = "Option::is_none")]
     pub time_stamp: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub score: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProvidersListParameters {
     #[serde(rename = "azureLocations", default, skip_serializing_if = "Vec::is_empty")]
     pub azure_locations: Vec<String>,
@@ -3472,7 +3472,7 @@ pub struct AvailableProvidersListParameters {
 pub struct AvailableProvidersList {
     pub countries: Vec<AvailableProvidersListCountry>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProvidersListCountry {
     #[serde(rename = "countryName", default, skip_serializing_if = "Option::is_none")]
     pub country_name: Option<String>,
@@ -3481,7 +3481,7 @@ pub struct AvailableProvidersListCountry {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub states: Vec<AvailableProvidersListState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProvidersListState {
     #[serde(rename = "stateName", default, skip_serializing_if = "Option::is_none")]
     pub state_name: Option<String>,
@@ -3490,7 +3490,7 @@ pub struct AvailableProvidersListState {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub cities: Vec<AvailableProvidersListCity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProvidersListCity {
     #[serde(rename = "cityName", default, skip_serializing_if = "Option::is_none")]
     pub city_name: Option<String>,
@@ -3523,26 +3523,26 @@ pub struct NetworkConfigurationDiagnosticProfile {
     #[serde(rename = "destinationPort")]
     pub destination_port: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkConfigurationDiagnosticResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub results: Vec<NetworkConfigurationDiagnosticResult>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkConfigurationDiagnosticResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile: Option<NetworkConfigurationDiagnosticProfile>,
     #[serde(rename = "networkSecurityGroupResult", default, skip_serializing_if = "Option::is_none")]
     pub network_security_group_result: Option<NetworkSecurityGroupResult>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityGroupResult {
     #[serde(rename = "securityRuleAccessResult", default, skip_serializing_if = "Option::is_none")]
     pub security_rule_access_result: Option<SecurityRuleAccess>,
     #[serde(rename = "evaluatedNetworkSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub evaluated_network_security_groups: Vec<EvaluatedNetworkSecurityGroup>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EvaluatedNetworkSecurityGroup {
     #[serde(rename = "networkSecurityGroupId", default, skip_serializing_if = "Option::is_none")]
     pub network_security_group_id: Option<String>,
@@ -3553,14 +3553,14 @@ pub struct EvaluatedNetworkSecurityGroup {
     #[serde(rename = "rulesEvaluationResult", default, skip_serializing_if = "Vec::is_empty")]
     pub rules_evaluation_result: Vec<NetworkSecurityRulesEvaluationResult>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MatchedRule {
     #[serde(rename = "ruleName", default, skip_serializing_if = "Option::is_none")]
     pub rule_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityRulesEvaluationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -3583,7 +3583,7 @@ pub struct ConnectionMonitor {
     pub tags: Option<serde_json::Value>,
     pub properties: ConnectionMonitorParameters,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<ConnectionMonitorSource>,
@@ -3611,7 +3611,7 @@ pub struct ConnectionMonitorSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorDestination {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
@@ -3660,7 +3660,7 @@ pub mod connection_monitor_endpoint {
         Full,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorEndpointFilter {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connection_monitor_endpoint_filter::Type>,
@@ -3674,19 +3674,19 @@ pub mod connection_monitor_endpoint_filter {
         Include,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorEndpointScope {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub include: Vec<ConnectionMonitorEndpointScopeItem>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub exclude: Vec<ConnectionMonitorEndpointScopeItem>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorEndpointScopeItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorEndpointFilterItem {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connection_monitor_endpoint_filter_item::Type>,
@@ -3741,7 +3741,7 @@ pub mod connection_monitor_test_configuration {
         IPv6,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorHttpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
@@ -3764,7 +3764,7 @@ pub mod connection_monitor_http_configuration {
         Post,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorTcpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
@@ -3781,19 +3781,19 @@ pub mod connection_monitor_tcp_configuration {
         ListenIfAvailable,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorIcmpConfiguration {
     #[serde(rename = "disableTraceRoute", default, skip_serializing_if = "Option::is_none")]
     pub disable_trace_route: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorSuccessThreshold {
     #[serde(rename = "checksFailedPercent", default, skip_serializing_if = "Option::is_none")]
     pub checks_failed_percent: Option<i32>,
     #[serde(rename = "roundTripTimeMs", default, skip_serializing_if = "Option::is_none")]
     pub round_trip_time_ms: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorOutput {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connection_monitor_output::Type>,
@@ -3807,12 +3807,12 @@ pub mod connection_monitor_output {
         Workspace,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorWorkspaceSettings {
     #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionStateSnapshot {
     #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
     pub connection_state: Option<connection_state_snapshot::ConnectionState>,
@@ -3850,12 +3850,12 @@ pub mod connection_state_snapshot {
         Completed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectionMonitorResult>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -3872,7 +3872,7 @@ pub struct ConnectionMonitorResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectionMonitorResultProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorResultProperties {
     #[serde(flatten)]
     pub connection_monitor_parameters: ConnectionMonitorParameters,
@@ -3893,7 +3893,7 @@ pub mod connection_monitor_result_properties {
         SingleSourceDestination,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorQueryResult {
     #[serde(rename = "sourceStatus", default, skip_serializing_if = "Option::is_none")]
     pub source_status: Option<connection_monitor_query_result::SourceStatus>,
@@ -3922,7 +3922,7 @@ pub struct RoutePropertiesFormat {
     #[serde(rename = "hasBgpOverride", default, skip_serializing_if = "Option::is_none")]
     pub has_bgp_override: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Route {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -3935,21 +3935,21 @@ pub struct Route {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteTableListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RouteTable>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Route>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceEndpointPolicyDefinitionPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -3960,7 +3960,7 @@ pub struct ServiceEndpointPolicyDefinitionPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceEndpointPolicyDefinition {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -3971,14 +3971,14 @@ pub struct ServiceEndpointPolicyDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceEndpointPolicyDefinitionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServiceEndpointPolicyDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceEndpointPolicyPropertiesFormat {
     #[serde(rename = "serviceEndpointPolicyDefinitions", default, skip_serializing_if = "Vec::is_empty")]
     pub service_endpoint_policy_definitions: Vec<ServiceEndpointPolicyDefinition>,
@@ -3989,7 +3989,7 @@ pub struct ServiceEndpointPolicyPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceEndpointPolicy {
     #[serde(flatten)]
     pub resource: Resource,
@@ -4000,21 +4000,21 @@ pub struct ServiceEndpointPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceEndpointPolicyListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServiceEndpointPolicy>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomDnsConfigPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
     #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4027,7 +4027,7 @@ pub struct PrivateLinkServiceConnection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -4042,28 +4042,28 @@ pub struct PrivateLinkServiceConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpoint>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateDnsZoneGroupListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateDnsZoneGroup>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailablePrivateEndpointTypesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AvailablePrivateEndpointType>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailablePrivateEndpointType {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -4076,7 +4076,7 @@ pub struct AvailablePrivateEndpointType {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateDnsZoneGroup {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4089,14 +4089,14 @@ pub struct PrivateDnsZoneGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateDnsZoneGroupPropertiesFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateDnsZoneGroupPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "privateDnsZoneConfigs", default, skip_serializing_if = "Vec::is_empty")]
     pub private_dns_zone_configs: Vec<PrivateDnsZoneConfig>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateDnsZoneConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -4109,7 +4109,7 @@ pub struct PrivateDnsZoneConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateDnsZonePropertiesFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateDnsZonePropertiesFormat {
     #[serde(rename = "privateDnsZoneId", default, skip_serializing_if = "Option::is_none")]
     pub private_dns_zone_id: Option<String>,
@@ -4118,7 +4118,7 @@ pub struct PrivateDnsZonePropertiesFormat {
     #[serde(rename = "recordSets", default, skip_serializing_if = "Vec::is_empty")]
     pub record_sets: Vec<RecordSet>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecordSet {
     #[serde(rename = "recordType", default, skip_serializing_if = "Option::is_none")]
     pub record_type: Option<String>,
@@ -4133,12 +4133,12 @@ pub struct RecordSet {
     #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSet {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub subscriptions: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4151,7 +4151,7 @@ pub struct PrivateLinkServiceIpConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceIpConfigurationProperties {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
@@ -4166,7 +4166,7 @@ pub struct PrivateLinkServiceIpConfigurationProperties {
     #[serde(rename = "privateIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address_version: Option<IpVersion>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4179,7 +4179,7 @@ pub struct PrivateEndpointConnection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
@@ -4190,43 +4190,43 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "linkIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub link_identifier: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkService>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckPrivateLinkServiceVisibilityRequest {
     #[serde(rename = "privateLinkServiceAlias", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_alias: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceVisibility {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visible: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoApprovedPrivateLinkServicesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AutoApprovedPrivateLinkService>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoApprovedPrivateLinkService {
     #[serde(rename = "privateLinkService", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfilePropertiesFormat {
     #[serde(rename = "containerNetworkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
     pub container_network_interfaces: Vec<ContainerNetworkInterface>,
@@ -4237,7 +4237,7 @@ pub struct NetworkProfilePropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfile {
     #[serde(flatten)]
     pub resource: Resource,
@@ -4246,14 +4246,14 @@ pub struct NetworkProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfileListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkProfile>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerNetworkInterfacePropertiesFormat {
     #[serde(
         rename = "containerNetworkInterfaceConfiguration",
@@ -4268,7 +4268,7 @@ pub struct ContainerNetworkInterfacePropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerNetworkInterfaceConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4281,7 +4281,7 @@ pub struct ContainerNetworkInterfaceConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerNetworkInterfaceConfigurationPropertiesFormat {
     #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_configurations: Vec<IpConfigurationProfile>,
@@ -4295,7 +4295,7 @@ pub struct Container {
     #[serde(flatten)]
     pub sub_resource: SubResource,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerNetworkInterface {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4308,14 +4308,14 @@ pub struct ContainerNetworkInterface {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpConfigurationProfilePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<Subnet>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpConfigurationProfile {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4328,12 +4328,12 @@ pub struct IpConfigurationProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerNetworkInterfaceIpConfigurationPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerNetworkInterfaceIpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContainerNetworkInterfaceIpConfigurationPropertiesFormat>,
@@ -4344,35 +4344,35 @@ pub struct ContainerNetworkInterfaceIpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpAddressListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PublicIpAddress>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpTag {
     #[serde(rename = "ipTagType", default, skip_serializing_if = "Option::is_none")]
     pub ip_tag_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NatGatewayListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NatGateway>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableDelegationsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AvailableDelegation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableDelegation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -4385,7 +4385,7 @@ pub struct AvailableDelegation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableServiceAlias {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -4396,14 +4396,14 @@ pub struct AvailableServiceAlias {
     #[serde(rename = "resourceName", default, skip_serializing_if = "Option::is_none")]
     pub resource_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableServiceAliasesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AvailableServiceAlias>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallIpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
@@ -4414,7 +4414,7 @@ pub struct AzureFirewallIpConfigurationPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4427,26 +4427,26 @@ pub struct AzureFirewallIpConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallPublicIpAddress {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallIpGroups {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(rename = "changeNumber", default, skip_serializing_if = "Option::is_none")]
     pub change_number: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubPublicIpAddresses {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub addresses: Vec<AzureFirewallPublicIpAddress>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubIpAddresses {
     #[serde(rename = "publicIPs", default, skip_serializing_if = "Option::is_none")]
     pub public_i_ps: Option<HubPublicIpAddresses>,
@@ -4454,7 +4454,7 @@ pub struct HubIpAddresses {
     pub private_ip_address: Option<String>,
 }
 pub type IpGroups = Vec<AzureFirewallIpGroups>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallPropertiesFormat {
     #[serde(rename = "applicationRuleCollections", default, skip_serializing_if = "Vec::is_empty")]
     pub application_rule_collections: Vec<AzureFirewallApplicationRuleCollection>,
@@ -4489,7 +4489,7 @@ pub enum AzureFirewallThreatIntelMode {
     Deny,
     Off,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<azure_firewall_sku::Name>,
@@ -4513,7 +4513,7 @@ pub mod azure_firewall_sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFirewallAdditionalProperties {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewall {
     #[serde(flatten)]
     pub resource: Resource,
@@ -4524,14 +4524,14 @@ pub struct AzureFirewall {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureFirewall>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallApplicationRuleCollectionPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
@@ -4542,7 +4542,7 @@ pub struct AzureFirewallApplicationRuleCollectionPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallRcAction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<AzureFirewallRcActionType>,
@@ -4552,7 +4552,7 @@ pub enum AzureFirewallRcActionType {
     Allow,
     Deny,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallApplicationRuleCollection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4563,7 +4563,7 @@ pub struct AzureFirewallApplicationRuleCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallApplicationRuleProtocol {
     #[serde(rename = "protocolType", default, skip_serializing_if = "Option::is_none")]
     pub protocol_type: Option<AzureFirewallApplicationRuleProtocolType>,
@@ -4576,7 +4576,7 @@ pub enum AzureFirewallApplicationRuleProtocolType {
     Https,
     Mssql,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallApplicationRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -4593,7 +4593,7 @@ pub struct AzureFirewallApplicationRule {
     #[serde(rename = "sourceIpGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub source_ip_groups: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallNatRuleCollectionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
@@ -4604,7 +4604,7 @@ pub struct AzureFirewallNatRuleCollectionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallNatRcAction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<AzureFirewallNatRcActionType>,
@@ -4614,7 +4614,7 @@ pub enum AzureFirewallNatRcActionType {
     Snat,
     Dnat,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallNatRuleCollection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4625,7 +4625,7 @@ pub struct AzureFirewallNatRuleCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallNatRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -4648,7 +4648,7 @@ pub struct AzureFirewallNatRule {
     #[serde(rename = "sourceIpGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub source_ip_groups: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallNetworkRuleCollectionPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
@@ -4659,7 +4659,7 @@ pub struct AzureFirewallNetworkRuleCollectionPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallNetworkRuleCollection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4670,7 +4670,7 @@ pub struct AzureFirewallNetworkRuleCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallNetworkRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -4701,14 +4701,14 @@ pub enum AzureFirewallNetworkRuleProtocol {
     #[serde(rename = "ICMP")]
     Icmp,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallFqdnTagPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "fqdnTagName", default, skip_serializing_if = "Option::is_none")]
     pub fqdn_tag_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallFqdnTag {
     #[serde(flatten)]
     pub resource: Resource,
@@ -4717,19 +4717,19 @@ pub struct AzureFirewallFqdnTag {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallFqdnTagListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureFirewallFqdnTag>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureWebCategoryPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub group: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureWebCategory {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureWebCategoryPropertiesFormat>,
@@ -4742,14 +4742,14 @@ pub struct AzureWebCategory {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureWebCategoryListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureWebCategory>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
@@ -4772,7 +4772,7 @@ pub struct BastionHostIpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<IpAllocationMethod>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionHostIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -4785,7 +4785,7 @@ pub struct BastionHostIpConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionHostPropertiesFormat {
     #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_configurations: Vec<BastionHostIpConfiguration>,
@@ -4794,7 +4794,7 @@ pub struct BastionHostPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionHost {
     #[serde(flatten)]
     pub resource: Resource,
@@ -4805,7 +4805,7 @@ pub struct BastionHost {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionHostListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BastionHost>,
@@ -4827,19 +4827,19 @@ pub struct Vm {
     #[serde(flatten)]
     pub resource: Resource,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionShareableLinkListRequest {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub vms: Vec<BastionShareableLink>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionShareableLinkListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BastionShareableLink>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionActiveSession {
     #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
@@ -4874,14 +4874,14 @@ pub mod bastion_active_session {
         Rdp,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionActiveSessionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BastionActiveSession>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionSessionState {
     #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
@@ -4890,24 +4890,24 @@ pub struct BastionSessionState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionSessionDeleteResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BastionSessionState>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SessionIds {
     #[serde(rename = "sessionIds", default, skip_serializing_if = "Vec::is_empty")]
     pub session_ids: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsNameAvailabilityResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub available: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomIpPrefixPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cidr: Option<String>,
@@ -4942,7 +4942,7 @@ pub mod custom_ip_prefix_properties_format {
         Deprovisioning,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomIpPrefix {
     #[serde(flatten)]
     pub resource: Resource,
@@ -4955,14 +4955,14 @@ pub struct CustomIpPrefix {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomIpPrefixListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomIpPrefix>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DdosCustomPolicy {
     #[serde(flatten)]
     pub resource: Resource,
@@ -4971,7 +4971,7 @@ pub struct DdosCustomPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DdosCustomPolicyPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
@@ -4982,7 +4982,7 @@ pub struct DdosCustomPolicyPropertiesFormat {
     #[serde(rename = "protocolCustomSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub protocol_custom_settings: Vec<ProtocolCustomSettingsFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtocolCustomSettingsFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<protocol_custom_settings_format::Protocol>,
@@ -5009,7 +5009,7 @@ pub mod protocol_custom_settings_format {
         High,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DdosProtectionPlan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -5026,7 +5026,7 @@ pub struct DdosProtectionPlan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DdosProtectionPlanPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
@@ -5035,14 +5035,14 @@ pub struct DdosProtectionPlanPropertiesFormat {
     #[serde(rename = "virtualNetworks", default, skip_serializing_if = "Vec::is_empty")]
     pub virtual_networks: Vec<SubResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DdosProtectionPlanListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DdosProtectionPlan>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscpConfiguration {
     #[serde(flatten)]
     pub resource: Resource,
@@ -5051,7 +5051,7 @@ pub struct DscpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscpConfigurationPropertiesFormat {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub markings: Vec<i32>,
@@ -5089,35 +5089,35 @@ pub mod dscp_configuration_properties_format {
         All,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QosIpRange {
     #[serde(rename = "startIP", default, skip_serializing_if = "Option::is_none")]
     pub start_ip: Option<String>,
     #[serde(rename = "endIP", default, skip_serializing_if = "Option::is_none")]
     pub end_ip: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QosPortRange {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscpConfigurationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DscpConfiguration>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointServicesListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EndpointServiceResult>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointServiceResult {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -5126,7 +5126,7 @@ pub struct EndpointServiceResult {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationPropertiesFormat {
     #[serde(rename = "authorizationKey", default, skip_serializing_if = "Option::is_none")]
     pub authorization_key: Option<String>,
@@ -5143,7 +5143,7 @@ pub mod authorization_properties_format {
         InUse,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitAuthorization {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -5156,14 +5156,14 @@ pub struct ExpressRouteCircuitAuthorization {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuitAuthorization>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeeringConfig {
     #[serde(rename = "advertisedPublicPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub advertised_public_prefixes: Vec<String>,
@@ -5188,7 +5188,7 @@ pub mod express_route_circuit_peering_config {
         ValidationNeeded,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Ipv6ExpressRouteCircuitPeeringConfig {
     #[serde(rename = "primaryPeerAddressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub primary_peer_address_prefix: Option<String>,
@@ -5209,7 +5209,7 @@ pub mod ipv6_express_route_circuit_peering_config {
         Enabled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitStats {
     #[serde(rename = "primarybytesIn", default, skip_serializing_if = "Option::is_none")]
     pub primarybytes_in: Option<i64>,
@@ -5220,7 +5220,7 @@ pub struct ExpressRouteCircuitStats {
     #[serde(rename = "secondarybytesOut", default, skip_serializing_if = "Option::is_none")]
     pub secondarybytes_out: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeeringPropertiesFormat {
     #[serde(rename = "peeringType", default, skip_serializing_if = "Option::is_none")]
     pub peering_type: Option<ExpressRoutePeeringType>,
@@ -5274,12 +5274,12 @@ pub enum ExpressRoutePeeringState {
     Disabled,
     Enabled,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteConnectionId {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeering {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -5292,14 +5292,14 @@ pub struct ExpressRouteCircuitPeering {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeeringListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuitPeering>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Ipv6CircuitConnectionConfig {
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix: Option<String>,
@@ -5312,7 +5312,7 @@ pub enum CircuitConnectionStatus {
     Connecting,
     Disconnected,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitConnectionPropertiesFormat {
     #[serde(rename = "expressRouteCircuitPeering", default, skip_serializing_if = "Option::is_none")]
     pub express_route_circuit_peering: Option<SubResource>,
@@ -5329,7 +5329,7 @@ pub struct ExpressRouteCircuitConnectionPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitConnection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -5342,14 +5342,14 @@ pub struct ExpressRouteCircuitConnection {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuitConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeerExpressRouteCircuitConnectionPropertiesFormat {
     #[serde(rename = "expressRouteCircuitPeering", default, skip_serializing_if = "Option::is_none")]
     pub express_route_circuit_peering: Option<SubResource>,
@@ -5366,7 +5366,7 @@ pub struct PeerExpressRouteCircuitConnectionPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeerExpressRouteCircuitConnection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -5379,14 +5379,14 @@ pub struct PeerExpressRouteCircuitConnection {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeerExpressRouteCircuitConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PeerExpressRouteCircuitConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -5410,7 +5410,7 @@ pub mod express_route_circuit_sku {
         MeteredData,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitServiceProviderProperties {
     #[serde(rename = "serviceProviderName", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_name: Option<String>,
@@ -5419,7 +5419,7 @@ pub struct ExpressRouteCircuitServiceProviderProperties {
     #[serde(rename = "bandwidthInMbps", default, skip_serializing_if = "Option::is_none")]
     pub bandwidth_in_mbps: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPropertiesFormat {
     #[serde(rename = "allowClassicOperations", default, skip_serializing_if = "Option::is_none")]
     pub allow_classic_operations: Option<bool>,
@@ -5457,7 +5457,7 @@ pub enum ServiceProviderProvisioningState {
     Provisioned,
     Deprovisioning,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuit {
     #[serde(flatten)]
     pub resource: Resource,
@@ -5468,7 +5468,7 @@ pub struct ExpressRouteCircuit {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitArpTable {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub age: Option<i32>,
@@ -5479,14 +5479,14 @@ pub struct ExpressRouteCircuitArpTable {
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitsArpTableListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuitArpTable>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitRoutesTable {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<String>,
@@ -5499,14 +5499,14 @@ pub struct ExpressRouteCircuitRoutesTable {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitsRoutesTableListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuitRoutesTable>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitRoutesTableSummary {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub neighbor: Option<String>,
@@ -5519,28 +5519,28 @@ pub struct ExpressRouteCircuitRoutesTableSummary {
     #[serde(rename = "statePfxRcd", default, skip_serializing_if = "Option::is_none")]
     pub state_pfx_rcd: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitsRoutesTableSummaryListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuitRoutesTableSummary>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuit>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteServiceProviderBandwidthsOffered {
     #[serde(rename = "offerName", default, skip_serializing_if = "Option::is_none")]
     pub offer_name: Option<String>,
     #[serde(rename = "valueInMbps", default, skip_serializing_if = "Option::is_none")]
     pub value_in_mbps: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteServiceProviderPropertiesFormat {
     #[serde(rename = "peeringLocations", default, skip_serializing_if = "Vec::is_empty")]
     pub peering_locations: Vec<String>,
@@ -5549,21 +5549,21 @@ pub struct ExpressRouteServiceProviderPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteServiceProvider {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExpressRouteServiceProviderPropertiesFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteServiceProviderListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteServiceProvider>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualWanProperties {
     #[serde(rename = "disableVpnEncryption", default, skip_serializing_if = "Option::is_none")]
     pub disable_vpn_encryption: Option<bool>,
@@ -5598,14 +5598,14 @@ pub struct VirtualWan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualWaNsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualWan>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnSiteProperties {
     #[serde(rename = "virtualWan", default, skip_serializing_if = "Option::is_none")]
     pub virtual_wan: Option<SubResource>,
@@ -5628,7 +5628,7 @@ pub struct VpnSiteProperties {
     #[serde(rename = "o365Policy", default, skip_serializing_if = "Option::is_none")]
     pub o365_policy: Option<O365PolicyProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceProperties {
     #[serde(rename = "deviceVendor", default, skip_serializing_if = "Option::is_none")]
     pub device_vendor: Option<String>,
@@ -5637,7 +5637,7 @@ pub struct DeviceProperties {
     #[serde(rename = "linkSpeedInMbps", default, skip_serializing_if = "Option::is_none")]
     pub link_speed_in_mbps: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BgpSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub asn: Option<i64>,
@@ -5648,12 +5648,12 @@ pub struct BgpSettings {
     #[serde(rename = "bgpPeeringAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub bgp_peering_addresses: Vec<IpConfigurationBgpPeeringAddress>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct O365PolicyProperties {
     #[serde(rename = "breakOutCategories", default, skip_serializing_if = "Option::is_none")]
     pub break_out_categories: Option<O365BreakOutCategoryPolicies>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct O365BreakOutCategoryPolicies {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub allow: Option<bool>,
@@ -5671,14 +5671,14 @@ pub struct VpnSite {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnSitesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VpnSite>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnSiteLinkProperties {
     #[serde(rename = "linkProperties", default, skip_serializing_if = "Option::is_none")]
     pub link_properties: Option<VpnLinkProviderProperties>,
@@ -5691,21 +5691,21 @@ pub struct VpnSiteLinkProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnLinkProviderProperties {
     #[serde(rename = "linkProviderName", default, skip_serializing_if = "Option::is_none")]
     pub link_provider_name: Option<String>,
     #[serde(rename = "linkSpeedInMbps", default, skip_serializing_if = "Option::is_none")]
     pub link_speed_in_mbps: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnLinkBgpSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub asn: Option<i64>,
     #[serde(rename = "bgpPeeringAddress", default, skip_serializing_if = "Option::is_none")]
     pub bgp_peering_address: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnSiteLink {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -5718,7 +5718,7 @@ pub struct VpnSiteLink {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnSiteLinksResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VpnSiteLink>,
@@ -5732,7 +5732,7 @@ pub struct GetVpnSitesConfigurationRequest {
     #[serde(rename = "outputBlobSasUrl")]
     pub output_blob_sas_url: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubProperties {
     #[serde(rename = "virtualWan", default, skip_serializing_if = "Option::is_none")]
     pub virtual_wan: Option<SubResource>,
@@ -5773,7 +5773,7 @@ pub struct VirtualHubProperties {
     #[serde(rename = "preferredRoutingGateway", default, skip_serializing_if = "Option::is_none")]
     pub preferred_routing_gateway: Option<PreferredRoutingGateway>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubRouteTable {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub routes: Vec<VirtualHubRoute>,
@@ -5791,7 +5791,7 @@ pub enum PreferredRoutingGateway {
     VpnGateway,
     None,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BgpConnection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -5804,7 +5804,7 @@ pub struct BgpConnection {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BgpConnectionProperties {
     #[serde(rename = "peerAsn", default, skip_serializing_if = "Option::is_none")]
     pub peer_asn: Option<i64>,
@@ -5825,7 +5825,7 @@ pub mod bgp_connection_properties {
         NotConnected,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeerRoute {
     #[serde(rename = "localAddress", default, skip_serializing_if = "Option::is_none")]
     pub local_address: Option<String>,
@@ -5842,12 +5842,12 @@ pub struct PeerRoute {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub weight: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeerRouteList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PeerRoute>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -5860,7 +5860,7 @@ pub struct HubIpConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubIpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
@@ -5873,7 +5873,7 @@ pub struct HubIpConfigurationPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubRoute {
     #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub address_prefixes: Vec<String>,
@@ -5889,14 +5889,14 @@ pub struct VirtualHub {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualHubsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualHub>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnGatewayProperties {
     #[serde(rename = "virtualHub", default, skip_serializing_if = "Option::is_none")]
     pub virtual_hub: Option<SubResource>,
@@ -5924,7 +5924,7 @@ pub struct VpnGateway {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnGatewayIpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -5933,19 +5933,19 @@ pub struct VpnGatewayIpConfiguration {
     #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnGatewaysResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VpnGateway>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnNatRuleMapping {
     #[serde(rename = "addressSpace", default, skip_serializing_if = "Option::is_none")]
     pub address_space: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnGatewayNatRuleProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -5977,7 +5977,7 @@ pub mod vpn_gateway_nat_rule_properties {
         IngressSnat,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnGatewayNatRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -5990,14 +5990,14 @@ pub struct VpnGatewayNatRule {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnGatewayNatRulesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VpnGatewayNatRule>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnConnectionProperties {
     #[serde(rename = "remoteVpnSite", default, skip_serializing_if = "Option::is_none")]
     pub remote_vpn_site: Option<SubResource>,
@@ -6052,7 +6052,7 @@ pub enum ConnectionProtocol {
     #[serde(rename = "IKEv1")]
     IkEv1,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoutingConfiguration {
     #[serde(rename = "associatedRouteTable", default, skip_serializing_if = "Option::is_none")]
     pub associated_route_table: Option<SubResource>,
@@ -6061,19 +6061,19 @@ pub struct RoutingConfiguration {
     #[serde(rename = "vnetRoutes", default, skip_serializing_if = "Option::is_none")]
     pub vnet_routes: Option<VnetRoute>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PropagatedRouteTable {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ids: Vec<SubResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VnetRoute {
     #[serde(rename = "staticRoutes", default, skip_serializing_if = "Vec::is_empty")]
     pub static_routes: Vec<StaticRoute>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnConnection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -6084,38 +6084,38 @@ pub struct VpnConnection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnConnectionsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VpnConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnConnectionPacketCaptureStartParameters {
     #[serde(rename = "filterData", default, skip_serializing_if = "Option::is_none")]
     pub filter_data: Option<String>,
     #[serde(rename = "linkConnectionNames", default, skip_serializing_if = "Vec::is_empty")]
     pub link_connection_names: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnConnectionPacketCaptureStopParameters {
     #[serde(rename = "sasUrl", default, skip_serializing_if = "Option::is_none")]
     pub sas_url: Option<String>,
     #[serde(rename = "linkConnectionNames", default, skip_serializing_if = "Vec::is_empty")]
     pub link_connection_names: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnGatewayPacketCaptureStartParameters {
     #[serde(rename = "filterData", default, skip_serializing_if = "Option::is_none")]
     pub filter_data: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnGatewayPacketCaptureStopParameters {
     #[serde(rename = "sasUrl", default, skip_serializing_if = "Option::is_none")]
     pub sas_url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnSiteLinkConnectionProperties {
     #[serde(rename = "vpnSiteLink", default, skip_serializing_if = "Option::is_none")]
     pub vpn_site_link: Option<SubResource>,
@@ -6161,7 +6161,7 @@ pub mod vpn_site_link_connection_properties {
         InitiatorOnly,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnSiteLinkConnection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -6174,14 +6174,14 @@ pub struct VpnSiteLinkConnection {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnSiteLinkConnectionsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VpnSiteLinkConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubVirtualNetworkConnectionProperties {
     #[serde(rename = "remoteVirtualNetwork", default, skip_serializing_if = "Option::is_none")]
     pub remote_virtual_network: Option<SubResource>,
@@ -6196,7 +6196,7 @@ pub struct HubVirtualNetworkConnectionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubVirtualNetworkConnection {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -6207,14 +6207,14 @@ pub struct HubVirtualNetworkConnection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListHubVirtualNetworkConnectionsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HubVirtualNetworkConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubRouteTableProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub routes: Vec<HubRoute>,
@@ -6227,7 +6227,7 @@ pub struct HubRouteTableProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubRouteTable {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -6251,24 +6251,24 @@ pub struct HubRoute {
     #[serde(rename = "nextHop")]
     pub next_hop: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListHubRouteTablesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HubRouteTable>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnSiteId {
     #[serde(rename = "vpnSite", default, skip_serializing_if = "Option::is_none")]
     pub vpn_site: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualWanSecurityProviders {
     #[serde(rename = "supportedProviders", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_providers: Vec<VirtualWanSecurityProvider>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualWanSecurityProvider {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -6296,35 +6296,35 @@ pub enum HubVirtualNetworkConnectionStatus {
     Connected,
     NotConnected,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnServerConfigVpnClientRootCertificate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "publicCertData", default, skip_serializing_if = "Option::is_none")]
     pub public_cert_data: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnServerConfigRadiusServerRootCertificate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "publicCertData", default, skip_serializing_if = "Option::is_none")]
     pub public_cert_data: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnServerConfigVpnClientRevokedCertificate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnServerConfigRadiusClientRootCertificate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AadAuthenticationParameters {
     #[serde(rename = "aadTenant", default, skip_serializing_if = "Option::is_none")]
     pub aad_tenant: Option<String>,
@@ -6333,7 +6333,7 @@ pub struct AadAuthenticationParameters {
     #[serde(rename = "aadIssuer", default, skip_serializing_if = "Option::is_none")]
     pub aad_issuer: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnServerConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -6366,7 +6366,7 @@ pub struct VpnServerConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnServerConfiguration {
     #[serde(flatten)]
     pub resource: Resource,
@@ -6377,14 +6377,14 @@ pub struct VpnServerConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnServerConfigurationsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VpnServerConfiguration>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnClientConnectionHealth {
     #[serde(rename = "totalIngressBytesTransferred", default, skip_serializing_if = "Option::is_none")]
     pub total_ingress_bytes_transferred: Option<i64>,
@@ -6395,7 +6395,7 @@ pub struct VpnClientConnectionHealth {
     #[serde(rename = "allocatedIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub allocated_ip_addresses: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct P2sVpnGatewayProperties {
     #[serde(rename = "virtualHub", default, skip_serializing_if = "Option::is_none")]
     pub virtual_hub: Option<SubResource>,
@@ -6423,48 +6423,48 @@ pub struct P2sVpnGateway {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListP2sVpnGatewaysResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<P2sVpnGateway>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct P2sVpnProfileParameters {
     #[serde(rename = "authenticationMethod", default, skip_serializing_if = "Option::is_none")]
     pub authentication_method: Option<AuthenticationMethod>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnProfileResponse {
     #[serde(rename = "profileUrl", default, skip_serializing_if = "Option::is_none")]
     pub profile_url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnServerConfigurationsResponse {
     #[serde(rename = "vpnServerConfigurationResourceIds", default, skip_serializing_if = "Vec::is_empty")]
     pub vpn_server_configuration_resource_ids: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualWanVpnProfileParameters {
     #[serde(rename = "vpnServerConfigurationResourceId", default, skip_serializing_if = "Option::is_none")]
     pub vpn_server_configuration_resource_id: Option<String>,
     #[serde(rename = "authenticationMethod", default, skip_serializing_if = "Option::is_none")]
     pub authentication_method: Option<AuthenticationMethod>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct P2sVpnConnectionHealthRequest {
     #[serde(rename = "vpnUserNamesFilter", default, skip_serializing_if = "Vec::is_empty")]
     pub vpn_user_names_filter: Vec<String>,
     #[serde(rename = "outputBlobSasUrl", default, skip_serializing_if = "Option::is_none")]
     pub output_blob_sas_url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct P2sVpnConnectionHealth {
     #[serde(rename = "sasUrl", default, skip_serializing_if = "Option::is_none")]
     pub sas_url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct P2sConnectionConfigurationProperties {
     #[serde(rename = "vpnClientAddressPool", default, skip_serializing_if = "Option::is_none")]
     pub vpn_client_address_pool: Option<AddressSpace>,
@@ -6475,7 +6475,7 @@ pub struct P2sConnectionConfigurationProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct P2sConnectionConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -6486,7 +6486,7 @@ pub struct P2sConnectionConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubRouteTableV2Properties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub routes: Vec<VirtualHubRouteV2>,
@@ -6495,7 +6495,7 @@ pub struct VirtualHubRouteTableV2Properties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubRouteTableV2 {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -6506,7 +6506,7 @@ pub struct VirtualHubRouteTableV2 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubRouteV2 {
     #[serde(rename = "destinationType", default, skip_serializing_if = "Option::is_none")]
     pub destination_type: Option<String>,
@@ -6517,24 +6517,24 @@ pub struct VirtualHubRouteV2 {
     #[serde(rename = "nextHops", default, skip_serializing_if = "Vec::is_empty")]
     pub next_hops: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualHubRouteTableV2sResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualHubRouteTableV2>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct P2sVpnConnectionRequest {
     #[serde(rename = "vpnConnectionIds", default, skip_serializing_if = "Vec::is_empty")]
     pub vpn_connection_ids: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubId {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeeringId {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -6552,14 +6552,14 @@ pub struct ExpressRouteGatewayProperties {
 }
 pub mod express_route_gateway_properties {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct AutoScaleConfiguration {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub bounds: Option<auto_scale_configuration::Bounds>,
     }
     pub mod auto_scale_configuration {
         use super::*;
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct Bounds {
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub min: Option<i64>,
@@ -6568,7 +6568,7 @@ pub mod express_route_gateway_properties {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteGateway {
     #[serde(flatten)]
     pub resource: Resource,
@@ -6577,7 +6577,7 @@ pub struct ExpressRouteGateway {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteGatewayList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteGateway>,
@@ -6607,26 +6607,26 @@ pub struct ExpressRouteConnection {
     pub properties: Option<ExpressRouteConnectionProperties>,
     pub name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteConnectionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteConnection>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualHubBgpConnectionResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BgpConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualHubIpConfigurationResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HubIpConfiguration>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StaticRoute {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -6635,12 +6635,12 @@ pub struct StaticRoute {
     #[serde(rename = "nextHopIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub next_hop_ip_address: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubEffectiveRouteList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualHubEffectiveRoute>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubEffectiveRoute {
     #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub address_prefixes: Vec<String>,
@@ -6653,14 +6653,14 @@ pub struct VirtualHubEffectiveRoute {
     #[serde(rename = "routeOrigin", default, skip_serializing_if = "Option::is_none")]
     pub route_origin: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveRoutesParameters {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[serde(rename = "virtualWanResourceType", default, skip_serializing_if = "Option::is_none")]
     pub virtual_wan_resource_type: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayIpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<IpAllocationMethod>,
@@ -6673,7 +6673,7 @@ pub struct VirtualNetworkGatewayIpConfigurationPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -6684,7 +6684,7 @@ pub struct VirtualNetworkGatewayIpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayNatRuleProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -6712,7 +6712,7 @@ pub mod virtual_network_gateway_nat_rule_properties {
         IngressSnat,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayNatRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -6725,7 +6725,7 @@ pub struct VirtualNetworkGatewayNatRule {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayPropertiesFormat {
     #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_configurations: Vec<VirtualNetworkGatewayIpConfiguration>,
@@ -6786,7 +6786,7 @@ pub mod virtual_network_gateway_properties_format {
         Generation2,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewaySku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<virtual_network_gateway_sku::Name>,
@@ -6854,7 +6854,7 @@ pub mod virtual_network_gateway_sku {
         ErGw3Az,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnClientConfiguration {
     #[serde(rename = "vpnClientAddressPool", default, skip_serializing_if = "Option::is_none")]
     pub vpn_client_address_pool: Option<AddressSpace>,
@@ -6898,14 +6898,14 @@ pub struct VpnClientRootCertificate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnClientRevokedCertificatePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnClientRevokedCertificate {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -6925,7 +6925,7 @@ pub struct RadiusServer {
     #[serde(rename = "radiusServerSecret", default, skip_serializing_if = "Option::is_none")]
     pub radius_server_secret: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BgpPeerStatus {
     #[serde(rename = "localAddress", default, skip_serializing_if = "Option::is_none")]
     pub local_address: Option<String>,
@@ -6955,7 +6955,7 @@ pub mod bgp_peer_status {
         Connected,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayRoute {
     #[serde(rename = "localAddress", default, skip_serializing_if = "Option::is_none")]
     pub local_address: Option<String>,
@@ -6982,7 +6982,7 @@ pub struct VirtualNetworkGateway {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnClientParameters {
     #[serde(rename = "processorArchitecture", default, skip_serializing_if = "Option::is_none")]
     pub processor_architecture: Option<vpn_client_parameters::ProcessorArchitecture>,
@@ -7001,31 +7001,31 @@ pub mod vpn_client_parameters {
         X86,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetworkGateway>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualNetworkGatewayNatRulesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetworkGatewayNatRule>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BgpPeerStatusListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BgpPeerStatus>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayRouteListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GatewayRoute>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TunnelConnectionHealth {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tunnel: Option<String>,
@@ -7106,7 +7106,7 @@ pub struct LocalNetworkGateway {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocalNetworkGatewayPropertiesFormat {
     #[serde(rename = "localNetworkAddressSpace", default, skip_serializing_if = "Option::is_none")]
     pub local_network_address_space: Option<AddressSpace>,
@@ -7143,7 +7143,7 @@ pub struct VirtualNetworkGatewayConnection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetworkGatewayConnection>,
@@ -7311,7 +7311,7 @@ pub struct VpnClientIPsecParameters {
     #[serde(rename = "pfsGroup")]
     pub pfs_group: PfsGroup,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocalNetworkGatewayListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LocalNetworkGateway>,
@@ -7375,14 +7375,14 @@ pub struct VirtualNetworkGatewayConnectionListEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayListConnectionsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetworkGatewayConnectionListEntity>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnDeviceScriptParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vendor: Option<String>,
@@ -7391,12 +7391,12 @@ pub struct VpnDeviceScriptParameters {
     #[serde(rename = "firmwareVersion", default, skip_serializing_if = "Option::is_none")]
     pub firmware_version: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnClientConnectionHealthDetailListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VpnClientConnectionHealthDetail>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnClientConnectionHealthDetail {
     #[serde(rename = "vpnConnectionId", default, skip_serializing_if = "Option::is_none")]
     pub vpn_connection_id: Option<String>,
@@ -7423,17 +7423,17 @@ pub struct VpnClientConnectionHealthDetail {
     #[serde(rename = "maxPacketsPerSecond", default, skip_serializing_if = "Option::is_none")]
     pub max_packets_per_second: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnPacketCaptureStopParameters {
     #[serde(rename = "sasUrl", default, skip_serializing_if = "Option::is_none")]
     pub sas_url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnPacketCaptureStartParameters {
     #[serde(rename = "filterData", default, skip_serializing_if = "Option::is_none")]
     pub filter_data: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpConfigurationBgpPeeringAddress {
     #[serde(rename = "ipconfigurationId", default, skip_serializing_if = "Option::is_none")]
     pub ipconfiguration_id: Option<String>,
@@ -7444,7 +7444,7 @@ pub struct IpConfigurationBgpPeeringAddress {
     #[serde(rename = "tunnelIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub tunnel_ip_addresses: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnectionRoutesTableSummary {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub neighbor: Option<String>,
@@ -7455,19 +7455,19 @@ pub struct ExpressRouteCrossConnectionRoutesTableSummary {
     #[serde(rename = "stateOrPrefixesReceived", default, skip_serializing_if = "Option::is_none")]
     pub state_or_prefixes_received: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnectionsRoutesTableSummaryListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCrossConnectionRoutesTableSummary>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnectionProperties {
     #[serde(rename = "primaryAzurePort", default, skip_serializing_if = "Option::is_none")]
     pub primary_azure_port: Option<String>,
@@ -7490,7 +7490,7 @@ pub struct ExpressRouteCrossConnectionProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub peerings: Vec<ExpressRouteCrossConnectionPeering>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnection {
     #[serde(flatten)]
     pub resource: Resource,
@@ -7499,14 +7499,14 @@ pub struct ExpressRouteCrossConnection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCrossConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnectionPeeringProperties {
     #[serde(rename = "peeringType", default, skip_serializing_if = "Option::is_none")]
     pub peering_type: Option<ExpressRoutePeeringType>,
@@ -7539,7 +7539,7 @@ pub struct ExpressRouteCrossConnectionPeeringProperties {
     #[serde(rename = "ipv6PeeringConfig", default, skip_serializing_if = "Option::is_none")]
     pub ipv6_peering_config: Option<Ipv6ExpressRouteCircuitPeeringConfig>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnectionPeering {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -7550,21 +7550,21 @@ pub struct ExpressRouteCrossConnectionPeering {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnectionPeeringList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCrossConnectionPeering>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRoutePortsLocationBandwidths {
     #[serde(rename = "offerName", default, skip_serializing_if = "Option::is_none")]
     pub offer_name: Option<String>,
     #[serde(rename = "valueInGbps", default, skip_serializing_if = "Option::is_none")]
     pub value_in_gbps: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRoutePortsLocationPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
@@ -7575,21 +7575,21 @@ pub struct ExpressRoutePortsLocationPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRoutePortsLocation {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExpressRoutePortsLocationPropertiesFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRoutePortsLocationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRoutePortsLocation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteLinkMacSecConfig {
     #[serde(rename = "cknSecretIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub ckn_secret_identifier: Option<String>,
@@ -7615,7 +7615,7 @@ pub mod express_route_link_mac_sec_config {
         Enabled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteLinkPropertiesFormat {
     #[serde(rename = "routerName", default, skip_serializing_if = "Option::is_none")]
     pub router_name: Option<String>,
@@ -7649,7 +7649,7 @@ pub mod express_route_link_properties_format {
         Disabled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteLink {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -7660,14 +7660,14 @@ pub struct ExpressRouteLink {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteLinkListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteLink>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRoutePortPropertiesFormat {
     #[serde(rename = "peeringLocation", default, skip_serializing_if = "Option::is_none")]
     pub peering_location: Option<String>,
@@ -7700,7 +7700,7 @@ pub mod express_route_port_properties_format {
         QinQ,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRoutePort {
     #[serde(flatten)]
     pub resource: Resource,
@@ -7711,7 +7711,7 @@ pub struct ExpressRoutePort {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRoutePortListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRoutePort>,
@@ -7723,12 +7723,12 @@ pub struct GenerateExpressRoutePortsLoaRequest {
     #[serde(rename = "customerName")]
     pub customer_name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GenerateExpressRoutePortsLoaResult {
     #[serde(rename = "encodedContent", default, skip_serializing_if = "Option::is_none")]
     pub encoded_content: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicy {
     #[serde(flatten)]
     pub resource: Resource,
@@ -7739,7 +7739,7 @@ pub struct FirewallPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyPropertiesFormat {
     #[serde(rename = "ruleCollectionGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub rule_collection_groups: Vec<SubResource>,
@@ -7768,14 +7768,14 @@ pub struct FirewallPolicyPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<FirewallPolicySku>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyThreatIntelWhitelist {
     #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub fqdns: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyInsights {
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
@@ -7784,19 +7784,19 @@ pub struct FirewallPolicyInsights {
     #[serde(rename = "logAnalyticsResources", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_resources: Option<FirewallPolicyLogAnalyticsResources>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyLogAnalyticsResources {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub workspaces: Vec<FirewallPolicyLogAnalyticsWorkspace>,
     #[serde(rename = "defaultWorkspaceId", default, skip_serializing_if = "Option::is_none")]
     pub default_workspace_id: Option<SubResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicySnat {
     #[serde(rename = "privateRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub private_ranges: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsSettings {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub servers: Vec<String>,
@@ -7805,7 +7805,7 @@ pub struct DnsSettings {
     #[serde(rename = "requireProxyForNetworkRules", default, skip_serializing_if = "Option::is_none")]
     pub require_proxy_for_network_rules: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyIntrusionDetection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<FirewallPolicyIntrusionDetectionStateOptions>,
@@ -7818,26 +7818,26 @@ pub enum FirewallPolicyIntrusionDetectionStateOptions {
     Alert,
     Deny,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyIntrusionDetectionConfiguration {
     #[serde(rename = "signatureOverrides", default, skip_serializing_if = "Vec::is_empty")]
     pub signature_overrides: Vec<FirewallPolicyIntrusionDetectionSignatureSpecification>,
     #[serde(rename = "bypassTrafficSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub bypass_traffic_settings: Vec<FirewallPolicyIntrusionDetectionBypassTrafficSpecifications>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyTransportSecurity {
     #[serde(rename = "certificateAuthority", default, skip_serializing_if = "Option::is_none")]
     pub certificate_authority: Option<FirewallPolicyCertificateAuthority>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyCertificateAuthority {
     #[serde(rename = "keyVaultSecretId", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_secret_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicySku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<firewall_policy_sku::Tier>,
@@ -7850,7 +7850,7 @@ pub mod firewall_policy_sku {
         Premium,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyRuleCollectionGroup {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -7863,7 +7863,7 @@ pub struct FirewallPolicyRuleCollectionGroup {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyRuleCollectionGroupProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
@@ -7889,7 +7889,7 @@ pub mod firewall_policy_rule_collection {
         FirewallPolicyFilterRuleCollection,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyNatRuleCollection {
     #[serde(flatten)]
     pub firewall_policy_rule_collection: FirewallPolicyRuleCollection,
@@ -7898,7 +7898,7 @@ pub struct FirewallPolicyNatRuleCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rules: Vec<FirewallPolicyRule>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyNatRuleCollectionAction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<FirewallPolicyNatRuleCollectionActionType>,
@@ -7908,7 +7908,7 @@ pub enum FirewallPolicyNatRuleCollectionActionType {
     #[serde(rename = "DNAT")]
     Dnat,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyFilterRuleCollection {
     #[serde(flatten)]
     pub firewall_policy_rule_collection: FirewallPolicyRuleCollection,
@@ -7917,7 +7917,7 @@ pub struct FirewallPolicyFilterRuleCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rules: Vec<FirewallPolicyRule>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyFilterRuleCollectionAction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<FirewallPolicyFilterRuleCollectionActionType>,
@@ -7945,7 +7945,7 @@ pub mod firewall_policy_rule {
         NatRule,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationRule {
     #[serde(flatten)]
     pub firewall_policy_rule: FirewallPolicyRule,
@@ -7968,7 +7968,7 @@ pub struct ApplicationRule {
     #[serde(rename = "webCategories", default, skip_serializing_if = "Vec::is_empty")]
     pub web_categories: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NatRule {
     #[serde(flatten)]
     pub firewall_policy_rule: FirewallPolicyRule,
@@ -7989,7 +7989,7 @@ pub struct NatRule {
     #[serde(rename = "translatedFqdn", default, skip_serializing_if = "Option::is_none")]
     pub translated_fqdn: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkRule {
     #[serde(flatten)]
     pub firewall_policy_rule: FirewallPolicyRule,
@@ -8008,7 +8008,7 @@ pub struct NetworkRule {
     #[serde(rename = "destinationFqdns", default, skip_serializing_if = "Vec::is_empty")]
     pub destination_fqdns: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyRuleApplicationProtocol {
     #[serde(rename = "protocolType", default, skip_serializing_if = "Option::is_none")]
     pub protocol_type: Option<FirewallPolicyRuleApplicationProtocolType>,
@@ -8030,28 +8030,28 @@ pub enum FirewallPolicyRuleNetworkProtocol {
     #[serde(rename = "ICMP")]
     Icmp,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FirewallPolicy>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyRuleCollectionGroupListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FirewallPolicyRuleCollectionGroup>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyIntrusionDetectionSignatureSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<FirewallPolicyIntrusionDetectionStateOptions>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyIntrusionDetectionBypassTrafficSpecifications {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -8081,14 +8081,14 @@ pub enum FirewallPolicyIntrusionDetectionBypassTrafficProtocol {
     #[serde(rename = "ANY")]
     Any,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyLogAnalyticsWorkspace {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<SubResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAllocationPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<SubResource>,
@@ -8112,7 +8112,7 @@ pub enum IpAllocationType {
     Undefined,
     Hypernet,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAllocation {
     #[serde(flatten)]
     pub resource: Resource,
@@ -8121,14 +8121,14 @@ pub struct IpAllocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAllocationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IpAllocation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpGroup {
     #[serde(flatten)]
     pub resource: Resource,
@@ -8137,7 +8137,7 @@ pub struct IpGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpGroupPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -8148,14 +8148,14 @@ pub struct IpGroupPropertiesFormat {
     #[serde(rename = "firewallPolicies", default, skip_serializing_if = "Vec::is_empty")]
     pub firewall_policies: Vec<SubResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpGroupListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IpGroup>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualAppliance {
     #[serde(flatten)]
     pub resource: Resource,
@@ -8166,7 +8166,7 @@ pub struct NetworkVirtualAppliance {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualAppliancePropertiesFormat {
     #[serde(rename = "nvaSku", default, skip_serializing_if = "Option::is_none")]
     pub nva_sku: Option<VirtualApplianceSkuProperties>,
@@ -8191,7 +8191,7 @@ pub struct NetworkVirtualAppliancePropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualApplianceSkuProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vendor: Option<String>,
@@ -8200,7 +8200,7 @@ pub struct VirtualApplianceSkuProperties {
     #[serde(rename = "marketPlaceVersion", default, skip_serializing_if = "Option::is_none")]
     pub market_place_version: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualApplianceNicProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -8209,7 +8209,7 @@ pub struct VirtualApplianceNicProperties {
     #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualApplianceSite {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -8222,7 +8222,7 @@ pub struct VirtualApplianceSite {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualApplianceSiteProperties {
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix: Option<String>,
@@ -8231,12 +8231,12 @@ pub struct VirtualApplianceSiteProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Office365PolicyProperties {
     #[serde(rename = "breakOutCategories", default, skip_serializing_if = "Option::is_none")]
     pub break_out_categories: Option<BreakOutCategoryPolicies>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BreakOutCategoryPolicies {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub allow: Option<bool>,
@@ -8245,7 +8245,7 @@ pub struct BreakOutCategoryPolicies {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualApplianceSku {
     #[serde(flatten)]
     pub resource: Resource,
@@ -8254,7 +8254,7 @@ pub struct NetworkVirtualApplianceSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualApplianceSkuPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vendor: Option<String>,
@@ -8263,35 +8263,35 @@ pub struct NetworkVirtualApplianceSkuPropertiesFormat {
     #[serde(rename = "availableScaleUnits", default, skip_serializing_if = "Vec::is_empty")]
     pub available_scale_units: Vec<NetworkVirtualApplianceSkuInstances>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualApplianceSkuInstances {
     #[serde(rename = "scaleUnit", default, skip_serializing_if = "Option::is_none")]
     pub scale_unit: Option<String>,
     #[serde(rename = "instanceCount", default, skip_serializing_if = "Option::is_none")]
     pub instance_count: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualApplianceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkVirtualAppliance>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualApplianceSiteListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualApplianceSite>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualApplianceSkuListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkVirtualApplianceSku>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundSecurityRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -8304,14 +8304,14 @@ pub struct InboundSecurityRule {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundSecurityRuleProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rules: Vec<InboundSecurityRules>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundSecurityRules {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<inbound_security_rules::Protocol>,
@@ -8330,14 +8330,14 @@ pub mod inbound_security_rules {
         Udp,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -8350,7 +8350,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -8362,14 +8362,14 @@ pub mod operation {
         pub description: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationPropertiesFormat {
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<operation_properties_format::ServiceSpecification>,
 }
 pub mod operation_properties_format {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ServiceSpecification {
         #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
         pub metric_specifications: Vec<MetricSpecification>,
@@ -8377,7 +8377,7 @@ pub mod operation_properties_format {
         pub log_specifications: Vec<LogSpecification>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -8386,7 +8386,7 @@ pub struct LogSpecification {
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -8417,7 +8417,7 @@ pub struct MetricSpecification {
     #[serde(rename = "resourceIdDimensionNameOverride", default, skip_serializing_if = "Option::is_none")]
     pub resource_id_dimension_name_override: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Dimension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -8426,7 +8426,7 @@ pub struct Dimension {
     #[serde(rename = "internalName", default, skip_serializing_if = "Option::is_none")]
     pub internal_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Availability {
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
@@ -8435,7 +8435,7 @@ pub struct Availability {
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpPrefixSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<public_ip_prefix_sku::Name>,
@@ -8454,7 +8454,7 @@ pub mod public_ip_prefix_sku {
         Global,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpPrefixPropertiesFormat {
     #[serde(rename = "publicIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address_version: Option<IpVersion>,
@@ -8477,7 +8477,7 @@ pub struct PublicIpPrefixPropertiesFormat {
     #[serde(rename = "natGateway", default, skip_serializing_if = "Option::is_none")]
     pub nat_gateway: Option<NatGateway>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpPrefix {
     #[serde(flatten)]
     pub resource: Resource,
@@ -8492,14 +8492,14 @@ pub struct PublicIpPrefix {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpPrefixListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PublicIpPrefix>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReferencedPublicIpAddress {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -8520,7 +8520,7 @@ pub mod route_filter_rule_properties_format {
         Community,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteFilterRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -8533,7 +8533,7 @@ pub struct RouteFilterRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchRouteFilterRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -8544,7 +8544,7 @@ pub struct PatchRouteFilterRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteFilterPropertiesFormat {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rules: Vec<RouteFilterRule>,
@@ -8564,7 +8564,7 @@ pub struct RouteFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchRouteFilter {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -8579,21 +8579,21 @@ pub struct PatchRouteFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteFilterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RouteFilter>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteFilterRuleListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RouteFilterRule>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityPartnerProviderPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -8617,7 +8617,7 @@ pub enum SecurityPartnerProviderConnectionStatus {
     Connected,
     NotConnected,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityPartnerProvider {
     #[serde(flatten)]
     pub resource: Resource,
@@ -8626,14 +8626,14 @@ pub struct SecurityPartnerProvider {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityPartnerProviderListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityPartnerProvider>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BgpCommunity {
     #[serde(rename = "serviceSupportedRegion", default, skip_serializing_if = "Option::is_none")]
     pub service_supported_region: Option<String>,
@@ -8648,28 +8648,28 @@ pub struct BgpCommunity {
     #[serde(rename = "serviceGroup", default, skip_serializing_if = "Option::is_none")]
     pub service_group: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BgpServiceCommunityPropertiesFormat {
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
     #[serde(rename = "bgpCommunities", default, skip_serializing_if = "Vec::is_empty")]
     pub bgp_communities: Vec<BgpCommunity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BgpServiceCommunity {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BgpServiceCommunityPropertiesFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BgpServiceCommunityListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BgpServiceCommunity>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTagsListResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -8686,7 +8686,7 @@ pub struct ServiceTagsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTagInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceTagInformationPropertiesFormat>,
@@ -8695,7 +8695,7 @@ pub struct ServiceTagInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTagInformationPropertiesFormat {
     #[serde(rename = "changeNumber", default, skip_serializing_if = "Option::is_none")]
     pub change_number: Option<String>,
@@ -8708,7 +8708,7 @@ pub struct ServiceTagInformationPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageName {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
@@ -8732,14 +8732,14 @@ pub mod usage {
         Count,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsagesListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualRouter {
     #[serde(flatten)]
     pub resource: Resource,
@@ -8748,7 +8748,7 @@ pub struct VirtualRouter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualRouterPropertiesFormat {
     #[serde(rename = "virtualRouterAsn", default, skip_serializing_if = "Option::is_none")]
     pub virtual_router_asn: Option<i64>,
@@ -8763,7 +8763,7 @@ pub struct VirtualRouterPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualRouterPeering {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -8776,7 +8776,7 @@ pub struct VirtualRouterPeering {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualRouterPeeringProperties {
     #[serde(rename = "peerAsn", default, skip_serializing_if = "Option::is_none")]
     pub peer_asn: Option<i64>,
@@ -8785,21 +8785,21 @@ pub struct VirtualRouterPeeringProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualRouterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualRouter>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualRouterPeeringListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualRouterPeering>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebApplicationFirewallPolicy {
     #[serde(flatten)]
     pub resource: Resource,
@@ -8839,7 +8839,7 @@ pub mod web_application_firewall_policy_properties_format {
         Deleting,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicySettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<policy_settings::State>,
@@ -8872,7 +8872,7 @@ pub struct ManagedRulesDefinition {
     #[serde(rename = "managedRuleSets")]
     pub managed_rule_sets: Vec<ManagedRuleSet>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebApplicationFirewallPolicyListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WebApplicationFirewallPolicy>,

@@ -7,12 +7,12 @@ pub struct AutoStorageBaseProperties {
     #[serde(rename = "storageAccountId")]
     pub storage_account_id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountUpdateProperties {
     #[serde(rename = "autoStorage", default, skip_serializing_if = "Option::is_none")]
     pub auto_storage: Option<AutoStorageBaseProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountCreateProperties {
     #[serde(rename = "autoStorage", default, skip_serializing_if = "Option::is_none")]
     pub auto_storage: Option<AutoStorageBaseProperties>,
@@ -46,14 +46,14 @@ pub struct AutoStorageProperties {
     #[serde(rename = "lastKeySync")]
     pub last_key_sync: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineFamilyCoreQuota {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "coreQuota", default, skip_serializing_if = "Option::is_none")]
     pub core_quota: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountProperties {
     #[serde(rename = "accountEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub account_endpoint: Option<String>,
@@ -90,21 +90,21 @@ pub mod batch_account_properties {
         Cancelled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccount {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BatchAccountProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BatchAccountUpdateProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BatchAccount>,
@@ -124,7 +124,7 @@ pub mod batch_account_regenerate_key_parameters {
         Secondary,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountKeys {
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
@@ -137,14 +137,14 @@ pub struct BatchAccountKeys {
 pub struct ActivateApplicationPackageParameters {
     pub format: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Application {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -153,14 +153,14 @@ pub struct ApplicationProperties {
     #[serde(rename = "defaultVersion", default, skip_serializing_if = "Option::is_none")]
     pub default_version: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationPackage {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationPackageProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationPackageProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<application_package_properties::State>,
@@ -181,26 +181,26 @@ pub mod application_package_properties {
         Active,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListApplicationsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Application>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListApplicationPackagesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationPackage>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchLocationQuota {
     #[serde(rename = "accountQuota", default, skip_serializing_if = "Option::is_none")]
     pub account_quota: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -213,7 +213,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -224,7 +224,7 @@ pub struct ProxyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateBaseProperties {
     #[serde(rename = "thumbprintAlgorithm", default, skip_serializing_if = "Option::is_none")]
     pub thumbprint_algorithm: Option<String>,
@@ -241,7 +241,7 @@ pub mod certificate_base_properties {
         Cer,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateProperties {
     #[serde(flatten)]
     pub certificate_base_properties: CertificateBaseProperties,
@@ -294,35 +294,35 @@ pub struct CertificateCreateOrUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Certificate {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateCreateOrUpdateParameters {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateCreateOrUpdateProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListCertificatesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Certificate>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Pool {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PoolProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PoolProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -394,7 +394,7 @@ pub mod pool_properties {
         Disabled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentConfiguration {
     #[serde(rename = "cloudServiceConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub cloud_service_configuration: Option<CloudServiceConfiguration>,
@@ -423,7 +423,7 @@ pub struct VirtualMachineConfiguration {
     #[serde(rename = "containerConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub container_configuration: Option<ContainerConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
@@ -436,7 +436,7 @@ pub struct ImageReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsConfiguration {
     #[serde(rename = "enableAutomaticUpdates", default, skip_serializing_if = "Option::is_none")]
     pub enable_automatic_updates: Option<bool>,
@@ -457,14 +457,14 @@ pub mod container_configuration {
         DockerCompatible,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScaleSettings {
     #[serde(rename = "fixedScale", default, skip_serializing_if = "Option::is_none")]
     pub fixed_scale: Option<FixedScaleSettings>,
     #[serde(rename = "autoScale", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale: Option<AutoScaleSettings>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FixedScaleSettings {
     #[serde(rename = "resizeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub resize_timeout: Option<String>,
@@ -504,7 +504,7 @@ pub struct AutoScaleRunError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<AutoScaleRunError>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkConfiguration {
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
@@ -531,7 +531,7 @@ pub mod task_scheduling_policy {
         Pack,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StartTask {
     #[serde(rename = "commandLine", default, skip_serializing_if = "Option::is_none")]
     pub command_line: Option<String>,
@@ -548,14 +548,14 @@ pub struct StartTask {
     #[serde(rename = "containerSettings", default, skip_serializing_if = "Option::is_none")]
     pub container_settings: Option<TaskContainerSettings>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentity {
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
     #[serde(rename = "autoUser", default, skip_serializing_if = "Option::is_none")]
     pub auto_user: Option<AutoUserSpecification>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoUserSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<auto_user_specification::Scope>,
@@ -601,7 +601,7 @@ pub struct ContainerRegistry {
     pub username: String,
     pub password: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResizeOperationStatus {
     #[serde(rename = "targetDedicatedNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_dedicated_nodes: Option<i32>,
@@ -670,7 +670,7 @@ pub enum StorageAccountType {
     #[serde(rename = "Premium_LRS")]
     PremiumLrs,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinuxUserConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uid: Option<i32>,
@@ -679,7 +679,7 @@ pub struct LinuxUserConfiguration {
     #[serde(rename = "sshPrivateKey", default, skip_serializing_if = "Option::is_none")]
     pub ssh_private_key: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsUserConfiguration {
     #[serde(rename = "loginMode", default, skip_serializing_if = "Option::is_none")]
     pub login_mode: Option<windows_user_configuration::LoginMode>,
@@ -703,7 +703,7 @@ pub struct UserAccount {
     #[serde(rename = "windowsUserConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub windows_user_configuration: Option<WindowsUserConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceFile {
     #[serde(rename = "autoStorageContainerName", default, skip_serializing_if = "Option::is_none")]
     pub auto_storage_container_name: Option<String>,
@@ -769,19 +769,19 @@ pub mod network_security_group_rule {
         Deny,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListPoolsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Pool>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -792,7 +792,7 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -805,7 +805,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -817,7 +817,7 @@ pub mod operation {
         pub description: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
@@ -838,7 +838,7 @@ pub mod check_name_availability_parameters {
         MicrosoftBatchBatchAccounts,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
@@ -855,7 +855,7 @@ pub mod check_name_availability_result {
         AlreadyExists,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MountConfiguration {
     #[serde(rename = "azureBlobFileSystemConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub azure_blob_file_system_configuration: Option<AzureBlobFileSystemConfiguration>,

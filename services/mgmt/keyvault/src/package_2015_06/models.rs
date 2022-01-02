@@ -31,7 +31,7 @@ pub struct AccessPolicyEntry {
     pub application_id: Option<String>,
     pub permissions: Permissions,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Permissions {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keys: Vec<String>,
@@ -71,14 +71,14 @@ pub struct Vault {
     pub resource: Resource,
     pub properties: VaultProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VaultListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Vault>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Resource>,

@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -15,7 +15,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Location {
     #[serde(flatten)]
     pub resource: Resource,
@@ -44,7 +44,7 @@ pub struct GroupsCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupItem {
     #[serde(flatten)]
     pub resource: Resource,
@@ -62,7 +62,7 @@ pub struct ApplicationCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Application {
     #[serde(flatten)]
     pub resource: Resource,
@@ -101,14 +101,14 @@ pub struct AndroidMamPolicyCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IOsmamPolicy {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IOsmamPolicyProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IOsmamPolicyProperties {
     #[serde(flatten)]
     pub mam_policy_properties: MamPolicyProperties,
@@ -138,14 +138,14 @@ pub mod i_osmam_policy_properties {
         Disable,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AndroidMamPolicy {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AndroidMamPolicyProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AndroidMamPolicyProperties {
     #[serde(flatten)]
     pub mam_policy_properties: MamPolicyProperties,
@@ -171,7 +171,7 @@ pub mod android_mam_policy_properties {
         NotRequired,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MamPolicyAppIdOrGroupIdPayload {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MamPolicyAppOrGroupIdProperties>,
@@ -306,7 +306,7 @@ pub struct DeviceCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Device {
     #[serde(flatten)]
     pub resource: Resource,
@@ -325,7 +325,7 @@ pub struct DeviceProperties {
     #[serde(rename = "deviceType")]
     pub device_type: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WipeDeviceOperationResult {
     #[serde(flatten)]
     pub resource: Resource,
@@ -342,7 +342,7 @@ pub struct OperationResultCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResult {
     #[serde(flatten)]
     pub resource: Resource,
@@ -367,7 +367,7 @@ pub struct OperationMetadataProperties {
     pub name: String,
     pub value: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StatusesDefault {
     #[serde(flatten)]
     pub resource: Resource,
@@ -376,7 +376,7 @@ pub struct StatusesDefault {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StatusesProperties {
     #[serde(rename = "deployedPolicies", default, skip_serializing_if = "Option::is_none")]
     pub deployed_policies: Option<i64>,
@@ -403,14 +403,14 @@ pub struct FlaggedUserCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedUser {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FlaggedUserProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedUserProperties {
     #[serde(rename = "errorCount", default, skip_serializing_if = "Option::is_none")]
     pub error_count: Option<i64>,
@@ -423,14 +423,14 @@ pub struct FlaggedEnrolledAppCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedEnrolledApp {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FlaggedEnrolledAppProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedEnrolledAppProperties {
     #[serde(rename = "deviceType", default, skip_serializing_if = "Option::is_none")]
     pub device_type: Option<String>,
@@ -443,7 +443,7 @@ pub struct FlaggedEnrolledAppProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<FlaggedEnrolledAppError>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedEnrolledAppError {
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,

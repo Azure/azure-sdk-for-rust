@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageResultOfCatalogItem {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<CatalogItem>,
@@ -249,7 +249,7 @@ pub enum OfferType {
     #[serde(rename = "PowerBIVisuals")]
     PowerBiVisuals,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MarketingMaterial {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
@@ -262,7 +262,7 @@ pub enum LegalTermsType {
     #[serde(rename = "EA")]
     Ea,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Competency {
     #[serde(rename = "competencyName", default, skip_serializing_if = "Option::is_none")]
     pub competency_name: Option<String>,
@@ -282,7 +282,7 @@ pub enum ServiceDurationUnit {
     Hours,
     Weeks,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MarketPricingDetailsItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pricing: Option<serde_json::Value>,
@@ -291,7 +291,7 @@ pub struct MarketPricingDetailsItem {
     #[serde(rename = "marketStates", default, skip_serializing_if = "Vec::is_empty")]
     pub market_states: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Pricing {
     #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
     pub currency_code: Option<String>,
@@ -308,7 +308,7 @@ pub struct PlanPrice {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CurrencyDecorator {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -317,7 +317,7 @@ pub struct LinkProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Filter {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -342,19 +342,19 @@ pub enum ArtifactType {
     Custom,
     Metadata,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfferMetadata {
     #[serde(rename = "leadGeneration", default, skip_serializing_if = "Option::is_none")]
     pub lead_generation: Option<serde_json::Value>,
     #[serde(rename = "testDrive", default, skip_serializing_if = "Option::is_none")]
     pub test_drive: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LeadGeneration {
     #[serde(rename = "productId", default, skip_serializing_if = "Option::is_none")]
     pub product_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestDrive {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -375,7 +375,7 @@ pub struct TestDrive {
     #[serde(rename = "powerBiDashboardLink", default, skip_serializing_if = "Option::is_none")]
     pub power_bi_dashboard_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductVideo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
@@ -386,7 +386,7 @@ pub struct ProductVideo {
     #[serde(rename = "previewImage", default, skip_serializing_if = "Option::is_none")]
     pub preview_image: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreviewImage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caption: Option<String>,
@@ -395,14 +395,14 @@ pub struct PreviewImage {
     #[serde(rename = "imagePurpose", default, skip_serializing_if = "Option::is_none")]
     pub image_purpose: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<Image>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Image {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -496,7 +496,7 @@ pub struct Plan {
     #[serde(rename = "displayRank", default, skip_serializing_if = "Option::is_none")]
     pub display_rank: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestrictedAudience {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub subscriptions: Vec<String>,
@@ -550,7 +550,7 @@ pub struct AvailabilityEntity {
     #[serde(rename = "planAvailabilities", default, skip_serializing_if = "Vec::is_empty")]
     pub plan_availabilities: Vec<AvailabilityEntity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Meter {
     #[serde(rename = "meterId", default, skip_serializing_if = "Option::is_none")]
     pub meter_id: Option<String>,
@@ -582,7 +582,7 @@ pub struct IncludedQuantityProperty {
     #[serde(flatten)]
     pub serde_json_value: serde_json::Value,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncludedQuantityProperty2 {
     #[serde(rename = "termId", default, skip_serializing_if = "Option::is_none")]
     pub term_id: Option<String>,
@@ -600,7 +600,7 @@ pub enum PricingAudience {
     DirectChk,
     DirectBlue,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Term {
     #[serde(rename = "termDescriptionParameters", default, skip_serializing_if = "Vec::is_empty")]
     pub term_description_parameters: Vec<TermDescriptionParameter>,
@@ -621,19 +621,19 @@ pub struct Term {
     #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
     pub billing_plan: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TermDescriptionParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameter: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProrationPolicy {
     #[serde(rename = "minimumProratedUnits", default, skip_serializing_if = "Option::is_none")]
     pub minimum_prorated_units: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingPlan {
     #[serde(rename = "billingPeriod", default, skip_serializing_if = "Option::is_none")]
     pub billing_period: Option<String>,
@@ -644,28 +644,28 @@ pub struct BillingPlan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PiFilter {
     #[serde(rename = "exclusionProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub exclusion_properties: Vec<String>,
     #[serde(rename = "inclusionProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub inclusion_properties: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Remediation {
     #[serde(rename = "remediationId", default, skip_serializing_if = "Option::is_none")]
     pub remediation_id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub generation: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperatingSystem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
@@ -687,7 +687,7 @@ pub enum VmSecurityType {
     Trusted,
     Confidential,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefinitionTemplates {
     #[serde(rename = "uiDefinitionFileUri", default, skip_serializing_if = "Option::is_none")]
     pub ui_definition_file_uri: Option<String>,

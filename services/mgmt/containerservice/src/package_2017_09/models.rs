@@ -506,7 +506,7 @@ pub struct ContainerService {
     #[serde(flatten)]
     pub serde_json_value: serde_json::Value,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContainerService>,
@@ -534,7 +534,7 @@ pub struct ContainerServiceProperties {
     #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
     pub diagnostics_profile: Option<ContainerServiceDiagnosticsProfile>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedCluster>,
@@ -548,7 +548,7 @@ pub struct ManagedCluster {
     #[serde(flatten)]
     pub serde_json_value: serde_json::Value,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -579,7 +579,7 @@ pub struct ManagedClusterAccessProfile {
     #[serde(flatten)]
     pub serde_json_value: serde_json::Value,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessProfile {
     #[serde(rename = "kubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub kube_config: Option<String>,

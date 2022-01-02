@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PresentationTimeRange {
     #[serde(rename = "startTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub start_timestamp: Option<i64>,
@@ -50,7 +50,7 @@ pub struct FilterTrackSelection {
     #[serde(rename = "trackSelections")]
     pub track_selections: Vec<FilterTrackPropertyCondition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaFilterProperties {
     #[serde(rename = "presentationTimeRange", default, skip_serializing_if = "Option::is_none")]
     pub presentation_time_range: Option<PresentationTimeRange>,
@@ -59,7 +59,7 @@ pub struct MediaFilterProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tracks: Vec<FilterTrackSelection>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountFilter {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -68,7 +68,7 @@ pub struct AccountFilter {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -100,14 +100,14 @@ pub mod system_data {
         Key,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountFilterCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AccountFilter>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ODataError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -118,7 +118,7 @@ pub struct ODataError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ODataError>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ODataError>,
@@ -128,7 +128,7 @@ pub struct Provider {
     #[serde(rename = "providerName")]
     pub provider_name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -139,7 +139,7 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricDimension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -148,7 +148,7 @@ pub struct MetricDimension {
     #[serde(rename = "toBeExportedForShoebox", default, skip_serializing_if = "Option::is_none")]
     pub to_be_exported_for_shoebox: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -188,19 +188,19 @@ pub mod metric_specification {
         Total,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Properties {
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<LogSpecification>,
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -247,12 +247,12 @@ pub mod storage_account {
         Secondary,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncStorageKeysInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaServiceProperties {
     #[serde(rename = "mediaServiceId", default, skip_serializing_if = "Option::is_none")]
     pub media_service_id: Option<String>,
@@ -286,14 +286,14 @@ pub mod account_encryption {
         CustomerKey,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultProperties {
     #[serde(rename = "keyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub key_identifier: Option<String>,
     #[serde(rename = "currentKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub current_key_identifier: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaService {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
@@ -321,12 +321,12 @@ pub mod media_service_identity {
         None,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListEdgePoliciesInput {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeUsageDataEventHub {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -335,7 +335,7 @@ pub struct EdgeUsageDataEventHub {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeUsageDataCollectionPolicy {
     #[serde(rename = "dataCollectionFrequency", default, skip_serializing_if = "Option::is_none")]
     pub data_collection_frequency: Option<String>,
@@ -346,33 +346,33 @@ pub struct EdgeUsageDataCollectionPolicy {
     #[serde(rename = "eventHubDetails", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_details: Option<EdgeUsageDataEventHub>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgePolicies {
     #[serde(rename = "usageDataCollectionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub usage_data_collection_policy: Option<EdgeUsageDataCollectionPolicy>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaServiceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MediaService>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetProperties {
     #[serde(rename = "assetId", default, skip_serializing_if = "Option::is_none")]
     pub asset_id: Option<String>,
@@ -399,7 +399,7 @@ pub mod asset_properties {
         MediaStorageClientEncryption,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetContainerSas {
     #[serde(rename = "assetContainerSasUrls", default, skip_serializing_if = "Vec::is_empty")]
     pub asset_container_sas_urls: Vec<String>,
@@ -413,19 +413,19 @@ pub struct AssetFileEncryptionMetadata {
     #[serde(rename = "assetFileId")]
     pub asset_file_id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageEncryptedAssetDecryptionData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
     #[serde(rename = "assetFileEncryptionMetadata", default, skip_serializing_if = "Vec::is_empty")]
     pub asset_file_encryption_metadata: Vec<AssetFileEncryptionMetadata>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListStreamingLocatorsResponse {
     #[serde(rename = "streamingLocators", default, skip_serializing_if = "Vec::is_empty")]
     pub streaming_locators: Vec<AssetStreamingLocator>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetStreamingLocator {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -444,7 +444,7 @@ pub struct AssetStreamingLocator {
     #[serde(rename = "defaultContentKeyPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub default_content_key_policy_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Asset {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -453,7 +453,7 @@ pub struct Asset {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetFilter {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -462,14 +462,14 @@ pub struct AssetFilter {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Asset>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListContainerSasInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<list_container_sas_input::Permissions>,
@@ -485,7 +485,7 @@ pub mod list_container_sas_input {
         ReadWriteDelete,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetFilterCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AssetFilter>,
@@ -559,7 +559,7 @@ pub mod content_key_policy_play_ready_play_right {
         AllowedWithVideoConstriction,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicyTokenClaim {
     #[serde(rename = "claimType", default, skip_serializing_if = "Option::is_none")]
     pub claim_type: Option<String>,
@@ -757,7 +757,7 @@ pub struct ContentKeyPolicyProperties {
     pub description: Option<String>,
     pub options: Vec<ContentKeyPolicyOption>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -766,7 +766,7 @@ pub struct ContentKeyPolicy {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicyCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContentKeyPolicy>,
@@ -785,7 +785,7 @@ pub struct Codec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Audio {
     #[serde(flatten)]
     pub codec: Codec,
@@ -796,7 +796,7 @@ pub struct Audio {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bitrate: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AacAudio {
     #[serde(flatten)]
     pub audio: Audio,
@@ -839,7 +839,7 @@ pub struct H265VideoLayer {
     #[serde(rename = "adaptiveBFrame", default, skip_serializing_if = "Option::is_none")]
     pub adaptive_b_frame: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct H265Layer {
     #[serde(flatten)]
     pub h265_video_layer: H265VideoLayer,
@@ -860,7 +860,7 @@ pub mod h265_layer {
         Main,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Video {
     #[serde(flatten)]
     pub codec: Codec,
@@ -887,7 +887,7 @@ pub mod video {
         Vfr,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct H265Video {
     #[serde(flatten)]
     pub video: Video,
@@ -912,7 +912,7 @@ pub struct TrackDescriptor {
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AudioTrackDescriptor {
     #[serde(flatten)]
     pub track_descriptor: TrackDescriptor,
@@ -981,14 +981,14 @@ pub struct FromEachInputFile {
     #[serde(flatten)]
     pub input_definition: InputDefinition,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputFile {
     #[serde(flatten)]
     pub input_definition: InputDefinition,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FaceDetectorPreset {
     #[serde(flatten)]
     pub preset: Preset,
@@ -1023,7 +1023,7 @@ pub mod face_detector_preset {
         Black,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AudioAnalyzerPreset {
     #[serde(flatten)]
     pub preset: Preset,
@@ -1106,7 +1106,7 @@ pub struct CopyAudio {
     #[serde(flatten)]
     pub codec: Codec,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Deinterlace {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parity: Option<deinterlace::Parity>,
@@ -1127,7 +1127,7 @@ pub mod deinterlace {
         AutoPixelAdaptive,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Rectangle {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub left: Option<String>,
@@ -1138,7 +1138,7 @@ pub struct Rectangle {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub height: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Filters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deinterlace: Option<Deinterlace>,
@@ -1177,7 +1177,7 @@ pub struct VideoLayer {
     #[serde(rename = "adaptiveBFrame", default, skip_serializing_if = "Option::is_none")]
     pub adaptive_b_frame: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct H264Layer {
     #[serde(flatten)]
     pub video_layer: VideoLayer,
@@ -1209,7 +1209,7 @@ pub mod h264_layer {
         Cavlc,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct H264Video {
     #[serde(flatten)]
     pub video: Video,
@@ -1229,7 +1229,7 @@ pub mod h264_video {
         Quality,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JpgImage {
     #[serde(flatten)]
     pub image: Image,
@@ -1238,14 +1238,14 @@ pub struct JpgImage {
     #[serde(rename = "spriteColumn", default, skip_serializing_if = "Option::is_none")]
     pub sprite_column: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JpgLayer {
     #[serde(flatten)]
     pub layer: Layer,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quality: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MultiBitrateFormat {
     #[serde(flatten)]
     pub format: Format,
@@ -1261,7 +1261,7 @@ pub struct Mp4Format {
     #[serde(flatten)]
     pub multi_bitrate_format: MultiBitrateFormat,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PngImage {
     #[serde(flatten)]
     pub image: Image,
@@ -1314,7 +1314,7 @@ pub struct StandardEncoderPreset {
     pub codecs: Vec<Codec>,
     pub formats: Vec<Format>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VideoAnalyzerPreset {
     #[serde(flatten)]
     pub audio_analyzer_preset: AudioAnalyzerPreset,
@@ -1335,7 +1335,7 @@ pub struct TransportStreamFormat {
     #[serde(flatten)]
     pub multi_bitrate_format: MultiBitrateFormat,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VideoOverlay {
     #[serde(flatten)]
     pub overlay: Overlay,
@@ -1414,7 +1414,7 @@ pub struct TransformProperties {
     pub last_modified: Option<String>,
     pub outputs: Vec<TransformOutput>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Transform {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -1428,7 +1428,7 @@ pub struct JobInput {
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobInputClip {
     #[serde(flatten)]
     pub job_input: JobInput,
@@ -1460,7 +1460,7 @@ pub struct UtcClipTime {
     pub clip_time: ClipTime,
     pub time: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobInputs {
     #[serde(flatten)]
     pub job_input: JobInput,
@@ -1474,7 +1474,7 @@ pub struct JobInputAsset {
     #[serde(rename = "assetName")]
     pub asset_name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobInputHttp {
     #[serde(flatten)]
     pub job_input_clip: JobInputClip,
@@ -1511,7 +1511,7 @@ pub mod job_output {
         Scheduled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<job_error::Code>,
@@ -1559,7 +1559,7 @@ pub struct JobOutputAsset {
     #[serde(rename = "assetName")]
     pub asset_name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -1606,14 +1606,14 @@ pub mod job_properties {
         High,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobInputSequence {
     #[serde(flatten)]
     pub job_input: JobInput,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<JobInputClip>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Job {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -1622,14 +1622,14 @@ pub struct Job {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransformCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Transform>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Job>,
@@ -1657,19 +1657,19 @@ pub mod track_property_condition {
         Equal,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackSelection {
     #[serde(rename = "trackSelections", default, skip_serializing_if = "Vec::is_empty")]
     pub track_selections: Vec<TrackPropertyCondition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyContentKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
@@ -1678,21 +1678,21 @@ pub struct StreamingPolicyContentKey {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tracks: Vec<TrackSelection>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyContentKeys {
     #[serde(rename = "defaultKey", default, skip_serializing_if = "Option::is_none")]
     pub default_key: Option<DefaultKey>,
     #[serde(rename = "keyToTrackMappings", default, skip_serializing_if = "Vec::is_empty")]
     pub key_to_track_mappings: Vec<StreamingPolicyContentKey>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyPlayReadyConfiguration {
     #[serde(rename = "customLicenseAcquisitionUrlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub custom_license_acquisition_url_template: Option<String>,
     #[serde(rename = "playReadyCustomAttributes", default, skip_serializing_if = "Option::is_none")]
     pub play_ready_custom_attributes: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyWidevineConfiguration {
     #[serde(rename = "customLicenseAcquisitionUrlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub custom_license_acquisition_url_template: Option<String>,
@@ -1704,7 +1704,7 @@ pub struct StreamingPolicyFairPlayConfiguration {
     #[serde(rename = "allowPersistentLicense")]
     pub allow_persistent_license: bool,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CbcsDrmConfiguration {
     #[serde(rename = "fairPlay", default, skip_serializing_if = "Option::is_none")]
     pub fair_play: Option<StreamingPolicyFairPlayConfiguration>,
@@ -1713,7 +1713,7 @@ pub struct CbcsDrmConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub widevine: Option<StreamingPolicyWidevineConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CencDrmConfiguration {
     #[serde(rename = "playReady", default, skip_serializing_if = "Option::is_none")]
     pub play_ready: Option<StreamingPolicyPlayReadyConfiguration>,
@@ -1728,12 +1728,12 @@ pub struct EnabledProtocols {
     #[serde(rename = "smoothStreaming")]
     pub smooth_streaming: bool,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NoEncryption {
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvelopeEncryption {
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
@@ -1744,7 +1744,7 @@ pub struct EnvelopeEncryption {
     #[serde(rename = "customKeyAcquisitionUrlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub custom_key_acquisition_url_template: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CommonEncryptionCenc {
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
@@ -1755,7 +1755,7 @@ pub struct CommonEncryptionCenc {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub drm: Option<CencDrmConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CommonEncryptionCbcs {
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
@@ -1766,7 +1766,7 @@ pub struct CommonEncryptionCbcs {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub drm: Option<CbcsDrmConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
@@ -1781,7 +1781,7 @@ pub struct StreamingPolicyProperties {
     #[serde(rename = "noEncryption", default, skip_serializing_if = "Option::is_none")]
     pub no_encryption: Option<NoEncryption>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -1862,19 +1862,19 @@ pub struct StreamingLocatorProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filters: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListContentKeysResponse {
     #[serde(rename = "contentKeys", default, skip_serializing_if = "Vec::is_empty")]
     pub content_keys: Vec<StreamingLocatorContentKey>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListPathsResponse {
     #[serde(rename = "streamingPaths", default, skip_serializing_if = "Vec::is_empty")]
     pub streaming_paths: Vec<StreamingPath>,
     #[serde(rename = "downloadPaths", default, skip_serializing_if = "Vec::is_empty")]
     pub download_paths: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingLocator {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -1883,21 +1883,21 @@ pub struct StreamingLocator {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StreamingPolicy>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingLocatorCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StreamingLocator>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Hls {
     #[serde(rename = "fragmentsPerTsSegment", default, skip_serializing_if = "Option::is_none")]
     pub fragments_per_ts_segment: Option<i32>,
@@ -1934,14 +1934,14 @@ pub mod live_output_properties {
         Deleting,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveOutput {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LiveOutputProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveOutputListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LiveOutput>,
@@ -1950,19 +1950,19 @@ pub struct LiveOutputListResult {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventInputAccessControl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<IpAccessControl>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAccessControl {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub allow: Vec<IpRange>,
@@ -1990,7 +1990,7 @@ pub mod live_event_input {
         Rtmp,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpRange {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1999,12 +1999,12 @@ pub struct IpRange {
     #[serde(rename = "subnetPrefixLength", default, skip_serializing_if = "Option::is_none")]
     pub subnet_prefix_length: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventPreviewAccessControl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<IpAccessControl>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventPreview {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<LiveEventEndpoint>,
@@ -2017,7 +2017,7 @@ pub struct LiveEventPreview {
     #[serde(rename = "alternativeMediaId", default, skip_serializing_if = "Option::is_none")]
     pub alternative_media_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventEncoding {
     #[serde(rename = "encodingType", default, skip_serializing_if = "Option::is_none")]
     pub encoding_type: Option<live_event_encoding::EncodingType>,
@@ -2043,7 +2043,7 @@ pub mod live_event_encoding {
         AutoFit,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventInputTrackSelection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub property: Option<String>,
@@ -2057,7 +2057,7 @@ pub struct LiveEventOutputTranscriptionTrack {
     #[serde(rename = "trackName")]
     pub track_name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventTranscription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
@@ -2066,14 +2066,14 @@ pub struct LiveEventTranscription {
     #[serde(rename = "outputTranscriptionTrack", default, skip_serializing_if = "Option::is_none")]
     pub output_transcription_track: Option<LiveEventOutputTranscriptionTrack>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CrossSiteAccessPolicies {
     #[serde(rename = "clientAccessPolicy", default, skip_serializing_if = "Option::is_none")]
     pub client_access_policy: Option<String>,
     #[serde(rename = "crossDomainPolicy", default, skip_serializing_if = "Option::is_none")]
     pub cross_domain_policy: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventActionInput {
     #[serde(rename = "removeOutputsOnStop", default, skip_serializing_if = "Option::is_none")]
     pub remove_outputs_on_stop: Option<bool>,
@@ -2119,7 +2119,7 @@ pub mod live_event_properties {
         Deleting,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEvent {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
@@ -2128,7 +2128,7 @@ pub struct LiveEvent {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LiveEvent>,
@@ -2137,7 +2137,7 @@ pub struct LiveEventListResult {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AkamaiSignatureHeaderAuthenticationKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identifier: Option<String>,
@@ -2146,7 +2146,7 @@ pub struct AkamaiSignatureHeaderAuthenticationKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expiration: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AkamaiAccessControl {
     #[serde(
         rename = "akamaiSignatureHeaderAuthenticationKeyList",
@@ -2155,14 +2155,14 @@ pub struct AkamaiAccessControl {
     )]
     pub akamai_signature_header_authentication_key_list: Vec<AkamaiSignatureHeaderAuthenticationKey>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingEndpointAccessControl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub akamai: Option<AkamaiAccessControl>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<IpAccessControl>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingEntityScaleUnit {
     #[serde(rename = "scaleUnit", default, skip_serializing_if = "Option::is_none")]
     pub scale_unit: Option<i32>,
@@ -2214,7 +2214,7 @@ pub mod streaming_endpoint_properties {
         Scaling,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingEndpoint {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
@@ -2223,7 +2223,7 @@ pub struct StreamingEndpoint {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingEndpointListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StreamingEndpoint>,
@@ -2237,7 +2237,7 @@ pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -2246,19 +2246,19 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
@@ -2267,12 +2267,12 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub resource: Resource,
@@ -2288,12 +2288,12 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,

@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiToken {
     #[serde(flatten)]
     pub permission: Permission,
@@ -30,7 +30,7 @@ pub struct Collection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Device {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -53,7 +53,7 @@ pub struct DeviceCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceCommand {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -92,7 +92,7 @@ pub struct SymmetricKey {
     #[serde(rename = "secondaryKey")]
     pub secondary_key: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509 {
     #[serde(rename = "clientCertificates", default, skip_serializing_if = "Option::is_none")]
     pub client_certificates: Option<X509Certificates>,
@@ -103,7 +103,7 @@ pub struct X509Certificates {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<X509Certificate>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509Certificate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub certificate: Option<String>,
@@ -122,7 +122,7 @@ pub struct Tpm {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceProperties {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceTelemetry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
@@ -160,7 +160,7 @@ pub struct EmailUser {
 pub struct Permission {
     pub roles: Vec<RoleAssignment>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Role {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,

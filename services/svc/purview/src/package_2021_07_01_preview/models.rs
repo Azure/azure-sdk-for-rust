@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AttributeMatcher {
     #[serde(rename = "attributeName", default, skip_serializing_if = "Option::is_none")]
     pub attribute_name: Option<String>,
@@ -17,7 +17,7 @@ pub struct AttributeMatcher {
 }
 pub type DnfCondition = Vec<Vec<AttributeMatcher>>;
 pub type CnfCondition = Vec<Vec<AttributeMatcher>>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DecisionRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<decision_rule::Kind>,
@@ -39,7 +39,7 @@ pub mod decision_rule {
         Permit,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AttributeRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<attribute_rule::Kind>,
@@ -58,14 +58,14 @@ pub mod attribute_rule {
         Attributerule,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CollectionReference {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
     pub reference_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataPolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -78,7 +78,7 @@ pub struct MetadataPolicyProperties {
     #[serde(rename = "parentCollectionName", default, skip_serializing_if = "Option::is_none")]
     pub parent_collection_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -108,7 +108,7 @@ pub struct MetadataPolicyList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataRoleProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -125,7 +125,7 @@ pub struct MetadataRoleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataRole {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,

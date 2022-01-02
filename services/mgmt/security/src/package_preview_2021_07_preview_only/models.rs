@@ -8,7 +8,7 @@ pub struct SecurityConnectorsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConnector {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
@@ -17,7 +17,7 @@ pub struct SecurityConnector {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityConnectorProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -49,7 +49,7 @@ pub mod system_data {
         Key,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConnectorProperties {
     #[serde(rename = "hierarchyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub hierarchy_identifier: Option<String>,
@@ -70,7 +70,7 @@ pub mod security_connector_properties {
         #[serde(rename = "GCP")]
         Gcp,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct OrganizationalData {
         #[serde(rename = "organizationMembershipType", default, skip_serializing_if = "Option::is_none")]
         pub organization_membership_type: Option<organizational_data::OrganizationMembershipType>,
@@ -106,7 +106,7 @@ pub mod cloud_offering {
         DefenderForServersAws,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CspmMonitorAwsOffering {
     #[serde(flatten)]
     pub cloud_offering: CloudOffering,
@@ -115,13 +115,13 @@ pub struct CspmMonitorAwsOffering {
 }
 pub mod cspm_monitor_aws_offering {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct NativeCloudConnection {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefenderForContainersAwsOffering {
     #[serde(flatten)]
     pub cloud_offering: CloudOffering,
@@ -136,28 +136,28 @@ pub struct DefenderForContainersAwsOffering {
 }
 pub mod defender_for_containers_aws_offering {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct KubernetesService {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct KubernetesScubaReader {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct CloudWatchToKinesis {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct KinesisToS3 {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefenderForServersAwsOffering {
     #[serde(flatten)]
     pub cloud_offering: CloudOffering,
@@ -168,12 +168,12 @@ pub struct DefenderForServersAwsOffering {
 }
 pub mod defender_for_servers_aws_offering {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct DefenderForServers {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ArcAutoProvisioning {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub enabled: Option<bool>,
@@ -182,7 +182,7 @@ pub mod defender_for_servers_aws_offering {
     }
     pub mod arc_auto_provisioning {
         use super::*;
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct ServicePrincipalSecretMetadata {
             #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
             pub expiry_date: Option<String>,
@@ -193,12 +193,12 @@ pub mod defender_for_servers_aws_offering {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -211,7 +211,7 @@ pub struct CloudErrorBody {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -231,7 +231,7 @@ pub struct TrackedResource {
     #[serde(flatten)]
     pub tags: Tags,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -240,22 +240,22 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureTrackedResourceLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Kind {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ETag {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Tags {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,

@@ -10,7 +10,7 @@ pub struct Account {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -26,7 +26,7 @@ pub mod identity {
         SystemAssigned,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountProperties {
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
@@ -54,7 +54,7 @@ pub struct AccountList {
     pub next_link: Option<String>,
     pub value: Vec<Account>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -530,14 +530,14 @@ pub struct ConsumerInvitationList {
     pub next_link: Option<String>,
     pub value: Vec<ConsumerInvitation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsumerSourceDataSet {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConsumerSourceDataSetProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsumerSourceDataSetProperties {
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
@@ -657,7 +657,7 @@ pub struct DataShareErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultDto {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
@@ -666,14 +666,14 @@ pub struct DefaultDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DimensionProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmailRegistration {
     #[serde(rename = "activationCode", default, skip_serializing_if = "Option::is_none")]
     pub activation_code: Option<String>,
@@ -695,14 +695,14 @@ pub mod email_registration {
         ActivationAttemptsExhausted,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Invitation {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InvitationProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InvitationProperties {
     #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date: Option<String>,
@@ -897,7 +897,7 @@ pub mod kusto_table_data_set_properties {
         Failed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableLevelSharingProperties {
     #[serde(rename = "externalTablesToExclude", default, skip_serializing_if = "Vec::is_empty")]
     pub external_tables_to_exclude: Vec<String>,
@@ -953,7 +953,7 @@ pub struct OperationList {
     pub next_link: Option<String>,
     pub value: Vec<OperationModel>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetaLogSpecification {
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
@@ -962,7 +962,7 @@ pub struct OperationMetaLogSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetaMetricSpecification {
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
@@ -989,19 +989,19 @@ pub struct OperationMetaMetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetaPropertyInfo {
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<OperationMetaServiceSpecification>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetaServiceSpecification {
     #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<OperationMetaLogSpecification>,
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<OperationMetaMetricSpecification>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationModelProperties>,
@@ -1012,7 +1012,7 @@ pub struct OperationModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationMetaPropertyInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationModelProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -1045,14 +1045,14 @@ pub mod operation_response {
         Canceled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderShareSubscription {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProviderShareSubscriptionProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderShareSubscriptionProperties {
     #[serde(rename = "consumerEmail", default, skip_serializing_if = "Option::is_none")]
     pub consumer_email: Option<String>,
@@ -1091,7 +1091,7 @@ pub struct ProviderShareSubscriptionList {
     pub next_link: Option<String>,
     pub value: Vec<ProviderShareSubscription>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1102,7 +1102,7 @@ pub struct ProxyDto {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
@@ -1134,7 +1134,7 @@ pub mod system_data {
         Key,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledSourceShareSynchronizationSettingProperties {
     #[serde(rename = "recurrenceInterval", default, skip_serializing_if = "Option::is_none")]
     pub recurrence_interval: Option<scheduled_source_share_synchronization_setting_properties::RecurrenceInterval>,
@@ -1241,14 +1241,14 @@ pub mod scheduled_trigger_properties {
         SourceSynchronizationSettingDeleted,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Share {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ShareProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareProperties {
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
@@ -1386,7 +1386,7 @@ pub struct ShareSubscriptionSynchronizationList {
     pub next_link: Option<String>,
     pub value: Vec<ShareSubscriptionSynchronization>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareSynchronization {
     #[serde(rename = "consumerEmail", default, skip_serializing_if = "Option::is_none")]
     pub consumer_email: Option<String>,
@@ -1604,7 +1604,7 @@ pub mod synapse_workspace_sql_pool_table_data_set_mapping_properties {
         Failed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SynchronizationDetails {
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
@@ -1684,7 +1684,7 @@ pub struct SynchronizationSettingList {
     pub next_link: Option<String>,
     pub value: Vec<SynchronizationSetting>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Synchronize {
     #[serde(rename = "synchronizationMode", default, skip_serializing_if = "Option::is_none")]
     pub synchronization_mode: Option<synchronize::SynchronizationMode>,

@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSyncError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -11,7 +11,7 @@ pub struct StorageSyncError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<StorageSyncErrorDetails>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSyncErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -20,7 +20,7 @@ pub struct StorageSyncErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -29,7 +29,7 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
@@ -38,7 +38,7 @@ pub struct TrackedResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<subscription_state::State>,
@@ -88,7 +88,7 @@ pub struct ServerEndpoint {
     #[serde(flatten)]
     pub serde_json_value: serde_json::Value,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegisteredServer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -99,7 +99,7 @@ pub struct RegisteredServer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegisteredServerProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegisteredServerProperties {
     #[serde(rename = "serverCertificate", default, skip_serializing_if = "Option::is_none")]
     pub server_certificate: Option<String>,
@@ -126,7 +126,7 @@ pub struct RegisteredServerProperties {
     #[serde(rename = "lastWorkflowId", default, skip_serializing_if = "Option::is_none")]
     pub last_workflow_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourcesMoveInfo {
     #[serde(rename = "targetResourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_group: Option<String>,
@@ -140,14 +140,14 @@ pub struct Workflow {
     #[serde(flatten)]
     pub serde_json_value: serde_json::Value,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -156,7 +156,7 @@ pub struct OperationEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplayInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -167,7 +167,7 @@ pub struct OperationDisplayInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplayResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -178,7 +178,7 @@ pub struct OperationDisplayResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PostRestoreRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub partition: Option<String>,
@@ -197,7 +197,7 @@ pub struct PostRestoreRequest {
     #[serde(rename = "restoreFileSpec", default, skip_serializing_if = "Vec::is_empty")]
     pub restore_file_spec: Vec<RestoreFileSpec>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreRestoreRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub partition: Option<String>,
@@ -222,66 +222,66 @@ pub struct PreRestoreRequest {
     )]
     pub pause_wait_for_sync_drain_time_period_in_seconds: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupRequest {
     #[serde(rename = "azureFileShare", default, skip_serializing_if = "Option::is_none")]
     pub azure_file_share: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PostBackupResponse {
     #[serde(rename = "backupMetadata", default, skip_serializing_if = "Option::is_none")]
     pub backup_metadata: Option<PostBackupResponseProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PostBackupResponseProperties {
     #[serde(rename = "cloudEndpointName", default, skip_serializing_if = "Option::is_none")]
     pub cloud_endpoint_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestoreFileSpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub isdir: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSyncServiceArray {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageSyncService>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupArray {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SyncGroup>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudEndpointArray {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CloudEndpoint>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointArray {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServerEndpoint>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegisteredServerArray {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RegisteredServer>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowArray {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workflow>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSyncServiceProperties {
     #[serde(rename = "storageSyncServiceStatus", default, skip_serializing_if = "Option::is_none")]
     pub storage_sync_service_status: Option<i64>,
     #[serde(rename = "storageSyncServiceUid", default, skip_serializing_if = "Option::is_none")]
     pub storage_sync_service_uid: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowProperties {
     #[serde(rename = "lastStepName", default, skip_serializing_if = "Option::is_none")]
     pub last_step_name: Option<String>,
@@ -316,14 +316,14 @@ pub enum OperationDirection {
     #[serde(rename = "cancel")]
     Cancel,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupProperties {
     #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
     pub unique_id: Option<String>,
     #[serde(rename = "syncGroupStatus", default, skip_serializing_if = "Option::is_none")]
     pub sync_group_status: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudEndpointProperties {
     #[serde(rename = "storageAccountKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_key: Option<String>,
@@ -346,7 +346,7 @@ pub struct CloudEndpointProperties {
     #[serde(rename = "lastWorkflowId", default, skip_serializing_if = "Option::is_none")]
     pub last_workflow_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointProperties {
     #[serde(rename = "serverLocalPath", default, skip_serializing_if = "Option::is_none")]
     pub server_local_path: Option<PhysicalPath>,

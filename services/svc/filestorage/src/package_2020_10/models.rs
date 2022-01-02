@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicy {
     #[serde(rename = "Start", default, skip_serializing_if = "Option::is_none")]
     pub start: Option<String>,
@@ -255,7 +255,7 @@ pub struct RetentionPolicy {
     #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
     pub days: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmbMultichannel {
     #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -274,24 +274,24 @@ pub struct ClearRange {
     #[serde(rename = "End")]
     pub end: i64,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareProtocolSettings {
     #[serde(rename = "Smb", default, skip_serializing_if = "Option::is_none")]
     pub smb: Option<ShareSmbSettings>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareSmbSettings {
     #[serde(rename = "Multichannel", default, skip_serializing_if = "Option::is_none")]
     pub multichannel: Option<SmbMultichannel>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareFileRangeList {
     #[serde(rename = "Ranges", default, skip_serializing_if = "Vec::is_empty")]
     pub ranges: Vec<FileRange>,
     #[serde(rename = "ClearRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub clear_ranges: Vec<ClearRange>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -368,7 +368,7 @@ pub struct SignedIdentifier {
     pub access_policy: Option<AccessPolicy>,
 }
 pub type SignedIdentifiers = Vec<SignedIdentifier>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceProperties {
     #[serde(rename = "HourMetrics", default, skip_serializing_if = "Option::is_none")]
     pub hour_metrics: Option<Metrics>,

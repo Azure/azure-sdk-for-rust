@@ -78,7 +78,7 @@ pub struct LedgerWriteResult {
     pub sub_ledger_id: SubLedgerId,
 }
 pub type MerkleProof = Vec<MerkleProofElement>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MerkleProofElement {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub left: Option<String>,
@@ -127,12 +127,12 @@ pub struct TransactionStatus {
     #[serde(rename = "transactionId")]
     pub transaction_id: TransactionId,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfidentialLedgerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ConfidentialLedgerErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfidentialLedgerErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,

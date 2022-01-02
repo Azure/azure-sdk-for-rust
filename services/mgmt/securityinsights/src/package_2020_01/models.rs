@@ -8,7 +8,7 @@ pub struct ActionsList {
     pub next_link: Option<String>,
     pub value: Vec<ActionResponse>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionRequest {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
@@ -22,7 +22,7 @@ pub struct ActionRequestProperties {
     #[serde(rename = "triggerUri")]
     pub trigger_uri: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionResponse {
     #[serde(flatten)]
     pub resource: Resource,
@@ -31,7 +31,7 @@ pub struct ActionResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionResponseProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionResponseProperties {
     #[serde(flatten)]
     pub action_properties_base: ActionPropertiesBase,
@@ -61,7 +61,7 @@ pub struct AlertRuleTemplate {
     pub resource: Resource,
     pub kind: AlertRuleKind,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertRuleTemplateDataSource {
     #[serde(rename = "connectorId", default, skip_serializing_if = "Option::is_none")]
     pub connector_id: Option<String>,
@@ -115,7 +115,7 @@ pub enum AttackTactic {
     CommandAndControl,
     Impact,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FusionAlertRule {
     #[serde(flatten)]
     pub alert_rule: AlertRule,
@@ -138,14 +138,14 @@ pub struct FusionAlertRuleProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FusionAlertRuleTemplate {
     #[serde(flatten)]
     pub alert_rule_template: AlertRuleTemplate,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FusionAlertRuleTemplateProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FusionAlertRuleTemplateProperties {
     #[serde(rename = "alertRulesCreatedByTemplateCount", default, skip_serializing_if = "Option::is_none")]
     pub alert_rules_created_by_template_count: Option<i32>,
@@ -164,7 +164,7 @@ pub struct FusionAlertRuleTemplateProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MicrosoftSecurityIncidentCreationAlertRule {
     #[serde(flatten)]
     pub alert_rule: AlertRule,
@@ -209,7 +209,7 @@ pub enum MicrosoftSecurityProductName {
     #[serde(rename = "Azure Security Center for IoT")]
     AzureSecurityCenterForIoT,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplate {
     #[serde(flatten)]
     pub alert_rule_template: AlertRuleTemplate,
@@ -239,7 +239,7 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties {
     #[serde(rename = "severitiesFilter", default, skip_serializing_if = "Vec::is_empty")]
     pub severities_filter: Vec<AlertSeverity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledAlertRule {
     #[serde(flatten)]
     pub alert_rule: AlertRule,
@@ -266,7 +266,7 @@ pub struct ScheduledAlertRuleProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledAlertRuleCommonProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
@@ -281,7 +281,7 @@ pub struct ScheduledAlertRuleCommonProperties {
     #[serde(rename = "triggerThreshold", default, skip_serializing_if = "Option::is_none")]
     pub trigger_threshold: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledAlertRuleTemplateProperties {
     #[serde(rename = "alertRulesCreatedByTemplateCount", default, skip_serializing_if = "Option::is_none")]
     pub alert_rules_created_by_template_count: Option<i32>,
@@ -310,14 +310,14 @@ pub struct ScheduledAlertRuleTemplateProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledAlertRuleTemplate {
     #[serde(flatten)]
     pub alert_rule_template: AlertRuleTemplate,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScheduledAlertRuleTemplateProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
@@ -328,12 +328,12 @@ pub struct ClientInfo {
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -346,7 +346,7 @@ pub struct ErrorResponse {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Incident {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
@@ -410,7 +410,7 @@ pub mod incident_properties {
         Closed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentAdditionalData {
     #[serde(rename = "alertsCount", default, skip_serializing_if = "Option::is_none")]
     pub alerts_count: Option<i32>,
@@ -423,7 +423,7 @@ pub struct IncidentAdditionalData {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentOwnerInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
@@ -441,7 +441,7 @@ pub enum IncidentSeverityEnum {
     Low,
     Informational,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentComment {
     #[serde(flatten)]
     pub resource: Resource,
@@ -483,14 +483,14 @@ pub struct IncidentList {
     pub next_link: Option<String>,
     pub value: Vec<Incident>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfficeConsent {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfficeConsentProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfficeConsentProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -503,7 +503,7 @@ pub struct OfficeConsentList {
     pub next_link: Option<String>,
     pub value: Vec<OfficeConsent>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
@@ -514,7 +514,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
@@ -532,7 +532,7 @@ pub struct OperationsList {
     pub next_link: Option<String>,
     pub value: Vec<Operation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -541,7 +541,7 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceWithEtag {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -552,7 +552,7 @@ pub struct ResourceWithEtag {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub confidence: Option<f64>,
@@ -576,7 +576,7 @@ pub struct UserInfo {
     #[serde(rename = "objectId")]
     pub object_id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Bookmark {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
@@ -611,7 +611,7 @@ pub struct BookmarkProperties {
     #[serde(rename = "incidentInfo", default, skip_serializing_if = "Option::is_none")]
     pub incident_info: Option<IncidentInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentInfo {
     #[serde(rename = "incidentId", default, skip_serializing_if = "Option::is_none")]
     pub incident_id: Option<String>,
@@ -629,26 +629,26 @@ pub struct BookmarkList {
     pub value: Vec<Bookmark>,
 }
 pub type Label = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AadDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AadDataConnectorProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AadDataConnectorProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<AlertsDataTypeOfDataConnector>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsDataTypeOfDataConnector {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alerts: Option<DataConnectorDataTypeCommon>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataConnectorDataTypeCommon {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<data_connector_data_type_common::State>,
@@ -661,49 +661,49 @@ pub mod data_connector_data_type_common {
         Disabled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AatpDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AatpDataConnectorProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AatpDataConnectorProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<AlertsDataTypeOfDataConnector>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AscDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AscDataConnectorProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AscDataConnectorProperties {
     #[serde(flatten)]
     pub data_connector_with_alerts_properties: DataConnectorWithAlertsProperties,
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AwsCloudTrailDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AwsCloudTrailDataConnectorProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AwsCloudTrailDataConnectorProperties {
     #[serde(rename = "awsRoleArn", default, skip_serializing_if = "Option::is_none")]
     pub aws_role_arn: Option<String>,
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<AwsCloudTrailDataConnectorDataTypes>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AwsCloudTrailDataConnectorDataTypes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logs: Option<serde_json::Value>,
@@ -731,31 +731,31 @@ pub struct DataConnectorList {
     pub next_link: Option<String>,
     pub value: Vec<DataConnector>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataConnectorTenantId {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataConnectorWithAlertsProperties {
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<AlertsDataTypeOfDataConnector>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct McasDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<McasDataConnectorProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct McasDataConnectorProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<McasDataConnectorDataTypes>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct McasDataConnectorDataTypes {
     #[serde(flatten)]
     pub alerts_data_type_of_data_connector: AlertsDataTypeOfDataConnector,
@@ -764,28 +764,28 @@ pub struct McasDataConnectorDataTypes {
     #[serde(rename = "discoveryLogs", default, skip_serializing_if = "Option::is_none")]
     pub discovery_logs: Option<DataConnectorDataTypeCommon>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MdatpDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MdatpDataConnectorProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MdatpDataConnectorProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<AlertsDataTypeOfDataConnector>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TiDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TiDataConnectorProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TiDataConnectorProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -794,26 +794,26 @@ pub struct TiDataConnectorProperties {
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<TiDataConnectorDataTypes>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TiDataConnectorDataTypes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub indicators: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfficeDataConnector {
     #[serde(flatten)]
     pub data_connector: DataConnector,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfficeDataConnectorProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfficeDataConnectorProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "dataTypes", default, skip_serializing_if = "Option::is_none")]
     pub data_types: Option<OfficeDataConnectorDataTypes>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfficeDataConnectorDataTypes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exchange: Option<serde_json::Value>,
@@ -822,7 +822,7 @@ pub struct OfficeDataConnectorDataTypes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub teams: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,

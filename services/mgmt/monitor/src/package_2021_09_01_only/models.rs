@@ -40,14 +40,14 @@ pub struct TestNotificationDetailsResponse {
     #[serde(rename = "ActionDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub action_details: Vec<ActionDetail>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Context {
     #[serde(rename = "NotificationSource", default, skip_serializing_if = "Option::is_none")]
     pub notification_source: Option<String>,
     #[serde(rename = "ContextType", default, skip_serializing_if = "Option::is_none")]
     pub context_type: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionDetail {
     #[serde(rename = "MechanismType", default, skip_serializing_if = "Option::is_none")]
     pub mechanism_type: Option<String>,
@@ -62,7 +62,7 @@ pub struct ActionDetail {
     #[serde(rename = "Detail", default, skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupResource {
     #[serde(flatten)]
     pub azure_resource: AzureResource,
@@ -97,7 +97,7 @@ pub struct ActionGroup {
     #[serde(rename = "eventHubReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub event_hub_receivers: Vec<EventHubReceiver>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ActionGroupResource>,
@@ -264,21 +264,21 @@ pub struct EnableRequest {
     #[serde(rename = "receiverName")]
     pub receiver_name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatchBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroupPatch>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,

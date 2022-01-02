@@ -20,14 +20,14 @@ pub struct PoolUsageMetrics {
     #[serde(rename = "dataEgressGiB")]
     pub data_egress_gi_b: f64,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PoolListUsageMetricsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PoolUsageMetrics>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeAgentSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -51,12 +51,12 @@ pub mod node_agent_sku {
         Windows,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthenticationTokenSettings {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub access: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountListNodeAgentSkusResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NodeAgentSku>,
@@ -143,14 +143,14 @@ pub struct JobStatistics {
     #[serde(rename = "waitTime")]
     pub wait_time: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NameValuePair {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeleteCertificateError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -159,7 +159,7 @@ pub struct DeleteCertificateError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<NameValuePair>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Certificate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
@@ -238,7 +238,7 @@ pub mod certificate_add_parameter {
         Cer,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Certificate>,
@@ -258,7 +258,7 @@ pub struct FileProperties {
     #[serde(rename = "fileMode", default, skip_serializing_if = "Option::is_none")]
     pub file_mode: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeFile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -269,14 +269,14 @@ pub struct NodeFile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FileProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeFileListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NodeFile>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Schedule {
     #[serde(rename = "doNotRunUntil", default, skip_serializing_if = "Option::is_none")]
     pub do_not_run_until: Option<String>,
@@ -287,7 +287,7 @@ pub struct Schedule {
     #[serde(rename = "recurrenceInterval", default, skip_serializing_if = "Option::is_none")]
     pub recurrence_interval: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobConstraints {
     #[serde(rename = "maxWallClockTime", default, skip_serializing_if = "Option::is_none")]
     pub max_wall_clock_time: Option<String>,
@@ -325,7 +325,7 @@ pub struct EnvironmentSetting {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExitConditions {
     #[serde(rename = "exitCodes", default, skip_serializing_if = "Vec::is_empty")]
     pub exit_codes: Vec<ExitCodeMapping>,
@@ -338,7 +338,7 @@ pub struct ExitConditions {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<ExitOptions>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExitOptions {
     #[serde(
         rename = "jobAction",
@@ -387,7 +387,7 @@ pub struct ExitCodeRangeMapping {
     #[serde(rename = "exitOptions")]
     pub exit_options: ExitOptions,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoUserSpecification {
     #[serde(
         default,
@@ -420,14 +420,14 @@ pub enum ElevationLevel {
     #[serde(rename = "admin")]
     Admin,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[serde(rename = "autoUser", default, skip_serializing_if = "Option::is_none")]
     pub auto_user: Option<AutoUserSpecification>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinuxUserConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uid: Option<i32>,
@@ -450,7 +450,7 @@ pub struct UserAccount {
     #[serde(rename = "linuxUserConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub linux_user_configuration: Option<LinuxUserConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskConstraints {
     #[serde(rename = "maxWallClockTime", default, skip_serializing_if = "Option::is_none")]
     pub max_wall_clock_time: Option<String>,
@@ -662,7 +662,7 @@ pub struct VirtualMachineConfiguration {
     #[serde(rename = "containerConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub container_configuration: Option<ContainerConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
@@ -675,7 +675,7 @@ pub struct ImageReference {
     #[serde(rename = "virtualMachineImageId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_image_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OsDisk {
     #[serde(
         default,
@@ -693,7 +693,7 @@ pub enum CachingType {
     #[serde(rename = "readwrite")]
     Readwrite,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsConfiguration {
     #[serde(rename = "enableAutomaticUpdates", default, skip_serializing_if = "Option::is_none")]
     pub enable_automatic_updates: Option<bool>,
@@ -715,7 +715,7 @@ pub mod container_configuration {
         Docker,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkConfiguration {
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
@@ -748,7 +748,7 @@ pub mod auto_pool_specification {
         Job,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PoolInformation {
     #[serde(rename = "poolId", default, skip_serializing_if = "Option::is_none")]
     pub pool_id: Option<String>,
@@ -806,14 +806,14 @@ pub enum OnTaskFailure {
     #[serde(rename = "performexitoptionsjobaction")]
     Performexitoptionsjobaction,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecentJob {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobScheduleExecutionInformation {
     #[serde(rename = "nextRunTime", default, skip_serializing_if = "Option::is_none")]
     pub next_run_time: Option<String>,
@@ -852,7 +852,7 @@ pub struct JobScheduleStatistics {
     #[serde(rename = "waitTime")]
     pub wait_time: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudJobSchedule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -918,7 +918,7 @@ pub struct JobScheduleAddParameter {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudJobScheduleListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CloudJobSchedule>,
@@ -956,7 +956,7 @@ pub struct JobExecutionInformation {
     #[serde(rename = "terminateReason", default, skip_serializing_if = "Option::is_none")]
     pub terminate_reason: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudJob {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1079,14 +1079,14 @@ pub struct JobAddParameter {
     #[serde(rename = "usesTaskDependencies", default, skip_serializing_if = "Option::is_none")]
     pub uses_task_dependencies: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudJobListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CloudJob>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskContainerExecutionInformation {
     #[serde(rename = "containerId", default, skip_serializing_if = "Option::is_none")]
     pub container_id: Option<String>,
@@ -1187,7 +1187,7 @@ pub mod job_release_task_execution_information {
         Completed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobPreparationAndReleaseTaskExecutionInformation {
     #[serde(rename = "poolId", default, skip_serializing_if = "Option::is_none")]
     pub pool_id: Option<String>,
@@ -1200,7 +1200,7 @@ pub struct JobPreparationAndReleaseTaskExecutionInformation {
     #[serde(rename = "jobReleaseTaskExecutionInfo", default, skip_serializing_if = "Option::is_none")]
     pub job_release_task_execution_info: Option<JobReleaseTaskExecutionInformation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudJobListPreparationAndReleaseTaskStatusResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobPreparationAndReleaseTaskExecutionInformation>,
@@ -1227,7 +1227,7 @@ pub mod task_counts {
         Unvalidated,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoScaleRunError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -1244,7 +1244,7 @@ pub struct AutoScaleRun {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<AutoScaleRunError>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResizeError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -1279,7 +1279,7 @@ pub enum StorageAccountType {
     #[serde(rename = "premium_lrs")]
     PremiumLrs,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudPool {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1424,14 +1424,14 @@ pub struct PoolAddParameter {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationSummary>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudPoolListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CloudPool>,
@@ -1470,7 +1470,7 @@ pub struct TaskExecutionInformation {
     )]
     pub result: Option<TaskExecutionResult>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeNodeInformation {
     #[serde(rename = "affinityId", default, skip_serializing_if = "Option::is_none")]
     pub affinity_id: Option<String>,
@@ -1518,7 +1518,7 @@ pub struct TaskStatistics {
     #[serde(rename = "waitTime")]
     pub wait_time: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskDependencies {
     #[serde(rename = "taskIds", default, skip_serializing_if = "Vec::is_empty")]
     pub task_ids: Vec<String>,
@@ -1530,7 +1530,7 @@ pub struct TaskIdRange {
     pub start: i32,
     pub end: i32,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudTask {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1668,7 +1668,7 @@ pub mod task_add_result {
         Servererror,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -1677,19 +1677,19 @@ pub struct BatchError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<BatchErrorDetail>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorMessage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lang: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskAddCollectionResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TaskAddResult>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubtaskInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<i32>,
@@ -1738,12 +1738,12 @@ pub enum SubtaskState {
     #[serde(rename = "completed")]
     Completed,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudTaskListSubtasksResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SubtaskInformation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudTaskListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CloudTask>,
@@ -1800,7 +1800,7 @@ pub mod start_task_information {
         Completed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeNodeError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -1809,7 +1809,7 @@ pub struct ComputeNodeError {
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub error_details: Vec<NameValuePair>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeNode {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1958,7 +1958,7 @@ pub struct InboundEndpoint {
     #[serde(rename = "backendPort")]
     pub backend_port: i32,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeNodeListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ComputeNode>,
@@ -1984,7 +1984,7 @@ pub struct ComputeNodeGetRemoteLoginSettingsResult {
     #[serde(rename = "remoteLoginPort")]
     pub remote_login_port: i32,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobSchedulePatchParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<Schedule>,
@@ -2018,12 +2018,12 @@ pub mod job_disable_parameter {
         Wait,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobTerminateParameter {
     #[serde(rename = "terminateReason", default, skip_serializing_if = "Option::is_none")]
     pub terminate_reason: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobPatchParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
@@ -2059,7 +2059,7 @@ pub struct JobUpdateParameter {
     )]
     pub on_all_tasks_complete: Option<OnAllTasksComplete>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PoolEnableAutoScaleParameter {
     #[serde(rename = "autoScaleFormula", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_formula: Option<String>,
@@ -2071,7 +2071,7 @@ pub struct PoolEvaluateAutoScaleParameter {
     #[serde(rename = "autoScaleFormula")]
     pub auto_scale_formula: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PoolResizeParameter {
     #[serde(rename = "targetDedicatedNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_dedicated_nodes: Option<i32>,
@@ -2113,7 +2113,7 @@ pub struct PoolUpgradeOsParameter {
     #[serde(rename = "targetOSVersion")]
     pub target_os_version: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PoolPatchParameter {
     #[serde(rename = "startTask", default, skip_serializing_if = "Option::is_none")]
     pub start_task: Option<StartTask>,
@@ -2124,12 +2124,12 @@ pub struct PoolPatchParameter {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskUpdateParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<TaskConstraints>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeUpdateUserParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
@@ -2138,7 +2138,7 @@ pub struct NodeUpdateUserParameter {
     #[serde(rename = "sshPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub ssh_public_key: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeRebootParameter {
     #[serde(
         rename = "nodeRebootOption",
@@ -2162,7 +2162,7 @@ pub mod node_reboot_parameter {
         Retaineddata,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeReimageParameter {
     #[serde(
         rename = "nodeReimageOption",
@@ -2186,7 +2186,7 @@ pub mod node_reimage_parameter {
         Retaineddata,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeDisableSchedulingParameter {
     #[serde(
         rename = "nodeDisableSchedulingOption",
@@ -2230,7 +2230,7 @@ pub struct OutputFile {
     #[serde(rename = "uploadOptions")]
     pub upload_options: OutputFileUploadOptions,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutputFileDestination {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub container: Option<OutputFileBlobContainerDestination>,
@@ -2256,7 +2256,7 @@ pub enum OutputFileUploadCondition {
     #[serde(rename = "taskcompletion")]
     Taskcompletion,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,

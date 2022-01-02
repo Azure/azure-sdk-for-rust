@@ -14,7 +14,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceOrchestratorProfile {
     #[serde(rename = "orchestratorType", default, skip_serializing_if = "Option::is_none")]
     pub orchestrator_type: Option<container_service_orchestrator_profile::OrchestratorType>,
@@ -168,7 +168,7 @@ pub struct ContainerServiceLinuxProfile {
     pub admin_username: String,
     pub ssh: ContainerServiceSshConfiguration,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceSshConfiguration {
     #[serde(rename = "publicKeys", default, skip_serializing_if = "Vec::is_empty")]
     pub public_keys: Vec<ContainerServiceSshPublicKey>,
@@ -178,19 +178,19 @@ pub struct ContainerServiceSshPublicKey {
     #[serde(rename = "keyData")]
     pub key_data: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceDiagnosticsProfile {
     #[serde(rename = "vmDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub vm_diagnostics: Option<ContainerServiceVmDiagnostics>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceVmDiagnostics {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
     pub storage_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerService {
     #[serde(flatten)]
     pub resource: Resource,
@@ -214,7 +214,7 @@ pub struct ContainerServiceProperties {
     #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
     pub diagnostics_profile: Option<ContainerServiceDiagnosticsProfile>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContainerService>,

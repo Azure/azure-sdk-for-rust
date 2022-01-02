@@ -3,7 +3,7 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 pub type ArrayOfStrings = Vec<String>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfStrings {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
@@ -52,7 +52,7 @@ pub struct UpdateId {
     pub name: String,
     pub version: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfUpdateIds {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UpdateId>,
@@ -131,7 +131,7 @@ pub struct InnerError {
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Box<Option<InnerError>>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfOperations {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
@@ -147,7 +147,7 @@ pub struct DeviceClass {
     #[serde(rename = "bestCompatibleUpdateId")]
     pub best_compatible_update_id: UpdateId,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeviceClasses {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeviceClass>,
@@ -183,12 +183,12 @@ pub enum DeviceDeploymentState {
     Canceled,
     Incompatible,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceFilter {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDevices {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Device>,
@@ -213,7 +213,7 @@ pub struct UpdatableDevices {
     #[serde(rename = "deviceCount")]
     pub device_count: i64,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfUpdatableDevices {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UpdatableDevices>,
@@ -227,7 +227,7 @@ pub struct DeviceTag {
     #[serde(rename = "deviceCount")]
     pub device_count: i64,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeviceTags {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeviceTag>,
@@ -250,7 +250,7 @@ pub struct Group {
 pub enum GroupType {
     IoTHubTag,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfGroups {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Group>,
@@ -292,7 +292,7 @@ pub enum DeviceGroupType {
     Devices,
     DeviceGroupDefinitions,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeployments {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Deployment>,
@@ -333,7 +333,7 @@ pub struct DeploymentDeviceState {
     #[serde(rename = "deviceState")]
     pub device_state: DeviceDeploymentState,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeploymentDeviceStates {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeploymentDeviceState>,
@@ -345,12 +345,12 @@ pub enum OperationFilterStatus {
     Running,
     NotStarted,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationFilterStatus>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -359,7 +359,7 @@ pub struct DeploymentFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupBestUpdatesFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -368,7 +368,7 @@ pub struct GroupBestUpdatesFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentDeviceStatesFilter {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,

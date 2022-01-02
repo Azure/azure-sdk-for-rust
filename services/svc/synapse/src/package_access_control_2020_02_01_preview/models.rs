@@ -17,7 +17,7 @@ pub struct SynapseRole {
     #[serde(rename = "isBuiltIn")]
     pub is_built_in: bool,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
@@ -46,7 +46,7 @@ pub struct RoleAssignmentOptions {
     #[serde(rename = "principalId")]
     pub principal_id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,

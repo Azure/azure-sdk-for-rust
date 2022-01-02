@@ -2,28 +2,28 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCollectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobCollectionDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobHistoryListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobHistoryDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCollectionDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -38,7 +38,7 @@ pub struct JobCollectionDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobCollectionProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCollectionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
@@ -57,7 +57,7 @@ pub mod job_collection_properties {
         Deleted,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
@@ -71,7 +71,7 @@ pub mod sku {
         Premium,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCollectionQuota {
     #[serde(rename = "maxJobCount", default, skip_serializing_if = "Option::is_none")]
     pub max_job_count: Option<i64>,
@@ -80,7 +80,7 @@ pub struct JobCollectionQuota {
     #[serde(rename = "maxRecurrence", default, skip_serializing_if = "Option::is_none")]
     pub max_recurrence: Option<JobMaxRecurrence>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobMaxRecurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<job_max_recurrence::Frequency>,
@@ -98,7 +98,7 @@ pub mod job_max_recurrence {
         Month,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -109,7 +109,7 @@ pub struct JobDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobProperties {
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
@@ -122,7 +122,7 @@ pub struct JobProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<JobStatus>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobAction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_action::Type>,
@@ -150,7 +150,7 @@ pub mod job_action {
         ServiceBusTopic,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HttpRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authentication: Option<HttpAuthentication>,
@@ -163,7 +163,7 @@ pub struct HttpRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HttpAuthentication {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<http_authentication::Type>,
@@ -178,7 +178,7 @@ pub mod http_authentication {
         Basic,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageQueueMessage {
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<String>,
@@ -189,21 +189,21 @@ pub struct StorageQueueMessage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusQueueMessage {
     #[serde(flatten)]
     pub service_bus_message: ServiceBusMessage,
     #[serde(rename = "queueName", default, skip_serializing_if = "Option::is_none")]
     pub queue_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusTopicMessage {
     #[serde(flatten)]
     pub service_bus_message: ServiceBusMessage,
     #[serde(rename = "topicPath", default, skip_serializing_if = "Option::is_none")]
     pub topic_path: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RetryPolicy {
     #[serde(rename = "retryType", default, skip_serializing_if = "Option::is_none")]
     pub retry_type: Option<retry_policy::RetryType>,
@@ -220,7 +220,7 @@ pub mod retry_policy {
         Fixed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobErrorAction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_error_action::Type>,
@@ -246,7 +246,7 @@ pub mod job_error_action {
         ServiceBusTopic,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobRecurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<job_recurrence::Frequency>,
@@ -270,7 +270,7 @@ pub mod job_recurrence {
         Month,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobRecurrenceSchedule {
     #[serde(rename = "weekDays", default, skip_serializing_if = "Vec::is_empty")]
     pub week_days: Vec<String>,
@@ -290,7 +290,7 @@ pub enum JobState {
     Faulted,
     Completed,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStatus {
     #[serde(rename = "executionCount", default, skip_serializing_if = "Option::is_none")]
     pub execution_count: Option<i64>,
@@ -303,7 +303,7 @@ pub struct JobStatus {
     #[serde(rename = "nextExecutionTime", default, skip_serializing_if = "Option::is_none")]
     pub next_execution_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobHistoryDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -314,7 +314,7 @@ pub struct JobHistoryDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobHistoryDefinitionProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobHistoryDefinitionProperties {
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
@@ -347,7 +347,7 @@ pub enum JobExecutionStatus {
     Failed,
     Postponed,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientCertAuthentication {
     #[serde(flatten)]
     pub http_authentication: HttpAuthentication,
@@ -362,7 +362,7 @@ pub struct ClientCertAuthentication {
     #[serde(rename = "certificateSubjectName", default, skip_serializing_if = "Option::is_none")]
     pub certificate_subject_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BasicAuthentication {
     #[serde(flatten)]
     pub http_authentication: HttpAuthentication,
@@ -371,7 +371,7 @@ pub struct BasicAuthentication {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OAuthAuthentication {
     #[serde(flatten)]
     pub http_authentication: HttpAuthentication,
@@ -384,7 +384,7 @@ pub struct OAuthAuthentication {
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusMessage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authentication: Option<ServiceBusAuthentication>,
@@ -409,7 +409,7 @@ pub mod service_bus_message {
         Amqp,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusAuthentication {
     #[serde(rename = "sasKey", default, skip_serializing_if = "Option::is_none")]
     pub sas_key: Option<String>,
@@ -426,7 +426,7 @@ pub mod service_bus_authentication {
         SharedAccessKey,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusBrokeredMessageProperties {
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
@@ -463,7 +463,7 @@ pub enum RecurrenceFrequency {
     Week,
     Month,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobRecurrenceScheduleMonthlyOccurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub day: Option<job_recurrence_schedule_monthly_occurrence::Day>,
@@ -483,12 +483,12 @@ pub mod job_recurrence_schedule_monthly_occurrence {
         Sunday,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStateFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<JobState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobHistoryFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<JobExecutionStatus>,

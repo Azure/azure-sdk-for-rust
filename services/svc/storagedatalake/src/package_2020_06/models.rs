@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AclFailedEntry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -11,7 +11,7 @@ pub struct AclFailedEntry {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SetAccessControlRecursiveResponse {
     #[serde(rename = "directoriesSuccessful", default, skip_serializing_if = "Option::is_none")]
     pub directories_successful: Option<i32>,
@@ -22,7 +22,7 @@ pub struct SetAccessControlRecursiveResponse {
     #[serde(rename = "failedEntries", default, skip_serializing_if = "Vec::is_empty")]
     pub failed_entries: Vec<AclFailedEntry>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Path {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -41,12 +41,12 @@ pub struct Path {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PathList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub paths: Vec<Path>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileSystem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -166,19 +166,19 @@ pub struct BlobPropertiesInternal {
     #[serde(rename = "DeleteTime", default, skip_serializing_if = "Option::is_none")]
     pub delete_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileSystemList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filesystems: Vec<FileSystem>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<storage_error::Error>,
 }
 pub mod storage_error {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Error {
         #[serde(rename = "Code", default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
